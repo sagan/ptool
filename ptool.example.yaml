@@ -1,0 +1,14 @@
+iyuutoken: abcdefg
+clients:
+  -
+    name: "local"
+    type: "qbittorrent"
+    url: "http://localhost:8085/"
+    username: "admin"
+    password: "adminadmin"
+sites:
+  -
+    name: "mt"
+    type: "nexusphp"
+    url: "https://kp.m-team.cc/"
+    cookie: "cookie_here"
