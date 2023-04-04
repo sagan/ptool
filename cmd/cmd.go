@@ -12,7 +12,7 @@ import (
 var RootCmd = &cobra.Command{
 	Use:   "ptool",
 	Short: "ptool command [flags]",
-	Long:  `ptools.`,
+	Long:  `ptool.`,
 	// Run: func(cmd *cobra.Command, args []string) { },
 }
 

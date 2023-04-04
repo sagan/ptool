@@ -250,6 +250,8 @@ func rateSiteTorrent(siteTorrent *site.SiteTorrent, now int64) (score float64, p
 	} else {
 		score = 10
 	}
+	score += float64(siteTorrent.Leechers)
+
 	if siteTorrent.Size <= 1024*1024*1024 {
 		score *= 10
 	} else if siteTorrent.Size <= 1024*1024*1024*10 {
