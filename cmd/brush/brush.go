@@ -81,7 +81,10 @@ func brush(cmd *cobra.Command, args []string) {
 			if siteInstance.GetSiteConfig().BrushUrl != "" {
 				url = siteInstance.GetSiteConfig().BrushUrl
 			}
-			siteTorrents, _ = siteInstance.GetLatestTorrents(url)
+			siteTorrents, err = siteInstance.GetLatestTorrents(url)
+			if err != nil {
+				log.Printf("failed to fetch site %s torrents: %v", sitename, err)
+			}
 		}
 
 		clientTorrents, err := clientInstance.GetTorrents("", CAT, true)

@@ -28,6 +28,7 @@ func SetHttpRequestBrowserHeaders(req *http.Request) {
 	req.Header.Set("User-Agent", ua)
 	req.Header.Set("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
 	req.Header.Set("accept-language", "en")
+	req.Header.Set("accept-encoding", "gzip, deflate, br")
 	req.Header.Set("cache-control", "no-cache")
 	req.Header.Set("pragma", "no-cache")
 }
