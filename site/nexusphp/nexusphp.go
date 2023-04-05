@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/sagan/ptool/config"
@@ -124,6 +125,7 @@ func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) 
 		titleEl := s.Find("a[href^=\"details.php?\"]")
 		if titleEl.Length() > 0 {
 			name = titleEl.Text()
+			name = strings.ReplaceAll(name, "[email protected]", "") // CloudFlare email obfuscation sometimes confuses with 0day torrent names such as "***-DIY@Audies"
 		}
 		downloadEl := s.Find("a[href^=\"download.php?\"]")
 		if downloadEl.Length() > 0 {
