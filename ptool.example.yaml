@@ -3,16 +3,17 @@ clients:
   -
     name: "local"
     type: "qbittorrent"
-    url: "http://localhost:8085/"
+    url: "http://localhost:8085/" # qb web UI 地址
     username: "admin"
     password: "adminadmin"
     brushMinDiskSpace: "5GB" # 刷流：保留最小空闲磁盘空间。
     brushSlowUploadSpeedTier: "100KB" # 刷流：上传速度持续低于此值的种子将可能被删除
-    brushMaxDownloadingTorrents: 6 # 刷流：最多下载状态的种子数
-    brushMaxTorrents: 50 # 刷流：最多种子数（所有状态）
+    brushMaxDownloadingTorrents: 6 # 刷流：位于下载状态的种子数上限
+    brushMaxTorrents: 50 # 刷流：种子数（所有状态）上限
 sites:
   -
     name: "mt"
     type: "nexusphp"
     url: "https://kp.m-team.cc/"
+    #brushUrl: "https://kp.m-team.cc/adult.php" # 单独设置刷流种子列表页 url。如不指定，np 使用 torrents.php
     cookie: "cookie_here"
