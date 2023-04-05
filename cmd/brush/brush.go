@@ -55,7 +55,8 @@ func brush(cmd *cobra.Command, args []string) {
 		status.UploadSpeed > 0 &&
 			(float64(status.UploadSpeed)/float64(status.UploadSpeedLimit)) >= 0.8 {
 		log.Printf(
-			"Client upload bandwidth is already full (Upload speed/limit: %s/s/%s/s). Do not fetch site new torrents\n",
+			"Client %s upload bandwidth is already full (Upload speed/limit: %s/s/%s/s). Do not fetch site new torrents\n",
+			clientInstance.GetName(),
 			utils.HumanSize(float64(status.UploadSpeed)),
 			utils.HumanSize(float64(status.UploadSpeedLimit)),
 		)
@@ -74,7 +75,8 @@ func brush(cmd *cobra.Command, args []string) {
 	}
 	result := Decide(status, clientTorrents, siteTorrents)
 	log.Printf(
-		`Current client torrents: %d; Download speed / limit: %s/s / %s/s; Upload speed / limit: %s/s / %s/s;Free disk space: %s;\n`,
+		`Current client %s torrents: %d; Download speed / limit: %s/s / %s/s; Upload speed / limit: %s/s / %s/s;Free disk space: %s;\n`,
+		clientInstance.GetName(),
 		len(clientTorrents),
 		utils.HumanSize(float64(status.DownloadSpeed)),
 		utils.HumanSize(float64(status.DownloadSpeedLimit)),
@@ -83,7 +85,8 @@ func brush(cmd *cobra.Command, args []string) {
 		utils.HumanSize(float64(status.FreeSpaceOnDisk)),
 	)
 	log.Printf(
-		`Fetched site torrents: %d; Client add / modify / stall / delete torrents: %d / %d / %d / %d. Msg: %s\n`,
+		`Fetched site %s torrents: %d; Client add / modify / stall / delete torrents: %d / %d / %d / %d. Msg: %s\n`,
+		siteInstance.GetName(),
 		len(siteTorrents),
 		len(result.AddTorrents),
 		len(result.ModifyTorrents),
@@ -93,7 +96,7 @@ func brush(cmd *cobra.Command, args []string) {
 	)
 	tmpdir, _ := os.MkdirTemp(os.TempDir(), "ptool")
 	for _, torrent := range result.AddTorrents {
-		log.Print("Add torrent \n", torrent.Name, " / ", torrent.Msg, " / ", torrent.Meta)
+		log.Printf("Add site %s torrent to client %s: %s / %s / %v", siteInstance.GetName(), clientInstance.GetName(), torrent.Name, torrent.Msg, torrent.Meta)
 		if dryRun {
 			continue
 		}
@@ -128,7 +131,7 @@ func brush(cmd *cobra.Command, args []string) {
 	}
 
 	for _, torrent := range result.ModifyTorrents {
-		log.Printf("Modify torrent: %v / %v / %v / %v ", torrent.Name, torrent.InfoHash, torrent.Msg, torrent.Meta)
+		log.Printf("Modify client %s torrent: %v / %v / %v / %v ", clientInstance.GetName(), torrent.Name, torrent.InfoHash, torrent.Msg, torrent.Meta)
 		if dryRun {
 			continue
 		}
@@ -137,7 +140,7 @@ func brush(cmd *cobra.Command, args []string) {
 	}
 
 	for _, torrent := range result.StallTorrents {
-		log.Printf("Stall torrent: %v / %v / %v", torrent.Name, torrent.InfoHash, torrent.Msg)
+		log.Printf("Stall client %s torrent: %v / %v / %v", clientInstance.GetName(), torrent.Name, torrent.InfoHash, torrent.Msg)
 		if dryRun {
 			continue
 		}
@@ -148,10 +151,10 @@ func brush(cmd *cobra.Command, args []string) {
 	}
 
 	for _, torrent := range result.DeleteTorrents {
-		clientTorrent := utils.FindInSlice[client.Torrent](clientTorrents, func(t client.Torrent) bool {
+		clientTorrent := utils.FindInSlice(clientTorrents, func(t client.Torrent) bool {
 			return t.InfoHash == torrent.InfoHash
 		})
-		log.Printf("Delete torrent: %v / %v / %v.", torrent.Name, torrent.InfoHash, torrent.Msg)
+		log.Printf("Delete client %s torrent: %v / %v / %v.", clientInstance.GetName(), torrent.Name, torrent.InfoHash, torrent.Msg)
 		log.Printf("Total downloads / uploads: %s / %s;",
 			utils.HumanSize(float64(clientTorrent.Downloaded)),
 			utils.HumanSize(float64(clientTorrent.Uploaded)),

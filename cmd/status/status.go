@@ -38,9 +38,10 @@ func status(cmd *cobra.Command, args []string) {
 	}
 	status, err := client.GetStatus()
 	if err != nil {
-		log.Fatal("cann't get client status ", err)
+		log.Fatalf("Cann't get client %s status: error=%v", client.GetName(), err)
 	}
-	fmt.Printf("Download (Speed/Limit): %s/s / %s/s; Upload (Speed/Limit): %s/s / %s/s; Free disk space: %s\n\n",
+	fmt.Printf("Client %s Download Speed/Limit: %s/s / %s/s; Upload Speed/Limit: %s/s / %s/s; Free disk space: %s\n\n",
+		client.GetName(),
 		utils.HumanSize(float64(status.DownloadSpeed)),
 		utils.HumanSize(float64(status.DownloadSpeedLimit)),
 		utils.HumanSize(float64(status.UploadSpeed)),

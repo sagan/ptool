@@ -25,6 +25,7 @@ type SiteTorrent struct {
 }
 
 type Site interface {
+	GetName() string
 	GetSiteConfig() *config.SiteConfigStruct
 	DownloadTorrent(url string) ([]byte, error)
 	GetLatestTorrents(url string) ([]SiteTorrent, error)
@@ -32,7 +33,7 @@ type Site interface {
 
 type RegInfo struct {
 	Name    string
-	Creator func(*config.SiteConfigStruct, *config.ConfigStruct) (Site, error)
+	Creator func(string, *config.SiteConfigStruct, *config.ConfigStruct) (Site, error)
 }
 
 type SiteCreator func(*RegInfo) (Site, error)
@@ -63,7 +64,7 @@ func CreateSite(name string) (Site, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unsupported site type %s", siteConfig.Type)
 	}
-	return regInfo.Creator(siteConfig, config.Get())
+	return regInfo.Creator(name, siteConfig, config.Get())
 }
 
 func Print(siteTorrents []SiteTorrent) {

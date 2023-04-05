@@ -55,7 +55,7 @@ func clientctl(cmd *cobra.Command, args []string) {
 		if len(s) == 1 {
 			value, err = client.GetConfig(name)
 			if err != nil {
-				log.Printf("error get client config %s: %v", name, err)
+				log.Printf("Error get client %s config %s: %v", client.GetName(), name, err)
 				exit = 1
 			}
 		} else {
@@ -67,7 +67,7 @@ func clientctl(cmd *cobra.Command, args []string) {
 				err = client.SetConfig(name, value)
 			}
 			if err != nil {
-				log.Printf("error set client config %s=%s: %v", name, value, err)
+				log.Printf("Error set client %s config %s=%s: %v", client.GetName(), name, value, err)
 				value = ""
 				exit = 1
 			}

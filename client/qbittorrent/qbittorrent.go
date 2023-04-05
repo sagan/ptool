@@ -22,6 +22,7 @@ import (
 )
 
 type Client struct {
+	Name         string
 	ClientConfig *config.ClientConfigStruct
 	Config       *config.ConfigStruct
 	HttpClient   *http.Client
@@ -60,6 +61,10 @@ func (qbclient *Client) login() error {
 	}
 	defer resp.Body.Close()
 	return nil
+}
+
+func (qbclient *Client) GetName() string {
+	return qbclient.Name
 }
 
 func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.TorrentOption, meta map[string](int64)) error {
@@ -308,12 +313,13 @@ func (qbclient *Client) GetTorrents(stateFilter string, category string, showAll
 	return torrents, nil
 }
 
-func NewClient(clientConfig *config.ClientConfigStruct, config *config.ConfigStruct) (client.Client, error) {
+func NewClient(name string, clientConfig *config.ClientConfigStruct, config *config.ConfigStruct) (client.Client, error) {
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		return nil, err
 	}
 	client := &Client{
+		Name:         name,
 		ClientConfig: clientConfig,
 		Config:       config,
 		HttpClient: &http.Client{

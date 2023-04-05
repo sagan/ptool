@@ -46,11 +46,13 @@ func Get() *ConfigStruct {
 	if !ConfigLoaded {
 		mu.Lock()
 		if !ConfigLoaded {
-			log.Printf("read config file %s", ConfigFile)
+			log.Printf("Read config file %s", ConfigFile)
 			file, err := os.ReadFile(ConfigFile)
 			if err == nil {
 				err = yaml.Unmarshal(file, &Config)
-				log.Print(err)
+				if err != nil {
+					log.Print(err)
+				}
 			}
 			ConfigLoaded = true
 		}

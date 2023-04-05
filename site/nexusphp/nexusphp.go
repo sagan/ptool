@@ -13,9 +13,14 @@ import (
 )
 
 type Site struct {
+	Name       string
 	SiteConfig *config.SiteConfigStruct
 	Config     *config.ConfigStruct
 	HttpClient *http.Client
+}
+
+func (npclient *Site) GetName() string {
+	return npclient.Name
 }
 
 func (npclient *Site) GetSiteConfig() *config.SiteConfigStruct {
@@ -158,8 +163,9 @@ func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) 
 	return torrents, nil
 }
 
-func NewSite(siteConfig *config.SiteConfigStruct, config *config.ConfigStruct) (site.Site, error) {
+func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.ConfigStruct) (site.Site, error) {
 	client := &Site{
+		Name:       name,
 		SiteConfig: siteConfig,
 		Config:     config,
 		HttpClient: &http.Client{},

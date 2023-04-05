@@ -52,13 +52,14 @@ type Client interface {
 	ModifyTorrent(infoHash string, option *TorrentOption, meta map[string](int64)) error
 	DeleteTorrents(infoHashes []string) error
 	GetStatus() (*Status, error)
+	GetName() string
 	SetConfig(variable string, value string) error
 	GetConfig(variable string) (string, error)
 }
 
 type RegInfo struct {
 	Name    string
-	Creator func(*config.ClientConfigStruct, *config.ConfigStruct) (Client, error)
+	Creator func(string, *config.ClientConfigStruct, *config.ConfigStruct) (Client, error)
 }
 
 type ClientCreator func(*RegInfo) (Client, error)
@@ -89,7 +90,7 @@ func CreateClient(name string) (Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unsupported client type %s", clientConfig.Type)
 	}
-	return regInfo.Creator(clientConfig, config.Get())
+	return regInfo.Creator(name, clientConfig, config.Get())
 }
 
 func GenerateNameWithMeta(name string, meta map[string](int64)) string {
