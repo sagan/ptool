@@ -6,6 +6,8 @@ clients:
     url: "http://localhost:8085/"
     username: "admin"
     password: "adminadmin"
+    brushMinDiskSpace: "5GB" # 刷流：保留最小空闲磁盘空间。
+    brushSlowUploadSpeedTier: "100KB" # 刷流：上传速度持续低于此值的种子将可能被删除
 sites:
   -
     name: "mt"
