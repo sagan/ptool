@@ -93,8 +93,8 @@ func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 	mp.WriteField("dlLimit", fmt.Sprint(option.DownloadSpeedLimit))
 	resp, err := qbclient.HttpClient.Post(qbclient.ClientConfig.Url+"api/v2/torrents/add",
 		mp.FormDataContentType(), body)
-	log.Printf("add torrent result %d\n", resp.StatusCode)
 	if err != nil {
+		log.Printf("add torrent result %d\n", resp.StatusCode)
 		defer resp.Body.Close()
 	}
 	return err
