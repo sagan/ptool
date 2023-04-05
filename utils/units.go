@@ -66,7 +66,7 @@ func HumanSizeWithPrecision(size float64, precision int) string {
 // HumanSize returns a human-readable approximation of a size
 // capped at 4 valid numbers (eg. "2.746 MB", "796 KB").
 func HumanSize(size float64) string {
-	return HumanSizeWithPrecision(size, 4)
+	return HumanSizeWithPrecision(size, 2)
 }
 
 // BytesSize returns a human-readable size in bytes, kibibytes,

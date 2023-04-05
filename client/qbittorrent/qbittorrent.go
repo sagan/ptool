@@ -42,7 +42,11 @@ func (qbclient *Client) apiRequest(apiPath string, v any) error {
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal(body, &v)
+	if v != nil {
+		return json.Unmarshal(body, &v)
+	} else {
+		return nil
+	}
 }
 
 func (qbclient *Client) login() error {
@@ -213,11 +217,11 @@ func (qbclient *Client) GetConfig(variable string) (string, error) {
 		return "", errors.New("login error " + err.Error())
 	}
 	switch variable {
-	case "global_download_limit":
+	case "global_download_speed_limit":
 		v := 0
 		err = qbclient.apiRequest("api/v2/transfer/downloadLimit", &v)
 		return fmt.Sprint(v), err
-	case "global_upload_limit":
+	case "global_upload_speed_limit":
 		v := 0
 		err = qbclient.apiRequest("api/v2/transfer/uploadLimit", &v)
 		return fmt.Sprint(v), err
@@ -232,13 +236,11 @@ func (qbclient *Client) SetConfig(variable string, value string) error {
 		return errors.New("login error " + err.Error())
 	}
 	switch variable {
-	case "global_download_limit":
-		v := 0
-		err = qbclient.apiRequest("api/v2/transfer/setDownloadLimit?limit="+value, &v)
+	case "global_download_speed_limit":
+		err = qbclient.apiRequest("api/v2/transfer/setDownloadLimit?limit="+value, nil)
 		return err
-	case "global_upload_limit":
-		v := 0
-		err = qbclient.apiRequest("api/v2/transfer/setUploadLimit?limit="+value, &v)
+	case "global_upload_speed_limit":
+		err = qbclient.apiRequest("api/v2/transfer/setUploadLimit?limit="+value, nil)
 		return err
 	default:
 		return nil

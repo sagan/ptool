@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/sagan/ptool/client"
@@ -23,8 +22,8 @@ var command = &cobra.Command{
 }
 
 var (
-	allOptions   = []string{"global_download_limit", "global_upload_limit"}
-	speedOptions = []string{"global_download_limit", "global_upload_limit"}
+	allOptions   = []string{"global_download_speed_limit", "global_upload_speed_limit"}
+	speedOptions = []string{"global_download_speed_limit", "global_upload_speed_limit"}
 	showRaw      = false
 )
 
@@ -56,12 +55,19 @@ func clientctl(cmd *cobra.Command, args []string) {
 		if len(s) == 1 {
 			value, err = client.GetConfig(name)
 			if err != nil {
+				log.Printf("error get client config %s: %v", name, err)
 				exit = 1
 			}
 		} else {
 			value = s[1]
-			err = client.SetConfig(name, value)
+			if slices.Contains(speedOptions, name) {
+				v, _ := utils.FromHumanSize(value)
+				err = client.SetConfig(name, fmt.Sprint(v))
+			} else {
+				err = client.SetConfig(name, value)
+			}
 			if err != nil {
+				log.Printf("error set client config %s=%s: %v", name, value, err)
 				value = ""
 				exit = 1
 			}
@@ -72,9 +78,13 @@ func clientctl(cmd *cobra.Command, args []string) {
 }
 
 func printOption(name string, value string) {
-	if !showRaw && slices.Contains(speedOptions, name) {
-		ff, _ := strconv.ParseFloat(value, 64)
-		fmt.Printf("%s=%s/s\n", name, utils.HumanSize(ff))
+	if value != "" && slices.Contains(speedOptions, name) {
+		ff, _ := utils.FromHumanSize(value)
+		if !showRaw {
+			fmt.Printf("%s=%s/s\n", name, utils.HumanSize(float64(ff)))
+		} else {
+			fmt.Printf("%s=%d\n", name, ff)
+		}
 	} else {
 		fmt.Printf("%s=%s\n", name, value)
 	}

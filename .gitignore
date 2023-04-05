@@ -17,4 +17,8 @@
 # config file
 ptool.yaml
 
+# local
 devtest/
+
+# Linux ELF
+/ptool
