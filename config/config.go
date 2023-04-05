@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	DEFAULT_BRUSH_MIN_DISK_SPACE         = int64(5 * 1024 * 1024 * 1024)
-	DEFAULT_BRUSH_SLOW_UPLOAD_SPEED_TIER = int64(100 * 1024)
+	DEFAULT_CLIENT_BRUSH_MIN_DISK_SPACE         = int64(5 * 1024 * 1024 * 1024)
+	DEFAULT_CLIENT_BRUSH_SLOW_UPLOAD_SPEED_TIER = int64(100 * 1024)
+	DEFAULT_SITE_TORRENT_UPLOAD_SPEED_LIMIT     = int64(10 * 1024 * 1024)
 )
 
 type ClientConfigStruct struct {
@@ -27,11 +28,13 @@ type ClientConfigStruct struct {
 }
 
 type SiteConfigStruct struct {
-	Name     string `yaml:"name"`
-	Type     string `yaml:"type"`
-	Url      string `yaml:"url"`
-	BrushUrl string `yaml:"brushUrl"`
-	Cookie   string `yaml:"cookie"`
+	Name                         string `yaml:"name"`
+	Type                         string `yaml:"type"`
+	Url                          string `yaml:"url"`
+	BrushUrl                     string `yaml:"brushUrl"`
+	Cookie                       string `yaml:"cookie"`
+	TorrentUploadSpeedLimit      string `yaml:"uploadSpeedLimit"`
+	TorrentUploadSpeedLimitValue int64
 }
 
 type ConfigStruct struct {
@@ -67,15 +70,22 @@ func Get() *ConfigStruct {
 			for i, client := range Config.Clients {
 				v, err := utils.RAMInBytes(client.BrushMinDiskSpace)
 				if err != nil || v <= 0 {
-					v = DEFAULT_BRUSH_MIN_DISK_SPACE
+					v = DEFAULT_CLIENT_BRUSH_MIN_DISK_SPACE
 				}
 				Config.Clients[i].BrushMinDiskSpaceValue = v
 
 				v, err = utils.RAMInBytes(client.BrushSlowUploadSpeedTier)
 				if err != nil || v <= 0 {
-					v = DEFAULT_BRUSH_SLOW_UPLOAD_SPEED_TIER
+					v = DEFAULT_CLIENT_BRUSH_SLOW_UPLOAD_SPEED_TIER
 				}
 				Config.Clients[i].BrushSlowUploadSpeedTierValue = v
+			}
+			for i, site := range Config.Sites {
+				v, err := utils.RAMInBytes(site.TorrentUploadSpeedLimit)
+				if err != nil || v <= 0 {
+					v = DEFAULT_SITE_TORRENT_UPLOAD_SPEED_LIMIT
+				}
+				Config.Sites[i].TorrentUploadSpeedLimitValue = v
 			}
 			ConfigLoaded = true
 		}

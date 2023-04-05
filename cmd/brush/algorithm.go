@@ -11,8 +11,10 @@ import (
 )
 
 type BrushOptionStruct struct {
-	MinDiskSpace        int64
-	SlowUploadSpeedTier int64
+	MinDiskSpace            int64
+	SlowUploadSpeedTier     int64
+	TorrentUploadSpeedLimit int64
+	Now                     int64
 }
 
 type AlgorithmAddTorrent struct {
@@ -76,7 +78,6 @@ type clientTorrentInfoStruct struct {
 func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTorrents []site.SiteTorrent, option *BrushOptionStruct) (result *AlgorithmResult) {
 	result = &AlgorithmResult{}
 
-	now := utils.Now()
 	cntTorrents := len(clientTorrents)
 	cntDownloadingTorrents := int64(0)
 	freespace := clientStatus.FreeSpaceOnDisk
@@ -99,7 +100,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	}
 
 	for _, siteTorrent := range siteTorrents {
-		score, predictionUploadSpeed := rateSiteTorrent(&siteTorrent, now)
+		score, predictionUploadSpeed := rateSiteTorrent(&siteTorrent, option)
 		if score > 0 {
 			candidateTorrent := candidateTorrentStruct{
 				Name:                  siteTorrent.Name,
@@ -154,8 +155,8 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 		// check slow torrents, add it to watch list first time and mark as deleteCandidate second time
 		if torrent.UploadSpeed < option.SlowUploadSpeedTier {
 			if torrent.Meta["sct"] > 0 { // second encounter on slow torrent
-				if now-torrent.Meta["sct"] >= 15*60 {
-					averageUploadSpeedSinceSct := (torrent.Uploaded - torrent.Meta["sctu"]) / (now - torrent.Meta["sct"])
+				if option.Now-torrent.Meta["sct"] >= 15*60 {
+					averageUploadSpeedSinceSct := (torrent.Uploaded - torrent.Meta["sctu"]) / (option.Now - torrent.Meta["sct"])
 					if averageUploadSpeedSinceSct < option.SlowUploadSpeedTier {
 						deleteCandidateTorrents = append(deleteCandidateTorrents, candidateClientTorrentStruct{
 							InfoHash: torrent.InfoHash,
@@ -165,7 +166,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 						clientTorrentsMap[torrent.InfoHash].DeleteCandidateFlag = true
 					} else {
 						meta := utils.CopyMap(torrent.Meta)
-						meta["sct"] = now
+						meta["sct"] = option.Now
 						meta["sctu"] = torrent.Uploaded
 						modifyTorrents = append(modifyTorrents, AlgorithmModifyTorrent{
 							InfoHash: torrent.InfoHash,
@@ -178,7 +179,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 				}
 			} else { // first encounter on slow torrent
 				meta := utils.CopyMap(torrent.Meta)
-				meta["sct"] = now
+				meta["sct"] = option.Now
 				meta["sctu"] = torrent.Uploaded
 				modifyTorrents = append(modifyTorrents, AlgorithmModifyTorrent{
 					InfoHash: torrent.InfoHash,
@@ -293,21 +294,21 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	return
 }
 
-func rateSiteTorrent(siteTorrent *site.SiteTorrent, now int64) (score float64, predictionUploadSpeed int64) {
+func rateSiteTorrent(siteTorrent *site.SiteTorrent, brushOption *BrushOptionStruct) (score float64, predictionUploadSpeed int64) {
 	if siteTorrent.IsActive ||
 		siteTorrent.HasHnR ||
 		siteTorrent.DownloadMultiplier != 0 ||
-		(siteTorrent.DiscountEndTime > 0 && siteTorrent.DiscountEndTime-now < 3600) ||
+		(siteTorrent.DiscountEndTime > 0 && siteTorrent.DiscountEndTime-brushOption.Now < 3600) ||
 		siteTorrent.Seeders == 0 ||
 		siteTorrent.Leechers <= siteTorrent.Seeders {
 		score = 0
 		return
 	}
 
-	if now-siteTorrent.Time >= 86400 {
+	if brushOption.Now-siteTorrent.Time >= 86400 {
 		score = 0
 		return
-	} else if now-siteTorrent.Time >= 7200 {
+	} else if brushOption.Now-siteTorrent.Time >= 7200 {
 		if siteTorrent.Leechers < 500 {
 			score = 0
 			return
@@ -315,6 +316,9 @@ func rateSiteTorrent(siteTorrent *site.SiteTorrent, now int64) (score float64, p
 	}
 
 	predictionUploadSpeed = siteTorrent.Leechers * 100 * 1024
+	if predictionUploadSpeed > brushOption.TorrentUploadSpeedLimit {
+		predictionUploadSpeed = brushOption.TorrentUploadSpeedLimit
+	}
 
 	if siteTorrent.Seeders == 1 {
 		score = 50

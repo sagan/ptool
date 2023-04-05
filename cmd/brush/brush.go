@@ -73,13 +73,16 @@ func brush(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 	brushOption := &BrushOptionStruct{
-		MinDiskSpace:        clientInstance.GetClientConfig().BrushMinDiskSpaceValue,
-		SlowUploadSpeedTier: clientInstance.GetClientConfig().BrushSlowUploadSpeedTierValue,
+		MinDiskSpace:            clientInstance.GetClientConfig().BrushMinDiskSpaceValue,
+		SlowUploadSpeedTier:     clientInstance.GetClientConfig().BrushSlowUploadSpeedTierValue,
+		TorrentUploadSpeedLimit: siteInstance.GetSiteConfig().TorrentUploadSpeedLimitValue,
+		Now:                     utils.Now(),
 	}
-	log.Printf("brush client %s site %s with options brushMinDiskSpace=%v, slowUploadSpeedTier=%v/s",
+	log.Printf("brush client %s site %s with options brushMinDiskSpace=%v, slowUploadSpeedTier=%v, torrentUploadSpeedLimit=%v/s",
 		clientInstance.GetName(), siteInstance.GetName(),
 		utils.BytesSize(float64(clientInstance.GetClientConfig().BrushMinDiskSpaceValue)),
 		utils.BytesSize(float64(clientInstance.GetClientConfig().BrushSlowUploadSpeedTierValue)),
+		utils.BytesSize(float64(siteInstance.GetSiteConfig().TorrentUploadSpeedLimitValue)),
 	)
 	result := Decide(status, clientTorrents, siteTorrents, brushOption)
 	log.Printf(
@@ -126,9 +129,10 @@ func brush(cmd *cobra.Command, args []string) {
 		}
 		log.Printf("torrent info: %s\n", tinfo.InfoHash)
 		torrentOption := &client.TorrentOption{
-			Name:     torrent.Name,
-			Paused:   paused,
-			Category: CAT,
+			Name:             torrent.Name,
+			Paused:           paused,
+			Category:         CAT,
+			UploadSpeedLimit: siteInstance.GetSiteConfig().TorrentUploadSpeedLimitValue,
 		}
 		// torrentname := fmt.Sprint(torrent.Name, "_", i, ".torrent")
 		// os.WriteFile(tmpdir+"/"+torrentname, torrentdata, 0777)
