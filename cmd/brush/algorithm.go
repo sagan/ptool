@@ -89,13 +89,13 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	clientTorrentsMap := make(map[string](*clientTorrentInfoStruct))
 	siteTorrentsMap := make(map[string](*site.SiteTorrent))
 
-	for _, torrent := range clientTorrents {
+	for i, torrent := range clientTorrents {
 		clientTorrentsMap[torrent.InfoHash] = &clientTorrentInfoStruct{
-			Torrent: &torrent,
+			Torrent: &clientTorrents[i],
 		}
 	}
-	for _, siteTorrent := range siteTorrents {
-		siteTorrentsMap[siteTorrent.InfoHash] = &siteTorrent
+	for i, siteTorrent := range siteTorrents {
+		siteTorrentsMap[siteTorrent.InfoHash] = &siteTorrents[i]
 	}
 
 	for _, siteTorrent := range siteTorrents {
@@ -263,6 +263,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 		if clientTorrentsMap[modifyTorrent.InfoHash].DeleteFlag {
 			continue
 		}
+
 		torrent := clientTorrentsMap[modifyTorrent.InfoHash].Torrent
 		result.ModifyTorrents = append(result.ModifyTorrents, AlgorithmModifyTorrent{
 			InfoHash: torrent.InfoHash,

@@ -66,7 +66,6 @@ func brush(cmd *cobra.Command, args []string) {
 			url = siteInstance.GetSiteConfig().BrushUrl
 		}
 		siteTorrents, _ = siteInstance.GetLatestTorrents(url)
-		log.Printf("Get %d torrents\n", len(siteTorrents))
 	}
 
 	clientTorrents, err := clientInstance.GetTorrents("", CAT, true)
