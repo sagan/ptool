@@ -135,7 +135,7 @@ func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) 
 		if s.Find(`*[title="免费"],*[alt="Free"]`).Length() > 0 {
 			downloadMultiplier = 0
 		}
-		if s.Find(`*[title^="seeding"],*[title^="downloading"]`).Length() > 0 {
+		if s.Find(`*[title^="seeding"],*[title^="leeching"],*[title^="downloading"],*[title^="uploading"]`).Length() > 0 {
 			isActive = true
 		}
 		re := regexp.MustCompile(`剩余(时间)?\s*(：|:)\s*(?P<time>[YMDHMSymdhms年月天时時分秒\d]+)`)
