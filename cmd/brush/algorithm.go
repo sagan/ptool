@@ -122,7 +122,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 
 	// mark torrents
 	for _, torrent := range clientTorrents {
-		if torrent.State == "downloading" && torrent.DownloadSpeedLimit > 1 {
+		if torrent.State == "downloading" && torrent.DownloadSpeedLimit != 1 {
 			cntDownloadingTorrents++
 		}
 
@@ -221,7 +221,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 		})
 		freespace += torrent.SizeCompleted
 		clientTorrentsMap[deleteTorrent.InfoHash].DeleteFlag = true
-		if torrent.State == "downloading" && torrent.DownloadSpeedLimit > 1 {
+		if torrent.State == "downloading" && torrent.DownloadSpeedLimit != 1 {
 			cntDownloadingTorrents--
 		}
 		estimateUploadSpeed -= torrent.UploadSpeed
@@ -233,7 +233,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 			if clientTorrentsMap[torrent.InfoHash].DeleteFlag || clientTorrentsMap[torrent.InfoHash].StallFlag {
 				continue
 			}
-			if torrent.State == "downloading" && torrent.DownloadSpeedLimit > 1 {
+			if torrent.State == "downloading" && torrent.DownloadSpeedLimit != 1 {
 				stallTorrents = append(stallTorrents, candidateClientTorrentStruct{
 					InfoHash: torrent.InfoHash,
 					Score:    math.Inf(1),
@@ -255,7 +255,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 			Name:     torrent.Name,
 			Msg:      stallTorrent.Msg,
 		})
-		if torrent.State == "downloading" && torrent.DownloadSpeedLimit > 1 {
+		if torrent.State == "downloading" && torrent.DownloadSpeedLimit != 1 {
 			cntDownloadingTorrents--
 		}
 	}
