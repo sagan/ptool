@@ -140,3 +140,7 @@ func SelfDir() string {
 	}
 	return filepath.Dir(ex)
 }
+
+func Sleep(seconds int64) {
+	time.Sleep(time.Duration(seconds) * time.Second)
+}

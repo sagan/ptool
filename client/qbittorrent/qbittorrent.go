@@ -188,6 +188,10 @@ func (qbclient *Client) ModifyTorrent(infoHash string,
 	return nil
 }
 
+func (qbclient *Client) PurgeCache() {
+	qbclient.datatime = 0
+}
+
 func (qbclient *Client) sync() error {
 	if utils.Now()-qbclient.datatime <= 15 {
 		return nil

@@ -44,6 +44,7 @@ type AlgorithmResult struct {
 	ModifyTorrents []AlgorithmModifyTorrent    // modify meta info of these torrents
 	StallTorrents  []AlgorithmOperationTorrent // torrents that will stop downloading but still uploading
 	DeleteTorrents []AlgorithmOperationTorrent // torrents that will be removed from client
+	CanAddMore     bool                        // client is able to add more torrents
 	Msg            string
 }
 
@@ -291,6 +292,10 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 			cntDownloadingTorrents++
 			estimateUploadSpeed += candidateTorrent.PredictionUploadSpeed
 		}
+	}
+
+	if cntTorrents < option.MaxTorrents && cntDownloadingTorrents < option.MaxDownloadingTorrents && estimateUploadSpeed <= clientStatus.UploadSpeedLimit*2 {
+		result.CanAddMore = true
 	}
 
 	return

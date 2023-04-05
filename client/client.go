@@ -52,6 +52,7 @@ type Client interface {
 	AddTorrent(torrentContent []byte, option *TorrentOption, meta map[string](int64)) error
 	ModifyTorrent(infoHash string, option *TorrentOption, meta map[string](int64)) error
 	DeleteTorrents(infoHashes []string) error
+	PurgeCache()
 	GetStatus() (*Status, error)
 	GetName() string
 	GetClientConfig() *config.ClientConfigStruct
