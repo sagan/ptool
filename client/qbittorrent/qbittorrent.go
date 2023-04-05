@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"net/http/cookiejar"
@@ -30,15 +29,27 @@ type Client struct {
 	datatime     int64
 }
 
+func (qbclient *Client) apiPost(apiUrl string, data url.Values) error {
+	resp, err := qbclient.HttpClient.PostForm(qbclient.ClientConfig.Url+apiUrl, data)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("apiPost error: status=%d", resp.StatusCode)
+	}
+	return nil
+}
+
 func (qbclient *Client) apiRequest(apiPath string, v any) error {
 	resp, err := qbclient.HttpClient.Get(qbclient.ClientConfig.Url + apiPath)
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("apiRequest %s response %d status", apiPath, resp.StatusCode)
 	}
-	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
@@ -55,12 +66,7 @@ func (qbclient *Client) login() error {
 		"username": {qbclient.ClientConfig.Username},
 		"password": {qbclient.ClientConfig.Password},
 	}
-	resp, err := qbclient.HttpClient.PostForm(qbclient.ClientConfig.Url+"api/v2/auth/login", data)
-	if err != nil || resp.StatusCode != 200 {
-		return err
-	}
-	defer resp.Body.Close()
-	return nil
+	return qbclient.apiPost("api/v2/auth/login", data)
 }
 
 func (qbclient *Client) GetName() string {
@@ -94,8 +100,11 @@ func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 	resp, err := qbclient.HttpClient.Post(qbclient.ClientConfig.Url+"api/v2/torrents/add",
 		mp.FormDataContentType(), body)
 	if err != nil {
-		log.Printf("add torrent result %d\n", resp.StatusCode)
-		defer resp.Body.Close()
+		return fmt.Errorf("add torrent error: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("add torrent error: status=%d", resp.StatusCode)
 	}
 	return err
 }
@@ -112,11 +121,7 @@ func (qbclient *Client) DeleteTorrents(infoHashes []string) error {
 		"hashes":      {strings.Join(infoHashes, "|")},
 		"deleteFiles": {"true"},
 	}
-	resp, err := qbclient.HttpClient.PostForm(qbclient.ClientConfig.Url+"api/v2/torrents/delete", data)
-	if err != nil || resp.StatusCode != 200 {
-		return fmt.Errorf("failed deleteTorrents: %d, %v", resp.StatusCode, err)
-	}
-	return nil
+	return qbclient.apiPost("api/v2/torrents/delete", data)
 }
 
 func (qbclient *Client) ModifyTorrent(infoHash string,
@@ -146,9 +151,9 @@ func (qbclient *Client) ModifyTorrent(infoHash string,
 			"hash": {infoHash},
 			"name": {name},
 		}
-		resp, err := qbclient.HttpClient.PostForm(qbclient.ClientConfig.Url+"api/v2/torrents/rename", data)
-		if err != nil || resp.StatusCode != 200 {
-			return fmt.Errorf("failed modify torrent (rename): %d, %v", resp.StatusCode, err)
+		err := qbclient.apiPost("api/v2/torrents/rename", data)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -157,9 +162,9 @@ func (qbclient *Client) ModifyTorrent(infoHash string,
 			"hashes":   {infoHash},
 			"category": {option.Category},
 		}
-		resp, err := qbclient.HttpClient.PostForm(qbclient.ClientConfig.Url+"api/v2/torrents/setCategory", data)
-		if err != nil || resp.StatusCode != 200 {
-			return fmt.Errorf("failed modify torrent (setCategory): %d, %v", resp.StatusCode, err)
+		err := qbclient.apiPost("api/v2/torrents/setCategory", data)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -168,9 +173,9 @@ func (qbclient *Client) ModifyTorrent(infoHash string,
 			"hashes": {infoHash},
 			"limit":  {fmt.Sprint(option.DownloadSpeedLimit)},
 		}
-		resp, err := qbclient.HttpClient.PostForm(qbclient.ClientConfig.Url+"api/v2/torrents/setDownloadLimit ", data)
-		if err != nil || resp.StatusCode != 200 {
-			return fmt.Errorf("failed modify torrent (setDownloadLimit ): %d, %v", resp.StatusCode, err)
+		err := qbclient.apiPost("api/v2/torrents/setDownloadLimit", data)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -179,9 +184,9 @@ func (qbclient *Client) ModifyTorrent(infoHash string,
 			"hashes": {infoHash},
 			"limit":  {fmt.Sprint(option.UploadSpeedLimit)},
 		}
-		resp, err := qbclient.HttpClient.PostForm(qbclient.ClientConfig.Url+"api/v2/torrents/setUploadLimit ", data)
-		if err != nil || resp.StatusCode != 200 {
-			return fmt.Errorf("failed modify torrent (setUploadLimit): %d, %v", resp.StatusCode, err)
+		err := qbclient.apiPost("api/v2/torrents/setUploadLimit", data)
+		if err != nil {
+			return err
 		}
 	}
 

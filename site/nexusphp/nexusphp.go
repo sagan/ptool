@@ -44,11 +44,12 @@ func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) 
 	res, err := utils.FetchUrl(url, npclient.SiteConfig.Cookie, npclient.HttpClient)
 	if err != nil {
 		return nil, fmt.Errorf("can not fetch torrents from site: %v", err)
-	} else if res.StatusCode != 200 {
+	}
+	defer res.Body.Close()
+	if res.StatusCode != 200 {
 		return nil, fmt.Errorf("can not fetch torrents from site: status=%d", res.StatusCode)
 	}
 	doc, err := goquery.NewDocumentFromReader(res.Body)
-	defer res.Body.Close()
 	if err != nil {
 		return nil, fmt.Errorf("parse torrents page DOM error: %v", err)
 	}
