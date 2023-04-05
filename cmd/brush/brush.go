@@ -166,10 +166,14 @@ func brush(cmd *cobra.Command, args []string) {
 		clientTorrent := utils.FindInSlice(clientTorrents, func(t client.Torrent) bool {
 			return t.InfoHash == torrent.InfoHash
 		})
+		duration := brushOption.Now - clientTorrent.Atime
 		log.Printf("Delete client %s torrent: %v / %v / %v.", clientInstance.GetName(), torrent.Name, torrent.InfoHash, torrent.Msg)
-		log.Printf("Total downloads / uploads: %s / %s;",
+		log.Printf("Torrent total downloads / uploads: %s / %s; Lifespan: %s; Average download / upload speed of lifespan: %s/s / %s/s",
 			utils.BytesSize(float64(clientTorrent.Downloaded)),
 			utils.BytesSize(float64(clientTorrent.Uploaded)),
+			utils.GetDurationString(duration),
+			utils.BytesSize(float64(clientTorrent.Downloaded)/float64(duration)),
+			utils.BytesSize(float64(clientTorrent.Uploaded)/float64(duration)),
 		)
 		if dryRun {
 			continue

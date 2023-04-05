@@ -4,6 +4,7 @@ package utils
 
 import (
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -179,4 +180,31 @@ func leadingFraction(s string) (x int64, scale float64, rem string) {
 		scale *= 10
 	}
 	return x, scale, s[i:]
+}
+
+func GetDurationString(seconds int64) string {
+	d := seconds / (3600 * 24)
+	h := seconds % (3600 * 24) / 3600
+	m := seconds % 3600 / 60
+	s := seconds % 60
+
+	dDisplay := ""
+	hDisplay := ""
+	mDisplay := ""
+	sDisplay := ""
+
+	if d > 0 {
+		dDisplay = fmt.Sprint(d, "d")
+	}
+	if h > 0 {
+		hDisplay = fmt.Sprint(h, "h")
+	}
+	if m > 0 {
+		mDisplay = fmt.Sprint(m, "m")
+	}
+	if s > 0 {
+		sDisplay = fmt.Sprint(s, "s")
+	}
+
+	return dDisplay + hDisplay + mDisplay + sDisplay
 }
