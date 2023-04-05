@@ -5,15 +5,25 @@ import (
 	"os"
 	"sync"
 
+	"github.com/sagan/ptool/utils"
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	DEFAULT_BRUSH_MIN_DISK_SPACE         = int64(5 * 1024 * 1024 * 1024)
+	DEFAULT_BRUSH_SLOW_UPLOAD_SPEED_TIER = int64(100 * 1024)
+)
+
 type ClientConfigStruct struct {
-	Name     string `yaml:"name"`
-	Type     string `yaml:"type"`
-	Url      string `yaml:"url"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
+	Name                          string `yaml:"name"`
+	Type                          string `yaml:"type"`
+	Url                           string `yaml:"url"`
+	Username                      string `yaml:"username"`
+	Password                      string `yaml:"password"`
+	BrushMinDiskSpace             string `yaml:"brushMinDiskSpace"`
+	BrushSlowUploadSpeedTier      string `yaml:"brushSlowUploadSpeedTier"`
+	BrushMinDiskSpaceValue        int64
+	BrushSlowUploadSpeedTierValue int64
 }
 
 type SiteConfigStruct struct {
@@ -53,6 +63,19 @@ func Get() *ConfigStruct {
 				if err != nil {
 					log.Print(err)
 				}
+			}
+			for i, client := range Config.Clients {
+				v, err := utils.RAMInBytes(client.BrushMinDiskSpace)
+				if err != nil || v <= 0 {
+					v = DEFAULT_BRUSH_MIN_DISK_SPACE
+				}
+				Config.Clients[i].BrushMinDiskSpaceValue = v
+
+				v, err = utils.RAMInBytes(client.BrushSlowUploadSpeedTier)
+				if err != nil || v <= 0 {
+					v = DEFAULT_BRUSH_SLOW_UPLOAD_SPEED_TIER
+				}
+				Config.Clients[i].BrushSlowUploadSpeedTierValue = v
 			}
 			ConfigLoaded = true
 		}

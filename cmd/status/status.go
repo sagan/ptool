@@ -42,11 +42,11 @@ func status(cmd *cobra.Command, args []string) {
 	}
 	fmt.Printf("Client %s Download Speed/Limit: %s/s / %s/s; Upload Speed/Limit: %s/s / %s/s; Free disk space: %s\n\n",
 		client.GetName(),
-		utils.HumanSize(float64(status.DownloadSpeed)),
-		utils.HumanSize(float64(status.DownloadSpeedLimit)),
-		utils.HumanSize(float64(status.UploadSpeed)),
-		utils.HumanSize(float64(status.UploadSpeedLimit)),
-		utils.HumanSize(float64(status.FreeSpaceOnDisk)),
+		utils.BytesSize(float64(status.DownloadSpeed)),
+		utils.BytesSize(float64(status.DownloadSpeedLimit)),
+		utils.BytesSize(float64(status.UploadSpeed)),
+		utils.BytesSize(float64(status.UploadSpeedLimit)),
+		utils.BytesSize(float64(status.FreeSpaceOnDisk)),
 	)
 
 	torrents, err := client.GetTorrents("", category, showAll)
@@ -63,8 +63,8 @@ func status(cmd *cobra.Command, args []string) {
 			torrent.InfoHash,
 			torrent.TrackerDomain,
 			torrent.State,
-			utils.HumanSize(float64(torrent.DownloadSpeed)),
-			utils.HumanSize(float64(torrent.UploadSpeed)),
+			utils.BytesSize(float64(torrent.DownloadSpeed)),
+			utils.BytesSize(float64(torrent.UploadSpeed)),
 			torrent.Meta,
 		)
 	}

@@ -25,6 +25,7 @@ type Torrent struct {
 	UploadSpeed        int64
 	UploadedSpeedLimit int64 // -1 means no limit
 	Size               int64
+	SizeCompleted      int64
 	Seeders            int64
 	Leechers           int64
 	Meta               map[string](int64)
@@ -53,6 +54,7 @@ type Client interface {
 	DeleteTorrents(infoHashes []string) error
 	GetStatus() (*Status, error)
 	GetName() string
+	GetClientConfig() *config.ClientConfigStruct
 	SetConfig(variable string, value string) error
 	GetConfig(variable string) (string, error)
 }

@@ -67,6 +67,10 @@ func (qbclient *Client) GetName() string {
 	return qbclient.Name
 }
 
+func (qbclient *Client) GetClientConfig() *config.ClientConfigStruct {
+	return qbclient.ClientConfig
+}
+
 func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.TorrentOption, meta map[string](int64)) error {
 	name := client.GenerateNameWithMeta(option.Name, meta)
 	body := new(bytes.Buffer)
@@ -77,7 +81,10 @@ func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 	h := make(textproto.MIMEHeader)
 	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "torrents", "file.torrent"))
 	h.Set("Content-Type", "application/x-bittorrent")
-	torrentPartWriter, _ := mp.CreatePart(h)
+	torrentPartWriter, err := mp.CreatePart(h)
+	if err != nil {
+		return err
+	}
 	torrentPartWriter.Write(torrentContent)
 	mp.WriteField("category", option.Category)
 	mp.WriteField("rename", name)
@@ -304,6 +311,7 @@ func (qbclient *Client) GetTorrents(stateFilter string, category string, showAll
 			Tags:               strings.Split(qbtorrent.Tags, ","),
 			Seeders:            qbtorrent.Num_complete,
 			Size:               qbtorrent.Size,
+			SizeCompleted:      qbtorrent.Completed,
 			Leechers:           qbtorrent.Num_incomplete,
 			Meta:               make(map[string]int64),
 		}

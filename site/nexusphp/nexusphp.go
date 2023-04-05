@@ -104,7 +104,7 @@ func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) 
 				}
 				switch field {
 				case "size":
-					size, _ = utils.FromHumanSize(s.Text())
+					size, _ = utils.RAMInBytes(s.Text())
 				case "seeders":
 					seeders = utils.ParseInt(s.Text())
 				case "leechers":

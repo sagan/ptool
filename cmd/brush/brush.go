@@ -57,8 +57,8 @@ func brush(cmd *cobra.Command, args []string) {
 		log.Printf(
 			"Client %s upload bandwidth is already full (Upload speed/limit: %s/s/%s/s). Do not fetch site new torrents\n",
 			clientInstance.GetName(),
-			utils.HumanSize(float64(status.UploadSpeed)),
-			utils.HumanSize(float64(status.UploadSpeedLimit)),
+			utils.BytesSize(float64(status.UploadSpeed)),
+			utils.BytesSize(float64(status.UploadSpeedLimit)),
 		)
 	} else {
 		url := ""
@@ -73,19 +73,28 @@ func brush(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	result := Decide(status, clientTorrents, siteTorrents)
+	brushOption := &BrushOptionStruct{
+		MinDiskSpace:        clientInstance.GetClientConfig().BrushMinDiskSpaceValue,
+		SlowUploadSpeedTier: clientInstance.GetClientConfig().BrushSlowUploadSpeedTierValue,
+	}
+	log.Printf("brush client %s site %s with options brushMinDiskSpace=%v, slowUploadSpeedTier=%v/s",
+		clientInstance.GetName(), siteInstance.GetName(),
+		utils.BytesSize(float64(clientInstance.GetClientConfig().BrushMinDiskSpaceValue)),
+		utils.BytesSize(float64(clientInstance.GetClientConfig().BrushSlowUploadSpeedTierValue)),
+	)
+	result := Decide(status, clientTorrents, siteTorrents, brushOption)
 	log.Printf(
-		`Current client %s torrents: %d; Download speed / limit: %s/s / %s/s; Upload speed / limit: %s/s / %s/s;Free disk space: %s;\n`,
+		"Current client %s torrents: %d; Download speed / limit: %s/s / %s/s; Upload speed / limit: %s/s / %s/s;Free disk space: %s;",
 		clientInstance.GetName(),
 		len(clientTorrents),
-		utils.HumanSize(float64(status.DownloadSpeed)),
-		utils.HumanSize(float64(status.DownloadSpeedLimit)),
-		utils.HumanSize(float64(status.UploadSpeed)),
-		utils.HumanSize(float64(status.UploadSpeedLimit)),
-		utils.HumanSize(float64(status.FreeSpaceOnDisk)),
+		utils.BytesSize(float64(status.DownloadSpeed)),
+		utils.BytesSize(float64(status.DownloadSpeedLimit)),
+		utils.BytesSize(float64(status.UploadSpeed)),
+		utils.BytesSize(float64(status.UploadSpeedLimit)),
+		utils.BytesSize(float64(status.FreeSpaceOnDisk)),
 	)
 	log.Printf(
-		`Fetched site %s torrents: %d; Client add / modify / stall / delete torrents: %d / %d / %d / %d. Msg: %s\n`,
+		"Fetched site %s torrents: %d; Client add / modify / stall / delete torrents: %d / %d / %d / %d. Msg: %s",
 		siteInstance.GetName(),
 		len(siteTorrents),
 		len(result.AddTorrents),
@@ -156,8 +165,8 @@ func brush(cmd *cobra.Command, args []string) {
 		})
 		log.Printf("Delete client %s torrent: %v / %v / %v.", clientInstance.GetName(), torrent.Name, torrent.InfoHash, torrent.Msg)
 		log.Printf("Total downloads / uploads: %s / %s;",
-			utils.HumanSize(float64(clientTorrent.Downloaded)),
-			utils.HumanSize(float64(clientTorrent.Uploaded)),
+			utils.BytesSize(float64(clientTorrent.Downloaded)),
+			utils.BytesSize(float64(clientTorrent.Uploaded)),
 		)
 		if dryRun {
 			continue

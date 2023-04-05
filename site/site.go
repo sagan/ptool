@@ -73,7 +73,7 @@ func Print(siteTorrents []SiteTorrent) {
 			"%s, %s, %s, %d, %d, HR=%t\n",
 			siteTorrent.Name,
 			utils.FormatTime(siteTorrent.Time),
-			utils.HumanSize(float64(siteTorrent.Size)),
+			utils.BytesSize(float64(siteTorrent.Size)),
 			siteTorrent.Seeders,
 			siteTorrent.Leechers,
 			siteTorrent.HasHnR,

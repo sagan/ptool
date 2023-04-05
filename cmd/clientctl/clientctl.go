@@ -22,9 +22,9 @@ var command = &cobra.Command{
 }
 
 var (
-	allOptions   = []string{"global_download_speed_limit", "global_upload_speed_limit"}
-	speedOptions = []string{"global_download_speed_limit", "global_upload_speed_limit"}
-	showRaw      = false
+	allOptions  = []string{"global_download_speed_limit", "global_upload_speed_limit"}
+	sizeOptions = []string{"global_download_speed_limit", "global_upload_speed_limit"}
+	showRaw     = false
 )
 
 func init() {
@@ -60,8 +60,9 @@ func clientctl(cmd *cobra.Command, args []string) {
 			}
 		} else {
 			value = s[1]
-			if slices.Contains(speedOptions, name) {
-				v, _ := utils.FromHumanSize(value)
+			if slices.Contains(sizeOptions, name) {
+				v, _ := utils.RAMInBytes(value)
+				log.Printf("%s=%d", value, v)
 				err = client.SetConfig(name, fmt.Sprint(v))
 			} else {
 				err = client.SetConfig(name, value)
@@ -78,10 +79,10 @@ func clientctl(cmd *cobra.Command, args []string) {
 }
 
 func printOption(name string, value string) {
-	if value != "" && slices.Contains(speedOptions, name) {
-		ff, _ := utils.FromHumanSize(value)
+	if value != "" && slices.Contains(sizeOptions, name) {
+		ff, _ := utils.RAMInBytes(value)
 		if !showRaw {
-			fmt.Printf("%s=%s/s\n", name, utils.HumanSize(float64(ff)))
+			fmt.Printf("%s=%s/s\n", name, utils.BytesSize(float64(ff)))
 		} else {
 			fmt.Printf("%s=%d\n", name, ff)
 		}
