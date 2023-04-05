@@ -1,6 +1,7 @@
 package nexusphp
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -42,16 +43,18 @@ func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) 
 	}
 	res, err := utils.FetchUrl(url, npclient.SiteConfig.Cookie, npclient.HttpClient)
 	if err != nil {
-		log.Fatal("Can not fetch torrents from site")
+		return nil, fmt.Errorf("can not fetch torrents from site: %v", err)
+	} else if res.StatusCode != 200 {
+		return nil, fmt.Errorf("can not fetch torrents from site: status=%d", res.StatusCode)
 	}
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	defer res.Body.Close()
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("parse torrents page DOM error: %v", err)
 	}
 	headerTr := doc.Find("table.torrents > tbody > tr").First()
 	if headerTr.Length() == 0 {
-		return nil, nil
+		return nil, fmt.Errorf("no torrents found in page, possible a parser error")
 	}
 	fieldColumIndex := map[string]int{
 		"time":     -1,

@@ -63,7 +63,7 @@ func brush(cmd *cobra.Command, args []string) {
 		log.Printf("Brush site %s", sitename)
 		status, err := clientInstance.GetStatus()
 		if err != nil {
-			log.Printf("Failed to get site %s status: %v", sitename, err)
+			log.Printf("Failed to get client %s status: %v", clientInstance.GetName(), err)
 			continue
 		}
 		var siteTorrents []site.SiteTorrent
