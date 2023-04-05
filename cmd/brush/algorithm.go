@@ -14,6 +14,8 @@ type BrushOptionStruct struct {
 	MinDiskSpace            int64
 	SlowUploadSpeedTier     int64
 	TorrentUploadSpeedLimit int64
+	MaxDownloadingTorrents  int64
+	MaxTorrents             int64
 	Now                     int64
 }
 
@@ -78,7 +80,7 @@ type clientTorrentInfoStruct struct {
 func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTorrents []site.SiteTorrent, option *BrushOptionStruct) (result *AlgorithmResult) {
 	result = &AlgorithmResult{}
 
-	cntTorrents := len(clientTorrents)
+	cntTorrents := int64(len(clientTorrents))
 	cntDownloadingTorrents := int64(0)
 	freespace := clientStatus.FreeSpaceOnDisk
 	estimateUploadSpeed := clientStatus.UploadSpeed
@@ -276,7 +278,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 
 	if freespace >= option.MinDiskSpace {
 		// add new torrents
-		for cntTorrents < 50 && cntDownloadingTorrents <= 5 && estimateUploadSpeed <= clientStatus.UploadSpeedLimit*2 && len(candidateTorrents) > 0 {
+		for cntTorrents < option.MaxTorrents && cntDownloadingTorrents < option.MaxDownloadingTorrents && estimateUploadSpeed <= clientStatus.UploadSpeedLimit*2 && len(candidateTorrents) > 0 {
 			candidateTorrent := candidateTorrents[0]
 			candidateTorrents = candidateTorrents[1:]
 			result.AddTorrents = append(result.AddTorrents, AlgorithmAddTorrent{

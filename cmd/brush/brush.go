@@ -76,13 +76,18 @@ func brush(cmd *cobra.Command, args []string) {
 		MinDiskSpace:            clientInstance.GetClientConfig().BrushMinDiskSpaceValue,
 		SlowUploadSpeedTier:     clientInstance.GetClientConfig().BrushSlowUploadSpeedTierValue,
 		TorrentUploadSpeedLimit: siteInstance.GetSiteConfig().TorrentUploadSpeedLimitValue,
+		MaxDownloadingTorrents:  clientInstance.GetClientConfig().BrushMaxDownloadingTorrents,
+		MaxTorrents:             clientInstance.GetClientConfig().BrushMaxTorrents,
 		Now:                     utils.Now(),
 	}
-	log.Printf("brush client %s site %s with options brushMinDiskSpace=%v, slowUploadSpeedTier=%v, torrentUploadSpeedLimit=%v/s",
-		clientInstance.GetName(), siteInstance.GetName(),
-		utils.BytesSize(float64(clientInstance.GetClientConfig().BrushMinDiskSpaceValue)),
-		utils.BytesSize(float64(clientInstance.GetClientConfig().BrushSlowUploadSpeedTierValue)),
-		utils.BytesSize(float64(siteInstance.GetSiteConfig().TorrentUploadSpeedLimitValue)),
+	log.Printf("brush client %s site %s with options brushMinDiskSpace=%v, slowUploadSpeedTier=%v, torrentUploadSpeedLimit=%v/s, maxDownloadingTorrents=%d, maxTorrents=%d",
+		clientInstance.GetName(),
+		siteInstance.GetName(),
+		utils.BytesSize(float64(brushOption.MinDiskSpace)),
+		utils.BytesSize(float64(brushOption.SlowUploadSpeedTier)),
+		utils.BytesSize(float64(brushOption.TorrentUploadSpeedLimit)),
+		brushOption.MaxDownloadingTorrents,
+		brushOption.MaxTorrents,
 	)
 	result := Decide(status, clientTorrents, siteTorrents, brushOption)
 	log.Printf(

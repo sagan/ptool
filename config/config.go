@@ -10,9 +10,11 @@ import (
 )
 
 const (
-	DEFAULT_CLIENT_BRUSH_MIN_DISK_SPACE         = int64(5 * 1024 * 1024 * 1024)
-	DEFAULT_CLIENT_BRUSH_SLOW_UPLOAD_SPEED_TIER = int64(100 * 1024)
-	DEFAULT_SITE_TORRENT_UPLOAD_SPEED_LIMIT     = int64(10 * 1024 * 1024)
+	DEFAULT_CLIENT_BRUSH_MIN_DISK_SPACE           = int64(5 * 1024 * 1024 * 1024)
+	DEFAULT_CLIENT_BRUSH_SLOW_UPLOAD_SPEED_TIER   = int64(100 * 1024)
+	DEFAULT_CLIENT_BRUSH_MAX_DOWNLOADING_TORRENTS = int64(6)
+	DEFAULT_CLIENT_BRUSH_MAX_TORRENTS             = int64(50)
+	DEFAULT_SITE_TORRENT_UPLOAD_SPEED_LIMIT       = int64(10 * 1024 * 1024)
 )
 
 type ClientConfigStruct struct {
@@ -23,6 +25,8 @@ type ClientConfigStruct struct {
 	Password                      string `yaml:"password"`
 	BrushMinDiskSpace             string `yaml:"brushMinDiskSpace"`
 	BrushSlowUploadSpeedTier      string `yaml:"brushSlowUploadSpeedTier"`
+	BrushMaxDownloadingTorrents   int64  `yaml:"brushMaxDownloadingTorrents"`
+	BrushMaxTorrents              int64  `yaml:"brushMaxTorrents"`
 	BrushMinDiskSpaceValue        int64
 	BrushSlowUploadSpeedTierValue int64
 }
@@ -79,6 +83,14 @@ func Get() *ConfigStruct {
 					v = DEFAULT_CLIENT_BRUSH_SLOW_UPLOAD_SPEED_TIER
 				}
 				Config.Clients[i].BrushSlowUploadSpeedTierValue = v
+
+				if client.BrushMaxDownloadingTorrents == 0 {
+					Config.Clients[i].BrushMaxDownloadingTorrents = DEFAULT_CLIENT_BRUSH_MAX_DOWNLOADING_TORRENTS
+				}
+
+				if client.BrushMaxTorrents == 0 {
+					Config.Clients[i].BrushMaxTorrents = DEFAULT_CLIENT_BRUSH_MAX_TORRENTS
+				}
 			}
 			for i, site := range Config.Sites {
 				v, err := utils.RAMInBytes(site.TorrentUploadSpeedLimit)

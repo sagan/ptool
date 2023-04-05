@@ -8,6 +8,8 @@ clients:
     password: "adminadmin"
     brushMinDiskSpace: "5GB" # 刷流：保留最小空闲磁盘空间。
     brushSlowUploadSpeedTier: "100KB" # 刷流：上传速度持续低于此值的种子将可能被删除
+    brushMaxDownloadingTorrents: 6 # 刷流：最多下载状态的种子数
+    brushMaxTorrents: 50 # 刷流：最多种子数（所有状态）
 sites:
   -
     name: "mt"
