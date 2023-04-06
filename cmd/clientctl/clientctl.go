@@ -62,7 +62,6 @@ func clientctl(cmd *cobra.Command, args []string) {
 			value = s[1]
 			if slices.Contains(sizeOptions, name) {
 				v, _ := utils.RAMInBytes(value)
-				log.Printf("%s=%d", value, v)
 				err = client.SetConfig(name, fmt.Sprint(v))
 			} else {
 				err = client.SetConfig(name, value)
