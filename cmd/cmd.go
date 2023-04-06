@@ -35,7 +35,6 @@ func init() {
 			configFile = "ptool.yaml"
 		}
 	}
-	log.Printf("Default config file: %s\n", configFile)
 
 	// global flags
 	RootCmd.PersistentFlags().StringVar(&config.ConfigFile, "config", configFile, "config file ([ptool.yaml])")
