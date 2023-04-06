@@ -24,11 +24,20 @@ type SiteTorrent struct {
 	IsActive           bool // true if torrent is as already downloading / seeding
 }
 
+type SiteMeta struct {
+	UserName            string
+	UserDownloaded      int64
+	UserUploaded        int64
+	TorrentsSeedingCnt  int64
+	TorrentsLeechingCnt int64
+}
+
 type Site interface {
 	GetName() string
 	GetSiteConfig() *config.SiteConfigStruct
 	DownloadTorrent(url string) ([]byte, error)
 	GetLatestTorrents(url string) ([]SiteTorrent, error)
+	GetMeta() (*SiteMeta, error)
 }
 
 type RegInfo struct {
@@ -62,6 +71,11 @@ func CreateSiteInternal(name string,
 		return nil, fmt.Errorf("unsupported site type %s", siteConfig.Type)
 	}
 	return regInfo.Creator(name, siteConfig, config)
+}
+
+func SiteExists(name string) bool {
+	siteConfig := config.GetSiteConfig(name)
+	return siteConfig != nil
 }
 
 func CreateSite(name string) (Site, error) {

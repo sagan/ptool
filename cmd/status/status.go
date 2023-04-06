@@ -7,6 +7,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/utils"
 	"github.com/spf13/cobra"
 )
@@ -33,56 +34,77 @@ func init() {
 }
 
 func status(cmd *cobra.Command, args []string) {
-	clientnames := args
-	isSingle := len(clientnames) == 1
+	names := args
+	isSingle := len(names) == 1
 	hasError := false
-	for i, clientname := range clientnames {
-		if i > 0 {
-			fmt.Printf("\n")
-		}
-		client, err := client.CreateClient(clientname)
-		if err != nil {
-			log.Printf("Failed to create client %s: %v", clientname, err)
-			hasError = true
-			continue
-		}
-		status, err := client.GetStatus()
-		if err != nil {
-			log.Printf("Cann't get client %s status: error=%v", client.GetName(), err)
-			hasError = true
-			continue
-		}
-		fmt.Printf("Client %s Download Speed/Limit: %s/s / %s/s; Upload Speed/Limit: %s/s / %s/s; Free disk space: %s\n",
-			client.GetName(),
-			utils.BytesSize(float64(status.DownloadSpeed)),
-			utils.BytesSize(float64(status.DownloadSpeedLimit)),
-			utils.BytesSize(float64(status.UploadSpeed)),
-			utils.BytesSize(float64(status.UploadSpeedLimit)),
-			utils.BytesSize(float64(status.FreeSpaceOnDisk)),
-		)
-
-		if isSingle || showAll {
-			torrents, err := client.GetTorrents("", category, !isSingle && showAll)
+	for _, name := range names {
+		if client.ClientExists(name) {
+			clientInstance, err := client.CreateClient(name)
 			if err != nil {
-				log.Printf("Cann't get client %s torrents: %v", clientname, err)
+				log.Printf("Failed to create client %s: %v", name, err)
 				hasError = true
 				continue
 			}
-			fmt.Printf("\nName  InfoHash  Tracker  State  DlSpeed  UpSpeed  Meta\n")
-			for _, torrent := range torrents {
-				if filter != "" && !utils.ContainsI(torrent.Name, filter) && !utils.ContainsI(torrent.InfoHash, filter) {
+			status, err := clientInstance.GetStatus()
+			if err != nil {
+				log.Printf("Cann't get client %s status: error=%v", clientInstance.GetName(), err)
+				hasError = true
+				continue
+			}
+			fmt.Printf("Client %s ↓ Speed/Limit: %s/s / %s/s; ↑ Speed/Limit: %s/s / %s/s; Free disk space: %s\n",
+				clientInstance.GetName(),
+				utils.BytesSize(float64(status.DownloadSpeed)),
+				utils.BytesSize(float64(status.DownloadSpeedLimit)),
+				utils.BytesSize(float64(status.UploadSpeed)),
+				utils.BytesSize(float64(status.UploadSpeedLimit)),
+				utils.BytesSize(float64(status.FreeSpaceOnDisk)),
+			)
+
+			if isSingle || showAll {
+				torrents, err := clientInstance.GetTorrents("", category, !isSingle && showAll)
+				if err != nil {
+					log.Printf("Cann't get client %s torrents: %v", name, err)
+					hasError = true
 					continue
 				}
-				fmt.Printf("%s  %s  %s  %s %s/s %s/s %v\n",
-					torrent.Name,
-					torrent.InfoHash,
-					torrent.TrackerDomain,
-					torrent.State,
-					utils.BytesSize(float64(torrent.DownloadSpeed)),
-					utils.BytesSize(float64(torrent.UploadSpeed)),
-					torrent.Meta,
-				)
+				fmt.Printf("\nName  InfoHash  Tracker  State  ↓S  ↑S  Meta\n")
+				for _, torrent := range torrents {
+					if filter != "" && !utils.ContainsI(torrent.Name, filter) && !utils.ContainsI(torrent.InfoHash, filter) {
+						continue
+					}
+					fmt.Printf("%s  %s  %s  %s %s/s %s/s %v\n",
+						torrent.Name,
+						torrent.InfoHash,
+						torrent.TrackerDomain,
+						client.TorrentStateIconText(torrent.State),
+						utils.BytesSize(float64(torrent.DownloadSpeed)),
+						utils.BytesSize(float64(torrent.UploadSpeed)),
+						torrent.Meta,
+					)
+				}
+				fmt.Printf("\n")
 			}
+		} else if site.SiteExists(name) {
+			siteInstance, err := site.CreateSite(name)
+			if err != nil {
+				log.Printf("Failed to create site %s: %v", name, err)
+				hasError = true
+				continue
+			}
+			meta, err := siteInstance.GetMeta()
+			if err != nil {
+				log.Printf("Failed to get site %s meta: %v", name, err)
+				hasError = true
+				continue
+			}
+			fmt.Printf("Site %s: ↑ %s / ↓ %s\n",
+				name,
+				utils.BytesSize(float64(meta.UserUploaded)),
+				utils.BytesSize(float64(meta.UserDownloaded)),
+			)
+		} else {
+			log.Printf("Error, name %s is not a client or site", name)
+			hasError = true
 		}
 	}
 	if hasError {

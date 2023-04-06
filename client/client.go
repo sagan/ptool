@@ -84,6 +84,11 @@ func Find(name string) (*RegInfo, error) {
 	return nil, fmt.Errorf("didn't find client %q", name)
 }
 
+func ClientExists(name string) bool {
+	clientConfig := config.GetClientConfig(name)
+	return clientConfig != nil
+}
+
 func CreateClient(name string) (Client, error) {
 	clientConfig := config.GetClientConfig(name)
 	if clientConfig == nil {
@@ -137,5 +142,18 @@ func ParseMetaFromName(fullname string) (name string, meta map[string](int64)) {
 	return
 }
 
+func TorrentStateIconText(state string) string {
+	switch state {
+	case "downloading":
+		return "↓"
+	case "seeding":
+		return "↑"
+	case "paused":
+		return "P" // may be unicode symbol ⏸
+	case "completed":
+		return "✓"
+	}
+	return "-"
+}
 func init() {
 }

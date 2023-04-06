@@ -3,7 +3,6 @@ package nexusphp
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -32,9 +31,44 @@ func (npclient *Site) GetSiteConfig() *config.SiteConfigStruct {
 func (npclient *Site) DownloadTorrent(url string) ([]byte, error) {
 	res, err := utils.FetchUrl(url, npclient.SiteConfig.Cookie, npclient.HttpClient)
 	if err != nil {
-		log.Fatal("Can not fetch torrents from site")
+		return nil, fmt.Errorf("can not fetch torrents from site: %v", err)
 	}
+	defer res.Body.Close()
 	return io.ReadAll(res.Body)
+}
+
+func (npclient *Site) GetMeta() (*site.SiteMeta, error) {
+	res, err := utils.FetchUrl(npclient.SiteConfig.Url+"torrents.php", npclient.SiteConfig.Cookie, npclient.HttpClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch torrents.php from site: %v", err)
+	}
+	defer res.Body.Close()
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	if err != nil {
+		return nil, fmt.Errorf("parse torrents.php DOM error: %v", err)
+	}
+	siteMeta := &site.SiteMeta{}
+	infoTr := doc.Find("#info_block, .m_nav").First()
+
+	infoTxt := infoTr.Text()
+	infoTxt = strings.ReplaceAll(infoTxt, "\n", " ")
+	infoTxt = strings.ReplaceAll(infoTxt, "\r", " ")
+	re := regexp.MustCompile(`(上傳量|上傳|上传量|上传)[：:\s]+(?P<s>[.\s0-9KMGTEPBkmgtepb]+)`)
+	m := re.FindStringSubmatch(infoTxt)
+	if m != nil {
+		ss := strings.ReplaceAll(m[re.SubexpIndex("s")], " ", "")
+		s, _ := utils.RAMInBytes(ss)
+		siteMeta.UserUploaded = s
+	}
+
+	re = regexp.MustCompile(`(下載量|下載|下载量|下载)[：:\s]+(?P<s>[.\s0-9KMGTEPBkmgtepb]+)`)
+	m = re.FindStringSubmatch(infoTxt)
+	if m != nil {
+		ss := strings.ReplaceAll(m[re.SubexpIndex("s")], " ", "")
+		s, _ := utils.RAMInBytes(ss)
+		siteMeta.UserDownloaded = s
+	}
+	return siteMeta, nil
 }
 
 func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) {
@@ -44,10 +78,6 @@ func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) 
 	res, err := utils.FetchUrl(url, npclient.SiteConfig.Cookie, npclient.HttpClient)
 	if err != nil {
 		return nil, fmt.Errorf("can not fetch torrents from site: %v", err)
-	}
-	defer res.Body.Close()
-	if res.StatusCode != 200 {
-		return nil, fmt.Errorf("can not fetch torrents from site: status=%d", res.StatusCode)
 	}
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {

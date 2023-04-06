@@ -284,7 +284,7 @@ func (qbclient *Client) GetTorrents(stateFilter string, category string, showAll
 		}
 		state := ""
 		switch qbtorrent.State {
-		case "forcedUP", "stalledUP", "queuedUP":
+		case "forcedUP", "stalledUP", "queuedUP", "uploading":
 			state = "seeding"
 		case "metaDL", "stalledDL", "checkingDL", "forcedDL", "downloading":
 			state = "downloading"

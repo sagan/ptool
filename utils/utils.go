@@ -45,7 +45,15 @@ func FetchUrl(url string, cookie string, client *http.Client) (*http.Response, e
 	if client == nil {
 		client = http.DefaultClient
 	}
-	return client.Do(req)
+	resp, error := client.Do(req)
+	if error != nil {
+		return nil, fmt.Errorf("failed to fetch url: %v", error)
+	}
+	if resp.StatusCode != 200 {
+		defer resp.Body.Close()
+		return nil, fmt.Errorf("failed to fetch url: status=%d", resp.StatusCode)
+	}
+	return resp, nil
 }
 
 func ParseInt(str string) int64 {
