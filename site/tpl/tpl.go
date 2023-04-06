@@ -40,8 +40,9 @@ var (
 			GlobalHnR: true,
 		},
 		"carpt": &config.SiteConfigStruct{
-			Type: "nexusphp",
-			Url:  "https://carpt.net/",
+			Type:      "nexusphp",
+			Url:       "https://carpt.net/",
+			GlobalHnR: true,
 		},
 		"cyanbug": &config.SiteConfigStruct{
 			Type: "nexusphp",
@@ -119,8 +120,9 @@ var (
 			BrushUrl: "https://kp.m-team.cc/adult.php",
 		},
 		"nicept": &config.SiteConfigStruct{
-			Type: "nexusphp",
-			Url:  "https://www.nicept.net/",
+			Type:      "nexusphp",
+			Url:       "https://www.nicept.net/",
+			GlobalHnR: true,
 		},
 		"oshen": &config.SiteConfigStruct{
 			Type: "nexusphp",
