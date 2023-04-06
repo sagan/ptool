@@ -10,7 +10,7 @@ clients:
     brushSlowUploadSpeedTier: "100KB" # 刷流：上传速度持续低于此值的种子将可能被删除
     brushMaxDownloadingTorrents: 6 # 刷流：位于下载状态的种子数上限
     brushMaxTorrents: 50 # 刷流：种子数（所有状态）上限
-    brushMinRatio: 0.3 # 刷流：最小上传/下载量比例
+    brushMinRatio: 0.2 # 刷流：最小上传/下载量比例
 sites:
   -
     name: "mt"
