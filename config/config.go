@@ -14,19 +14,21 @@ const (
 	DEFAULT_CLIENT_BRUSH_SLOW_UPLOAD_SPEED_TIER   = int64(100 * 1024)
 	DEFAULT_CLIENT_BRUSH_MAX_DOWNLOADING_TORRENTS = int64(6)
 	DEFAULT_CLIENT_BRUSH_MAX_TORRENTS             = int64(50)
+	DEFAULT_CLIENT_BRUSH_MIN_RATION               = float64(0.3)
 	DEFAULT_SITE_TORRENT_UPLOAD_SPEED_LIMIT       = int64(10 * 1024 * 1024)
 )
 
 type ClientConfigStruct struct {
-	Name                          string `yaml:"name"`
-	Type                          string `yaml:"type"`
-	Url                           string `yaml:"url"`
-	Username                      string `yaml:"username"`
-	Password                      string `yaml:"password"`
-	BrushMinDiskSpace             string `yaml:"brushMinDiskSpace"`
-	BrushSlowUploadSpeedTier      string `yaml:"brushSlowUploadSpeedTier"`
-	BrushMaxDownloadingTorrents   int64  `yaml:"brushMaxDownloadingTorrents"`
-	BrushMaxTorrents              int64  `yaml:"brushMaxTorrents"`
+	Name                          string  `yaml:"name"`
+	Type                          string  `yaml:"type"`
+	Url                           string  `yaml:"url"`
+	Username                      string  `yaml:"username"`
+	Password                      string  `yaml:"password"`
+	BrushMinDiskSpace             string  `yaml:"brushMinDiskSpace"`
+	BrushSlowUploadSpeedTier      string  `yaml:"brushSlowUploadSpeedTier"`
+	BrushMaxDownloadingTorrents   int64   `yaml:"brushMaxDownloadingTorrents"`
+	BrushMaxTorrents              int64   `yaml:"brushMaxTorrents"`
+	BrushMinRatio                 float64 `yaml:"brushMinRatio"`
 	BrushMinDiskSpaceValue        int64
 	BrushSlowUploadSpeedTierValue int64
 }
@@ -90,6 +92,10 @@ func Get() *ConfigStruct {
 
 				if client.BrushMaxTorrents == 0 {
 					Config.Clients[i].BrushMaxTorrents = DEFAULT_CLIENT_BRUSH_MAX_TORRENTS
+				}
+
+				if client.BrushMinRatio == 0 {
+					Config.Clients[i].BrushMinRatio = DEFAULT_CLIENT_BRUSH_MIN_RATION
 				}
 			}
 			for i, site := range Config.Sites {

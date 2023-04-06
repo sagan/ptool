@@ -16,6 +16,7 @@ type BrushOptionStruct struct {
 	TorrentUploadSpeedLimit int64
 	MaxDownloadingTorrents  int64
 	MaxTorrents             int64
+	MinRatio                float64
 	Now                     int64
 }
 
@@ -131,7 +132,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 		}
 
 		// mark torrents that discount time ends as stall and delete
-		if torrent.Meta["dcet"] > 0 && torrent.Meta["dcet"]-utils.Now() <= 3600 &&
+		if torrent.Meta["dcet"] > 0 && torrent.Meta["dcet"]-option.Now <= 3600 &&
 			(torrent.State != "completed" && torrent.State != "seeding") {
 			stallTorrents = append(stallTorrents, candidateClientTorrentStruct{
 				InfoHash:    torrent.InfoHash,
@@ -154,7 +155,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 		}
 
 		// skip new added torrents
-		if utils.Now()-torrent.Atime <= 15*60 {
+		if option.Now-torrent.Atime <= 15*60 {
 			continue
 		}
 
@@ -164,6 +165,17 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 				if option.Now-torrent.Meta["sct"] >= 15*60 {
 					averageUploadSpeedSinceSct := (torrent.Uploaded - torrent.Meta["sctu"]) / (option.Now - torrent.Meta["sct"])
 					if averageUploadSpeedSinceSct < option.SlowUploadSpeedTier {
+						if float64(torrent.Uploaded)/float64(torrent.Downloaded) < option.MinRatio &&
+							option.Now-torrent.Atime >= 30*60 &&
+							(torrent.State == "downloading" && torrent.DownloadSpeedLimit != 1) {
+							stallTorrents = append(stallTorrents, candidateClientTorrentStruct{
+								InfoHash:    torrent.InfoHash,
+								Score:       math.Inf(1),
+								FutureValue: torrent.UploadSpeed,
+								Msg:         "low upload / download ratio",
+							})
+							clientTorrentsMap[torrent.InfoHash].StallFlag = true
+						}
 						deleteCandidateTorrents = append(deleteCandidateTorrents, candidateClientTorrentStruct{
 							InfoHash:    torrent.InfoHash,
 							Score:       -float64(torrent.UploadSpeed),
