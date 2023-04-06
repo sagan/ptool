@@ -165,9 +165,10 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 				if option.Now-torrent.Meta["sct"] >= 15*60 {
 					averageUploadSpeedSinceSct := (torrent.Uploaded - torrent.Meta["sctu"]) / (option.Now - torrent.Meta["sct"])
 					if averageUploadSpeedSinceSct < option.SlowUploadSpeedTier {
-						if float64(torrent.Uploaded)/float64(torrent.Downloaded) < option.MinRatio &&
-							option.Now-torrent.Atime >= 30*60 &&
-							(torrent.State == "downloading" && torrent.DownloadSpeedLimit != 1) {
+						if (torrent.State == "downloading" && torrent.DownloadSpeedLimit != 1) &&
+							torrent.DownloadSpeed >= 100*1024 &&
+							float64(torrent.UploadSpeed)/float64(torrent.DownloadSpeed) < option.MinRatio &&
+							option.Now-torrent.Atime >= 30*60 {
 							stallTorrents = append(stallTorrents, candidateClientTorrentStruct{
 								InfoHash:    torrent.InfoHash,
 								Score:       math.Inf(1),
