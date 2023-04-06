@@ -135,6 +135,7 @@ func brush(cmd *cobra.Command, args []string) {
 			result.Msg,
 		)
 
+		cndAddTorrents := 0
 		for _, torrent := range result.AddTorrents {
 			log.Printf("Add site %s torrent to client %s: %s / %s / %v", siteInstance.GetName(), clientInstance.GetName(), torrent.Name, torrent.Msg, torrent.Meta)
 			if dryRun {
@@ -157,6 +158,7 @@ func brush(cmd *cobra.Command, args []string) {
 				continue
 			}
 			log.Printf("torrent info: %s\n", tinfo.InfoHash)
+			cndAddTorrents++
 			torrentOption := &client.TorrentOption{
 				Name:             torrent.Name,
 				Paused:           paused,
@@ -215,7 +217,7 @@ func brush(cmd *cobra.Command, args []string) {
 			log.Printf("Client capacity is full. Stop brushing")
 			break
 		}
-		if len(result.AddTorrents) > 0 || len(result.ModifyTorrents) > 0 || len(result.DeleteTorrents) > 0 || len(result.StallTorrents) > 0 {
+		if cndAddTorrents > 0 || len(result.ModifyTorrents) > 0 || len(result.DeleteTorrents) > 0 || len(result.StallTorrents) > 0 {
 			clientInstance.PurgeCache()
 			utils.Sleep(3)
 		}
