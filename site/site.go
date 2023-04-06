@@ -55,16 +55,21 @@ func Find(name string) (*RegInfo, error) {
 	return nil, fmt.Errorf("didn't find site %q", name)
 }
 
+func CreateSiteInternal(name string,
+	siteConfig *config.SiteConfigStruct, config *config.ConfigStruct) (Site, error) {
+	regInfo, err := Find(siteConfig.Type)
+	if err != nil {
+		return nil, fmt.Errorf("unsupported site type %s", siteConfig.Type)
+	}
+	return regInfo.Creator(name, siteConfig, config)
+}
+
 func CreateSite(name string) (Site, error) {
 	siteConfig := config.GetSiteConfig(name)
 	if siteConfig == nil {
 		return nil, fmt.Errorf("site %s not existed", name)
 	}
-	regInfo, err := Find(siteConfig.Type)
-	if err != nil {
-		return nil, fmt.Errorf("unsupported site type %s", siteConfig.Type)
-	}
-	return regInfo.Creator(name, siteConfig, config.Get())
+	return CreateSiteInternal(name, siteConfig, config.Get())
 }
 
 func Print(siteTorrents []SiteTorrent) {

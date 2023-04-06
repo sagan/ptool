@@ -127,5 +127,10 @@ func GetSiteConfig(name string) *SiteConfigStruct {
 			return &site
 		}
 	}
+	for _, site := range Get().Sites {
+		if site.Name == "" && site.Type == name {
+			return &site
+		}
+	}
 	return nil
 }

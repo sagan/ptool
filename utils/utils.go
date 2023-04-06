@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -143,4 +144,31 @@ func SelfDir() string {
 
 func Sleep(seconds int64) {
 	time.Sleep(time.Duration(seconds) * time.Second)
+}
+
+// https://stackoverflow.com/questions/23350173
+// copy none-empty field values from src to dst. dst and src must be pointors of same type of plain struct
+func Assign(dst any, src any) {
+	dstValue := reflect.ValueOf(dst).Elem()
+	srcValue := reflect.ValueOf(src).Elem()
+
+	for i := 0; i < dstValue.NumField(); i++ {
+		dstField := dstValue.Field(i)
+		srcField := srcValue.Field(i)
+		fieldType := dstField.Type()
+		srcValue := reflect.Value(srcField)
+		if fieldType.Kind() == reflect.String && srcValue.String() == "" {
+			continue
+		}
+		if fieldType.Kind() == reflect.Int64 && srcValue.Int() == 0 {
+			continue
+		}
+		if fieldType.Kind() == reflect.Float64 && srcValue.Float() == 0 {
+			continue
+		}
+		if fieldType.Kind() == reflect.Bool && !srcValue.Bool() {
+			continue
+		}
+		dstField.Set(srcValue)
+	}
 }
