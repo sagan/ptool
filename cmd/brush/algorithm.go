@@ -58,9 +58,10 @@ type candidateTorrentStruct struct {
 }
 
 type candidateClientTorrentStruct struct {
-	InfoHash string
-	Score    float64
-	Msg      string
+	InfoHash    string
+	Score       float64
+	FutureValue int64 // 预期的该种子未来的刷流上传价值
+	Msg         string
 }
 
 type clientTorrentInfoStruct struct {
@@ -133,17 +134,19 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 		if torrent.Meta["dcet"] > 0 && torrent.Meta["dcet"]-utils.Now() <= 3600 &&
 			(torrent.State != "completed" && torrent.State != "seeding") {
 			stallTorrents = append(stallTorrents, candidateClientTorrentStruct{
-				InfoHash: torrent.InfoHash,
-				Score:    math.Inf(1),
-				Msg:      "discount time ends",
+				InfoHash:    torrent.InfoHash,
+				Score:       math.Inf(1),
+				FutureValue: torrent.UploadSpeed,
+				Msg:         "discount time ends",
 			})
 			clientTorrentsMap[torrent.InfoHash].StallFlag = true
 
 			if torrent.UploadSpeed < option.SlowUploadSpeedTier {
 				deleteCandidateTorrents = append(deleteCandidateTorrents, candidateClientTorrentStruct{
-					InfoHash: torrent.InfoHash,
-					Score:    -float64(torrent.UploadSpeed),
-					Msg:      "discount time ends",
+					InfoHash:    torrent.InfoHash,
+					Score:       -float64(torrent.UploadSpeed),
+					FutureValue: torrent.UploadSpeed,
+					Msg:         "discount time ends",
 				})
 				clientTorrentsMap[torrent.InfoHash].DeleteCandidateFlag = true
 			}
@@ -162,9 +165,10 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 					averageUploadSpeedSinceSct := (torrent.Uploaded - torrent.Meta["sctu"]) / (option.Now - torrent.Meta["sct"])
 					if averageUploadSpeedSinceSct < option.SlowUploadSpeedTier {
 						deleteCandidateTorrents = append(deleteCandidateTorrents, candidateClientTorrentStruct{
-							InfoHash: torrent.InfoHash,
-							Score:    -float64(torrent.UploadSpeed),
-							Msg:      "slow uploading speed",
+							InfoHash:    torrent.InfoHash,
+							Score:       -float64(torrent.UploadSpeed),
+							FutureValue: torrent.UploadSpeed,
+							Msg:         "slow uploading speed",
 						})
 						clientTorrentsMap[torrent.InfoHash].DeleteCandidateFlag = true
 					} else {
@@ -212,6 +216,8 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 		return stallTorrents[i].Score > stallTorrents[j].Score
 	})
 
+	// @todo: use Dynamic Programming to find torrents that
+	// meets space release requirements with min total FutureValue
 	// if not enough free space, delete torrents to free space
 	for freespace < option.MinDiskSpace && len(deleteCandidateTorrents) > 0 {
 		deleteTorrent := deleteCandidateTorrents[0]
@@ -238,9 +244,10 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 			}
 			if torrent.State == "downloading" && torrent.DownloadSpeedLimit != 1 {
 				stallTorrents = append(stallTorrents, candidateClientTorrentStruct{
-					InfoHash: torrent.InfoHash,
-					Score:    math.Inf(1),
-					Msg:      "insufficient free disk space",
+					InfoHash:    torrent.InfoHash,
+					Score:       math.Inf(1),
+					FutureValue: torrent.UploadSpeed,
+					Msg:         "insufficient free disk space",
 				})
 				clientTorrentsMap[torrent.InfoHash].StallFlag = true
 			}
