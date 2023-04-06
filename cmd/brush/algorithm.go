@@ -259,7 +259,26 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 		}
 	}
 
-	// if still not enough free space, mark ALL torrents as stall
+	// if still not enough free space, delete ALL stalled incomplete torrents
+	if freespace < option.MinDiskSpace {
+		for _, torrent := range clientTorrents {
+			if clientTorrentsMap[torrent.InfoHash].DeleteFlag || isCompleted(&torrent) || torrent.Meta["stt"] == 0 {
+				continue
+			}
+			result.DeleteTorrents = append(result.DeleteTorrents, AlgorithmOperationTorrent{
+				InfoHash: torrent.InfoHash,
+				Name:     torrent.Name,
+				Msg:      "delete stalled incomplete torrents due to insufficient disk space",
+			})
+			freespace += torrent.SizeCompleted
+			estimateUploadSpeed -= torrent.UploadSpeed
+			clientTorrentsMap[torrent.InfoHash].DeleteFlag = true
+			if isDownloading(&torrent) {
+				cntDownloadingTorrents--
+			}
+		}
+	}
+	// if still still not enough free space, mark ALL torrents as stall
 	if freespace < option.MinDiskSpace {
 		for _, torrent := range clientTorrents {
 			if clientTorrentsMap[torrent.InfoHash].DeleteFlag || clientTorrentsMap[torrent.InfoHash].StallFlag {
@@ -271,7 +290,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 				stallTorrents = append(stallTorrents, AlgorithmModifyTorrent{
 					InfoHash: torrent.InfoHash,
 					Name:     torrent.Name,
-					Msg:      "insufficient free disk space",
+					Msg:      "stall all torrents due to insufficient free disk space",
 					Meta:     meta,
 				})
 				clientTorrentsMap[torrent.InfoHash].StallFlag = true
