@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -179,4 +180,13 @@ func Assign(dst any, src any) {
 		}
 		dstField.Set(srcValue)
 	}
+}
+
+func ParseUrlHostname(urlStr string) string {
+	hostname := ""
+	url, err := url.Parse(urlStr)
+	if err == nil {
+		hostname = url.Hostname()
+	}
+	return hostname
 }

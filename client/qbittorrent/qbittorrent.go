@@ -94,6 +94,7 @@ func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 	torrentPartWriter.Write(torrentContent)
 	mp.WriteField("category", option.Category)
 	mp.WriteField("rename", name)
+	mp.WriteField("root_folder", "true")
 	mp.WriteField("paused", fmt.Sprint(option.Paused))
 	mp.WriteField("upLimit", fmt.Sprint(option.UploadSpeedLimit))
 	mp.WriteField("dlLimit", fmt.Sprint(option.DownloadSpeedLimit))
@@ -298,15 +299,10 @@ func (qbclient *Client) GetTorrents(stateFilter string, category string, showAll
 		if stateFilter != "" && stateFilter != state {
 			continue
 		}
-		trackerDomain := ""
-		url, err := url.Parse(qbtorrent.Tracker)
-		if err == nil {
-			trackerDomain = url.Hostname()
-		}
 		torrent := client.Torrent{
 			InfoHash:           qbtorrent.Hash,
 			Name:               qbtorrent.Name,
-			TrackerDomain:      trackerDomain,
+			TrackerDomain:      utils.ParseUrlHostname(qbtorrent.Tracker),
 			State:              state,
 			Atime:              qbtorrent.Added_on,
 			Ctime:              qbtorrent.Completion_on,
