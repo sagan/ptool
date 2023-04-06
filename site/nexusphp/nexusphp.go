@@ -170,6 +170,9 @@ func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) 
 }
 
 func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.ConfigStruct) (site.Site, error) {
+	if siteConfig.Cookie == "" {
+		return nil, fmt.Errorf("cann't create site: no cookie provided")
+	}
 	client := &Site{
 		Name:       name,
 		SiteConfig: siteConfig,

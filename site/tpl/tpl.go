@@ -10,31 +10,162 @@ import (
 
 var (
 	SITES = map[string](*config.SiteConfigStruct){
-		"hhanclub": &config.SiteConfigStruct{ // 憨憨
+		"1ptba": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://1ptba.com/",
+		},
+		"2xfree": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://pt.2xfree.org/",
+		},
+		"3wmg": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://www.3wmg.com/",
+		},
+		"audiences": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://audiences.me/",
+		},
+		"azusa": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://azusa.wiki/",
+		},
+		"beitai": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://www.beitai.pt/",
+		},
+		"btschool": &config.SiteConfigStruct{
+			Type:      "nexusphp",
+			Url:       "https://pt.btschool.club/",
+			GlobalHnR: true,
+		},
+		"carpt": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://carpt.net/",
+		},
+		"cyanbug": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://cyanbug.net/",
+		},
+		"gainbound": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://gainbound.net/",
+		},
+		"haidan": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://www.haidan.video/",
+		},
+		"hdatmos": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://hdatmos.club/",
+		},
+		"hddolby": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://www.hddolby.com/",
+		},
+		"hdfans": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://hdfans.org/",
+		},
+		"hdmayi": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "http://hdmayi.com/",
+		},
+		// @todo
+		// "hdcity": &config.SiteConfigStruct{
+		// 	Type: "",
+		// 	Url:  "https://hdcity.city/",
+		// },
+		"hdtime": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://hdtime.org/",
+		},
+		"hdupt": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://pt.hdupt.com/",
+		},
+		"hdvideo": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://hdvideo.one/",
+		},
+		"hdzone": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://hdzone.me/",
+		},
+		"hhanclub": &config.SiteConfigStruct{
 			Type: "nexusphp",
 			Url:  "https://hhanclub.top/",
 		},
-		"leaves": &config.SiteConfigStruct{ // 红叶
+		"icc2022": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://www.icc2022.com/",
+		},
+		"joyhd": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://www.joyhd.net/",
+		},
+		"kamept": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://kamept.com/",
+		},
+		"leaves": &config.SiteConfigStruct{
 			Type:     "nexusphp",
 			Url:      "https://leaves.red/",
 			BrushUrl: "https://leaves.red/special.php",
 		},
-		"mteam": &config.SiteConfigStruct{ // 馒头
+		"mteam": &config.SiteConfigStruct{
 			Type:     "nexusphp",
 			Url:      "https://kp.m-team.cc/",
 			BrushUrl: "https://kp.m-team.cc/adult.php",
 		},
-		"sharkpt": &config.SiteConfigStruct{ // 鲨鱼
+		"nicept": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://www.nicept.net/",
+		},
+		"oshen": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://www.oshen.win/",
+		},
+		"piggo": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://piggo.me/",
+		},
+		"ptchina": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://ptchina.org/",
+		},
+		"ptsbao": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://ptsbao.club/",
+		},
+		"pthome": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://pthome.net/",
+		},
+		"pttime": &config.SiteConfigStruct{
+			Type:     "nexusphp",
+			Url:      "https://www.pttime.org/",
+			BrushUrl: "https://www.pttime.org/adults.php",
+		},
+		"sharkpt": &config.SiteConfigStruct{
 			Type: "nexusphp",
 			Url:  "https://sharkpt.net/",
 		},
-		"soulvoice": &config.SiteConfigStruct{ // 铃音
+		"soulvoice": &config.SiteConfigStruct{
 			Type: "nexusphp",
 			Url:  "https://pt.soulvoice.club/",
 		},
-		"wintersakura": &config.SiteConfigStruct{ // 冬樱
+		"u2": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://u2.dmhy.org/",
+		},
+		"wintersakura": &config.SiteConfigStruct{
 			Type: "nexusphp",
 			Url:  "https://wintersakura.net/",
+		},
+		"zmpt": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://zmpt.cc/",
 		},
 	}
 )
