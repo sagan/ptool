@@ -40,6 +40,7 @@ type SiteConfigStruct struct {
 	BrushUrl                     string `yaml:"brushUrl"`
 	Cookie                       string `yaml:"cookie"`
 	TorrentUploadSpeedLimit      string `yaml:"uploadSpeedLimit"`
+	GlobalHnR                    bool   `yaml:"globalHnR"`
 	TorrentUploadSpeedLimitValue int64
 }
 

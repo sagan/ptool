@@ -76,6 +76,8 @@ func brush(cmd *cobra.Command, args []string) {
 				utils.BytesSize(float64(status.UploadSpeed)),
 				utils.BytesSize(float64(status.UploadSpeedLimit)),
 			)
+		} else if siteInstance.GetSiteConfig().GlobalHnR {
+			log.Printf("Site %s enforces global HnR. Do not fetch site new torrents", sitename)
 		} else {
 			url := ""
 			if siteInstance.GetSiteConfig().BrushUrl != "" {
