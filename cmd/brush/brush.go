@@ -157,6 +157,17 @@ func brush(cmd *cobra.Command, args []string) {
 				log.Printf("Already existing in client. skip\n")
 				continue
 			}
+			torrentRootPath := ""
+			if len(tinfo.Files) > 0 {
+				fp := tinfo.Files[0].Path
+				if len(fp) > 0 {
+					torrentRootPath = fp[0]
+				}
+			}
+			if clientInstance.TorrentRootPathExists(torrentRootPath) {
+				log.Printf("torrent rootpath %s existing in client. skip\n", torrentRootPath)
+				continue
+			}
 			log.Printf("torrent info: %s\n", tinfo.InfoHash)
 			cndAddTorrents++
 			torrentOption := &client.TorrentOption{

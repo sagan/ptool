@@ -219,6 +219,22 @@ func (qbclient *Client) sync() error {
 	return nil
 }
 
+func (qbclient *Client) TorrentRootPathExists(rootFolder string) bool {
+	if rootFolder == "" {
+		return false
+	}
+	err := qbclient.sync()
+	if err != nil {
+		return false
+	}
+	for _, torrent := range qbclient.data.Torrents {
+		if strings.HasSuffix(torrent.Content_path, "/"+rootFolder) {
+			return true
+		}
+	}
+	return false
+}
+
 func (qbclient *Client) GetStatus() (*client.Status, error) {
 	err := qbclient.sync()
 	if err != nil {
