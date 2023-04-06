@@ -78,6 +78,10 @@ func isDownloading(torrent *client.Torrent) bool {
 		torrent.DownloadSpeedLimit != 1 && torrent.DownloadSpeed >= 10*1024
 }
 
+func notStalled(torrent *client.Torrent) bool {
+	return torrent.State == "downloading" && torrent.DownloadSpeedLimit != 1
+}
+
 /*
  * Strategy
  * Delete a torrent from client ONLY when it's uploading speed become SLOW enough AND free disk space insufficient.
@@ -139,13 +143,15 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 		// mark torrents that discount time ends as stall and delete
 		if torrent.Meta["dcet"] > 0 && torrent.Meta["dcet"]-option.Now <= 3600 &&
 			(torrent.State != "completed" && torrent.State != "seeding") {
-			stallTorrents = append(stallTorrents, candidateClientTorrentStruct{
-				InfoHash:    torrent.InfoHash,
-				Score:       math.Inf(1),
-				FutureValue: torrent.UploadSpeed,
-				Msg:         "discount time ends",
-			})
-			clientTorrentsMap[torrent.InfoHash].StallFlag = true
+			if torrent.DownloadSpeedLimit != 1 {
+				stallTorrents = append(stallTorrents, candidateClientTorrentStruct{
+					InfoHash:    torrent.InfoHash,
+					Score:       math.Inf(1),
+					FutureValue: torrent.UploadSpeed,
+					Msg:         "discount time ends",
+				})
+				clientTorrentsMap[torrent.InfoHash].StallFlag = true
+			}
 
 			if torrent.UploadSpeed < option.SlowUploadSpeedTier {
 				deleteCandidateTorrents = append(deleteCandidateTorrents, candidateClientTorrentStruct{
@@ -170,7 +176,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 				if option.Now-torrent.Meta["sct"] >= 15*60 {
 					averageUploadSpeedSinceSct := (torrent.Uploaded - torrent.Meta["sctu"]) / (option.Now - torrent.Meta["sct"])
 					if averageUploadSpeedSinceSct < option.SlowUploadSpeedTier {
-						if isDownloading(&torrent) &&
+						if notStalled(&torrent) &&
 							torrent.DownloadSpeed >= 100*1024 &&
 							float64(torrent.UploadSpeed)/float64(torrent.DownloadSpeed) < option.MinRatio &&
 							option.Now-torrent.Atime >= 30*60 {
@@ -260,7 +266,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 			if clientTorrentsMap[torrent.InfoHash].DeleteFlag || clientTorrentsMap[torrent.InfoHash].StallFlag {
 				continue
 			}
-			if isDownloading(&torrent) {
+			if notStalled(&torrent) {
 				stallTorrents = append(stallTorrents, candidateClientTorrentStruct{
 					InfoHash:    torrent.InfoHash,
 					Score:       math.Inf(1),
