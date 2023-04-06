@@ -188,8 +188,8 @@ func brush(cmd *cobra.Command, args []string) {
 				continue
 			}
 			err := clientInstance.ModifyTorrent(torrent.InfoHash, &client.TorrentOption{
-				DownloadSpeedLimit: 1,
-			}, nil)
+				DownloadSpeedLimit: STALL_DOWNLOAD_SPEED,
+			}, torrent.Meta)
 			log.Printf("Stall torrent result: error=%v", err)
 		}
 
