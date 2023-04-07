@@ -97,8 +97,9 @@ func status(cmd *cobra.Command, args []string) {
 				hasError = true
 				continue
 			}
-			fmt.Printf("Site %s: ↑ %s / ↓ %s\n",
+			fmt.Printf("Site %s: %s ↑ %s / ↓ %s\n",
 				name,
+				meta.UserName,
 				utils.BytesSize(float64(meta.UserUploaded)),
 				utils.BytesSize(float64(meta.UserDownloaded)),
 			)

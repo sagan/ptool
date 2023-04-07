@@ -68,6 +68,11 @@ func (npclient *Site) GetMeta() (*site.SiteMeta, error) {
 		s, _ := utils.RAMInBytes(ss)
 		siteMeta.UserDownloaded = s
 	}
+
+	userEl := doc.Find("*[href*=\"userdetails.php?\"]").First()
+	if userEl.Length() > 0 {
+		siteMeta.UserName = userEl.Text()
+	}
 	return siteMeta, nil
 }
 
