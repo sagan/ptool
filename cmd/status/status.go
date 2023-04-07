@@ -125,12 +125,14 @@ func status(cmd *cobra.Command, args []string) {
 				log.Printf("Error get site %s status: error=%v", response.Name, response.Error)
 				hasError = true
 			}
-			fmt.Printf("Site %s: %s ↑ %s / ↓ %s\n",
-				response.Name,
-				response.SiteStatus.UserName,
-				utils.BytesSize(float64(response.SiteStatus.UserUploaded)),
-				utils.BytesSize(float64(response.SiteStatus.UserDownloaded)),
-			)
+			if response.SiteStatus != nil {
+				fmt.Printf("Site %s: %s ↑ %s / ↓ %s\n",
+					response.Name,
+					response.SiteStatus.UserName,
+					utils.BytesSize(float64(response.SiteStatus.UserUploaded)),
+					utils.BytesSize(float64(response.SiteStatus.UserDownloaded)),
+				)
+			}
 		}
 	}
 
