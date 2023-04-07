@@ -110,6 +110,11 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	clientTorrentsMap := make(map[string](*clientTorrentInfoStruct))
 	siteTorrentsMap := make(map[string](*site.SiteTorrent))
 
+	targetUploadSpeed := clientStatus.UploadSpeedLimit
+	if targetUploadSpeed <= 0 {
+		targetUploadSpeed = 10 * 1024 * 1024
+	}
+
 	for i, torrent := range clientTorrents {
 		clientTorrentsMap[torrent.InfoHash] = &clientTorrentInfoStruct{
 			Torrent: &clientTorrents[i],
@@ -319,7 +324,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 
 	// add new torrents
 	if freespace >= option.MinDiskSpace {
-		for cntTorrents < option.MaxTorrents && cntDownloadingTorrents < option.MaxDownloadingTorrents && estimateUploadSpeed <= clientStatus.UploadSpeedLimit*2 && len(candidateTorrents) > 0 {
+		for cntTorrents < option.MaxTorrents && cntDownloadingTorrents < option.MaxDownloadingTorrents && estimateUploadSpeed <= targetUploadSpeed*2 && len(candidateTorrents) > 0 {
 			candidateTorrent := candidateTorrents[0]
 			candidateTorrents = candidateTorrents[1:]
 			result.AddTorrents = append(result.AddTorrents, AlgorithmAddTorrent{
@@ -334,7 +339,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 		}
 	}
 
-	if cntTorrents < option.MaxTorrents && cntDownloadingTorrents < option.MaxDownloadingTorrents && estimateUploadSpeed <= clientStatus.UploadSpeedLimit*2 {
+	if cntTorrents < option.MaxTorrents && cntDownloadingTorrents < option.MaxDownloadingTorrents && estimateUploadSpeed <= targetUploadSpeed*2 {
 		result.CanAddMore = true
 	}
 
