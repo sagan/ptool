@@ -25,4 +25,5 @@ func version(cmd *cobra.Command, args []string) {
 	fmt.Printf("ptool version v-%s\n", config.VERSION)
 	fmt.Printf("- os/type: %s\n", runtime.GOOS)
 	fmt.Printf("- os/arch: %s\n", runtime.GOARCH)
+	fmt.Printf("- go/version: %s\n", runtime.Version())
 }
