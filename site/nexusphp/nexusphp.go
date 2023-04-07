@@ -37,7 +37,7 @@ func (npclient *Site) DownloadTorrent(url string) ([]byte, error) {
 	return io.ReadAll(res.Body)
 }
 
-func (npclient *Site) GetMeta() (*site.SiteMeta, error) {
+func (npclient *Site) GetStatus() (*site.Status, error) {
 	res, err := utils.FetchUrl(npclient.SiteConfig.Url+"torrents.php", npclient.SiteConfig.Cookie, npclient.HttpClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch torrents.php from site: %v", err)
@@ -47,7 +47,7 @@ func (npclient *Site) GetMeta() (*site.SiteMeta, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parse torrents.php DOM error: %v", err)
 	}
-	siteMeta := &site.SiteMeta{}
+	siteMeta := &site.Status{}
 	infoTr := doc.Find("#info_block, .m_nav").First()
 
 	infoTxt := infoTr.Text()

@@ -24,7 +24,7 @@ type SiteTorrent struct {
 	IsActive           bool // true if torrent is as already downloading / seeding
 }
 
-type SiteMeta struct {
+type Status struct {
 	UserName            string
 	UserDownloaded      int64
 	UserUploaded        int64
@@ -37,7 +37,7 @@ type Site interface {
 	GetSiteConfig() *config.SiteConfigStruct
 	DownloadTorrent(url string) ([]byte, error)
 	GetLatestTorrents(url string) ([]SiteTorrent, error)
-	GetMeta() (*SiteMeta, error)
+	GetStatus() (*Status, error)
 }
 
 type RegInfo struct {
