@@ -8,6 +8,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/utils"
 	"github.com/spf13/cobra"
@@ -16,28 +17,56 @@ import (
 )
 
 var (
-	filter   = ""
-	category = ""
-	showAll  = false
+	filter         = ""
+	category       = ""
+	showAll        = false
+	showFull       = false
+	showAllClients = false
+	showAllSites   = false
 )
 
 var command = &cobra.Command{
-	Use:   "status ...clients",
-	Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
-	Short: "Show clients status",
+	Use: "status ...clientOrSites",
+	// Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
+	Short: "Show clients or site status",
 	Long:  `A longer description`,
 	Run:   status,
 }
 
 func init() {
-	command.Flags().StringVar(&filter, "filter", "", "filter torrents by name")
-	command.Flags().StringVar(&category, "category", "", "filter torrents by category")
-	command.Flags().BoolVar(&showAll, "all", false, "show all torrents.")
+	command.Flags().StringVar(&filter, "filter", "", "filter client torrents by name")
+	command.Flags().StringVar(&category, "category", "", "filter client torrents by category")
+	command.Flags().BoolVar(&showAll, "all", false, "show all clients / sites.")
+	command.Flags().BoolVar(&showAllClients, "clients", false, "show all clients.")
+	command.Flags().BoolVar(&showAllSites, "sites", false, "show all sites.")
+	command.Flags().BoolVar(&showFull, "full", false, "show full info of each client / site")
 	cmd.RootCmd.AddCommand(command)
 }
 
 func status(cmd *cobra.Command, args []string) {
 	names := args
+	if showAll || showAllClients || showAllSites {
+		if len(args) > 0 {
+			log.Fatal("Illegal args: --all, --clients, --sites cann't be used with site or client names")
+		}
+		if showAll || showAllClients {
+			for _, client := range config.Get().Clients {
+				names = append(names, client.Name)
+			}
+		}
+		if showAll || showAllSites {
+			for _, site := range config.Get().Sites {
+				sitename := site.Name
+				if sitename == "" {
+					sitename = site.Type
+				}
+				names = append(names, sitename)
+			}
+		}
+	}
+	if len(names) == 0 {
+		log.Fatal("Usage: status ...clientOrSites")
+	}
 	isSingle := len(names) == 1
 	hasError := false
 	doneFlag := make(map[string](bool))
@@ -55,7 +84,7 @@ func status(cmd *cobra.Command, args []string) {
 				hasError = true
 				continue
 			}
-			go fetchClientStatus(clientInstance, !isSingle && showAll, category, ch)
+			go fetchClientStatus(clientInstance, isSingle || showFull, isSingle && showFull, category, ch)
 			cnt++
 		} else if site.SiteExists(name) {
 			siteInstance, err := site.CreateSite(name)
@@ -86,10 +115,11 @@ func status(cmd *cobra.Command, args []string) {
 		return indexA < indexB
 	})
 
-	for _, response := range responses {
+	errorsStr := ""
+	for i, response := range responses {
 		if response.Kind == 1 {
 			if response.Error != nil {
-				log.Printf("Error get client %s status: error=%v", response.Name, response.Error)
+				errorsStr += fmt.Sprintf("Error get client %s status: error=%v\n", response.Name, response.Error)
 				hasError = true
 			}
 			if response.ClientStatus != nil {
@@ -101,6 +131,8 @@ func status(cmd *cobra.Command, args []string) {
 					utils.BytesSize(float64(response.ClientStatus.UploadSpeedLimit)),
 					utils.BytesSize(float64(response.ClientStatus.FreeSpaceOnDisk)),
 				)
+			} else {
+				fmt.Printf("Client %s failed to get status\n", response.Name)
 			}
 			if response.ClientTorrents != nil {
 				fmt.Printf("\nName  InfoHash  Tracker  State  ↓S  ↑S  Meta\n")
@@ -118,11 +150,13 @@ func status(cmd *cobra.Command, args []string) {
 						torrent.Meta,
 					)
 				}
-				fmt.Printf("\n")
+				if i != len(responses)-1 {
+					fmt.Printf("\n")
+				}
 			}
 		} else if response.Kind == 2 {
 			if response.Error != nil {
-				log.Printf("Error get site %s status: error=%v", response.Name, response.Error)
+				errorsStr += fmt.Sprintf("Error get site %s status: error=%v\n", response.Name, response.Error)
 				hasError = true
 			}
 			if response.SiteStatus != nil {
@@ -132,8 +166,14 @@ func status(cmd *cobra.Command, args []string) {
 					utils.BytesSize(float64(response.SiteStatus.UserUploaded)),
 					utils.BytesSize(float64(response.SiteStatus.UserDownloaded)),
 				)
+			} else {
+				fmt.Printf("Site %s: failed to get status", response.Name)
 			}
 		}
+	}
+
+	if errorsStr != "" {
+		fmt.Printf("\nErrors:%s\n", errorsStr)
 	}
 
 	if hasError {

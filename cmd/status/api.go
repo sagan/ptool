@@ -16,7 +16,8 @@ type StatusResponse struct {
 	Error          error
 }
 
-func fetchClientStatus(clientInstance client.Client, showAll bool, category string, ch chan *StatusResponse) {
+func fetchClientStatus(clientInstance client.Client, showTorrents bool, showAllTorrents bool,
+	category string, ch chan *StatusResponse) {
 	response := &StatusResponse{Name: clientInstance.GetName(), Kind: 1}
 
 	clientStatus, err := clientInstance.GetStatus()
@@ -27,12 +28,13 @@ func fetchClientStatus(clientInstance client.Client, showAll bool, category stri
 		return
 	}
 
-	clientTorrents, err := clientInstance.GetTorrents("", category, showAll)
-	response.ClientTorrents = clientTorrents
-	if err != nil {
-		response.Error = fmt.Errorf("cann't get client %s torrents: %v", clientInstance.GetName(), err)
+	if showTorrents {
+		clientTorrents, err := clientInstance.GetTorrents("", category, showAllTorrents)
+		response.ClientTorrents = clientTorrents
+		if err != nil {
+			response.Error = fmt.Errorf("cann't get client %s torrents: %v", clientInstance.GetName(), err)
+		}
 	}
-
 	ch <- response
 }
 
