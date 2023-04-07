@@ -1,11 +1,11 @@
 package config
 
 import (
-	"log"
 	"os"
 	"sync"
 
 	"github.com/sagan/ptool/utils"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
@@ -16,6 +16,7 @@ const (
 	DEFAULT_CLIENT_BRUSH_MAX_TORRENTS             = int64(50)
 	DEFAULT_CLIENT_BRUSH_MIN_RATION               = float64(0.2)
 	DEFAULT_SITE_TORRENT_UPLOAD_SPEED_LIMIT       = int64(10 * 1024 * 1024)
+	VERSION                                       = "0.0.1"
 )
 
 type ClientConfigStruct struct {
@@ -51,11 +52,11 @@ type ConfigStruct struct {
 }
 
 var (
+	VerboseLevel               = 0
 	ConfigFile                 = ""
 	ConfigLoaded               = false
 	Config       *ConfigStruct = &ConfigStruct{}
-
-	mu sync.Mutex
+	mu           sync.Mutex
 )
 
 func init() {

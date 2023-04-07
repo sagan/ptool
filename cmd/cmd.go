@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"log"
 	"os"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/sagan/ptool/config"
 	"github.com/spf13/cobra"
@@ -19,7 +20,12 @@ var RootCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	log.Print(os.Args)
+	cobra.OnInitialize(func() {
+		// level: panic(0), fatal(1), error(2), warn(3), info(4), debug(5), trace(6)
+		logLevel := 3 + config.VerboseLevel
+		log.SetLevel(log.Level(logLevel))
+		log.Info("ptool Start: ", os.Args)
+	})
 	err := RootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
@@ -38,7 +44,7 @@ func init() {
 
 	// global flags
 	RootCmd.PersistentFlags().StringVar(&config.ConfigFile, "config", configFile, "config file ([ptool.yaml])")
-
+	RootCmd.PersistentFlags().CountVarP(&config.VerboseLevel, "", "v", "verbose (-v, -vv, -vvv)")
 	// local flags
 	RootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

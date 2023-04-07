@@ -2,9 +2,10 @@ package status
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"sort"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"

@@ -2,13 +2,13 @@ package parsetorrent
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
 	goTorrentParser "github.com/j-muller/go-torrent-parser"
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/utils"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 

@@ -2,11 +2,11 @@ package brush
 
 import (
 	"bytes"
-	"log"
 	"math/rand"
 	"os"
 
 	goTorrentParser "github.com/j-muller/go-torrent-parser"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"

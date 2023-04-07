@@ -2,13 +2,13 @@ package clientctl
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/utils"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/exp/slices"
 )

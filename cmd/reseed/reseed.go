@@ -1,7 +1,7 @@
 package reseed
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/config"
