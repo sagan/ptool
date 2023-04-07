@@ -173,7 +173,7 @@ func status(cmd *cobra.Command, args []string) {
 	}
 
 	if errorsStr != "" {
-		fmt.Printf("\nErrors:%s\n", errorsStr)
+		log.Printf("\nErrors:\n%s", errorsStr)
 	}
 
 	if hasError {
