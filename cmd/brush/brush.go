@@ -104,7 +104,7 @@ func brush(cmd *cobra.Command, args []string) {
 			Now:                     utils.Now(),
 		}
 		log.Printf(
-			"Brush Options: brushMinDiskSpace=%v, slowUploadSpeedTier=%v, torrentUploadSpeedLimit=%v/s,"+
+			"Brush Options: minDiskSpace=%v, slowUploadSpeedTier=%v, torrentUploadSpeedLimit=%v/s,"+
 				" maxDownloadingTorrents=%d, maxTorrents=%d, minRatio=%f",
 			utils.BytesSize(float64(brushOption.MinDiskSpace)),
 			utils.BytesSize(float64(brushOption.SlowUploadSpeedTier)),
