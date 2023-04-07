@@ -74,7 +74,7 @@ func status(cmd *cobra.Command, args []string) {
 	cnt := int64(0)
 	ch := make(chan *StatusResponse, len(names))
 	for _, name := range names {
-		if doneFlag[name] {
+		if name == "_" || doneFlag[name] {
 			continue
 		}
 		doneFlag[name] = true
