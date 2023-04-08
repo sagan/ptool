@@ -2,6 +2,7 @@ package brush
 
 import (
 	"bytes"
+	"fmt"
 	"math/rand"
 	"os"
 
@@ -47,10 +48,12 @@ func brush(cmd *cobra.Command, args []string) {
 
 	rand.Shuffle(len(sitenames), func(i, j int) { sitenames[i], sitenames[j] = sitenames[j], sitenames[i] })
 	cntSuccessSite := int64(0)
+	cntAddTorrents := int64(0)
+	cntDeleteTorrents := int64(0)
 	doneSiteFlag := make(map[string](bool))
 	tmpdir, _ := os.MkdirTemp(os.TempDir(), "ptool")
 
-	for _, sitename := range sitenames {
+	for i, sitename := range sitenames {
 		if doneSiteFlag[sitename] {
 			continue
 		}
@@ -181,6 +184,9 @@ func brush(cmd *cobra.Command, args []string) {
 			if !dryRun {
 				err = clientInstance.AddTorrent(torrentdata, torrentOption, torrent.Meta)
 				log.Printf("Add torrent result: error=%v", err)
+				if err == nil {
+					cntAddTorrents++
+				}
 			}
 		}
 
@@ -222,20 +228,24 @@ func brush(cmd *cobra.Command, args []string) {
 			}
 			err := clientInstance.DeleteTorrents([]string{torrent.InfoHash})
 			log.Printf("Delete torrent result: error=%v", err)
+			if err == nil {
+				cntDeleteTorrents++
+			}
 		}
 		cntSuccessSite++
 		if !result.CanAddMore {
 			log.Printf("Client capacity is full. Stop brushing")
 			break
 		}
-		if cndAddTorrents > 0 || len(result.ModifyTorrents) > 0 || len(result.DeleteTorrents) > 0 || len(result.StallTorrents) > 0 {
+		if i < len(sitenames)-1 && cndAddTorrents > 0 || len(result.ModifyTorrents) > 0 || len(result.DeleteTorrents) > 0 || len(result.StallTorrents) > 0 {
 			clientInstance.PurgeCache()
 			utils.Sleep(3)
 		}
 	}
 
+	fmt.Printf("Finish brushing %d sites, successSites=%d; Added / Deleted torrents: %d / %d to client %s\n",
+		len(sitenames), cntSuccessSite, cntAddTorrents, cntDeleteTorrents, clientInstance.GetName())
 	os.RemoveAll(tmpdir)
-
 	if cntSuccessSite == 0 {
 		os.Exit(1)
 	}
