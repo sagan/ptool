@@ -60,7 +60,7 @@ func brush(cmd *cobra.Command, args []string) {
 		doneSiteFlag[sitename] = true
 		siteInstance, err := site.CreateSite(sitename)
 		if err != nil {
-			log.Printf("Failed to get instance of site %s: %v", sitename, err)
+			log.Errorf("Failed to get instance of site %s: %v", sitename, err)
 			continue
 		}
 		log.Printf("Brush client %s site %s", clientInstance.GetName(), sitename)
