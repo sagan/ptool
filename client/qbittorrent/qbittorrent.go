@@ -95,6 +95,7 @@ func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 	mp.WriteField("category", option.Category)
 	mp.WriteField("rename", name)
 	mp.WriteField("root_folder", "true")
+	mp.WriteField("tags", strings.Join(option.Tags, ","))
 	mp.WriteField("paused", fmt.Sprint(option.Paused))
 	mp.WriteField("upLimit", fmt.Sprint(option.UploadSpeedLimit))
 	mp.WriteField("dlLimit", fmt.Sprint(option.DownloadSpeedLimit))

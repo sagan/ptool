@@ -46,13 +46,15 @@ type SiteConfigStruct struct {
 }
 
 type ConfigStruct struct {
-	IyuuToken string               `yaml:"iyuutoken"`
-	Clients   []ClientConfigStruct `yaml:"clients"`
-	Sites     []SiteConfigStruct   `yaml:"sites"`
+	IyuuToken        string               `yaml:"iyuutoken"`
+	BrushEnableStats bool                 `yaml:"brushEnableStats"`
+	Clients          []ClientConfigStruct `yaml:"clients"`
+	Sites            []SiteConfigStruct   `yaml:"sites"`
 }
 
 var (
 	VerboseLevel               = 0
+	ConfigDir                  = ""
 	ConfigFile                 = ""
 	ConfigLoaded               = false
 	Config       *ConfigStruct = &ConfigStruct{}

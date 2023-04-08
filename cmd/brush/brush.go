@@ -11,7 +11,9 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
+	"github.com/sagan/ptool/stat"
 	"github.com/sagan/ptool/utils"
 	"github.com/spf13/cobra"
 )
@@ -21,25 +23,36 @@ const (
 )
 
 var command = &cobra.Command{
-	Use:   "brush client ...sites",
+	Use:   "brush [client sites...]",
 	Short: "Brush site using client",
 	Long:  `A longer description`,
-	Args:  cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	Run:   brush,
 }
 
 var (
-	dryRun = false
-	paused = false
+	dryRun    = false
+	paused    = false
+	showStats = false
 )
 
 func init() {
 	command.Flags().BoolVar(&dryRun, "dry-run", false, "Dry run. Do not actually controlling client")
 	command.Flags().BoolVar(&paused, "paused", false, "Add torrents to client in paused state")
+	command.Flags().BoolVar(&showStats, "stats", false, "Show brush statistics")
 	cmd.RootCmd.AddCommand(command)
 }
 
 func brush(cmd *cobra.Command, args []string) {
+	if showStats {
+		stat.ShowTrafficStats(CAT)
+		return
+	}
+
+	if len(args) < 2 {
+		fmt.Fprintf(os.Stderr, "Usate: ptool brush <client> <site>...\n")
+		os.Exit(1)
+	}
+
 	clientInstance, err := client.CreateClient(args[0])
 	if err != nil {
 		log.Fatal(err)
@@ -177,6 +190,7 @@ func brush(cmd *cobra.Command, args []string) {
 				Name:             torrent.Name,
 				Paused:           paused,
 				Category:         CAT,
+				Tags:             []string{client.GenerateTorrentTagFromSite(siteInstance.GetName())},
 				UploadSpeedLimit: siteInstance.GetSiteConfig().TorrentUploadSpeedLimitValue,
 			}
 			// torrentname := fmt.Sprint(torrent.Name, "_", i, ".torrent")
@@ -230,6 +244,20 @@ func brush(cmd *cobra.Command, args []string) {
 			log.Printf("Delete torrent result: error=%v", err)
 			if err == nil {
 				cntDeleteTorrents++
+				if config.Get().BrushEnableStats {
+					stat.AddTorrentStat(brushOption.Now, 1, &stat.TorrentStat{
+						Client:     clientInstance.GetName(),
+						Site:       clientTorrent.GetSiteFromTag(),
+						InfoHash:   clientTorrent.InfoHash,
+						Category:   clientTorrent.Category,
+						Name:       clientTorrent.Name,
+						Atime:      clientTorrent.Atime,
+						Size:       clientTorrent.Size,
+						Uploaded:   clientTorrent.Uploaded,
+						Downloaded: clientTorrent.Downloaded,
+						Msg:        torrent.Msg,
+					})
+				}
 			}
 		}
 		cntSuccessSite++

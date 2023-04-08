@@ -16,6 +16,7 @@
 
 # config file
 ptool.yaml
+ptool_stats.txt
 
 # local
 devtest/

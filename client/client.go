@@ -40,8 +40,9 @@ type Status struct {
 }
 
 type TorrentOption struct {
-	Category           string
 	Name               string
+	Category           string
+	Tags               []string
 	DownloadSpeedLimit int64
 	UploadSpeedLimit   int64
 	Paused             bool
@@ -157,4 +158,17 @@ func TorrentStateIconText(state string) string {
 	return "-"
 }
 func init() {
+}
+
+func (torrent *Torrent) GetSiteFromTag() string {
+	for _, tag := range torrent.Tags {
+		if strings.HasPrefix(tag, "site:") {
+			return tag[5:]
+		}
+	}
+	return ""
+}
+
+func GenerateTorrentTagFromSite(site string) string {
+	return "site:" + site
 }
