@@ -53,7 +53,7 @@ func (npclient *Site) GetStatus() (*site.Status, error) {
 	infoTxt := infoTr.Text()
 	infoTxt = strings.ReplaceAll(infoTxt, "\n", " ")
 	infoTxt = strings.ReplaceAll(infoTxt, "\r", " ")
-	re := regexp.MustCompile(`(上傳量|上傳|上传量|上传)[：:\s]+(?P<s>[.\s0-9KMGTEPBkmgtepb]+)`)
+	re := regexp.MustCompile(`(上傳量|上傳|上传量|上传)[：:\s]+(?P<s>[.\s0-9KMGTEPBkmgtepib]+)`)
 	m := re.FindStringSubmatch(infoTxt)
 	if m != nil {
 		ss := strings.ReplaceAll(m[re.SubexpIndex("s")], " ", "")
@@ -61,7 +61,7 @@ func (npclient *Site) GetStatus() (*site.Status, error) {
 		siteMeta.UserUploaded = s
 	}
 
-	re = regexp.MustCompile(`(下載量|下載|下载量|下载)[：:\s]+(?P<s>[.\s0-9KMGTEPBkmgtepb]+)`)
+	re = regexp.MustCompile(`(下載量|下載|下载量|下载)[：:\s]+(?P<s>[.\s0-9KMGTEPBkmgtepib]+)`)
 	m = re.FindStringSubmatch(infoTxt)
 	if m != nil {
 		ss := strings.ReplaceAll(m[re.SubexpIndex("s")], " ", "")
@@ -102,7 +102,7 @@ func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) 
 	processFieldIndex := -1 // m-team
 	headerTr.Children().Each(func(i int, s *goquery.Selection) {
 		for field := range fieldColumIndex {
-			if s.Find("*[alt=\""+field+"\"]").Length() > 0 {
+			if s.Find(`*[alt="`+field+`"],`+`*[alt="`+strings.ToUpper(field)+`"],`+`*[alt="`+utils.Capitalize(field)+`"]`).Length() > 0 {
 				fieldColumIndex[field] = i
 				break
 			}
@@ -173,14 +173,14 @@ func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) 
 		if s.Find(`*[title="H&R"],*[alt="H&R"]`).Length() > 0 {
 			hnr = true
 		}
-		if s.Find(`*[title="免费"],*[alt="Free"]`).Length() > 0 {
+		if s.Find(`*[title="免费"],*[title="免費"],*[alt="Free"],*[alt="FREE"],*[alt="2X Free"]`).Length() > 0 {
 			downloadMultiplier = 0
 		}
 		if s.Find(`*[title^="seeding"],*[title^="leeching"],*[title^="downloading"],*[title^="uploading"]`).Length() > 0 {
 			isActive = true
 		}
-		re := regexp.MustCompile(`剩余(时间)?\s*(：|:)\s*(?P<time>[YMDHMSymdhms年月天时時分秒\d]+)`)
-		m := re.FindStringSubmatch(s.Text())
+		re := regexp.MustCompile(`(剩余|剩餘)(时间|時間)?[：:\s]*(?P<time>[YMDHMSymdhms年月天小时時分种鐘秒\d]+)`)
+		m := re.FindStringSubmatch(utils.DomSanitizedText(s))
 		if m != nil {
 			discountEndTime, _ = utils.ParseFutureTime(m[re.SubexpIndex("time")])
 		}

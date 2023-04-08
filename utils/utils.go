@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	"golang.org/x/exp/slices"
 )
 
@@ -67,8 +68,12 @@ func ParseTimeDuration(str string) (int64, error) {
 	str = strings.ReplaceAll(str, "周", "w")
 	str = strings.ReplaceAll(str, "天", "d")
 	str = strings.ReplaceAll(str, "日", "d")
+	str = strings.ReplaceAll(str, "小时", "h")
+	str = strings.ReplaceAll(str, "小時", "h")
 	str = strings.ReplaceAll(str, "时", "h")
 	str = strings.ReplaceAll(str, "時", "h")
+	str = strings.ReplaceAll(str, "分种", "m")
+	str = strings.ReplaceAll(str, "分鐘", "m")
 	str = strings.ReplaceAll(str, "分", "m")
 	str = strings.ReplaceAll(str, "秒", "s")
 	td, error := ParseDuration(str)
@@ -189,4 +194,19 @@ func ParseUrlHostname(urlStr string) string {
 		hostname = url.Hostname()
 	}
 	return hostname
+}
+
+func DomHtml(el *goquery.Selection) string {
+	html, _ := el.Html()
+	return html
+}
+
+func DomSanitizedText(el *goquery.Selection) string {
+	text := el.Text()
+	text = strings.ReplaceAll(text, "­", "") // &shy;  invisible Soft hyphen
+	return text
+}
+
+func Capitalize(str string) string {
+	return strings.ToUpper(str[:1]) + str[1:]
 }

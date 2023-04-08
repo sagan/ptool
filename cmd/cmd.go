@@ -21,7 +21,7 @@ var RootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	cobra.OnInitialize(func() {
-		// level: panic(0), fatal(1), error(2), warn(3), info(4), debug(5), trace(6)
+		// level: panic(0), fatal(1), error(2), warn(3), info(4), debug(5), trace(6). Default level = warning(3)
 		logLevel := 3 + config.VerboseLevel
 		log.SetLevel(log.Level(logLevel))
 		log.Debugf("ptool start: %s", os.Args)

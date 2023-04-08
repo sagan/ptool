@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sort"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/utils"
@@ -347,6 +349,18 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 }
 
 func rateSiteTorrent(siteTorrent *site.SiteTorrent, brushOption *BrushOptionStruct) (score float64, predictionUploadSpeed int64) {
+	if log.GetLevel() >= log.TraceLevel {
+		defer func() {
+			log.Tracef("rateSiteTorrent score=%0.0f name=%s, free=%t, rtime=%d, seeders=%d, leechers=%d",
+				score,
+				siteTorrent.Name,
+				siteTorrent.DownloadMultiplier == 0,
+				brushOption.Now-siteTorrent.Time,
+				siteTorrent.Seeders,
+				siteTorrent.Leechers,
+			)
+		}()
+	}
 	if siteTorrent.IsActive ||
 		siteTorrent.HasHnR ||
 		siteTorrent.DownloadMultiplier != 0 ||
@@ -356,7 +370,6 @@ func rateSiteTorrent(siteTorrent *site.SiteTorrent, brushOption *BrushOptionStru
 		score = 0
 		return
 	}
-
 	if brushOption.Now-siteTorrent.Time >= 86400 {
 		score = 0
 		return
@@ -392,10 +405,13 @@ func rateSiteTorrent(siteTorrent *site.SiteTorrent, brushOption *BrushOptionStru
 	} else if siteTorrent.Size <= 1024*1024*1024*100 {
 		score *= 0.1
 	} else {
-		if siteTorrent.Leechers >= 1000 { // 馒头大包特殊处理
+		// 大包特殊处理
+		if siteTorrent.Leechers >= 1000 {
 			score *= 100
-		} else if siteTorrent.Leechers >= 500 { // 馒头大包特殊处理
+		} else if siteTorrent.Leechers >= 500 {
 			score *= 50
+		} else if siteTorrent.Leechers >= 100 {
+			score *= 10
 		} else {
 			score *= 0
 		}

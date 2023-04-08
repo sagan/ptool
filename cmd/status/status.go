@@ -81,7 +81,7 @@ func status(cmd *cobra.Command, args []string) {
 		if client.ClientExists(name) {
 			clientInstance, err := client.CreateClient(name)
 			if err != nil {
-				log.Printf("Failed to create client %s: %v", name, err)
+				log.Errorf("Error: failed to create client %s: %v\n", name, err)
 				hasError = true
 				continue
 			}
@@ -90,14 +90,14 @@ func status(cmd *cobra.Command, args []string) {
 		} else if site.SiteExists(name) {
 			siteInstance, err := site.CreateSite(name)
 			if err != nil {
-				log.Printf("Failed to create site %s: %v", name, err)
+				log.Errorf("Error: failed to create site %s: %v\n", name, err)
 				hasError = true
 				continue
 			}
 			go fetchSiteStatus(siteInstance, ch)
 			cnt++
 		} else {
-			log.Printf("Error, name %s is not a client or site", name)
+			log.Errorf("Error: %s is not a client or site\n", name)
 			hasError = true
 		}
 	}
@@ -133,7 +133,7 @@ func status(cmd *cobra.Command, args []string) {
 					utils.BytesSize(float64(response.ClientStatus.FreeSpaceOnDisk)),
 				)
 			} else {
-				fmt.Printf("Client %s failed to get status\n", response.Name)
+				fmt.Printf("Error: client %s failed to get status\n", response.Name)
 			}
 			if response.ClientTorrents != nil {
 				fmt.Printf("\nName  InfoHash  Tracker  State  ↓S  ↑S  Meta\n")
@@ -168,7 +168,7 @@ func status(cmd *cobra.Command, args []string) {
 					utils.BytesSize(float64(response.SiteStatus.UserDownloaded)),
 				)
 			} else {
-				fmt.Printf("Site %s: failed to get status", response.Name)
+				fmt.Printf("Error: site %s: failed to get status\n", response.Name)
 			}
 		}
 	}
