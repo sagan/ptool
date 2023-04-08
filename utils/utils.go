@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/PuerkitoBio/goquery"
 	"golang.org/x/exp/slices"
 )
@@ -36,6 +38,7 @@ func SetHttpRequestBrowserHeaders(req *http.Request) {
 }
 
 func FetchUrl(url string, cookie string, client *http.Client) (*http.Response, error) {
+	log.Tracef("FetchUrl url=%s hasCookie=%t", url, cookie != "")
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -51,6 +54,7 @@ func FetchUrl(url string, cookie string, client *http.Client) (*http.Response, e
 	if error != nil {
 		return nil, fmt.Errorf("failed to fetch url: %v", error)
 	}
+	log.Tracef("FetchUrl resp status=%d", resp.StatusCode)
 	if resp.StatusCode != 200 {
 		defer resp.Body.Close()
 		return nil, fmt.Errorf("failed to fetch url: status=%d", resp.StatusCode)
