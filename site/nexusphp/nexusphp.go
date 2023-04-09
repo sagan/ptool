@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	cloudflarebp "github.com/DaRealFreak/cloudflare-bp-go"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
@@ -208,11 +209,13 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 	if siteConfig.Cookie == "" {
 		return nil, fmt.Errorf("cann't create site: no cookie provided")
 	}
+	httpClient := &http.Client{}
+	httpClient.Transport = cloudflarebp.AddCloudFlareByPass(httpClient.Transport)
 	client := &Site{
 		Name:       name,
 		SiteConfig: siteConfig,
 		Config:     config,
-		HttpClient: &http.Client{},
+		HttpClient: httpClient,
 	}
 	return client, nil
 }
