@@ -101,8 +101,8 @@ func (db *StatDb) ShowTrafficStats(client string) {
 		endday   string
 	}{
 		{"<all time>", "", ""},
-		{"Last 30d", yesterdayMinus30day, yesterday},
-		{"Last 7d", yesterdayMinus7day, yesterday},
+		{"last 30d", yesterdayMinus30day, yesterday},
+		{"last 7d", yesterdayMinus7day, yesterday},
 		{"yesterday", yesterday, yesterday},
 		{"today", today, today},
 	}
