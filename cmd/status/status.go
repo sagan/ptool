@@ -57,11 +57,7 @@ func status(cmd *cobra.Command, args []string) {
 		}
 		if showAll || showAllSites {
 			for _, site := range config.Get().Sites {
-				sitename := site.Name
-				if sitename == "" {
-					sitename = site.Type
-				}
-				names = append(names, sitename)
+				names = append(names, site.Name)
 			}
 		}
 	}

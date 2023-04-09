@@ -101,6 +101,10 @@ func Get() *ConfigStruct {
 				if client.BrushMinRatio == 0 {
 					Config.Clients[i].BrushMinRatio = DEFAULT_CLIENT_BRUSH_MIN_RATION
 				}
+
+				if client.Name == "" {
+					Config.Clients[i].Name = client.Type
+				}
 			}
 			for i, site := range Config.Sites {
 				v, err := utils.RAMInBytes(site.TorrentUploadSpeedLimit)
@@ -108,6 +112,10 @@ func Get() *ConfigStruct {
 					v = DEFAULT_SITE_TORRENT_UPLOAD_SPEED_LIMIT
 				}
 				Config.Sites[i].TorrentUploadSpeedLimitValue = v
+
+				if site.Name == "" {
+					Config.Sites[i].Name = site.Type
+				}
 			}
 			ConfigLoaded = true
 		}
@@ -128,11 +136,6 @@ func GetClientConfig(name string) *ClientConfigStruct {
 func GetSiteConfig(name string) *SiteConfigStruct {
 	for _, site := range Get().Sites {
 		if site.Name == name {
-			return &site
-		}
-	}
-	for _, site := range Get().Sites {
-		if site.Name == "" && site.Type == name {
 			return &site
 		}
 	}
