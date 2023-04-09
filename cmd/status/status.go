@@ -129,7 +129,7 @@ func status(cmd *cobra.Command, args []string) {
 					utils.BytesSize(float64(response.ClientStatus.FreeSpaceOnDisk)),
 				)
 			} else {
-				fmt.Printf("Error: client %s failed to get status\n", response.Name)
+				fmt.Printf("Client %s: failed to get status\n", response.Name)
 			}
 			if response.ClientTorrents != nil {
 				fmt.Printf("\nName  InfoHash  Tracker  State  ↓S  ↑S  Meta\n")
@@ -164,7 +164,7 @@ func status(cmd *cobra.Command, args []string) {
 					utils.BytesSize(float64(response.SiteStatus.UserDownloaded)),
 				)
 			} else {
-				fmt.Printf("Error: site %s: failed to get status\n", response.Name)
+				fmt.Printf("Site %s: failed to get status\n", response.Name)
 			}
 		}
 	}
