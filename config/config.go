@@ -69,7 +69,7 @@ func Get() *ConfigStruct {
 	if !ConfigLoaded {
 		mu.Lock()
 		if !ConfigLoaded {
-			log.Printf("Read config file %s", ConfigFile)
+			log.Debugf("Read config file %s", ConfigFile)
 			file, err := os.ReadFile(ConfigFile)
 			if err == nil {
 				err = yaml.Unmarshal(file, &Config)

@@ -118,6 +118,14 @@ func ParseTime(str string) (int64, error) {
 	return 0, fmt.Errorf("invalid time str")
 }
 
+func FormatDate(ts int64) string {
+	return time.Unix(ts, 0).Format("2006-01-02")
+}
+
+func FormatDate2(ts int64) string {
+	return time.Unix(ts, 0).Format("20060102")
+}
+
 func FormatTime(ts int64) string {
 	return time.Unix(ts, 0).Format("2006-01-02 15:04:05")
 }

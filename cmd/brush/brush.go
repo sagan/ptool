@@ -13,7 +13,7 @@ import (
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
-	"github.com/sagan/ptool/stat"
+	"github.com/sagan/ptool/stats"
 	"github.com/sagan/ptool/utils"
 	"github.com/spf13/cobra"
 )
@@ -23,36 +23,25 @@ const (
 )
 
 var command = &cobra.Command{
-	Use:   "brush [client sites...]",
+	Use:   "brush <client> <site>...",
 	Short: "Brush site using client",
 	Long:  `A longer description`,
+	Args:  cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	Run:   brush,
 }
 
 var (
-	dryRun    = false
-	paused    = false
-	showStats = false
+	dryRun = false
+	paused = false
 )
 
 func init() {
 	command.Flags().BoolVar(&dryRun, "dry-run", false, "Dry run. Do not actually controlling client")
 	command.Flags().BoolVar(&paused, "paused", false, "Add torrents to client in paused state")
-	command.Flags().BoolVar(&showStats, "stats", false, "Show brush statistics")
 	cmd.RootCmd.AddCommand(command)
 }
 
 func brush(cmd *cobra.Command, args []string) {
-	if showStats {
-		stat.ShowTrafficStats(CAT)
-		return
-	}
-
-	if len(args) < 2 {
-		fmt.Fprintf(os.Stderr, "Usate: ptool brush <client> <site>...\n")
-		os.Exit(1)
-	}
-
 	clientInstance, err := client.CreateClient(args[0])
 	if err != nil {
 		log.Fatal(err)
@@ -245,7 +234,7 @@ func brush(cmd *cobra.Command, args []string) {
 			if err == nil {
 				cntDeleteTorrents++
 				if config.Get().BrushEnableStats {
-					stat.AddTorrentStat(brushOption.Now, 1, &stat.TorrentStat{
+					stats.Db.AddTorrentStat(brushOption.Now, 1, &stats.TorrentStat{
 						Client:     clientInstance.GetName(),
 						Site:       clientTorrent.GetSiteFromTag(),
 						InfoHash:   clientTorrent.InfoHash,
