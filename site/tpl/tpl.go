@@ -114,6 +114,11 @@ var (
 			Url:      "https://leaves.red/",
 			BrushUrl: "https://leaves.red/special.php",
 		},
+		"lemonhd": &config.SiteConfigStruct{
+			Type:     "nexusphp",
+			Url:      "https://lemonhd.org/",
+			BrushUrl: "https://lemonhd.org/torrents_new.php",
+		},
 		"mteam": &config.SiteConfigStruct{
 			Type:     "nexusphp",
 			Url:      "https://kp.m-team.cc/",

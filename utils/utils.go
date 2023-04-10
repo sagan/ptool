@@ -215,7 +215,8 @@ func DomHtml(el *goquery.Selection) string {
 
 func DomSanitizedText(el *goquery.Selection) string {
 	text := el.Text()
-	text = strings.ReplaceAll(text, "­", "") // &shy;  invisible Soft hyphen
+	text = strings.ReplaceAll(text, "\u00ad", "") // &shy;  invisible Soft hyphen
+	text = strings.TrimSpace(text)
 	return text
 }
 

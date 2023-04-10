@@ -12,6 +12,7 @@ import (
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 type Site struct {
@@ -99,17 +100,24 @@ func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) 
 		"seeders":  -1,
 		"leechers": -1,
 		"snatched": -1,
+		"title":    -1,
+		"process":  -1,
 	}
-	processFieldIndex := -1 // m-team
 	headerTr.Children().Each(func(i int, s *goquery.Selection) {
+		text := utils.DomSanitizedText(s)
+		if text == "進度" || text == "进度" {
+			fieldColumIndex["process"] = i
+			return
+		}
+		if text == "標題" || text == "标题" {
+			fieldColumIndex["title"] = i
+			return
+		}
 		for field := range fieldColumIndex {
-			if s.Find(`*[alt="`+field+`"],`+`*[alt="`+strings.ToUpper(field)+`"],`+`*[alt="`+utils.Capitalize(field)+`"]`).Length() > 0 {
+			if s.Find(`img[alt="`+field+`"],`+`img[alt="`+strings.ToUpper(field)+`"],`+`img[alt="`+utils.Capitalize(field)+`"]`).Length() > 0 {
 				fieldColumIndex[field] = i
 				break
 			}
-		}
-		if s.Text() == "進度" || s.Text() == "进度" {
-			processFieldIndex = i
 		}
 	})
 	torrents := []site.SiteTorrent{}
@@ -134,35 +142,40 @@ func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) 
 
 		s.Children().Each(func(i int, s *goquery.Selection) {
 			for field, index := range fieldColumIndex {
-				if processFieldIndex == i {
-					if m := processValueRegexp.MatchString(s.Text()); m {
+				if index != i {
+					continue
+				}
+				text := utils.DomSanitizedText(s)
+				if field == "process" {
+					if m := processValueRegexp.MatchString(text); m {
 						isActive = true
 					}
 					continue
 				}
-				if index != i {
+				if field == "title" {
 					continue
 				}
 				switch field {
 				case "size":
-					size, _ = utils.RAMInBytes(s.Text())
+					size, _ = utils.RAMInBytes(text)
 				case "seeders":
-					seeders = utils.ParseInt(s.Text())
+					seeders = utils.ParseInt(text)
 				case "leechers":
-					leechers = utils.ParseInt(s.Text())
+					leechers = utils.ParseInt(text)
 				case "snatched":
-					snatched = utils.ParseInt(s.Text())
+					snatched = utils.ParseInt(text)
 				case "time":
 					title := s.Find("*[title]").AttrOr("title", "")
 					time, error = utils.ParseTime(title)
 					if error == nil {
 						break
 					}
-					time, error = utils.ParseTime((s.Text()))
+					time, error = utils.ParseTime(text)
 				}
 			}
 		})
-		titleEl := s.Find("a[href^=\"details.php?\"]")
+		// lemonhd: href="details_movie.php?id=12345"
+		titleEl := s.Find(`a[href^="details.php?"],a[href^="details_"]`)
 		if titleEl.Length() > 0 {
 			name = titleEl.Text()
 			name = strings.ReplaceAll(name, "[email protected]", "") // CloudFlare email obfuscation sometimes confuses with 0day torrent names such as "***-DIY@Audies"
@@ -180,9 +193,12 @@ func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) 
 		if s.Find(`*[title^="seeding"],*[title^="leeching"],*[title^="downloading"],*[title^="uploading"]`).Length() > 0 {
 			isActive = true
 		}
-		re := regexp.MustCompile(`(剩余|剩餘)(时间|時間)?[：:\s]*(?P<time>[YMDHMSymdhms年月天小时時分种鐘秒\d]+)`)
+		re := regexp.MustCompile(`(?P<free>(^|\s|\(|\[（【)(免费|免費)\s*)?(剩余|剩餘)(时间|時間)?[：:\s]*(?P<time>[YMDHMSymdhms年月天小时時分种鐘秒\d]+)`)
 		m := re.FindStringSubmatch(utils.DomSanitizedText(s))
 		if m != nil {
+			if m[re.SubexpIndex("free")] != "" {
+				downloadMultiplier = 0
+			}
 			discountEndTime, _ = utils.ParseFutureTime(m[re.SubexpIndex("time")])
 		}
 		if name != "" && downloadUrl != "" {
@@ -202,6 +218,9 @@ func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) 
 			})
 		}
 	})
+	if len(torrents) == 0 && log.GetLevel() >= log.TraceLevel {
+		log.Tracef("LatestTorrents page html: %s", utils.DomHtml(doc.Find("html")))
+	}
 	return torrents, nil
 }
 
