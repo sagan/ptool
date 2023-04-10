@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	DEFAULT_SITE_TIMEZONE                         = "Asia/Shanghai"
 	DEFAULT_CLIENT_BRUSH_MIN_DISK_SPACE           = int64(5 * 1024 * 1024 * 1024)
 	DEFAULT_CLIENT_BRUSH_SLOW_UPLOAD_SPEED_TIER   = int64(100 * 1024)
 	DEFAULT_CLIENT_BRUSH_MAX_DOWNLOADING_TORRENTS = int64(6)
@@ -42,6 +43,7 @@ type SiteConfigStruct struct {
 	Cookie                       string `yaml:"cookie"`
 	TorrentUploadSpeedLimit      string `yaml:"uploadSpeedLimit"`
 	GlobalHnR                    bool   `yaml:"globalHnR"`
+	Timezone                     string `yaml:"timezone"`
 	TorrentUploadSpeedLimitValue int64
 }
 
@@ -115,6 +117,10 @@ func Get() *ConfigStruct {
 
 				if site.Name == "" {
 					Config.Sites[i].Name = site.Type
+				}
+
+				if site.Timezone == "" {
+					Config.Sites[i].Timezone = DEFAULT_SITE_TIMEZONE
 				}
 			}
 			ConfigLoaded = true

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	cloudflarebp "github.com/DaRealFreak/cloudflare-bp-go"
 	"github.com/PuerkitoBio/goquery"
@@ -17,6 +18,7 @@ import (
 
 type Site struct {
 	Name       string
+	Location   *time.Location
 	SiteConfig *config.SiteConfigStruct
 	Config     *config.ConfigStruct
 	HttpClient *http.Client
@@ -166,11 +168,11 @@ func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) 
 					snatched = utils.ParseInt(text)
 				case "time":
 					title := s.Find("*[title]").AttrOr("title", "")
-					time, error = utils.ParseTime(title)
+					time, error = utils.ParseTime(title, npclient.Location)
 					if error == nil {
 						break
 					}
-					time, error = utils.ParseTime(text)
+					time, error = utils.ParseTime(text, npclient.Location)
 				}
 			}
 		})
@@ -228,10 +230,15 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 	if siteConfig.Cookie == "" {
 		return nil, fmt.Errorf("cann't create site: no cookie provided")
 	}
+	location, err := time.LoadLocation(siteConfig.Timezone)
+	if err != nil {
+		return nil, fmt.Errorf("Invalid site timezone: %s", siteConfig.Timezone)
+	}
 	httpClient := &http.Client{}
 	httpClient.Transport = cloudflarebp.AddCloudFlareByPass(httpClient.Transport)
 	client := &Site{
 		Name:       name,
+		Location:   location,
 		SiteConfig: siteConfig,
 		Config:     config,
 		HttpClient: httpClient,

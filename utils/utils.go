@@ -96,7 +96,7 @@ func ParseFutureTime(str string) (int64, error) {
 }
 
 // parse time. Treat duration time as pasted
-func ParseTime(str string) (int64, error) {
+func ParseTime(str string, location *time.Location) (int64, error) {
 	str = strings.TrimSpace(str)
 	if str == "" {
 		return 0, fmt.Errorf("empty str")
@@ -106,7 +106,10 @@ func ParseTime(str string) (int64, error) {
 		str = str[:10] + " " + str[10:]
 	}
 
-	t, error := time.ParseInLocation("2006-01-02 15:04:05", str, time.FixedZone("Asia/Shanghai", 8*60*60))
+	if location == nil {
+		location = time.Local
+	}
+	t, error := time.ParseInLocation("2006-01-02 15:04:05", str, location)
 	if error == nil {
 		return t.Unix(), nil
 	}
@@ -116,6 +119,14 @@ func ParseTime(str string) (int64, error) {
 		return time.Now().Unix() - td, nil
 	}
 	return 0, fmt.Errorf("invalid time str")
+}
+
+func ParseLocalDateTime(str string) (int64, error) {
+	t, error := time.ParseInLocation("2006-01-02", str, time.Local)
+	if error == nil {
+		return t.Unix(), nil
+	}
+	return 0, fmt.Errorf("invalid date str")
 }
 
 func FormatDate(ts int64) string {

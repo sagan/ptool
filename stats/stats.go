@@ -91,10 +91,10 @@ func (db *StatDb) ShowTrafficStats(client string) {
 	now := utils.Now()
 	var rows *sql.Rows
 	sql := ""
-	today := utils.FormatDate2(now)
-	yesterday := utils.FormatDate2(now - 86400)
-	yesterdayMinus7day := utils.FormatDate2(now - 86400*8)
-	yesterdayMinus30day := utils.FormatDate2(now - 86400*31)
+	today := utils.FormatDate(now)
+	yesterday := utils.FormatDate(now - 86400)
+	yesterdayMinus7day := utils.FormatDate(now - 86400*8)
+	yesterdayMinus30day := utils.FormatDate(now - 86400*31)
 	timespans := []struct {
 		name     string
 		startday string
@@ -277,15 +277,50 @@ func (db *StatDb) prepare() {
 		if err != nil || statRecord.Event != 1 {
 			continue
 		}
-		_, err = db.sqldb.Exec(
-			`INSERT INTO torrent_traffics (client, day, site, downloaded, uploaded) VALUES (?,?,?,?,?)
-			ON CONFLICT(client, day, site) DO UPDATE SET downloaded = downloaded + ?, uploaded = uploaded + ?;
-			`,
-			statRecord.Data.Client, utils.FormatDate2(statRecord.Ts), statRecord.Data.Site, statRecord.Data.Downloaded, statRecord.Data.Uploaded,
-			statRecord.Data.Downloaded, statRecord.Data.Uploaded,
-		)
-		if err != nil {
-			log.Tracef("StatDb.addAlll insert error: %s", err)
+		timespan := statRecord.Ts - statRecord.Data.Atime
+		if timespan == 0 {
+			continue // just skip it
+		}
+		aDownloadSpeed := statRecord.Data.Downloaded / timespan
+		aUploadSpeed := statRecord.Data.Uploaded / timespan
+		dailyDownloaded := 86400 * aDownloadSpeed
+		dailyUploaded := 86400 * aUploadSpeed
+
+		time := statRecord.Data.Atime
+		day := utils.FormatDate(time)
+		nexydayTime, _ := utils.ParseLocalDateTime(day)
+		nexydayTime += 86400
+		for statRecord.Ts > time {
+			isFullDay := true
+			time2 := nexydayTime
+			if time2 > statRecord.Ts {
+				time2 = statRecord.Ts
+				isFullDay = false
+			} else if time == statRecord.Data.Atime {
+				isFullDay = false
+			}
+			downloaded := int64(0)
+			uploaded := int64(0)
+			if isFullDay {
+				downloaded = dailyDownloaded
+				uploaded = dailyUploaded
+			} else {
+				downloaded = (time2 - time) * aDownloadSpeed
+				uploaded = (time2 - time) * aUploadSpeed
+			}
+			_, err = db.sqldb.Exec(
+				`INSERT INTO torrent_traffics (client, day, site, downloaded, uploaded) VALUES (?,?,?,?,?)
+				ON CONFLICT(client, day, site) DO UPDATE SET downloaded = downloaded + ?, uploaded = uploaded + ?;
+				`,
+				statRecord.Data.Client, day, statRecord.Data.Site, downloaded, uploaded,
+				downloaded, uploaded,
+			)
+			if err != nil {
+				log.Tracef("StatDb.addAlll insert error: %s", err)
+			}
+			time = nexydayTime
+			day = utils.FormatDate(time)
+			nexydayTime += 86400
 		}
 	}
 }
