@@ -98,6 +98,12 @@ func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) 
 	if err != nil {
 		return nil, fmt.Errorf("parse torrents page DOM error: %v", err)
 	}
+	torrents := []site.SiteTorrent{}
+	defer func() {
+		if len(torrents) == 0 && log.GetLevel() >= log.TraceLevel {
+			log.Tracef("LatestTorrents page html: %s", utils.DomHtml(doc.Find("html")))
+		}
+	}()
 	headerTr := doc.Find("table.torrents > tbody > tr").First()
 	if headerTr.Length() == 0 {
 		return nil, fmt.Errorf("no torrents found in page, possible a parser error")
@@ -128,7 +134,6 @@ func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) 
 			}
 		}
 	})
-	torrents := []site.SiteTorrent{}
 	doc.Find("table.torrents > tbody > tr").Each(func(i int, s *goquery.Selection) {
 		if i == 0 {
 			return
@@ -226,9 +231,6 @@ func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) 
 			})
 		}
 	})
-	if len(torrents) == 0 && log.GetLevel() >= log.TraceLevel {
-		log.Tracef("LatestTorrents page html: %s", utils.DomHtml(doc.Find("html")))
-	}
 	return torrents, nil
 }
 
