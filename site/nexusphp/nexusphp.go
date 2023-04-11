@@ -77,6 +77,12 @@ func (npclient *Site) GetStatus() (*site.Status, error) {
 	if userEl.Length() > 0 {
 		siteMeta.UserName = userEl.Text()
 	}
+	// possibly parsing error or some problem
+	if siteMeta.UserName == "" && siteMeta.UserDownloaded == 0 && siteMeta.UserUploaded == 0 {
+		if log.GetLevel() >= log.TraceLevel {
+			log.Tracef("Site GetStatus got no data, html: %s", utils.DomHtml(doc.Find("html")))
+		}
+	}
 	return siteMeta, nil
 }
 
