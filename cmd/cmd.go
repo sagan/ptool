@@ -49,6 +49,4 @@ func init() {
 	// global flags
 	RootCmd.PersistentFlags().StringVar(&config.ConfigFile, "config", configFile, "config file ([ptool.yaml])")
 	RootCmd.PersistentFlags().CountVarP(&config.VerboseLevel, "", "v", "verbose (-v, -vv, -vvv)")
-	// local flags
-	RootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

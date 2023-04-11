@@ -41,7 +41,7 @@ func init() {
 	command.Flags().BoolVar(&showAll, "all", false, "show all clients / sites.")
 	command.Flags().BoolVar(&showAllClients, "clients", false, "show all clients.")
 	command.Flags().BoolVar(&showAllSites, "sites", false, "show all sites.")
-	command.Flags().BoolVar(&showTorrents, "torrents", false, "show torrents (active torrents for client / latest torrents for site).")
+	command.Flags().BoolVarP(&showTorrents, "torrents", "t", false, "show torrents (active torrents for client / latest torrents for site).")
 	command.Flags().BoolVar(&showFull, "full", false, "show full info of each client / site")
 	cmd.RootCmd.AddCommand(command)
 }
