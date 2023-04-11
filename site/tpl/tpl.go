@@ -48,6 +48,10 @@ var (
 			Type: "nexusphp",
 			Url:  "https://cyanbug.net/",
 		},
+		"discfan": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://discfan.net/",
+		},
 		"gainbound": &config.SiteConfigStruct{
 			Type: "nexusphp",
 			Url:  "https://gainbound.net/",
