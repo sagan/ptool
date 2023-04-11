@@ -43,7 +43,7 @@ func add(cmd *cobra.Command, args []string) {
 	errCnt := int64(0)
 	torrentIds := args[2:]
 	for _, torrentId := range torrentIds {
-		torrentContent, err := siteInstance.DownloadTorrentById(torrentId)
+		torrentContent, err := siteInstance.DownloadTorrent(torrentId)
 		if err != nil {
 			fmt.Printf("add site %s torrent %s error: failed to get site torrent: %v\n", siteInstance.GetName(), torrentId, err)
 			errCnt++

@@ -40,6 +40,9 @@ func (npclient *Site) GetSiteConfig() *config.SiteConfigStruct {
 }
 
 func (npclient *Site) DownloadTorrent(url string) ([]byte, error) {
+	if regexp.MustCompile(`^\d+$`).MatchString(url) {
+		return npclient.DownloadTorrentById(url)
+	}
 	if !strings.Contains(url, "/download.php") {
 		idRegexp := regexp.MustCompile(`[?&]id=(?P<id>\d+)`)
 		m := idRegexp.FindStringSubmatch(url)
