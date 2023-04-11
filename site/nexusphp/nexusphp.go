@@ -17,11 +17,18 @@ import (
 )
 
 type Site struct {
-	Name       string
-	Location   *time.Location
-	SiteConfig *config.SiteConfigStruct
-	Config     *config.ConfigStruct
-	HttpClient *http.Client
+	Name               string
+	Location           *time.Location
+	SiteConfig         *config.SiteConfigStruct
+	Config             *config.ConfigStruct
+	HttpClient         *http.Client
+	siteStatus         *site.Status
+	latestSiteTorrents []site.Torrent
+	datatime           int64
+}
+
+func (npclient *Site) PurgeCache() {
+	npclient.datatime = 0
 }
 
 func (npclient *Site) GetName() string {
@@ -41,19 +48,52 @@ func (npclient *Site) DownloadTorrent(url string) ([]byte, error) {
 	return io.ReadAll(res.Body)
 }
 
-func (npclient *Site) GetStatus() (*site.Status, error) {
-	res, err := utils.FetchUrl(npclient.SiteConfig.Url+"torrents.php", npclient.SiteConfig.Cookie, npclient.HttpClient)
+func (npclient *Site) DownloadTorrentById(id string) ([]byte, error) {
+	res, err := utils.FetchUrl(npclient.SiteConfig.Url+"download.php?https=1&id="+fmt.Sprint(id), npclient.SiteConfig.Cookie, npclient.HttpClient)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch torrents.php from site: %v", err)
+		return nil, fmt.Errorf("can not fetch torrents from site: %v", err)
+	}
+	defer res.Body.Close()
+	return io.ReadAll(res.Body)
+}
+
+func (npclient *Site) GetStatus() (*site.Status, error) {
+	err := npclient.sync()
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch site data: %v", err)
+	}
+	return npclient.siteStatus, nil
+}
+
+func (npclient *Site) GetLatestTorrents() ([]site.Torrent, error) {
+	err := npclient.sync()
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch site data: %v", err)
+	}
+	return npclient.latestSiteTorrents, nil
+}
+
+func (npclient *Site) sync() error {
+	if npclient.datatime > 0 {
+		return nil
+	}
+	url := npclient.SiteConfig.BrushUrl
+	if url == "" {
+		url = npclient.SiteConfig.Url + "torrents.php"
+	}
+	res, err := utils.FetchUrl(url, npclient.SiteConfig.Cookie, npclient.HttpClient)
+	if err != nil {
+		return fmt.Errorf("can not fetch site data %v", err)
 	}
 	defer res.Body.Close()
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
-		return nil, fmt.Errorf("parse torrents.php DOM error: %v", err)
+		return fmt.Errorf("failed to parse site page DOM, error: %v", err)
 	}
-	siteMeta := &site.Status{}
-	infoTr := doc.Find("#info_block, .m_nav").First()
+	npclient.datatime = utils.Now()
 
+	siteStatus := &site.Status{}
+	infoTr := doc.Find("#info_block, .m_nav").First()
 	infoTxt := infoTr.Text()
 	infoTxt = strings.ReplaceAll(infoTxt, "\n", " ")
 	infoTxt = strings.ReplaceAll(infoTxt, "\r", " ")
@@ -62,43 +102,28 @@ func (npclient *Site) GetStatus() (*site.Status, error) {
 	if m != nil {
 		ss := strings.ReplaceAll(m[re.SubexpIndex("s")], " ", "")
 		s, _ := utils.RAMInBytes(ss)
-		siteMeta.UserUploaded = s
+		siteStatus.UserUploaded = s
 	}
-
 	re = regexp.MustCompile(`(下載量|下載|下载量|下载)[：:\s]+(?P<s>[.\s0-9KMGTEPBkmgtepib]+)`)
 	m = re.FindStringSubmatch(infoTxt)
 	if m != nil {
 		ss := strings.ReplaceAll(m[re.SubexpIndex("s")], " ", "")
 		s, _ := utils.RAMInBytes(ss)
-		siteMeta.UserDownloaded = s
+		siteStatus.UserDownloaded = s
 	}
-
 	userEl := doc.Find("*[href*=\"userdetails.php?\"]").First()
 	if userEl.Length() > 0 {
-		siteMeta.UserName = userEl.Text()
+		siteStatus.UserName = userEl.Text()
 	}
 	// possibly parsing error or some problem
-	if siteMeta.UserName == "" && siteMeta.UserDownloaded == 0 && siteMeta.UserUploaded == 0 {
+	if siteStatus.UserName == "" && siteStatus.UserDownloaded == 0 && siteStatus.UserUploaded == 0 {
 		if log.GetLevel() >= log.TraceLevel {
 			log.Tracef("Site GetStatus got no data, html: %s", utils.DomHtml(doc.Find("html")))
 		}
 	}
-	return siteMeta, nil
-}
+	npclient.siteStatus = siteStatus
 
-func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) {
-	if url == "" {
-		url = npclient.SiteConfig.Url + "torrents.php"
-	}
-	res, err := utils.FetchUrl(url, npclient.SiteConfig.Cookie, npclient.HttpClient)
-	if err != nil {
-		return nil, fmt.Errorf("can not fetch torrents from site: %v", err)
-	}
-	doc, err := goquery.NewDocumentFromReader(res.Body)
-	if err != nil {
-		return nil, fmt.Errorf("parse torrents page DOM error: %v", err)
-	}
-	torrents := []site.SiteTorrent{}
+	torrents := []site.Torrent{}
 	defer func() {
 		if len(torrents) == 0 && log.GetLevel() >= log.TraceLevel {
 			log.Tracef("LatestTorrents page html: %s", utils.DomHtml(doc.Find("html")))
@@ -106,7 +131,7 @@ func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) 
 	}()
 	headerTr := doc.Find("table.torrents > tbody > tr").First()
 	if headerTr.Length() == 0 {
-		return nil, fmt.Errorf("no torrents found in page, possible a parser error")
+		return nil
 	}
 	fieldColumIndex := map[string]int{
 		"time":     -1,
@@ -139,6 +164,7 @@ func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) 
 			return
 		}
 		name := ""
+		id := ""
 		downloadUrl := ""
 		size := int64(0)
 		seeders := int64(0)
@@ -152,6 +178,7 @@ func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) 
 		isActive := false
 		var error error = nil
 		processValueRegexp := regexp.MustCompile(`\d+(\.\d+)?%`)
+		idRegexp := regexp.MustCompile(`[?&]id=(?P<id>\d+)`)
 
 		s.Children().Each(func(i int, s *goquery.Selection) {
 			for field, index := range fieldColumIndex {
@@ -196,6 +223,10 @@ func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) 
 		downloadEl := s.Find("a[href^=\"download.php?\"]")
 		if downloadEl.Length() > 0 {
 			downloadUrl = npclient.SiteConfig.Url + downloadEl.AttrOr("href", "")
+			m := idRegexp.FindStringSubmatch(downloadUrl)
+			if m != nil {
+				id = m[idRegexp.SubexpIndex("id")]
+			}
 		}
 		if s.Find(`*[title="H&R"],*[alt="H&R"]`).Length() > 0 {
 			hnr = true
@@ -215,8 +246,9 @@ func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) 
 			discountEndTime, _ = utils.ParseFutureTime(m[re.SubexpIndex("time")])
 		}
 		if name != "" && downloadUrl != "" {
-			torrents = append(torrents, site.SiteTorrent{
+			torrents = append(torrents, site.Torrent{
 				Name:               name,
+				Id:                 id,
 				Size:               size,
 				DownloadUrl:        downloadUrl,
 				Leechers:           leechers,
@@ -231,7 +263,8 @@ func (npclient *Site) GetLatestTorrents(url string) ([]site.SiteTorrent, error) 
 			})
 		}
 	})
-	return torrents, nil
+	npclient.latestSiteTorrents = torrents
+	return nil
 }
 
 func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.ConfigStruct) (site.Site, error) {

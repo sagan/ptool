@@ -20,8 +20,9 @@ import (
 var (
 	filter         = ""
 	category       = ""
-	showAll        = false
+	showTorrents   = false
 	showFull       = false
+	showAll        = false
 	showAllClients = false
 	showAllSites   = false
 )
@@ -40,6 +41,7 @@ func init() {
 	command.Flags().BoolVar(&showAll, "all", false, "show all clients / sites.")
 	command.Flags().BoolVar(&showAllClients, "clients", false, "show all clients.")
 	command.Flags().BoolVar(&showAllSites, "sites", false, "show all sites.")
+	command.Flags().BoolVar(&showTorrents, "torrents", false, "show torrents (active torrents for client / latest torrents for site).")
 	command.Flags().BoolVar(&showFull, "full", false, "show full info of each client / site")
 	cmd.RootCmd.AddCommand(command)
 }
@@ -64,7 +66,6 @@ func status(cmd *cobra.Command, args []string) {
 	if len(names) == 0 {
 		log.Fatal("Usage: status ...clientOrSites")
 	}
-	isSingle := len(names) == 1
 	hasError := false
 	doneFlag := make(map[string](bool))
 	cnt := int64(0)
@@ -81,7 +82,7 @@ func status(cmd *cobra.Command, args []string) {
 				hasError = true
 				continue
 			}
-			go fetchClientStatus(clientInstance, isSingle || showFull, isSingle && showFull, category, ch)
+			go fetchClientStatus(clientInstance, showTorrents, showFull, category, ch)
 			cnt++
 		} else if site.SiteExists(name) {
 			siteInstance, err := site.CreateSite(name)
@@ -90,7 +91,7 @@ func status(cmd *cobra.Command, args []string) {
 				hasError = true
 				continue
 			}
-			go fetchSiteStatus(siteInstance, ch)
+			go fetchSiteStatus(siteInstance, showTorrents, ch)
 			cnt++
 		} else {
 			log.Errorf("Error: %s is not a client or site\n", name)
@@ -132,19 +133,22 @@ func status(cmd *cobra.Command, args []string) {
 				fmt.Printf("Client %s: failed to get status\n", response.Name)
 			}
 			if response.ClientTorrents != nil {
-				fmt.Printf("\nName  InfoHash  Tracker  State  ↓S  ↑S  Meta\n")
+				fmt.Printf("%-40s  %40s  %25s  %11s  %12s  %12s\n", "Name", "InfoHash", "Tracker", "State", "↓S", "↑S")
 				for _, torrent := range response.ClientTorrents {
 					if filter != "" && !utils.ContainsI(torrent.Name, filter) && !utils.ContainsI(torrent.InfoHash, filter) {
 						continue
 					}
-					fmt.Printf("%s  %s  %s  %s %s/s %s/s %v\n",
-						torrent.Name,
+					name := torrent.Name
+					if len(name) > 37 {
+						name = name[:37] + "..."
+					}
+					fmt.Printf("%-40s  %40s  %25s  %11s  %10s/s  %10s/s\n",
+						name,
 						torrent.InfoHash,
 						torrent.TrackerDomain,
 						client.TorrentStateIconText(torrent.State),
 						utils.BytesSize(float64(torrent.DownloadSpeed)),
 						utils.BytesSize(float64(torrent.UploadSpeed)),
-						torrent.Meta,
 					)
 				}
 				if i != len(responses)-1 {
@@ -165,6 +169,41 @@ func status(cmd *cobra.Command, args []string) {
 				)
 			} else {
 				fmt.Printf("Site %s: failed to get status\n", response.Name)
+			}
+			if response.SiteTorrents != nil {
+				fmt.Printf("%-40s  %10s  %4s  %19s  %4s  %4s  %4s  %10s  %2s\n", "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "P")
+				for _, torrent := range response.SiteTorrents {
+					if filter != "" && !utils.ContainsI(torrent.Name, filter) {
+						continue
+					}
+					freeStr := "✕"
+					if torrent.DownloadMultiplier == 0 {
+						freeStr = "✓"
+					}
+					name := torrent.Name
+					if len(name) > 37 {
+						name = name[:37] + "..."
+					}
+					process := "-"
+					if torrent.IsActive {
+						process = "0%"
+					}
+
+					fmt.Printf("%-40s  %10s  %4s  %19s  %4s  %4s  %4s  %10s  %2s\n",
+						name,
+						utils.BytesSize(float64(torrent.Size)),
+						freeStr,
+						utils.FormatTime(torrent.Time),
+						fmt.Sprint(torrent.Seeders),
+						fmt.Sprint(torrent.Leechers),
+						fmt.Sprint(torrent.Snatched),
+						torrent.Id,
+						process,
+					)
+				}
+				if i != len(responses)-1 {
+					fmt.Printf("\n")
+				}
 			}
 		}
 	}

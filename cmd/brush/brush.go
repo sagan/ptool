@@ -71,7 +71,7 @@ func brush(cmd *cobra.Command, args []string) {
 			log.Printf("Failed to get client %s status: %v", clientInstance.GetName(), err)
 			continue
 		}
-		var siteTorrents []site.SiteTorrent
+		var siteTorrents []site.Torrent
 		if status.UploadSpeedLimit > 0 && status.UploadSpeedLimit < 100*1024 ||
 			status.UploadSpeed > 0 &&
 				(float64(status.UploadSpeed)/float64(status.UploadSpeedLimit)) >= 0.8 {
@@ -84,11 +84,7 @@ func brush(cmd *cobra.Command, args []string) {
 		} else if siteInstance.GetSiteConfig().GlobalHnR {
 			log.Printf("Site %s enforces global HnR. Do not fetch site new torrents", sitename)
 		} else {
-			url := ""
-			if siteInstance.GetSiteConfig().BrushUrl != "" {
-				url = siteInstance.GetSiteConfig().BrushUrl
-			}
-			siteTorrents, err = siteInstance.GetLatestTorrents(url)
+			siteTorrents, err = siteInstance.GetLatestTorrents()
 			if err != nil {
 				log.Printf("failed to fetch site %s torrents: %v", sitename, err)
 			}

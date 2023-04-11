@@ -97,7 +97,7 @@ func isCompleted(torrent *client.Torrent) bool {
  * Add new torrents to client when server uploading bandwidth is somewhat idle AND there is SOME free disk space.
  *
  */
-func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTorrents []site.SiteTorrent, option *BrushOptionStruct) (result *AlgorithmResult) {
+func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTorrents []site.Torrent, option *BrushOptionStruct) (result *AlgorithmResult) {
 	result = &AlgorithmResult{}
 
 	cntTorrents := int64(len(clientTorrents))
@@ -110,7 +110,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	var stallTorrents []AlgorithmModifyTorrent
 	var deleteCandidateTorrents []candidateClientTorrentStruct
 	clientTorrentsMap := make(map[string](*clientTorrentInfoStruct))
-	siteTorrentsMap := make(map[string](*site.SiteTorrent))
+	siteTorrentsMap := make(map[string](*site.Torrent))
 
 	targetUploadSpeed := clientStatus.UploadSpeedLimit
 	if targetUploadSpeed <= 0 {
@@ -348,7 +348,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	return
 }
 
-func rateSiteTorrent(siteTorrent *site.SiteTorrent, brushOption *BrushOptionStruct) (score float64, predictionUploadSpeed int64) {
+func rateSiteTorrent(siteTorrent *site.Torrent, brushOption *BrushOptionStruct) (score float64, predictionUploadSpeed int64) {
 	if log.GetLevel() >= log.TraceLevel {
 		defer func() {
 			log.Tracef("rateSiteTorrent score=%0.0f name=%s, free=%t, rtime=%d, seeders=%d, leechers=%d",

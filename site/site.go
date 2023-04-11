@@ -7,8 +7,9 @@ import (
 	"github.com/sagan/ptool/utils"
 )
 
-type SiteTorrent struct {
+type Torrent struct {
 	Name               string
+	Id                 string // optional torrent id in the site
 	InfoHash           string
 	DownloadUrl        string
 	DownloadMultiplier float64
@@ -36,8 +37,10 @@ type Site interface {
 	GetName() string
 	GetSiteConfig() *config.SiteConfigStruct
 	DownloadTorrent(url string) ([]byte, error)
-	GetLatestTorrents(url string) ([]SiteTorrent, error)
+	DownloadTorrentById(id string) ([]byte, error)
+	GetLatestTorrents() ([]Torrent, error)
 	GetStatus() (*Status, error)
+	PurgeCache()
 }
 
 type RegInfo struct {
@@ -86,7 +89,7 @@ func CreateSite(name string) (Site, error) {
 	return CreateSiteInternal(name, siteConfig, config.Get())
 }
 
-func Print(siteTorrents []SiteTorrent) {
+func Print(siteTorrents []Torrent) {
 	for _, siteTorrent := range siteTorrents {
 		fmt.Printf(
 			"%s, %s, %s, %d, %d, HR=%t\n",

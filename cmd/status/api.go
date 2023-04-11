@@ -13,6 +13,7 @@ type StatusResponse struct {
 	ClientStatus   *client.Status
 	ClientTorrents []client.Torrent
 	SiteStatus     *site.Status
+	SiteTorrents   []site.Torrent // latest site torrents
 	Error          error
 }
 
@@ -38,13 +39,23 @@ func fetchClientStatus(clientInstance client.Client, showTorrents bool, showAllT
 	ch <- response
 }
 
-func fetchSiteStatus(siteInstance site.Site, ch chan *StatusResponse) {
+func fetchSiteStatus(siteInstance site.Site, showTorrents bool, ch chan *StatusResponse) {
 	response := &StatusResponse{Name: siteInstance.GetName(), Kind: 2}
 
 	SiteStatus, err := siteInstance.GetStatus()
 	response.SiteStatus = SiteStatus
 	if err != nil {
 		response.Error = fmt.Errorf("cann't get site %s status: error=%v", siteInstance.GetName(), err)
+		ch <- response
+		return
+	}
+
+	if showTorrents {
+		siteTorrents, err := siteInstance.GetLatestTorrents()
+		response.SiteTorrents = siteTorrents
+		if err != nil {
+			response.Error = fmt.Errorf("cann't get site %s torrents: %v", siteInstance.GetName(), err)
+		}
 	}
 
 	ch <- response
