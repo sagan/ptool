@@ -38,9 +38,9 @@ var command = &cobra.Command{
 func init() {
 	command.Flags().StringVar(&filter, "filter", "", "filter client torrents by name")
 	command.Flags().StringVar(&category, "category", "", "filter client torrents by category")
-	command.Flags().BoolVar(&showAll, "all", false, "show all clients / sites.")
-	command.Flags().BoolVar(&showAllClients, "clients", false, "show all clients.")
-	command.Flags().BoolVar(&showAllSites, "sites", false, "show all sites.")
+	command.Flags().BoolVarP(&showAll, "all", "a", false, "show all clients / sites.")
+	command.Flags().BoolVarP(&showAllClients, "clients", "c", false, "show all clients.")
+	command.Flags().BoolVarP(&showAllSites, "sites", "s", false, "show all sites.")
 	command.Flags().BoolVarP(&showTorrents, "torrents", "t", false, "show torrents (active torrents for client / latest torrents for site).")
 	command.Flags().BoolVar(&showFull, "full", false, "show full info of each client / site")
 	cmd.RootCmd.AddCommand(command)
