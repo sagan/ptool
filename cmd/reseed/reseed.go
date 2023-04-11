@@ -10,8 +10,8 @@ import (
 
 var command = &cobra.Command{
 	Use:   "reseed source",
-	Short: "Reseed use iyuu API",
-	Long:  `A longer description`,
+	Short: "Reseed using iyuu API.",
+	Long:  `Reseed using iyuu API.`,
 	Run:   reseed,
 }
 

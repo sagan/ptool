@@ -26,6 +26,7 @@ type Client struct {
 	Config       *config.ConfigStruct
 	HttpClient   *http.Client
 	data         apiSyncMaindata
+	Logined      bool
 	datatime     int64
 }
 
@@ -62,11 +63,18 @@ func (qbclient *Client) apiRequest(apiPath string, v any) error {
 }
 
 func (qbclient *Client) login() error {
+	if qbclient.Logined {
+		return nil
+	}
 	data := url.Values{
 		"username": {qbclient.ClientConfig.Username},
 		"password": {qbclient.ClientConfig.Password},
 	}
-	return qbclient.apiPost("api/v2/auth/login", data)
+	err := qbclient.apiPost("api/v2/auth/login", data)
+	if err == nil {
+		qbclient.Logined = true
+	}
+	return err
 }
 
 func (qbclient *Client) GetName() string {
@@ -78,6 +86,11 @@ func (qbclient *Client) GetClientConfig() *config.ClientConfigStruct {
 }
 
 func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.TorrentOption, meta map[string](int64)) error {
+	err := qbclient.login()
+	if err != nil {
+		return errors.New("login error " + err.Error())
+	}
+
 	name := client.GenerateNameWithMeta(option.Name, meta)
 	body := new(bytes.Buffer)
 	mp := multipart.NewWriter(body)
@@ -92,13 +105,15 @@ func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 		return err
 	}
 	torrentPartWriter.Write(torrentContent)
-	mp.WriteField("category", option.Category)
 	mp.WriteField("rename", name)
 	mp.WriteField("root_folder", "true")
-	mp.WriteField("tags", strings.Join(option.Tags, ","))
-	mp.WriteField("paused", fmt.Sprint(option.Paused))
-	mp.WriteField("upLimit", fmt.Sprint(option.UploadSpeedLimit))
-	mp.WriteField("dlLimit", fmt.Sprint(option.DownloadSpeedLimit))
+	if option != nil {
+		mp.WriteField("category", option.Category)
+		mp.WriteField("tags", strings.Join(option.Tags, ","))
+		mp.WriteField("paused", fmt.Sprint(option.Paused))
+		mp.WriteField("upLimit", fmt.Sprint(option.UploadSpeedLimit))
+		mp.WriteField("dlLimit", fmt.Sprint(option.DownloadSpeedLimit))
+	}
 	resp, err := qbclient.HttpClient.Post(qbclient.ClientConfig.Url+"api/v2/torrents/add",
 		mp.FormDataContentType(), body)
 	if err != nil {

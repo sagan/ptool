@@ -24,8 +24,8 @@ const (
 
 var command = &cobra.Command{
 	Use:   "brush <client> <site>...",
-	Short: "Brush site using client",
-	Long:  `A longer description`,
+	Short: "Brush site using client.",
+	Long:  `Brush site using client.`,
 	Args:  cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	Run:   brush,
 }

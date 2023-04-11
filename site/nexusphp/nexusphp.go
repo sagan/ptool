@@ -40,6 +40,13 @@ func (npclient *Site) GetSiteConfig() *config.SiteConfigStruct {
 }
 
 func (npclient *Site) DownloadTorrent(url string) ([]byte, error) {
+	if !strings.Contains(url, "/download.php") {
+		idRegexp := regexp.MustCompile(`[?&]id=(?P<id>\d+)`)
+		m := idRegexp.FindStringSubmatch(url)
+		if m != nil {
+			return npclient.DownloadTorrentById(m[idRegexp.SubexpIndex("id")])
+		}
+	}
 	res, err := utils.FetchUrl(url, npclient.SiteConfig.Cookie, npclient.HttpClient)
 	if err != nil {
 		return nil, fmt.Errorf("can not fetch torrents from site: %v", err)

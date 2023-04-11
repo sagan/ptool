@@ -11,8 +11,8 @@ import (
 
 var command = &cobra.Command{
 	Use:   "version",
-	Short: "Display version",
-	Long:  `A longer description`,
+	Short: "Display version.",
+	Long:  `Display version.`,
 	Args:  cobra.MatchAll(cobra.ExactArgs(0), cobra.OnlyValidArgs),
 	Run:   version,
 }
