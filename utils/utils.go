@@ -68,6 +68,48 @@ func ParseInt(str string) int64 {
 	return v
 }
 
+func FormatDuration(seconds int64) (str string) {
+	dStr := ""
+	hStr := ""
+	mStr := ""
+	sStr := ""
+
+	d := seconds / 86400
+	if d > 0 {
+		dStr = fmt.Sprint(d, "d")
+	}
+	seconds %= 86400
+
+	h := seconds / 3600
+	if h > 0 {
+		hStr = fmt.Sprint(h, "h")
+	}
+	seconds %= 3600
+
+	m := seconds / 60
+	if m > 0 {
+		mStr = fmt.Sprint(m, "m")
+	}
+	seconds %= 60
+
+	if seconds > 0 {
+		sStr = fmt.Sprint(seconds, "s")
+	}
+
+	strs := []string{dStr, hStr, mStr, sStr}
+	i := 0
+	for _, s := range strs {
+		if s != "" {
+			str += s
+			i++
+		}
+		if i == 2 {
+			break
+		}
+	}
+	return
+}
+
 func ParseTimeDuration(str string) (int64, error) {
 	str = strings.ReplaceAll(str, "周", "w")
 	str = strings.ReplaceAll(str, "天", "d")

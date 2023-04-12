@@ -139,6 +139,24 @@ func (npclient *Site) sync() error {
 			log.Tracef("LatestTorrents page html: %s", utils.DomHtml(doc.Find("html")))
 		}
 	}()
+
+	globalDiscountEndTime := int64(0)
+	doc.Find(`b a[href="torrents.php"]`).EachWithBreak(func(i int, s *goquery.Selection) bool {
+		txt := utils.DomSanitizedText(s)
+		// eg. '全站 [2X Free] 生效中！时间：2023-04-12 13:50:00 ~ 2023-04-15 13:50:00'
+		re = regexp.MustCompile(`全站 \[(?P<discount>(\dX Free|Free))\] 生效中！时间：(?P<start>[-\d\s:]+)\s*~\s*(?P<end>[-\d\s:]+)`)
+		m := re.FindStringSubmatch(txt)
+		if m != nil {
+			t1, err1 := utils.ParseTime(m[re.SubexpIndex("start")], npclient.Location)
+			t2, err2 := utils.ParseTime(m[re.SubexpIndex("end")], npclient.Location)
+			if err1 == nil && err2 == nil && npclient.datatime >= t1 && npclient.datatime < t2 {
+				globalDiscountEndTime = t2
+			}
+			return false
+		}
+		return true
+	})
+
 	headerTr := doc.Find("table.torrents > tbody > tr").First()
 	if headerTr.Length() == 0 {
 		return nil
@@ -257,6 +275,9 @@ func (npclient *Site) sync() error {
 				downloadMultiplier = 0
 			}
 			discountEndTime, _ = utils.ParseFutureTime(m[re.SubexpIndex("time")])
+		}
+		if discountEndTime <= 0 && globalDiscountEndTime > 0 {
+			discountEndTime = globalDiscountEndTime
 		}
 		if name != "" && downloadUrl != "" {
 			torrents = append(torrents, site.Torrent{
