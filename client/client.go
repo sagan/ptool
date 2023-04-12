@@ -15,7 +15,7 @@ type Torrent struct {
 	TrackerDomain      string
 	State              string // simplifiec state: seeding|downloading|completed|paused
 	Atime              int64  // timestamp torrent added
-	Ctime              int64  // timestamp torrent completed.
+	Ctime              int64  // timestamp torrent completed. <=0 if not completed.
 	Category           string
 	Tags               []string
 	Downloaded         int64

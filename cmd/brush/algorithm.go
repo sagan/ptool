@@ -2,6 +2,7 @@ package brush
 
 import (
 	"fmt"
+	"math"
 	"sort"
 
 	log "github.com/sirupsen/logrus"
@@ -86,10 +87,6 @@ func notStalled(torrent *client.Torrent) bool {
 	return torrent.State == "downloading" && torrent.Meta["stt"] == 0
 }
 
-func isCompleted(torrent *client.Torrent) bool {
-	return torrent.State == "completed" || torrent.State == "seeding"
-}
-
 /*
  * Strategy
  * Delete a torrent from client ONLY when it's uploading speed become SLOW enough AND free disk space insufficient.
@@ -154,7 +151,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 		}
 
 		// mark torrents that discount time ends as stall
-		if torrent.Meta["dcet"] > 0 && torrent.Meta["dcet"]-option.Now <= 3600 && !isCompleted(&torrent) {
+		if torrent.Meta["dcet"] > 0 && torrent.Meta["dcet"]-option.Now <= 3600 && torrent.Ctime <= 0 {
 			if notStalled(&torrent) {
 				meta := utils.CopyMap(torrent.Meta)
 				meta["stt"] = option.Now
@@ -194,8 +191,12 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 							clientTorrentsMap[torrent.InfoHash].StallFlag = true
 						}
 						score := -float64(torrent.UploadSpeed)
-						if !isCompleted(&torrent) && torrent.Meta["stt"] > 0 {
-							score -= float64(option.Now) - float64(torrent.Meta["stt"])
+						if torrent.Ctime <= 0 {
+							if torrent.Meta["stt"] > 0 {
+								score += float64(option.Now) - float64(torrent.Meta["stt"])
+							}
+						} else {
+							score += math.Min(float64(option.Now-torrent.Ctime), 86400)
 						}
 						deleteCandidateTorrents = append(deleteCandidateTorrents, candidateClientTorrentStruct{
 							InfoHash:    torrent.InfoHash,
@@ -250,7 +251,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	// delete torrents
 	for _, deleteTorrent := range deleteCandidateTorrents {
 		torrent := clientTorrentsMap[deleteTorrent.InfoHash].Torrent
-		if (isCompleted(torrent) || torrent.Meta["stt"] == 0 || option.Now-torrent.Meta["stt"] < 30*60) && freespace >= option.MinDiskSpace {
+		if (torrent.Ctime > 0 || torrent.Meta["stt"] == 0 || option.Now-torrent.Meta["stt"] < 30*60) && freespace >= option.MinDiskSpace {
 			continue
 		}
 		result.DeleteTorrents = append(result.DeleteTorrents, AlgorithmOperationTorrent{
@@ -270,7 +271,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	// if still not enough free space, delete ALL stalled incomplete torrents
 	if freespace < option.MinDiskSpace {
 		for _, torrent := range clientTorrents {
-			if clientTorrentsMap[torrent.InfoHash].DeleteFlag || isCompleted(&torrent) || torrent.Meta["stt"] == 0 {
+			if clientTorrentsMap[torrent.InfoHash].DeleteFlag || torrent.Ctime > 0 || torrent.Meta["stt"] == 0 {
 				continue
 			}
 			result.DeleteTorrents = append(result.DeleteTorrents, AlgorithmOperationTorrent{
