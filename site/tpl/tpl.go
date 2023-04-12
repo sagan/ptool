@@ -22,6 +22,10 @@ var (
 			Type: "nexusphp",
 			Url:  "https://www.3wmg.com/",
 		},
+		"52pt": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://52pt.site/",
+		},
 		"audiences": &config.SiteConfigStruct{
 			Type: "nexusphp",
 			Url:  "https://audiences.me/",
