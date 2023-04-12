@@ -22,6 +22,7 @@ const (
 
 type ClientConfigStruct struct {
 	Name                          string  `yaml:"name"`
+	Disabled                      bool    `yaml:"disabled"`
 	Type                          string  `yaml:"type"`
 	Url                           string  `yaml:"url"`
 	Username                      string  `yaml:"username"`
@@ -37,6 +38,7 @@ type ClientConfigStruct struct {
 
 type SiteConfigStruct struct {
 	Name                         string `yaml:"name"`
+	Disabled                     bool   `yaml:"disabled"`
 	Type                         string `yaml:"type"`
 	Url                          string `yaml:"url"`
 	BrushUrl                     string `yaml:"brushUrl"`
@@ -125,6 +127,12 @@ func Get() *ConfigStruct {
 			}
 			ConfigLoaded = true
 		}
+		Config.Clients = utils.Filter(Config.Clients, func(c ClientConfigStruct) bool {
+			return !c.Disabled
+		})
+		Config.Sites = utils.Filter(Config.Sites, func(s SiteConfigStruct) bool {
+			return !s.Disabled
+		})
 		mu.Unlock()
 	}
 	return Config
