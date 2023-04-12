@@ -264,6 +264,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 		if isDownloading(torrent) {
 			cntDownloadingTorrents--
 		}
+		cntTorrents--
 	}
 
 	// if still not enough free space, delete ALL stalled incomplete torrents
@@ -283,9 +284,41 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 			if isDownloading(&torrent) {
 				cntDownloadingTorrents--
 			}
+			cntTorrents--
 		}
 	}
-	// if still still not enough free space, mark ALL torrents as stall
+
+	// delete torrents due to max brush torrents limit
+	if cntTorrents > option.MaxTorrents && len(candidateTorrents) > 0 {
+		cntDeleteDueToMaxTorrents := cntTorrents - option.MaxTorrents
+		if cntDeleteDueToMaxTorrents > int64(len(candidateTorrents)) {
+			cntDeleteDueToMaxTorrents = int64(len(candidateTorrents))
+		}
+		for _, deleteTorrent := range deleteCandidateTorrents {
+			torrent := clientTorrentsMap[deleteTorrent.InfoHash].Torrent
+			if clientTorrentsMap[torrent.InfoHash].DeleteFlag {
+				continue
+			}
+			result.DeleteTorrents = append(result.DeleteTorrents, AlgorithmOperationTorrent{
+				InfoHash: torrent.InfoHash,
+				Name:     torrent.Name,
+				Msg:      deleteTorrent.Msg + " (delete due to max torrents limit)",
+			})
+			freespace += torrent.SizeCompleted
+			estimateUploadSpeed -= torrent.UploadSpeed
+			clientTorrentsMap[torrent.InfoHash].DeleteFlag = true
+			if isDownloading(torrent) {
+				cntDownloadingTorrents--
+			}
+			cntTorrents--
+			cntDeleteDueToMaxTorrents--
+			if cntDeleteDueToMaxTorrents == 0 {
+				break
+			}
+		}
+	}
+
+	// if still not enough free space, mark ALL torrents as stall
 	if freespace < option.MinDiskSpace {
 		for _, torrent := range clientTorrents {
 			if clientTorrentsMap[torrent.InfoHash].DeleteFlag || clientTorrentsMap[torrent.InfoHash].StallFlag {
@@ -325,8 +358,8 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	}
 
 	// add new torrents
-	if freespace >= option.MinDiskSpace {
-		for cntTorrents < option.MaxTorrents && cntDownloadingTorrents < option.MaxDownloadingTorrents && estimateUploadSpeed <= targetUploadSpeed*2 && len(candidateTorrents) > 0 {
+	if freespace >= option.MinDiskSpace && cntTorrents <= option.MaxTorrents {
+		for cntDownloadingTorrents < option.MaxDownloadingTorrents && estimateUploadSpeed <= targetUploadSpeed*2 && len(candidateTorrents) > 0 {
 			candidateTorrent := candidateTorrents[0]
 			candidateTorrents = candidateTorrents[1:]
 			result.AddTorrents = append(result.AddTorrents, AlgorithmAddTorrent{
@@ -341,7 +374,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 		}
 	}
 
-	if cntTorrents < option.MaxTorrents && cntDownloadingTorrents < option.MaxDownloadingTorrents && estimateUploadSpeed <= targetUploadSpeed*2 {
+	if cntTorrents <= option.MaxTorrents && cntDownloadingTorrents < option.MaxDownloadingTorrents && estimateUploadSpeed <= targetUploadSpeed*2 {
 		result.CanAddMore = true
 	}
 
