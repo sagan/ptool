@@ -241,7 +241,10 @@ func (npclient *Site) sync() error {
 		if s.Find(`*[title="H&R"],*[alt="H&R"]`).Length() > 0 {
 			hnr = true
 		}
-		if s.Find(`*[title="免费"],*[title="免費"],*[alt="Free"],*[alt="FREE"],*[alt="2X Free"]`).Length() > 0 {
+		if s.Find(`*[alt="2X Free"]`).Length() > 0 {
+			downloadMultiplier = 0
+			uploadMultiplier = 2
+		} else if s.Find(`*[title="免费"],*[title="免費"],*[alt="Free"],*[alt="FREE"]`).Length() > 0 {
 			downloadMultiplier = 0
 		}
 		if s.Find(`*[title^="seeding"],*[title^="leeching"],*[title^="downloading"],*[title^="uploading"]`).Length() > 0 {

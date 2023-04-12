@@ -171,7 +171,7 @@ func status(cmd *cobra.Command, args []string) {
 				fmt.Printf("Site %s: failed to get status\n", response.Name)
 			}
 			if response.SiteTorrents != nil {
-				fmt.Printf("%-40s  %10s  %4s  %19s  %4s  %4s  %4s  %10s  %2s\n", "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "P")
+				fmt.Printf("%-40s  %10s  %5s  %19s  %4s  %4s  %4s  %10s  %2s\n", "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "P")
 				for _, torrent := range response.SiteTorrents {
 					if filter != "" && !utils.ContainsI(torrent.Name, filter) {
 						continue
@@ -179,6 +179,9 @@ func status(cmd *cobra.Command, args []string) {
 					freeStr := "✕"
 					if torrent.DownloadMultiplier == 0 {
 						freeStr = "✓"
+					}
+					if torrent.UploadMultiplier > 1 {
+						freeStr = fmt.Sprintf("%1.1fX", torrent.UploadMultiplier) + freeStr
 					}
 					name := torrent.Name
 					if len(name) > 37 {
@@ -189,7 +192,7 @@ func status(cmd *cobra.Command, args []string) {
 						process = "0%"
 					}
 
-					fmt.Printf("%-40s  %10s  %4s  %19s  %4s  %4s  %4s  %10s  %2s\n",
+					fmt.Printf("%-40s  %10s  %5s  %19s  %4s  %4s  %4s  %10s  %2s\n",
 						name,
 						utils.BytesSize(float64(torrent.Size)),
 						freeStr,
