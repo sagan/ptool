@@ -71,6 +71,10 @@ func brush(cmd *cobra.Command, args []string) {
 			log.Printf("Failed to get client %s status: %v", clientInstance.GetName(), err)
 			continue
 		}
+		if status.FreeSpaceOnDisk == 0 && config.Get().TreatZeroFreeDiskSpaceAsError {
+			log.Warnf("Warn: FreeSpaceOnDisk=0, treat it as an error value.")
+			status.FreeSpaceOnDisk = 1024 * 1024 * 1024 * 1024
+		}
 		var siteTorrents []site.Torrent
 		if status.UploadSpeedLimit > 0 && (status.UploadSpeedLimit < 100*1024 ||
 			(float64(status.UploadSpeed)/float64(status.UploadSpeedLimit)) >= 0.8) {
@@ -101,7 +105,7 @@ func brush(cmd *cobra.Command, args []string) {
 			MaxDownloadingTorrents:  clientInstance.GetClientConfig().BrushMaxDownloadingTorrents,
 			MaxTorrents:             clientInstance.GetClientConfig().BrushMaxTorrents,
 			MinRatio:                clientInstance.GetClientConfig().BrushMinRatio,
-			DefaultUploadSpeedLimit: clientInstance.GetClientConfig().BrushDefaultUploadSpeedLimit,
+			DefaultUploadSpeedLimit: clientInstance.GetClientConfig().BrushDefaultUploadSpeedLimitValue,
 			Now:                     utils.Now(),
 		}
 		log.Printf(

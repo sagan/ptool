@@ -22,20 +22,21 @@ const (
 )
 
 type ClientConfigStruct struct {
-	Name                          string  `yaml:"name"`
-	Disabled                      bool    `yaml:"disabled"`
-	Type                          string  `yaml:"type"`
-	Url                           string  `yaml:"url"`
-	Username                      string  `yaml:"username"`
-	Password                      string  `yaml:"password"`
-	BrushMinDiskSpace             string  `yaml:"brushMinDiskSpace"`
-	BrushSlowUploadSpeedTier      string  `yaml:"brushSlowUploadSpeedTier"`
-	BrushMaxDownloadingTorrents   int64   `yaml:"brushMaxDownloadingTorrents"`
-	BrushMaxTorrents              int64   `yaml:"brushMaxTorrents"`
-	BrushMinRatio                 float64 `yaml:"brushMinRatio"`
-	BrushDefaultUploadSpeedLimit  int64   `yaml:"brushDefaultUploadSpeedLimit"`
-	BrushMinDiskSpaceValue        int64
-	BrushSlowUploadSpeedTierValue int64
+	Name                              string  `yaml:"name"`
+	Disabled                          bool    `yaml:"disabled"`
+	Type                              string  `yaml:"type"`
+	Url                               string  `yaml:"url"`
+	Username                          string  `yaml:"username"`
+	Password                          string  `yaml:"password"`
+	BrushMinDiskSpace                 string  `yaml:"brushMinDiskSpace"`
+	BrushSlowUploadSpeedTier          string  `yaml:"brushSlowUploadSpeedTier"`
+	BrushMaxDownloadingTorrents       int64   `yaml:"brushMaxDownloadingTorrents"`
+	BrushMaxTorrents                  int64   `yaml:"brushMaxTorrents"`
+	BrushMinRatio                     float64 `yaml:"brushMinRatio"`
+	BrushDefaultUploadSpeedLimit      string  `yaml:"brushDefaultUploadSpeedLimit"`
+	BrushMinDiskSpaceValue            int64
+	BrushSlowUploadSpeedTierValue     int64
+	BrushDefaultUploadSpeedLimitValue int64
 }
 
 type SiteConfigStruct struct {
@@ -52,10 +53,11 @@ type SiteConfigStruct struct {
 }
 
 type ConfigStruct struct {
-	IyuuToken        string               `yaml:"iyuutoken"`
-	BrushEnableStats bool                 `yaml:"brushEnableStats"`
-	Clients          []ClientConfigStruct `yaml:"clients"`
-	Sites            []SiteConfigStruct   `yaml:"sites"`
+	IyuuToken                     string               `yaml:"iyuutoken"`
+	BrushEnableStats              bool                 `yaml:"brushEnableStats"`
+	TreatZeroFreeDiskSpaceAsError bool                 `yaml:"treatZeroFreeDiskSpaceAsError"`
+	Clients                       []ClientConfigStruct `yaml:"clients"`
+	Sites                         []SiteConfigStruct   `yaml:"sites"`
 }
 
 var (
@@ -96,6 +98,12 @@ func Get() *ConfigStruct {
 				}
 				Config.Clients[i].BrushSlowUploadSpeedTierValue = v
 
+				v, err = utils.RAMInBytes(client.BrushDefaultUploadSpeedLimit)
+				if err != nil || v <= 0 {
+					v = DEFAULT_CLIENT_BRUSH_DEFAULT_UPLOAD_SPEED_LIMIT
+				}
+				Config.Clients[i].BrushDefaultUploadSpeedLimitValue = v
+
 				if client.BrushMaxDownloadingTorrents == 0 {
 					Config.Clients[i].BrushMaxDownloadingTorrents = DEFAULT_CLIENT_BRUSH_MAX_DOWNLOADING_TORRENTS
 				}
@@ -106,10 +114,6 @@ func Get() *ConfigStruct {
 
 				if client.BrushMinRatio == 0 {
 					Config.Clients[i].BrushMinRatio = DEFAULT_CLIENT_BRUSH_MIN_RATION
-				}
-
-				if client.BrushDefaultUploadSpeedLimit == 0 {
-					Config.Clients[i].BrushDefaultUploadSpeedLimit = DEFAULT_CLIENT_BRUSH_DEFAULT_UPLOAD_SPEED_LIMIT
 				}
 
 				if client.Name == "" {
