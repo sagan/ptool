@@ -147,13 +147,13 @@ func ParseMetaFromName(fullname string) (name string, meta map[string](int64)) {
 func TorrentStateIconText(state string) string {
 	switch state {
 	case "downloading":
-		return "↓"
+		return "↓D"
 	case "seeding":
-		return "↑"
+		return "↑U"
 	case "paused":
-		return "P" // may be unicode symbol ⏸
+		return "-P" // may be unicode symbol ⏸
 	case "completed":
-		return "✓"
+		return "✓C"
 	}
 	return "-"
 }
