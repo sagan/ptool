@@ -10,14 +10,15 @@ import (
 )
 
 const (
-	DEFAULT_SITE_TIMEZONE                         = "Asia/Shanghai"
-	DEFAULT_CLIENT_BRUSH_MIN_DISK_SPACE           = int64(5 * 1024 * 1024 * 1024)
-	DEFAULT_CLIENT_BRUSH_SLOW_UPLOAD_SPEED_TIER   = int64(100 * 1024)
-	DEFAULT_CLIENT_BRUSH_MAX_DOWNLOADING_TORRENTS = int64(6)
-	DEFAULT_CLIENT_BRUSH_MAX_TORRENTS             = int64(500)
-	DEFAULT_CLIENT_BRUSH_MIN_RATION               = float64(0.2)
-	DEFAULT_SITE_TORRENT_UPLOAD_SPEED_LIMIT       = int64(10 * 1024 * 1024)
-	VERSION                                       = "0.0.1"
+	DEFAULT_SITE_TIMEZONE                           = "Asia/Shanghai"
+	DEFAULT_CLIENT_BRUSH_MIN_DISK_SPACE             = int64(5 * 1024 * 1024 * 1024)
+	DEFAULT_CLIENT_BRUSH_SLOW_UPLOAD_SPEED_TIER     = int64(100 * 1024)
+	DEFAULT_CLIENT_BRUSH_MAX_DOWNLOADING_TORRENTS   = int64(6)
+	DEFAULT_CLIENT_BRUSH_MAX_TORRENTS               = int64(500)
+	DEFAULT_CLIENT_BRUSH_MIN_RATION                 = float64(0.2)
+	DEFAULT_CLIENT_BRUSH_DEFAULT_UPLOAD_SPEED_LIMIT = int64(10 * 1024 * 1024)
+	DEFAULT_SITE_TORRENT_UPLOAD_SPEED_LIMIT         = int64(10 * 1024 * 1024)
+	VERSION                                         = "0.0.1"
 )
 
 type ClientConfigStruct struct {
@@ -32,6 +33,7 @@ type ClientConfigStruct struct {
 	BrushMaxDownloadingTorrents   int64   `yaml:"brushMaxDownloadingTorrents"`
 	BrushMaxTorrents              int64   `yaml:"brushMaxTorrents"`
 	BrushMinRatio                 float64 `yaml:"brushMinRatio"`
+	BrushDefaultUploadSpeedLimit  int64   `yaml:"brushDefaultUploadSpeedLimit"`
 	BrushMinDiskSpaceValue        int64
 	BrushSlowUploadSpeedTierValue int64
 }
@@ -104,6 +106,10 @@ func Get() *ConfigStruct {
 
 				if client.BrushMinRatio == 0 {
 					Config.Clients[i].BrushMinRatio = DEFAULT_CLIENT_BRUSH_MIN_RATION
+				}
+
+				if client.BrushDefaultUploadSpeedLimit == 0 {
+					Config.Clients[i].BrushDefaultUploadSpeedLimit = DEFAULT_CLIENT_BRUSH_DEFAULT_UPLOAD_SPEED_LIMIT
 				}
 
 				if client.Name == "" {

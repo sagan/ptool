@@ -23,6 +23,7 @@ type BrushOptionStruct struct {
 	MaxDownloadingTorrents  int64
 	MaxTorrents             int64
 	MinRatio                float64
+	DefaultUploadSpeedLimit int64
 	Now                     int64
 }
 
@@ -111,7 +112,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 
 	targetUploadSpeed := clientStatus.UploadSpeedLimit
 	if targetUploadSpeed <= 0 {
-		targetUploadSpeed = 10 * 1024 * 1024
+		targetUploadSpeed = option.DefaultUploadSpeedLimit
 	}
 
 	for i, torrent := range clientTorrents {
