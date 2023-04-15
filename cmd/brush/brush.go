@@ -254,7 +254,7 @@ func brush(cmd *cobra.Command, args []string) {
 			log.Printf("Client capacity is full. Stop brushing")
 			break
 		}
-		if i < len(sitenames)-1 && cndAddTorrents > 0 || len(result.ModifyTorrents) > 0 || len(result.DeleteTorrents) > 0 || len(result.StallTorrents) > 0 {
+		if i < len(sitenames)-1 && (cndAddTorrents > 0 || len(result.ModifyTorrents) > 0 || len(result.DeleteTorrents) > 0 || len(result.StallTorrents) > 0) {
 			clientInstance.PurgeCache()
 			utils.Sleep(3)
 		}
