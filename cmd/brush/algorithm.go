@@ -13,7 +13,14 @@ import (
 )
 
 const (
-	STALL_DOWNLOAD_SPEED = int64(10 * 1024)
+	NEW_TORRENTS_TIMESPAN                 = int64(15 * 60) // new torrents timespan during which will NOT be examined at all
+	NEW_TORRENTS_STALL_EXEMPTION_TIMESPAN = int64(30 * 60) // new torrents timespan during which will NOT be stalled
+	STALL_DOWNLOAD_SPEED                  = int64(10 * 1024)
+	SLOW_UPLOAD_SPEED                     = int64(100 * 1024)
+	RATIO_CHECK_MIN_DOWNLOAD_SPEED        = int64(100 * 1024)
+	SLOW_TORRENTS_CHECK_TIMESPAN          = int64(15 * 60)
+	STALL_TORRENT_DELETEION_TIMESPAN      = int64(30 * 60) // stalled torrent will be deleted after this time passed
+	BANDWIDTH_FULL_PERCENT                = float64(0.8)
 )
 
 type BrushOptionStruct struct {
@@ -80,8 +87,8 @@ type clientTorrentInfoStruct struct {
 	DeleteFlag          bool
 }
 
-func isDownloading(torrent *client.Torrent) bool {
-	return notStalled(torrent) && torrent.DownloadSpeed >= STALL_DOWNLOAD_SPEED
+func countAsDownloading(torrent *client.Torrent, now int64) bool {
+	return notStalled(torrent) && (torrent.DownloadSpeed >= STALL_DOWNLOAD_SPEED || now-torrent.Atime <= NEW_TORRENTS_TIMESPAN)
 }
 
 func notStalled(torrent *client.Torrent) bool {
@@ -147,7 +154,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 
 	// mark torrents
 	for _, torrent := range clientTorrents {
-		if isDownloading(&torrent) {
+		if countAsDownloading(&torrent, option.Now) {
 			cntDownloadingTorrents++
 		}
 
@@ -167,20 +174,20 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 		}
 
 		// skip new added torrents
-		if option.Now-torrent.Atime <= 15*60 {
+		if option.Now-torrent.Atime <= NEW_TORRENTS_TIMESPAN {
 			continue
 		}
 
 		// check slow torrents, add it to watch list first time and mark as deleteCandidate second time
 		if torrent.UploadSpeed < option.SlowUploadSpeedTier {
 			if torrent.Meta["sct"] > 0 { // second encounter on slow torrent
-				if option.Now-torrent.Meta["sct"] >= 15*60 {
+				if option.Now-torrent.Meta["sct"] >= SLOW_TORRENTS_CHECK_TIMESPAN {
 					averageUploadSpeedSinceSct := (torrent.Uploaded - torrent.Meta["sctu"]) / (option.Now - torrent.Meta["sct"])
 					if averageUploadSpeedSinceSct < option.SlowUploadSpeedTier {
 						if notStalled(&torrent) &&
-							torrent.DownloadSpeed >= 100*1024 &&
+							torrent.DownloadSpeed >= RATIO_CHECK_MIN_DOWNLOAD_SPEED &&
 							float64(torrent.UploadSpeed)/float64(torrent.DownloadSpeed) < option.MinRatio &&
-							option.Now-torrent.Atime >= 30*60 {
+							option.Now-torrent.Atime >= NEW_TORRENTS_STALL_EXEMPTION_TIMESPAN {
 							meta := utils.CopyMap(torrent.Meta)
 							meta["stt"] = option.Now
 							stallTorrents = append(stallTorrents, AlgorithmModifyTorrent{
@@ -252,7 +259,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	// delete torrents
 	for _, deleteTorrent := range deleteCandidateTorrents {
 		torrent := clientTorrentsMap[deleteTorrent.InfoHash].Torrent
-		if (torrent.Ctime > 0 || torrent.Meta["stt"] == 0 || option.Now-torrent.Meta["stt"] < 30*60) && freespace >= option.MinDiskSpace {
+		if (torrent.Ctime > 0 || torrent.Meta["stt"] == 0 || option.Now-torrent.Meta["stt"] < STALL_TORRENT_DELETEION_TIMESPAN) && freespace >= option.MinDiskSpace {
 			continue
 		}
 		result.DeleteTorrents = append(result.DeleteTorrents, AlgorithmOperationTorrent{
@@ -263,7 +270,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 		freespace += torrent.SizeCompleted
 		estimateUploadSpeed -= torrent.UploadSpeed
 		clientTorrentsMap[torrent.InfoHash].DeleteFlag = true
-		if isDownloading(torrent) {
+		if countAsDownloading(torrent, option.Now) {
 			cntDownloadingTorrents--
 		}
 		cntTorrents--
@@ -283,7 +290,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 			freespace += torrent.SizeCompleted
 			estimateUploadSpeed -= torrent.UploadSpeed
 			clientTorrentsMap[torrent.InfoHash].DeleteFlag = true
-			if isDownloading(&torrent) {
+			if countAsDownloading(&torrent, option.Now) {
 				cntDownloadingTorrents--
 			}
 			cntTorrents--
@@ -309,7 +316,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 			freespace += torrent.SizeCompleted
 			estimateUploadSpeed -= torrent.UploadSpeed
 			clientTorrentsMap[torrent.InfoHash].DeleteFlag = true
-			if isDownloading(torrent) {
+			if countAsDownloading(torrent, option.Now) {
 				cntDownloadingTorrents--
 			}
 			cntTorrents--
@@ -346,7 +353,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 			continue
 		}
 		result.StallTorrents = append(result.StallTorrents, stallTorrent)
-		if isDownloading(clientTorrentsMap[stallTorrent.InfoHash].Torrent) {
+		if countAsDownloading(clientTorrentsMap[stallTorrent.InfoHash].Torrent, option.Now) {
 			cntDownloadingTorrents--
 		}
 	}

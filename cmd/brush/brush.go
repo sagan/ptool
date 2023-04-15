@@ -76,8 +76,8 @@ func brush(cmd *cobra.Command, args []string) {
 			status.FreeSpaceOnDisk = 1024 * 1024 * 1024 * 1024
 		}
 		var siteTorrents []site.Torrent
-		if status.UploadSpeedLimit > 0 && (status.UploadSpeedLimit < 100*1024 ||
-			(float64(status.UploadSpeed)/float64(status.UploadSpeedLimit)) >= 0.8) {
+		if status.UploadSpeedLimit > 0 && (status.UploadSpeedLimit < SLOW_UPLOAD_SPEED ||
+			(float64(status.UploadSpeed)/float64(status.UploadSpeedLimit)) >= BANDWIDTH_FULL_PERCENT) {
 			log.Printf(
 				"Client %s upload bandwidth is already full (Upload speed/limit: %s/s/%s/s). Do not fetch site new torrents\n",
 				clientInstance.GetName(),
