@@ -21,6 +21,7 @@ const (
 	SLOW_TORRENTS_CHECK_TIMESPAN          = int64(15 * 60)
 	STALL_TORRENT_DELETEION_TIMESPAN      = int64(30 * 60) // stalled torrent will be deleted after this time passed
 	BANDWIDTH_FULL_PERCENT                = float64(0.8)
+	DELETE_TORRENT_IMMEDIATELY_STORE      = float64(99999)
 )
 
 type BrushOptionStruct struct {
@@ -178,8 +179,15 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 			continue
 		}
 
-		// check slow torrents, add it to watch list first time and mark as deleteCandidate second time
-		if torrent.UploadSpeed < option.SlowUploadSpeedTier {
+		if torrent.DownloadSpeed == 0 && torrent.SizeCompleted == 0 {
+			deleteCandidateTorrents = append(deleteCandidateTorrents, candidateClientTorrentStruct{
+				InfoHash:    torrent.InfoHash,
+				Score:       DELETE_TORRENT_IMMEDIATELY_STORE,
+				FutureValue: 0,
+				Msg:         "torrent has no download proccess",
+			})
+			clientTorrentsMap[torrent.InfoHash].DeleteCandidateFlag = true
+		} else if torrent.UploadSpeed < option.SlowUploadSpeedTier { // check slow torrents, add it to watch list first time and mark as deleteCandidate second time
 			if torrent.Meta["sct"] > 0 { // second encounter on slow torrent
 				if option.Now-torrent.Meta["sct"] >= SLOW_TORRENTS_CHECK_TIMESPAN {
 					averageUploadSpeedSinceSct := (torrent.Uploaded - torrent.Meta["sctu"]) / (option.Now - torrent.Meta["sct"])
@@ -259,7 +267,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	// delete torrents
 	for _, deleteTorrent := range deleteCandidateTorrents {
 		torrent := clientTorrentsMap[deleteTorrent.InfoHash].Torrent
-		if (torrent.Ctime > 0 || torrent.Meta["stt"] == 0 || option.Now-torrent.Meta["stt"] < STALL_TORRENT_DELETEION_TIMESPAN) && freespace >= option.MinDiskSpace {
+		if (torrent.Ctime > 0 || torrent.Meta["stt"] == 0 || option.Now-torrent.Meta["stt"] < STALL_TORRENT_DELETEION_TIMESPAN) && freespace >= option.MinDiskSpace && deleteTorrent.Score < DELETE_TORRENT_IMMEDIATELY_STORE {
 			continue
 		}
 		result.DeleteTorrents = append(result.DeleteTorrents, AlgorithmOperationTorrent{
