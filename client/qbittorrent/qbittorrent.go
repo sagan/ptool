@@ -25,7 +25,7 @@ type Client struct {
 	ClientConfig *config.ClientConfigStruct
 	Config       *config.ConfigStruct
 	HttpClient   *http.Client
-	data         apiSyncMaindata
+	data         *apiSyncMaindata
 	Logined      bool
 	datatime     int64
 }
@@ -215,6 +215,7 @@ func (qbclient *Client) ModifyTorrent(infoHash string,
 }
 
 func (qbclient *Client) PurgeCache() {
+	qbclient.data = nil
 	qbclient.datatime = 0
 }
 
