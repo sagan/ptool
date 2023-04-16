@@ -83,60 +83,11 @@ func (npclient *Site) GetLatestTorrents() ([]site.Torrent, error) {
 	return npclient.latestSiteTorrents, nil
 }
 
-func (npclient *Site) sync() error {
-	if npclient.datatime > 0 {
-		return nil
-	}
-	url := npclient.SiteConfig.BrushUrl
-	if url == "" {
-		url = npclient.SiteConfig.Url + "torrents.php"
-	}
-	res, err := utils.FetchUrl(url, npclient.SiteConfig.Cookie, npclient.HttpClient)
-	if err != nil {
-		return fmt.Errorf("can not fetch site data %v", err)
-	}
-	defer res.Body.Close()
-	doc, err := goquery.NewDocumentFromReader(res.Body)
-	if err != nil {
-		return fmt.Errorf("failed to parse site page DOM, error: %v", err)
-	}
-	npclient.datatime = utils.Now()
-
-	siteStatus := &site.Status{}
-	infoTr := doc.Find("#info_block, .m_nav").First()
-	infoTxt := infoTr.Text()
-	infoTxt = strings.ReplaceAll(infoTxt, "\n", " ")
-	infoTxt = strings.ReplaceAll(infoTxt, "\r", " ")
-	re := regexp.MustCompile(`(上傳量|上傳|上传量|上传)[：:\s]+(?P<s>[.\s0-9KMGTEPBkmgtepib]+)`)
-	m := re.FindStringSubmatch(infoTxt)
-	if m != nil {
-		ss := strings.ReplaceAll(m[re.SubexpIndex("s")], " ", "")
-		s, _ := utils.RAMInBytes(ss)
-		siteStatus.UserUploaded = s
-	}
-	re = regexp.MustCompile(`(下載量|下載|下载量|下载)[：:\s]+(?P<s>[.\s0-9KMGTEPBkmgtepib]+)`)
-	m = re.FindStringSubmatch(infoTxt)
-	if m != nil {
-		ss := strings.ReplaceAll(m[re.SubexpIndex("s")], " ", "")
-		s, _ := utils.RAMInBytes(ss)
-		siteStatus.UserDownloaded = s
-	}
-	userEl := doc.Find("*[href*=\"userdetails.php?\"]").First()
-	if userEl.Length() > 0 {
-		siteStatus.UserName = userEl.Text()
-	}
-	// possibly parsing error or some problem
-	if siteStatus.UserName == "" && siteStatus.UserDownloaded == 0 && siteStatus.UserUploaded == 0 {
-		if log.GetLevel() >= log.TraceLevel {
-			log.Tracef("Site GetStatus got no data, html: %s", utils.DomHtml(doc.Find("html")))
-		}
-	}
-	npclient.siteStatus = siteStatus
-
+func (npclient *Site) parseTorrentsFromDoc(doc *goquery.Document) ([]site.Torrent, error) {
 	torrents := []site.Torrent{}
 	defer func() {
 		if len(torrents) == 0 && log.GetLevel() >= log.TraceLevel {
-			log.Tracef("LatestTorrents page html: %s", utils.DomHtml(doc.Find("html")))
+			log.Tracef("torrents page html: %s", utils.DomHtml(doc.Find("html")))
 		}
 	}()
 
@@ -144,7 +95,7 @@ func (npclient *Site) sync() error {
 	doc.Find(`b a[href="torrents.php"]`).EachWithBreak(func(i int, s *goquery.Selection) bool {
 		txt := utils.DomSanitizedText(s)
 		// eg. '全站 [2X Free] 生效中！时间：2023-04-12 13:50:00 ~ 2023-04-15 13:50:00'
-		re = regexp.MustCompile(`全站 \[(?P<discount>(\dX Free|Free))\] 生效中！时间：(?P<start>[-\d\s:]+)\s*~\s*(?P<end>[-\d\s:]+)`)
+		re := regexp.MustCompile(`全站 \[(?P<discount>(\dX Free|Free))\] 生效中！时间：(?P<start>[-\d\s:]+)\s*~\s*(?P<end>[-\d\s:]+)`)
 		m := re.FindStringSubmatch(txt)
 		if m != nil {
 			t1, err1 := utils.ParseTime(m[re.SubexpIndex("start")], npclient.Location)
@@ -159,7 +110,7 @@ func (npclient *Site) sync() error {
 
 	headerTr := doc.Find("table.torrents > tbody > tr").First()
 	if headerTr.Length() == 0 {
-		return nil
+		return nil, fmt.Errorf("No torrents found: possible a parser error")
 	}
 	fieldColumIndex := map[string]int{
 		"time":     -1,
@@ -297,7 +248,77 @@ func (npclient *Site) sync() error {
 			})
 		}
 	})
-	npclient.latestSiteTorrents = torrents
+	return torrents, nil
+}
+
+func (npclient *Site) sync() error {
+	if npclient.datatime > 0 {
+		return nil
+	}
+	url := npclient.SiteConfig.BrushUrl
+	if url == "" {
+		url = npclient.SiteConfig.Url + "torrents.php"
+	}
+	doc, err := utils.GetUrlDoc(url, npclient.SiteConfig.Cookie, npclient.HttpClient)
+	if err != nil {
+		return fmt.Errorf("failed to get site page dom: %v", err)
+	}
+	npclient.datatime = utils.Now()
+
+	siteStatus := &site.Status{}
+	infoTr := doc.Find("#info_block, .m_nav").First()
+	infoTxt := infoTr.Text()
+	infoTxt = strings.ReplaceAll(infoTxt, "\n", " ")
+	infoTxt = strings.ReplaceAll(infoTxt, "\r", " ")
+	re := regexp.MustCompile(`(上傳量|上傳|上传量|上传)[：:\s]+(?P<s>[.\s0-9KMGTEPBkmgtepib]+)`)
+	m := re.FindStringSubmatch(infoTxt)
+	if m != nil {
+		ss := strings.ReplaceAll(m[re.SubexpIndex("s")], " ", "")
+		s, _ := utils.RAMInBytes(ss)
+		siteStatus.UserUploaded = s
+	}
+	re = regexp.MustCompile(`(下載量|下載|下载量|下载)[：:\s]+(?P<s>[.\s0-9KMGTEPBkmgtepib]+)`)
+	m = re.FindStringSubmatch(infoTxt)
+	if m != nil {
+		ss := strings.ReplaceAll(m[re.SubexpIndex("s")], " ", "")
+		s, _ := utils.RAMInBytes(ss)
+		siteStatus.UserDownloaded = s
+	}
+	userEl := doc.Find("*[href*=\"userdetails.php?\"]").First()
+	if userEl.Length() > 0 {
+		siteStatus.UserName = userEl.Text()
+	}
+	// possibly parsing error or some problem
+	if siteStatus.UserName == "" && siteStatus.UserDownloaded == 0 && siteStatus.UserUploaded == 0 {
+		if log.GetLevel() >= log.TraceLevel {
+			log.Tracef("Site GetStatus got no data, html: %s", utils.DomHtml(doc.Find("html")))
+		}
+	}
+	npclient.siteStatus = siteStatus
+
+	npclient.latestSiteTorrents = make([]site.Torrent, 0)
+	torrents, err := npclient.parseTorrentsFromDoc(doc)
+	if err != nil {
+		log.Errorf("failed to parse site page torrents: %v", err)
+	} else {
+		npclient.latestSiteTorrents = append(npclient.latestSiteTorrents, torrents...)
+	}
+	for _, extraUrl := range npclient.SiteConfig.BrushExtraUrls {
+		if extraUrl == url {
+			continue
+		}
+		doc, err := utils.GetUrlDoc(extraUrl, npclient.SiteConfig.Cookie, npclient.HttpClient)
+		if err != nil {
+			log.Errorf("failed to parse site page dom: %v", err)
+			continue
+		}
+		extraTorrents, err := npclient.parseTorrentsFromDoc(doc)
+		if err != nil {
+			log.Errorf("failed to parse site page torrents: %v", err)
+			continue
+		}
+		npclient.latestSiteTorrents = append(npclient.latestSiteTorrents, extraTorrents...)
+	}
 	return nil
 }
 

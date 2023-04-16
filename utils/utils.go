@@ -62,6 +62,19 @@ func FetchUrl(url string, cookie string, client *http.Client) (*http.Response, e
 	return resp, nil
 }
 
+func GetUrlDoc(url string, cookie string, client *http.Client) (*goquery.Document, error) {
+	res, err := FetchUrl(url, cookie, client)
+	if err != nil {
+		return nil, fmt.Errorf("can not fetch site data %v", err)
+	}
+	defer res.Body.Close()
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse site page DOM, error: %v", err)
+	}
+	return doc, nil
+}
+
 func ParseInt(str string) int64 {
 	str = strings.ReplaceAll(str, ",", "")
 	v, _ := strconv.ParseInt(str, 10, 0)
