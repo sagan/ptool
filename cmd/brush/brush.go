@@ -31,15 +31,17 @@ var command = &cobra.Command{
 }
 
 var (
-	dryRun  = false
-	paused  = false
-	ordered = false
+	dryRun   = false
+	paused   = false
+	ordered  = false
+	maxSites = int64(0)
 )
 
 func init() {
 	command.Flags().BoolVar(&dryRun, "dry-run", false, "Dry run. Do not actually controlling client")
 	command.Flags().BoolVar(&paused, "paused", false, "Add torrents to client in paused state")
 	command.Flags().BoolVar(&ordered, "order", false, "Brush sites provided in order")
+	command.Flags().Int64Var(&maxSites, "max-sites", 0, "Allowed max succcess sites number, 0 = unlimited")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -255,8 +257,13 @@ func brush(cmd *cobra.Command, args []string) {
 			}
 		}
 		cntSuccessSite++
+		if maxSites > 0 && cntSuccessSite >= maxSites {
+			log.Printf("MaxSites reached. Stop brushing.")
+			cntSkipSite = int64(len(sitenames) - 1 - i)
+			break
+		}
 		if !result.CanAddMore {
-			log.Printf("Client capacity is full. Stop brushing")
+			log.Printf("Client capacity is full. Stop brushing.")
 			cntSkipSite = int64(len(sitenames) - 1 - i)
 			break
 		}
