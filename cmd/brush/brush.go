@@ -256,18 +256,22 @@ func brush(cmd *cobra.Command, args []string) {
 				}
 			}
 		}
-		cntSuccessSite++
+		if len(result.AddTorrents) > 0 {
+			cntSuccessSite++
+		} else {
+			cntSkipSite++
+		}
 		if maxSites > 0 && cntSuccessSite >= maxSites {
 			log.Printf("MaxSites reached. Stop brushing.")
-			cntSkipSite = int64(len(sitenames) - 1 - i)
+			cntSkipSite += int64(len(sitenames) - 1 - i)
 			break
 		}
 		if !result.CanAddMore {
 			log.Printf("Client capacity is full. Stop brushing.")
-			cntSkipSite = int64(len(sitenames) - 1 - i)
+			cntSkipSite += int64(len(sitenames) - 1 - i)
 			break
 		}
-		if i < len(sitenames)-1 && (cndAddTorrents > 0 || len(result.ModifyTorrents) > 0 || len(result.DeleteTorrents) > 0 || len(result.StallTorrents) > 0) {
+		if i < len(sitenames)-1 && (len(result.AddTorrents) > 0 || len(result.ModifyTorrents) > 0 || len(result.DeleteTorrents) > 0 || len(result.StallTorrents) > 0) {
 			clientInstance.PurgeCache()
 			utils.Sleep(3)
 		}
