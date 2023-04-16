@@ -44,8 +44,9 @@ type SiteConfigStruct struct {
 	Disabled                     bool     `yaml:"disabled"`
 	Type                         string   `yaml:"type"`
 	Url                          string   `yaml:"url"`
-	BrushUrl                     string   `yaml:"brushUrl"`
-	BrushExtraUrls               []string `yaml:"brushExtraUrls"`
+	TorrentsUrl                  string   `yaml:"torrentsUrl"`
+	SearchUrl                    string   `yaml:"searchUrl"`
+	TorrentsExtraUrls            []string `yaml:"torrentsExtraUrls"`
 	Cookie                       string   `yaml:"cookie"`
 	TorrentUploadSpeedLimit      string   `yaml:"uploadSpeedLimit"`
 	GlobalHnR                    bool     `yaml:"globalHnR"`

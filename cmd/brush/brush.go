@@ -38,9 +38,9 @@ var (
 )
 
 func init() {
-	command.Flags().BoolVar(&dryRun, "dry-run", false, "Dry run. Do not actually controlling client")
-	command.Flags().BoolVar(&paused, "paused", false, "Add torrents to client in paused state")
-	command.Flags().BoolVar(&ordered, "order", false, "Brush sites provided in order")
+	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do not actually controlling client")
+	command.Flags().BoolVarP(&paused, "paused", "p", false, "Add torrents to client in paused state")
+	command.Flags().BoolVarP(&ordered, "ordered", "o", false, "Brush sites provided in order")
 	command.Flags().Int64Var(&maxSites, "max-sites", 0, "Allowed max succcess sites number, 0 = unlimited")
 	cmd.RootCmd.AddCommand(command)
 }
@@ -94,7 +94,7 @@ func brush(cmd *cobra.Command, args []string) {
 		} else if siteInstance.GetSiteConfig().GlobalHnR {
 			log.Printf("Site %s enforces global HnR. Do not fetch site new torrents", sitename)
 		} else {
-			siteTorrents, err = siteInstance.GetLatestTorrents()
+			siteTorrents, err = siteInstance.GetLatestTorrents(true)
 			if err != nil {
 				log.Printf("failed to fetch site %s torrents: %v", sitename, err)
 			}

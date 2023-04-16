@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -17,14 +18,16 @@ import (
 )
 
 type Site struct {
-	Name               string
-	Location           *time.Location
-	SiteConfig         *config.SiteConfigStruct
-	Config             *config.ConfigStruct
-	HttpClient         *http.Client
-	siteStatus         *site.Status
-	latestSiteTorrents []site.Torrent
-	datatime           int64
+	Name           string
+	Location       *time.Location
+	SiteConfig     *config.SiteConfigStruct
+	Config         *config.ConfigStruct
+	HttpClient     *http.Client
+	siteStatus     *site.Status
+	latestTorrents []site.Torrent
+	extraTorrents  []site.Torrent
+	datatime       int64
+	datetimeExtra  int64
 }
 
 func (npclient *Site) PurgeCache() {
@@ -37,6 +40,28 @@ func (npclient *Site) GetName() string {
 
 func (npclient *Site) GetSiteConfig() *config.SiteConfigStruct {
 	return npclient.SiteConfig
+}
+
+func (npclient *Site) SearchTorrents(keyword string) ([]site.Torrent, error) {
+	searchUrl := npclient.SiteConfig.SearchUrl
+	if searchUrl == "" {
+		searchUrl = npclient.SiteConfig.Url + "torrents.php"
+	}
+	if !strings.Contains(searchUrl, "%s") {
+		if strings.Contains(searchUrl, "?") {
+			searchUrl += "&"
+		} else {
+			searchUrl += "?"
+		}
+		searchUrl += "search=%s"
+	}
+	searchUrl = strings.Replace(searchUrl, "%s", url.PathEscape(keyword), 1)
+
+	doc, err := utils.GetUrlDoc(searchUrl, npclient.SiteConfig.Cookie, npclient.HttpClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse site page dom: %v", err)
+	}
+	return npclient.parseTorrentsFromDoc(doc)
 }
 
 func (npclient *Site) DownloadTorrent(url string) ([]byte, error) {
@@ -75,12 +100,22 @@ func (npclient *Site) GetStatus() (*site.Status, error) {
 	return npclient.siteStatus, nil
 }
 
-func (npclient *Site) GetLatestTorrents() ([]site.Torrent, error) {
+func (npclient *Site) GetLatestTorrents(full bool) ([]site.Torrent, error) {
+	latestTorrents := make([]site.Torrent, 0)
 	err := npclient.sync()
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch site data: %v", err)
 	}
-	return npclient.latestSiteTorrents, nil
+	if full {
+		npclient.syncExtra()
+	}
+	if npclient.latestTorrents != nil {
+		latestTorrents = append(latestTorrents, npclient.latestTorrents...)
+	}
+	if npclient.extraTorrents != nil {
+		latestTorrents = append(latestTorrents, npclient.extraTorrents...)
+	}
+	return latestTorrents, nil
 }
 
 func (npclient *Site) parseTorrentsFromDoc(doc *goquery.Document) ([]site.Torrent, error) {
@@ -255,7 +290,7 @@ func (npclient *Site) sync() error {
 	if npclient.datatime > 0 {
 		return nil
 	}
-	url := npclient.SiteConfig.BrushUrl
+	url := npclient.SiteConfig.TorrentsUrl
 	if url == "" {
 		url = npclient.SiteConfig.Url + "torrents.php"
 	}
@@ -296,29 +331,36 @@ func (npclient *Site) sync() error {
 	}
 	npclient.siteStatus = siteStatus
 
-	npclient.latestSiteTorrents = make([]site.Torrent, 0)
 	torrents, err := npclient.parseTorrentsFromDoc(doc)
 	if err != nil {
 		log.Errorf("failed to parse site page torrents: %v", err)
 	} else {
-		npclient.latestSiteTorrents = append(npclient.latestSiteTorrents, torrents...)
+		npclient.latestTorrents = torrents
 	}
-	for _, extraUrl := range npclient.SiteConfig.BrushExtraUrls {
-		if extraUrl == url {
-			continue
-		}
+	return nil
+}
+
+func (npclient *Site) syncExtra() error {
+	if npclient.datetimeExtra > 0 {
+		return nil
+	}
+
+	extraTorrents := make([]site.Torrent, 0)
+	for _, extraUrl := range npclient.SiteConfig.TorrentsExtraUrls {
 		doc, err := utils.GetUrlDoc(extraUrl, npclient.SiteConfig.Cookie, npclient.HttpClient)
 		if err != nil {
 			log.Errorf("failed to parse site page dom: %v", err)
 			continue
 		}
-		extraTorrents, err := npclient.parseTorrentsFromDoc(doc)
+		torrents, err := npclient.parseTorrentsFromDoc(doc)
 		if err != nil {
 			log.Errorf("failed to parse site page torrents: %v", err)
 			continue
 		}
-		npclient.latestSiteTorrents = append(npclient.latestSiteTorrents, extraTorrents...)
+		extraTorrents = append(npclient.extraTorrents, torrents...)
 	}
+	npclient.extraTorrents = extraTorrents
+	npclient.datetimeExtra = utils.Now()
 	return nil
 }
 

@@ -172,3 +172,24 @@ func (torrent *Torrent) GetSiteFromTag() string {
 func GenerateTorrentTagFromSite(site string) string {
 	return "site:" + site
 }
+
+func PrintTorrents(torrents []Torrent, filter string) {
+	fmt.Printf("%-40s  %40s  %25s  %11s  %12s  %12s\n", "Name", "InfoHash", "Tracker", "State", "↓S", "↑S")
+	for _, torrent := range torrents {
+		if filter != "" && !utils.ContainsI(torrent.Name, filter) && !utils.ContainsI(torrent.InfoHash, filter) {
+			continue
+		}
+		name := torrent.Name
+		if len(name) > 37 {
+			name = name[:37] + "..."
+		}
+		fmt.Printf("%-40s  %40s  %25s  %11s  %10s/s  %10s/s\n",
+			name,
+			torrent.InfoHash,
+			torrent.TrackerDomain,
+			TorrentStateIconText(torrent.State),
+			utils.BytesSize(float64(torrent.DownloadSpeed)),
+			utils.BytesSize(float64(torrent.UploadSpeed)),
+		)
+	}
+}
