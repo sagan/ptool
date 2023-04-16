@@ -15,6 +15,7 @@ import (
 const (
 	NEW_TORRENTS_TIMESPAN                 = int64(15 * 60) // new torrents timespan during which will NOT be examined at all
 	NEW_TORRENTS_STALL_EXEMPTION_TIMESPAN = int64(30 * 60) // new torrents timespan during which will NOT be stalled
+	NO_PROCESS_TORRENT_DELETEION_TIMESPAN = int64(30 * 60)
 	STALL_DOWNLOAD_SPEED                  = int64(10 * 1024)
 	SLOW_UPLOAD_SPEED                     = int64(100 * 1024)
 	RATIO_CHECK_MIN_DOWNLOAD_SPEED        = int64(100 * 1024)
@@ -180,13 +181,15 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 		}
 
 		if torrent.DownloadSpeed == 0 && torrent.SizeCompleted == 0 {
-			deleteCandidateTorrents = append(deleteCandidateTorrents, candidateClientTorrentStruct{
-				InfoHash:    torrent.InfoHash,
-				Score:       DELETE_TORRENT_IMMEDIATELY_STORE,
-				FutureValue: 0,
-				Msg:         "torrent has no download proccess",
-			})
-			clientTorrentsMap[torrent.InfoHash].DeleteCandidateFlag = true
+			if option.Now-torrent.Atime > NO_PROCESS_TORRENT_DELETEION_TIMESPAN {
+				deleteCandidateTorrents = append(deleteCandidateTorrents, candidateClientTorrentStruct{
+					InfoHash:    torrent.InfoHash,
+					Score:       DELETE_TORRENT_IMMEDIATELY_STORE,
+					FutureValue: 0,
+					Msg:         "torrent has no download proccess",
+				})
+				clientTorrentsMap[torrent.InfoHash].DeleteCandidateFlag = true
+			}
 		} else if torrent.UploadSpeed < option.SlowUploadSpeedTier { // check slow torrents, add it to watch list first time and mark as deleteCandidate second time
 			if torrent.Meta["sct"] > 0 { // second encounter on slow torrent
 				if option.Now-torrent.Meta["sct"] >= SLOW_TORRENTS_CHECK_TIMESPAN {
