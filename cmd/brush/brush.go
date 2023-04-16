@@ -31,13 +31,15 @@ var command = &cobra.Command{
 }
 
 var (
-	dryRun = false
-	paused = false
+	dryRun  = false
+	paused  = false
+	ordered = false
 )
 
 func init() {
 	command.Flags().BoolVar(&dryRun, "dry-run", false, "Dry run. Do not actually controlling client")
 	command.Flags().BoolVar(&paused, "paused", false, "Add torrents to client in paused state")
+	command.Flags().BoolVar(&ordered, "order", false, "Brush sites provided in order")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -48,8 +50,11 @@ func brush(cmd *cobra.Command, args []string) {
 	}
 	sitenames := args[1:]
 
-	rand.Shuffle(len(sitenames), func(i, j int) { sitenames[i], sitenames[j] = sitenames[j], sitenames[i] })
+	if !ordered {
+		rand.Shuffle(len(sitenames), func(i, j int) { sitenames[i], sitenames[j] = sitenames[j], sitenames[i] })
+	}
 	cntSuccessSite := int64(0)
+	cntSkipSite := int64(0)
 	cntAddTorrents := int64(0)
 	cntDeleteTorrents := int64(0)
 	doneSiteFlag := make(map[string](bool))
@@ -252,6 +257,7 @@ func brush(cmd *cobra.Command, args []string) {
 		cntSuccessSite++
 		if !result.CanAddMore {
 			log.Printf("Client capacity is full. Stop brushing")
+			cntSkipSite = int64(len(sitenames) - 1 - i)
 			break
 		}
 		if i < len(sitenames)-1 && (cndAddTorrents > 0 || len(result.ModifyTorrents) > 0 || len(result.DeleteTorrents) > 0 || len(result.StallTorrents) > 0) {
@@ -260,8 +266,8 @@ func brush(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	fmt.Printf("Finish brushing %d sites, successSites=%d; Added / Deleted torrents: %d / %d to client %s\n",
-		len(sitenames), cntSuccessSite, cntAddTorrents, cntDeleteTorrents, clientInstance.GetName())
+	fmt.Printf("Finish brushing %d sites: successSites=%d, skipSites=%d; Added / Deleted torrents: %d / %d to client %s\n",
+		len(sitenames), cntSuccessSite, cntSkipSite, cntAddTorrents, cntDeleteTorrents, clientInstance.GetName())
 	os.RemoveAll(tmpdir)
 	if cntSuccessSite == 0 {
 		os.Exit(1)
