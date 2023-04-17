@@ -18,32 +18,45 @@
 
 ## 快速开始（刷流）
 
-下载本程序的可执行文件 ptool (Linux) 或 ptool.exe (Windows) 放到任意目录，在同目录下创建名为 "ptool.yaml" 的配置文件，内容示例如下：
+下载本程序的可执行文件 ptool (Linux) 或 ptool.exe (Windows) 放到任意目录，在同目录下创建名为 "ptool.toml" 的配置文件，内容示例如下：
 
-```yaml
-clients: # BT 客户端列表
-  -
-    name: "local"
-    type: "qbittorrent" # 客户端类型。目前只支持 qbittorrent。需要启用 Web UI。
-    url: "http://localhost:8080/" # qBittorrent web UI 地址
-    username: "admin" # QB Web UI 用户名
-    password: "adminadmin" # QB Web UI 密码
-sites: # PT 网站列表
-  -
-    name: "mteam"
-    type: "nexusphp" # 站点类型。目前只支持 nexusphp
-    url: "https://kp.m-team.cc/" # 站点首页 URL
-    cookie: "cookie_here" # 浏览器 F12 获取的网站 cookie
+```toml
+[[clients]]
+name = "local"
+type = "qbittorrent" # 客户端类型。目前只支持 qbittorrent。需要启用 Web UI。
+url = "http://localhost:8080/" # qBittorrent web UI 地址
+username = "admin" # QB Web UI 用户名
+password = "adminadmin" # QB Web UI 密码
+
+[[sites]]
+name = "mteam"
+type = "nexusphp" # 站点类型。目前只支持 nexusphp
+url = "https://kp.m-team.cc/" # 站点首页 URL
+cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
+
 ```
+
+可以使用 ```[[clients]]``` 和 ```[[sites]]``` 区块添加任意多个 BT 客户端和站点。
 
 然后在当前目录下运行 ```ptool brush local mteam``` 即可执行刷流任务。程序会从 M-Team 获取最新的种子、根据一定规则筛选出适合的种子添加到本地的 qBittorrent 客户端里，同时自动从 BT 客户端里删除（已经没有上传的）旧的刷流种子。刷流任务添加到客户端里的种子会放到 ```_brush``` 分类(Category)里。程序只会对这个分类里的种子进行管理或删除等操作。
 
 使用 cron job / 计划任务等方式定时执行上面的刷流任务命令（例如每隔 10 分钟执行一次）即可。
 
-您也可以选择把 ```ptool.yaml``` 配置文件放到当前操作系统用户主目录下的 ".config/ptool/" 路径下（推荐）：
 
-* Linux: ```~/.config/ptool/ptool.yaml```
-* Windows: ```%USERPROFILE%\.config\ptool\ptool.yaml```
+
+## 配置文件
+
+程序支持使用 toml 或 yaml 格式的配置文件（```ptool.toml``` 或 ```ptool.toml```）。
+
+配置文件可以之间放到程序启动时的当前目录下，也可以选择放到当前操作系统用户主目录下的 ".config/ptool/" 路径下（推荐）：
+
+* Linux: ```~/.config/ptool/ptool.toml```
+* Windows: ```%USERPROFILE%\.config\ptool\ptool.toml```
+
+也可以通过启动程序时传入命令行参数 ```--config ptool.toml``` 手动指定使用的配置文件路径。
+
+参考程序代码根目录下的 ```ptool.example.toml``` 和 ```ptool.example.yaml``` 示例配置文件了解所有可用的配置项。
+
 
 ## 程序功能
 

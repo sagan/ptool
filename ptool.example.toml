@@ -1,0 +1,24 @@
+iyuutoken = "abcdefg"
+#brushEnableStats = false # 启用刷流统计功能
+#treatZeroFreeDiskSpaceAsError = false # 如启用。BT客户端返回的硬盘剩余空间“0”将被认为是错误值。
+
+[[clients]]
+name = "local"
+type = "qbittorrent"
+url = "http://localhost:8085/"
+username = "admin"
+password = "adminadmin"
+#brushMinDiskSpace = "5GB" # 刷流：保留最小空闲磁盘空间。
+#brushSlowUploadSpeedTier = "100KB" # 刷流：上传速度持续低于此值的种子将可能被删除
+#brushMaxDownloadingTorrents = 6 # 刷流：位于下载状态的种子数上限
+#brushMaxTorrents = 50 # 刷流：种子数（所有状态）上限
+#brushMinRatio = 0.2 # 刷流：最小上传/下载量比例
+#brushDefaultUploadSpeedLimit = "10MB" # 默认最大上传速度限制(/s)
+
+[[sites]]
+name = "mt"
+type = "nexusphp"
+url = "https://kp.m-team.cc/"
+cookie = "cookie_here"
+#brushUrl = "https://kp.m-team.cc/adult.php" # 单独设置刷流种子列表页 url。如不指定，np 使用 torrents.php
+#timezone = "Asia/Shanghai" # 网站页面显示时间的时区
