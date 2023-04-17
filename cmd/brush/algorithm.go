@@ -180,7 +180,15 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 			continue
 		}
 
-		if torrent.DownloadSpeed == 0 && torrent.SizeCompleted == 0 {
+		if torrent.State == "error" {
+			deleteCandidateTorrents = append(deleteCandidateTorrents, candidateClientTorrentStruct{
+				InfoHash:    torrent.InfoHash,
+				Score:       DELETE_TORRENT_IMMEDIATELY_STORE,
+				FutureValue: 0,
+				Msg:         "torrent in error state",
+			})
+			clientTorrentsMap[torrent.InfoHash].DeleteCandidateFlag = true
+		} else if torrent.DownloadSpeed == 0 && torrent.SizeCompleted == 0 {
 			if option.Now-torrent.Atime > NO_PROCESS_TORRENT_DELETEION_TIMESPAN {
 				deleteCandidateTorrents = append(deleteCandidateTorrents, candidateClientTorrentStruct{
 					InfoHash:    torrent.InfoHash,
