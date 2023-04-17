@@ -37,16 +37,23 @@ func Execute() {
 }
 
 func init() {
-	configFile, _ := os.UserHomeDir()
-	configFile += "/.config/ptool/ptool.yaml"
-	_, err := os.Stat(configFile)
-	if err != nil {
-		if _, err = os.Stat("ptool.yaml"); err == nil {
-			configFile = "ptool.yaml"
+	UserHomeDir, _ := os.UserHomeDir()
+	configFile := "ptool.toml"
+	configFiles := []string{
+		UserHomeDir + "/.config/ptool/ptool.toml",
+		UserHomeDir + "/.config/ptool/ptool.yaml",
+		"ptool.toml",
+		"ptool.yaml",
+	}
+	for _, cf := range configFiles {
+		_, err := os.Stat(cf)
+		if err == nil {
+			configFile = cf
+			break
 		}
 	}
 
 	// global flags
-	RootCmd.PersistentFlags().StringVar(&config.ConfigFile, "config", configFile, "config file ([ptool.yaml])")
+	RootCmd.PersistentFlags().StringVar(&config.ConfigFile, "config", configFile, "config file ([ptool.toml])")
 	RootCmd.PersistentFlags().CountVarP(&config.VerboseLevel, "", "v", "verbose (-v, -vv, -vvv)")
 }

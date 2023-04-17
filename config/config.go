@@ -2,8 +2,10 @@ package config
 
 import (
 	"os"
+	"strings"
 	"sync"
 
+	toml "github.com/pelletier/go-toml/v2"
 	"github.com/sagan/ptool/utils"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -80,9 +82,18 @@ func Get() *ConfigStruct {
 			log.Debugf("Read config file %s", ConfigFile)
 			file, err := os.ReadFile(ConfigFile)
 			if err == nil {
-				err = yaml.Unmarshal(file, &Config)
-				if err != nil {
-					log.Print(err)
+				if strings.HasSuffix(ConfigFile, ".yaml") {
+					err = yaml.Unmarshal(file, &Config)
+					if err != nil {
+						log.Fatalf("Error parsing config file: %v", err)
+					}
+				} else if strings.HasSuffix(ConfigFile, ".toml") {
+					err = toml.Unmarshal(file, &Config)
+					if err != nil {
+						log.Fatalf("Error parsing config file: %v", err)
+					}
+				} else {
+					log.Fatalf("Unsupported config file format. Neither toml nor yaml.")
 				}
 			}
 			for i, client := range Config.Clients {
