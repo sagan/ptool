@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	runewidth "github.com/mattn/go-runewidth"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/PuerkitoBio/goquery"
@@ -288,4 +289,23 @@ func DomSanitizedText(el *goquery.Selection) string {
 
 func Capitalize(str string) string {
 	return strings.ToUpper(str[:1]) + str[1:]
+}
+
+func PrintStringInWidth(str string, width int64, padRight bool) {
+	strWidth := int64(0)
+	pstr := ""
+	for _, char := range str {
+		runeWidth := int64(runewidth.RuneWidth(char))
+		if strWidth+runeWidth > width {
+			break
+		}
+		pstr += string(char)
+		strWidth += runeWidth
+	}
+	if padRight {
+		pstr += strings.Repeat(" ", int(width-strWidth))
+	} else {
+		pstr = strings.Repeat(" ", int(width-strWidth)) + pstr
+	}
+	fmt.Print(pstr)
 }

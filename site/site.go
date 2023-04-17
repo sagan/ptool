@@ -126,16 +126,12 @@ func PrintTorrents(torrents []Torrent, filter string, now int64) {
 			freeStr = fmt.Sprintf("%1.1f", torrent.UploadMultiplier) + freeStr
 		}
 		name := torrent.Name
-		if len(name) > 37 {
-			name = name[:37] + "..."
-		}
 		process := "-"
 		if torrent.IsActive {
 			process = "0%"
 		}
-
-		fmt.Printf("%-40s  %10s  %-13s  %19s  %4s  %4s  %4s  %10s  %2s\n",
-			name,
+		utils.PrintStringInWidth(name, 40, true)
+		fmt.Printf("  %10s  %-13s  %19s  %4s  %4s  %4s  %10s  %2s\n",
 			utils.BytesSize(float64(torrent.Size)),
 			freeStr,
 			utils.FormatTime(torrent.Time),
