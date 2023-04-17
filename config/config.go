@@ -42,15 +42,17 @@ type ClientConfigStruct struct {
 }
 
 type SiteConfigStruct struct {
-	Name                         string `yaml:"name"`
-	Disabled                     bool   `yaml:"disabled"`
-	Type                         string `yaml:"type"`
-	Url                          string `yaml:"url"`
-	BrushUrl                     string `yaml:"brushUrl"`
-	Cookie                       string `yaml:"cookie"`
-	TorrentUploadSpeedLimit      string `yaml:"uploadSpeedLimit"`
-	GlobalHnR                    bool   `yaml:"globalHnR"`
-	Timezone                     string `yaml:"timezone"`
+	Name                         string   `yaml:"name"`
+	Disabled                     bool     `yaml:"disabled"`
+	Type                         string   `yaml:"type"`
+	Url                          string   `yaml:"url"`
+	TorrentsUrl                  string   `yaml:"torrentsUrl"`
+	SearchUrl                    string   `yaml:"searchUrl"`
+	TorrentsExtraUrls            []string `yaml:"torrentsExtraUrls"`
+	Cookie                       string   `yaml:"cookie"`
+	TorrentUploadSpeedLimit      string   `yaml:"uploadSpeedLimit"`
+	GlobalHnR                    bool     `yaml:"globalHnR"`
+	Timezone                     string   `yaml:"timezone"`
 	TorrentUploadSpeedLimitValue int64
 }
 

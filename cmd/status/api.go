@@ -39,7 +39,7 @@ func fetchClientStatus(clientInstance client.Client, showTorrents bool, showAllT
 	ch <- response
 }
 
-func fetchSiteStatus(siteInstance site.Site, showTorrents bool, ch chan *StatusResponse) {
+func fetchSiteStatus(siteInstance site.Site, showTorrents bool, full bool, ch chan *StatusResponse) {
 	response := &StatusResponse{Name: siteInstance.GetName(), Kind: 2}
 
 	SiteStatus, err := siteInstance.GetStatus()
@@ -51,7 +51,7 @@ func fetchSiteStatus(siteInstance site.Site, showTorrents bool, ch chan *StatusR
 	}
 
 	if showTorrents {
-		siteTorrents, err := siteInstance.GetLatestTorrents()
+		siteTorrents, err := siteInstance.GetLatestTorrents(full)
 		response.SiteTorrents = siteTorrents
 		if err != nil {
 			response.Error = fmt.Errorf("cann't get site %s torrents: %v", siteInstance.GetName(), err)

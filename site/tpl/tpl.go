@@ -10,6 +10,10 @@ import (
 
 var (
 	SITES = map[string](*config.SiteConfigStruct){
+		"0ff": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://pt.0ff.cc/",
+		},
 		"1ptba": &config.SiteConfigStruct{
 			Type: "nexusphp",
 			Url:  "https://1ptba.com/",
@@ -118,19 +122,19 @@ var (
 			Url:  "https://kamept.com/",
 		},
 		"leaves": &config.SiteConfigStruct{
-			Type:     "nexusphp",
-			Url:      "https://leaves.red/",
-			BrushUrl: "https://leaves.red/special.php",
+			Type:              "nexusphp",
+			Url:               "https://leaves.red/",
+			TorrentsExtraUrls: []string{"https://leaves.red/special.php"},
 		},
 		"lemonhd": &config.SiteConfigStruct{
-			Type:     "nexusphp",
-			Url:      "https://lemonhd.org/",
-			BrushUrl: "https://lemonhd.org/torrents_new.php",
+			Type:        "nexusphp",
+			Url:         "https://lemonhd.org/",
+			TorrentsUrl: "https://lemonhd.org/torrents_new.php",
 		},
 		"mteam": &config.SiteConfigStruct{
-			Type:     "nexusphp",
-			Url:      "https://kp.m-team.cc/",
-			BrushUrl: "https://kp.m-team.cc/adult.php",
+			Type:              "nexusphp",
+			Url:               "https://kp.m-team.cc/",
+			TorrentsExtraUrls: []string{"https://kp.m-team.cc/adult.php"},
 		},
 		"nicept": &config.SiteConfigStruct{
 			Type:      "nexusphp",
@@ -158,9 +162,9 @@ var (
 			Url:  "https://pthome.net/",
 		},
 		"pttime": &config.SiteConfigStruct{
-			Type:     "nexusphp",
-			Url:      "https://www.pttime.org/",
-			BrushUrl: "https://www.pttime.org/adults.php",
+			Type:              "nexusphp",
+			Url:               "https://www.pttime.org/",
+			TorrentsExtraUrls: []string{"https://www.pttime.org/adults.php"},
 		},
 		"sharkpt": &config.SiteConfigStruct{
 			Type: "nexusphp",

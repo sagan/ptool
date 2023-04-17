@@ -38,7 +38,8 @@ type Site interface {
 	GetSiteConfig() *config.SiteConfigStruct
 	DownloadTorrent(url string) ([]byte, error)
 	DownloadTorrentById(id string) ([]byte, error)
-	GetLatestTorrents() ([]Torrent, error)
+	GetLatestTorrents(full bool) ([]Torrent, error)
+	SearchTorrents(keyword string) ([]Torrent, error)
 	GetStatus() (*Status, error)
 	PurgeCache()
 }
@@ -99,6 +100,50 @@ func Print(siteTorrents []Torrent) {
 			siteTorrent.Seeders,
 			siteTorrent.Leechers,
 			siteTorrent.HasHnR,
+		)
+	}
+}
+
+func PrintTorrents(torrents []Torrent, filter string, now int64) {
+	fmt.Printf("%-40s  %10s  %-13s  %19s  %4s  %4s  %4s  %10s  %2s\n", "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "P")
+	for _, torrent := range torrents {
+		if filter != "" && !utils.ContainsI(torrent.Name, filter) {
+			continue
+		}
+		freeStr := ""
+		if torrent.HasHnR {
+			freeStr += "!"
+		}
+		if torrent.DownloadMultiplier == 0 {
+			freeStr += "✓"
+		} else {
+			freeStr += "✕"
+		}
+		if torrent.DiscountEndTime > 0 {
+			freeStr += fmt.Sprintf("(%s)", utils.FormatDuration(torrent.DiscountEndTime-now))
+		}
+		if torrent.UploadMultiplier > 1 {
+			freeStr = fmt.Sprintf("%1.1f", torrent.UploadMultiplier) + freeStr
+		}
+		name := torrent.Name
+		if len(name) > 37 {
+			name = name[:37] + "..."
+		}
+		process := "-"
+		if torrent.IsActive {
+			process = "0%"
+		}
+
+		fmt.Printf("%-40s  %10s  %-13s  %19s  %4s  %4s  %4s  %10s  %2s\n",
+			name,
+			utils.BytesSize(float64(torrent.Size)),
+			freeStr,
+			utils.FormatTime(torrent.Time),
+			fmt.Sprint(torrent.Seeders),
+			fmt.Sprint(torrent.Leechers),
+			fmt.Sprint(torrent.Snatched),
+			torrent.Id,
+			process,
 		)
 	}
 }

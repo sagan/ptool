@@ -42,7 +42,7 @@ func init() {
 	command.Flags().BoolVarP(&showAllClients, "clients", "c", false, "show all clients.")
 	command.Flags().BoolVarP(&showAllSites, "sites", "s", false, "show all sites.")
 	command.Flags().BoolVarP(&showTorrents, "torrents", "t", false, "show torrents (active torrents for client / latest torrents for site).")
-	command.Flags().BoolVar(&showFull, "full", false, "show full info of each client / site")
+	command.Flags().BoolVarP(&showFull, "full", "f", false, "show full info of each client / site")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -92,7 +92,7 @@ func status(cmd *cobra.Command, args []string) {
 				hasError = true
 				continue
 			}
-			go fetchSiteStatus(siteInstance, showTorrents, ch)
+			go fetchSiteStatus(siteInstance, showTorrents, showFull, ch)
 			cnt++
 		} else {
 			log.Errorf("Error: %s is not a client or site\n", name)
@@ -134,24 +134,7 @@ func status(cmd *cobra.Command, args []string) {
 				fmt.Printf("Client %s: failed to get status\n", response.Name)
 			}
 			if response.ClientTorrents != nil {
-				fmt.Printf("%-40s  %40s  %25s  %11s  %12s  %12s\n", "Name", "InfoHash", "Tracker", "State", "↓S", "↑S")
-				for _, torrent := range response.ClientTorrents {
-					if filter != "" && !utils.ContainsI(torrent.Name, filter) && !utils.ContainsI(torrent.InfoHash, filter) {
-						continue
-					}
-					name := torrent.Name
-					if len(name) > 37 {
-						name = name[:37] + "..."
-					}
-					fmt.Printf("%-40s  %40s  %25s  %11s  %10s/s  %10s/s\n",
-						name,
-						torrent.InfoHash,
-						torrent.TrackerDomain,
-						client.TorrentStateIconText(torrent.State),
-						utils.BytesSize(float64(torrent.DownloadSpeed)),
-						utils.BytesSize(float64(torrent.UploadSpeed)),
-					)
-				}
+				client.PrintTorrents(response.ClientTorrents, filter)
 				if i != len(responses)-1 {
 					fmt.Printf("\n")
 				}
@@ -172,42 +155,7 @@ func status(cmd *cobra.Command, args []string) {
 				fmt.Printf("Site %s: failed to get status\n", response.Name)
 			}
 			if response.SiteTorrents != nil {
-				fmt.Printf("%-40s  %10s  %-12s  %19s  %4s  %4s  %4s  %10s  %2s\n", "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "P")
-				for _, torrent := range response.SiteTorrents {
-					if filter != "" && !utils.ContainsI(torrent.Name, filter) {
-						continue
-					}
-					freeStr := "✕"
-					if torrent.DownloadMultiplier == 0 {
-						freeStr = "✓"
-					}
-					if torrent.DiscountEndTime > 0 {
-						freeStr += fmt.Sprintf("(%s)", utils.FormatDuration(torrent.DiscountEndTime-now))
-					}
-					if torrent.UploadMultiplier > 1 {
-						freeStr = fmt.Sprintf("%1.1f", torrent.UploadMultiplier) + freeStr
-					}
-					name := torrent.Name
-					if len(name) > 37 {
-						name = name[:37] + "..."
-					}
-					process := "-"
-					if torrent.IsActive {
-						process = "0%"
-					}
-
-					fmt.Printf("%-40s  %10s  %-12s  %19s  %4s  %4s  %4s  %10s  %2s\n",
-						name,
-						utils.BytesSize(float64(torrent.Size)),
-						freeStr,
-						utils.FormatTime(torrent.Time),
-						fmt.Sprint(torrent.Seeders),
-						fmt.Sprint(torrent.Leechers),
-						fmt.Sprint(torrent.Snatched),
-						torrent.Id,
-						process,
-					)
-				}
+				site.PrintTorrents(response.SiteTorrents, filter, now)
 				if i != len(responses)-1 {
 					fmt.Printf("\n")
 				}

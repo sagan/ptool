@@ -20,5 +20,5 @@ sites:
     type: "nexusphp"
     url: "https://kp.m-team.cc/"
     cookie: "cookie_here"
-    #brushUrl: "https://kp.m-team.cc/adult.php" # 单独设置刷流种子列表页 url。如不指定，np 使用 torrents.php
+    #torrentsUrl: "https://kp.m-team.cc/adult.php" # 单独设置种子列表页 url。如不指定，np 使用 torrents.php
     #timezone: "Asia/Shanghai" # 网站页面显示时间的时区

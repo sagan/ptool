@@ -271,6 +271,7 @@ func (db *StatDb) prepare() {
 	fileScanner := bufio.NewScanner(db.file)
 	fileScanner.Split(bufio.ScanLines)
 
+	flagMap := make(map[string](bool))
 	for fileScanner.Scan() {
 		statRecord := Stat{}
 		err := json.Unmarshal([]byte(fileScanner.Text()), &statRecord)
@@ -281,6 +282,11 @@ func (db *StatDb) prepare() {
 		if timespan == 0 {
 			continue // just skip it
 		}
+		id := fmt.Sprint(statRecord.Data.Client, statRecord.Data.InfoHash, statRecord.Data.Atime)
+		if flagMap[id] {
+			continue // duplicate records
+		}
+		flagMap[id] = true
 		aDownloadSpeed := statRecord.Data.Downloaded / timespan
 		aUploadSpeed := statRecord.Data.Uploaded / timespan
 		dailyDownloaded := 86400 * aDownloadSpeed

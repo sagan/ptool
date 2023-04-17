@@ -31,13 +31,17 @@ var command = &cobra.Command{
 }
 
 var (
-	dryRun = false
-	paused = false
+	dryRun   = false
+	paused   = false
+	ordered  = false
+	maxSites = int64(0)
 )
 
 func init() {
-	command.Flags().BoolVar(&dryRun, "dry-run", false, "Dry run. Do not actually controlling client")
-	command.Flags().BoolVar(&paused, "paused", false, "Add torrents to client in paused state")
+	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do not actually controlling client")
+	command.Flags().BoolVarP(&paused, "paused", "p", false, "Add torrents to client in paused state")
+	command.Flags().BoolVarP(&ordered, "ordered", "o", false, "Brush sites provided in order")
+	command.Flags().Int64Var(&maxSites, "max-sites", 0, "Allowed max succcess sites number, 0 = unlimited")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -48,8 +52,11 @@ func brush(cmd *cobra.Command, args []string) {
 	}
 	sitenames := args[1:]
 
-	rand.Shuffle(len(sitenames), func(i, j int) { sitenames[i], sitenames[j] = sitenames[j], sitenames[i] })
+	if !ordered {
+		rand.Shuffle(len(sitenames), func(i, j int) { sitenames[i], sitenames[j] = sitenames[j], sitenames[i] })
+	}
 	cntSuccessSite := int64(0)
+	cntSkipSite := int64(0)
 	cntAddTorrents := int64(0)
 	cntDeleteTorrents := int64(0)
 	doneSiteFlag := make(map[string](bool))
@@ -76,8 +83,8 @@ func brush(cmd *cobra.Command, args []string) {
 			status.FreeSpaceOnDisk = 1024 * 1024 * 1024 * 1024
 		}
 		var siteTorrents []site.Torrent
-		if status.UploadSpeedLimit > 0 && (status.UploadSpeedLimit < 100*1024 ||
-			(float64(status.UploadSpeed)/float64(status.UploadSpeedLimit)) >= 0.8) {
+		if status.UploadSpeedLimit > 0 && (status.UploadSpeedLimit < SLOW_UPLOAD_SPEED ||
+			(float64(status.UploadSpeed)/float64(status.UploadSpeedLimit)) >= BANDWIDTH_FULL_PERCENT) {
 			log.Printf(
 				"Client %s upload bandwidth is already full (Upload speed/limit: %s/s/%s/s). Do not fetch site new torrents\n",
 				clientInstance.GetName(),
@@ -87,7 +94,7 @@ func brush(cmd *cobra.Command, args []string) {
 		} else if siteInstance.GetSiteConfig().GlobalHnR {
 			log.Printf("Site %s enforces global HnR. Do not fetch site new torrents", sitename)
 		} else {
-			siteTorrents, err = siteInstance.GetLatestTorrents()
+			siteTorrents, err = siteInstance.GetLatestTorrents(true)
 			if err != nil {
 				log.Printf("failed to fetch site %s torrents: %v", sitename, err)
 			}
@@ -249,19 +256,29 @@ func brush(cmd *cobra.Command, args []string) {
 				}
 			}
 		}
-		cntSuccessSite++
-		if !result.CanAddMore {
-			log.Printf("Client capacity is full. Stop brushing")
+		if len(result.AddTorrents) > 0 {
+			cntSuccessSite++
+		} else {
+			cntSkipSite++
+		}
+		if maxSites > 0 && cntSuccessSite >= maxSites {
+			log.Printf("MaxSites reached. Stop brushing.")
+			cntSkipSite += int64(len(sitenames) - 1 - i)
 			break
 		}
-		if i < len(sitenames)-1 && cndAddTorrents > 0 || len(result.ModifyTorrents) > 0 || len(result.DeleteTorrents) > 0 || len(result.StallTorrents) > 0 {
+		if !result.CanAddMore {
+			log.Printf("Client capacity is full. Stop brushing.")
+			cntSkipSite += int64(len(sitenames) - 1 - i)
+			break
+		}
+		if i < len(sitenames)-1 && (len(result.AddTorrents) > 0 || len(result.ModifyTorrents) > 0 || len(result.DeleteTorrents) > 0 || len(result.StallTorrents) > 0) {
 			clientInstance.PurgeCache()
 			utils.Sleep(3)
 		}
 	}
 
-	fmt.Printf("Finish brushing %d sites, successSites=%d; Added / Deleted torrents: %d / %d to client %s\n",
-		len(sitenames), cntSuccessSite, cntAddTorrents, cntDeleteTorrents, clientInstance.GetName())
+	fmt.Printf("Finish brushing %d sites: successSites=%d, skipSites=%d; Added / Deleted torrents: %d / %d to client %s\n",
+		len(sitenames), cntSuccessSite, cntSkipSite, cntAddTorrents, cntDeleteTorrents, clientInstance.GetName())
 	os.RemoveAll(tmpdir)
 	if cntSuccessSite == 0 {
 		os.Exit(1)
