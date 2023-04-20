@@ -84,11 +84,11 @@ var (
 			Type: "nexusphp",
 			Url:  "http://hdmayi.com/",
 		},
-		// @todo
-		// "hdcity": &config.SiteConfigStruct{
-		// 	Type: "",
-		// 	Url:  "https://hdcity.city/",
-		// },
+		"hdcity": &config.SiteConfigStruct{
+			Type:                       "nexusphp",
+			Url:                        "https://hdcity.city/",
+			SelectorTorrentDetailsLink: `a[href^="t-"]`,
+		},
 		"hdtime": &config.SiteConfigStruct{
 			Type: "nexusphp",
 			Url:  "https://hdtime.org/",
@@ -167,8 +167,9 @@ var (
 			TorrentsExtraUrls: []string{"https://www.pttime.org/adults.php"},
 		},
 		"sharkpt": &config.SiteConfigStruct{
-			Type: "nexusphp",
-			Url:  "https://sharkpt.net/",
+			Type:            "nexusphp",
+			Url:             "https://sharkpt.net/",
+			SelectorTorrent: ".torrent-action-bookmark",
 		},
 		"soulvoice": &config.SiteConfigStruct{
 			Type: "nexusphp",

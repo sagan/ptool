@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	runewidth "github.com/mattn/go-runewidth"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/PuerkitoBio/goquery"
+	"golang.org/x/exp/constraints"
 	"golang.org/x/exp/slices"
 )
 
@@ -151,6 +151,15 @@ func ParseFutureTime(str string) (int64, error) {
 	return 0, fmt.Errorf("invalid time str")
 }
 
+func ExtractTime(str string, location *time.Location) (time int64) {
+	timeRegexp := regexp.MustCompile(`(?P<time>\d{4}-\d{2}-\d{2}\s*\d{2}:\d{2}:\d{2})`)
+	m := timeRegexp.FindStringSubmatch(str)
+	if m != nil {
+		time, _ = ParseTime(m[timeRegexp.SubexpIndex("time")], location)
+	}
+	return
+}
+
 // parse time. Treat duration time as pasted
 func ParseTime(str string, location *time.Location) (int64, error) {
 	str = strings.TrimSpace(str)
@@ -208,6 +217,23 @@ func Filter[T any](ss []T, test func(T) bool) (ret []T) {
 		}
 	}
 	return
+}
+
+func MapMaxElementKey[TK comparable, TV constraints.Ordered](m map[TK](TV)) TK {
+	var result TK
+	var resultValue TV
+	i := int64(0)
+	for key, value := range m {
+		if i == 0 {
+			result = key
+			resultValue = value
+		} else if value > resultValue {
+			result = key
+			resultValue = value
+		}
+		i++
+	}
+	return result
 }
 
 func CopyMap[T1 comparable, T2 any](m map[T1](T2)) map[T1](T2) {
@@ -285,6 +311,13 @@ func DomSanitizedText(el *goquery.Selection) string {
 	text = strings.ReplaceAll(text, "\u00ad", "") // &shy;  invisible Soft hyphen
 	text = strings.TrimSpace(text)
 	return text
+}
+
+func DomRemovedSpecialCharsText(node *goquery.Selection) string {
+	str := DomSanitizedText(node)
+	m := regexp.MustCompile(`[-\[\]\(\)【】（）：:]`)
+	str = m.ReplaceAllString(str, " ")
+	return str
 }
 
 func Capitalize(str string) string {
