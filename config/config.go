@@ -66,7 +66,7 @@ type SiteConfigStruct struct {
 }
 
 type ConfigStruct struct {
-	IyuuToken                     string               `yaml:"iyuutoken"`
+	IyuuToken                     string               `yaml:"iyuuToken"`
 	BrushEnableStats              bool                 `yaml:"brushEnableStats"`
 	TreatZeroFreeDiskSpaceAsError bool                 `yaml:"treatZeroFreeDiskSpaceAsError"`
 	Clients                       []ClientConfigStruct `yaml:"clients"`

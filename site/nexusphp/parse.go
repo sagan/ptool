@@ -102,7 +102,11 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		}
 	}
 	if containerElNode == nil {
-		err = fmt.Errorf("cann't find torrents list container element")
+		if torrentEls.Length() > 1 || option.selectorTorrentsList != "" {
+			err = fmt.Errorf("cann't find torrents list container element")
+		} else {
+			log.Tracef("Cann't find torrents list container element.")
+		}
 		return
 	}
 	log.Tracef("nptr: container node=%v, id=%v, class=%v\n",

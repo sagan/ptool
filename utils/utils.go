@@ -1,7 +1,11 @@
 package utils
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -39,8 +43,27 @@ func SetHttpRequestBrowserHeaders(req *http.Request) {
 	req.Header.Set("pragma", "no-cache")
 }
 
+func FetchJson(url string, v any, client *http.Client) error {
+	res, err := FetchUrl(url, "", client)
+	if err != nil {
+		return err
+	}
+	body, _ := io.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+	if log.GetLevel() >= log.TraceLevel {
+		log.Tracef("FetchJson response: %s", string(body))
+	}
+	defer res.Body.Close()
+	return json.Unmarshal(body, &v)
+}
+
 func FetchUrl(url string, cookie string, client *http.Client) (*http.Response, error) {
 	log.Tracef("FetchUrl url=%s hasCookie=%t", url, cookie != "")
+	if client == nil {
+		client = http.DefaultClient
+	}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -374,4 +397,39 @@ func PrintStringInWidth(str string, width int64, padRight bool) {
 		pstr = strings.Repeat(" ", int(width-strWidth)) + pstr
 	}
 	fmt.Print(pstr)
+}
+
+func PostUrlForJson(url string, data url.Values, v any, client *http.Client) error {
+	if client == nil {
+		client = http.DefaultClient
+	}
+	log.Tracef("PostUrlForJson request url=%s, data=%v", url, data)
+	resp, err := client.PostForm(url, data)
+	if err != nil {
+		return err
+	}
+	body, _ := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	if log.GetLevel() >= log.TraceLevel {
+		log.Tracef("PostUrlForJson response: %s", string(body))
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("PostUrlForJson response error: status=%d", resp.StatusCode)
+	}
+	return json.Unmarshal(body, &v)
+}
+
+func CopySlice[T any](src []T) []T {
+	dst := make([]T, len(src))
+	copy(dst, src)
+	return dst
+}
+
+func Sha1(s []byte) string {
+	h := sha1.New()
+	h.Write(s)
+	return hex.EncodeToString(h.Sum(nil))
 }

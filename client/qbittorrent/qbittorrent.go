@@ -35,7 +35,10 @@ func (qbclient *Client) apiPost(apiUrl string, data url.Values) error {
 	if err != nil {
 		return err
 	}
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
 	if string(body) == "Fails." {
 		return fmt.Errorf("apiPost error: Fails")
 	}
