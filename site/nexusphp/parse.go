@@ -22,6 +22,7 @@ const (
 type TorrentsParserOption struct {
 	location                    *time.Location
 	siteurl                     string
+	selectorTorrentsList        string
 	selectorTorrent             string
 	selectorTorrentDownloadLink string
 	selectorTorrentDetailsLink  string
@@ -63,29 +64,47 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		return true
 	})
 
+	var containerElNode *html.Node
+	var containerEl *goquery.Selection
 	torrentEls := doc.Find(option.selectorTorrent)
-	commonParentsCnt := map[*html.Node](int64){}
-	nodeSelectionMap := map[*html.Node](*goquery.Selection){}
-	var previousEl *goquery.Selection = nil
-	torrentEls.Each(func(i int, el *goquery.Selection) {
-		if i == 0 {
+	if option.selectorTorrentsList != "" {
+		containerEl = doc.Find(option.selectorTorrentsList)
+		containerElNode = containerEl.Get(0)
+	} else if torrentEls.Length() > 1 {
+		commonParentsCnt := map[*html.Node](int64){}
+		nodeSelectionMap := map[*html.Node](*goquery.Selection){}
+		var previousEl *goquery.Selection = nil
+		torrentEls.Each(func(i int, el *goquery.Selection) {
+			if i == 0 {
+				previousEl = el
+				return
+			}
+			commonParent := domCommonParent(previousEl, el)
+			if commonParent != nil {
+				commonParentsCnt[commonParent.Get(0)] += 1
+				nodeSelectionMap[commonParent.Get(0)] = commonParent
+			}
 			previousEl = el
-			return
+		})
+		log.Tracef("nptr: map elsLen=%d, len=%d\n", torrentEls.Length(), len(commonParentsCnt))
+		containerElNode = utils.MapMaxElementKey(commonParentsCnt)
+		if containerElNode != nil {
+			containerEl = nodeSelectionMap[containerElNode]
 		}
-		commonParent := domCommonParent(previousEl, el)
-		if commonParent != nil {
-			commonParentsCnt[commonParent.Get(0)] += 1
-			nodeSelectionMap[commonParent.Get(0)] = commonParent
+	} else if torrentEls.Length() == 1 { // only one torrent found (eg. search result page)
+		parent := torrentEls.Parent()
+		for parent.Length() > 0 && parent.Children().Length() > 1 {
+			parent = parent.Parent()
 		}
-		previousEl = el
-	})
-	log.Tracef("nptr: map elsLen=%d, len=%d\n", torrentEls.Length(), len(commonParentsCnt))
-	containerElNode := utils.MapMaxElementKey(commonParentsCnt)
+		if parent.Length() > 0 && parent.Children().Length() == 1 {
+			containerEl = parent
+			containerElNode = parent.Get(0)
+		}
+	}
 	if containerElNode == nil {
 		err = fmt.Errorf("cann't find torrents list container element")
 		return
 	}
-	containerEl := nodeSelectionMap[containerElNode]
 	log.Tracef("nptr: container node=%v, id=%v, class=%v\n",
 		containerElNode,
 		containerEl.AttrOr("id", ""),

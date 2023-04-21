@@ -220,6 +220,7 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 		torrentsParserOption: &TorrentsParserOption{
 			location:                    location,
 			siteurl:                     siteConfig.Url,
+			selectorTorrentsList:        siteConfig.SelectorTorrentsList,
 			selectorTorrent:             siteConfig.SelectorTorrent,
 			selectorTorrentDownloadLink: siteConfig.SelectorTorrentDownloadLink,
 			selectorTorrentDetailsLink:  siteConfig.SelectorTorrentDetailsLink,
