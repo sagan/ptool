@@ -227,29 +227,29 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		}
 		if fieldColumIndex["time"] == -1 {
 			if option.selectorTorrentTime != "" {
-				time = domTime(s.Find(option.selectorTorrentTime), option.location)
+				time = utils.ExtractTime(utils.DomSelectorText(s, option.selectorTorrentTime), option.location)
 			} else {
 				time = utils.ExtractTime(text, option.location)
 			}
 		}
 		if fieldColumIndex["seeders"] == -1 {
 			if option.SelectorTorrentSeeders != "" {
-				seeders = utils.ParseInt(utils.DomRemovedSpecialCharsText(s.Find(option.SelectorTorrentSeeders)))
+				seeders = utils.ParseInt(utils.DomSelectorText(s, option.SelectorTorrentSeeders))
 			}
 		}
 		if fieldColumIndex["leechers"] == -1 {
 			if option.SelectorTorrentLeechers != "" {
-				leechers = utils.ParseInt(utils.DomRemovedSpecialCharsText(s.Find(option.SelectorTorrentLeechers)))
+				leechers = utils.ParseInt(utils.DomSelectorText(s, option.SelectorTorrentLeechers))
 			}
 		}
 		if fieldColumIndex["snatched"] == -1 {
 			if option.SelectorTorrentSnatched != "" {
-				snatched = utils.ParseInt(utils.DomRemovedSpecialCharsText(s.Find(option.SelectorTorrentSnatched)))
+				snatched = utils.ParseInt(utils.DomSelectorText(s, option.SelectorTorrentSnatched))
 			}
 		}
 		if fieldColumIndex["size"] == -1 {
 			if option.SelectorTorrentSize != "" {
-				size, _ = utils.RAMInBytes(utils.DomRemovedSpecialCharsText(s.Find(option.SelectorTorrentSize)))
+				size, _ = utils.RAMInBytes(utils.DomSelectorText(s, option.SelectorTorrentSize))
 			}
 		}
 		if s.Find(`*[title="H&R"],*[alt="H&R"]`).Length() > 0 {

@@ -88,6 +88,11 @@ var (
 			Type:                       "nexusphp",
 			Url:                        "https://hdcity.city/",
 			SelectorTorrentDetailsLink: `a[href^="t-"]`,
+			SelectorTorrentTime:        `.trtop > div:nth-last-child(2)@text`,
+			SelectorTorrentSize:        `.trbo > div:nth-child(3)@text`,
+			SelectorTorrentSeeders:     `a[title="种子数"] font`,
+			SelectorTorrentLeechers:    ``,
+			SelectorTorrentSnatched:    `a[title="完成数"]@text`,
 		},
 		"hdtime": &config.SiteConfigStruct{
 			Type: "nexusphp",

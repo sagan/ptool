@@ -17,6 +17,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/constraints"
 	"golang.org/x/exp/slices"
+	"golang.org/x/net/html"
 )
 
 var (
@@ -306,11 +307,43 @@ func DomHtml(el *goquery.Selection) string {
 	return html
 }
 
-func DomSanitizedText(el *goquery.Selection) string {
-	text := el.Text()
+/*
+ * DIY 了个 @text 选择器语法。用于选择某个 Element 里的第一个 TEXT_NODE
+ */
+func DomSelectorText(el *goquery.Selection, selector string) (text string) {
+	isTextNode := false
+	if strings.HasSuffix(selector, "@text") {
+		isTextNode = true
+		selector = selector[:len(selector)-5]
+	}
+	el = el.Find(selector)
+	if el.Length() == 0 {
+		return
+	}
+	if isTextNode {
+		elNode := el.Get(0)
+		node := elNode.FirstChild
+		for node != nil {
+			if node.Type == html.TextNode {
+				text += SanitizeText(node.Data)
+				break
+			}
+			node = node.NextSibling
+		}
+	} else {
+		text = DomSanitizedText(el)
+	}
+	return
+}
+
+func SanitizeText(text string) string {
 	text = strings.ReplaceAll(text, "\u00ad", "") // &shy;  invisible Soft hyphen
 	text = strings.TrimSpace(text)
 	return text
+}
+
+func DomSanitizedText(el *goquery.Selection) string {
+	return SanitizeText(el.Text())
 }
 
 func DomRemovedSpecialCharsText(node *goquery.Selection) string {
