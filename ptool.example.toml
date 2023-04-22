@@ -1,4 +1,4 @@
-iyuutoken = "abcdefg"
+iyuuToken = "abcdefg"
 #brushEnableStats = false # 启用刷流统计功能
 #treatZeroFreeDiskSpaceAsError = false # 如启用。BT客户端返回的硬盘剩余空间“0”将被认为是错误值。
 
@@ -13,7 +13,8 @@ password = "adminadmin"
 #brushMaxDownloadingTorrents = 6 # 刷流：位于下载状态的种子数上限
 #brushMaxTorrents = 50 # 刷流：种子数（所有状态）上限
 #brushMinRatio = 0.2 # 刷流：最小上传/下载量比例
-#brushDefaultUploadSpeedLimit = "10MB" # 默认最大上传速度限制(/s)
+#brushDefaultUploadSpeedLimit = "10MB" # 刷流：默认最大上传速度限制(/s)
+#brushTorrentSizeLimit = "1PB" #刷流：种子大小限制。大小超过此值的种子不会被选择。
 
 [[sites]]
 name = "mt"

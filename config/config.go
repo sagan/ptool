@@ -19,6 +19,7 @@ const (
 	DEFAULT_CLIENT_BRUSH_MAX_TORRENTS               = int64(500)
 	DEFAULT_CLIENT_BRUSH_MIN_RATION                 = float64(0.2)
 	DEFAULT_CLIENT_BRUSH_DEFAULT_UPLOAD_SPEED_LIMIT = int64(10 * 1024 * 1024)
+	DEFAULT_CLIENT_BRUSH_TORRENT_SIZE_LIMIT         = int64(1024 * 1024 * 1024 * 1024 * 1024) // 1PB, that's say, unlimited
 	DEFAULT_SITE_TORRENT_UPLOAD_SPEED_LIMIT         = int64(10 * 1024 * 1024)
 	VERSION                                         = "0.0.1"
 )
@@ -36,9 +37,11 @@ type ClientConfigStruct struct {
 	BrushMaxTorrents                  int64   `yaml:"brushMaxTorrents"`
 	BrushMinRatio                     float64 `yaml:"brushMinRatio"`
 	BrushDefaultUploadSpeedLimit      string  `yaml:"brushDefaultUploadSpeedLimit"`
+	BrushTorrentSizeLimit             string  `yaml:"brushTorrentSizeLimit"`
 	BrushMinDiskSpaceValue            int64
 	BrushSlowUploadSpeedTierValue     int64
 	BrushDefaultUploadSpeedLimitValue int64
+	BrushTorrentSizeLimitValue        int64
 }
 
 type SiteConfigStruct struct {
@@ -125,6 +128,12 @@ func Get() *ConfigStruct {
 					v = DEFAULT_CLIENT_BRUSH_DEFAULT_UPLOAD_SPEED_LIMIT
 				}
 				Config.Clients[i].BrushDefaultUploadSpeedLimitValue = v
+
+				v, err = utils.RAMInBytes(client.BrushTorrentSizeLimit)
+				if err != nil || v <= 0 {
+					v = DEFAULT_CLIENT_BRUSH_TORRENT_SIZE_LIMIT
+				}
+				Config.Clients[i].BrushTorrentSizeLimitValue = v
 
 				if client.BrushMaxDownloadingTorrents == 0 {
 					Config.Clients[i].BrushMaxDownloadingTorrents = DEFAULT_CLIENT_BRUSH_MAX_DOWNLOADING_TORRENTS

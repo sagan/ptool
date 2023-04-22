@@ -33,6 +33,7 @@ type BrushOptionStruct struct {
 	MaxTorrents             int64
 	MinRatio                float64
 	DefaultUploadSpeedLimit int64
+	TorrentSizeLimit        int64
 	Now                     int64
 }
 
@@ -180,7 +181,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 			continue
 		}
 
-		if torrent.State == "error" {
+		if torrent.State == "error" && torrent.DownloadSpeed < option.SlowUploadSpeedTier {
 			deleteCandidateTorrents = append(deleteCandidateTorrents, candidateClientTorrentStruct{
 				InfoHash:    torrent.InfoHash,
 				Score:       DELETE_TORRENT_IMMEDIATELY_STORE,
@@ -386,7 +387,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	}
 
 	// add new torrents
-	if freespace >= option.MinDiskSpace && cntTorrents <= option.MaxTorrents {
+	if freespace > option.MinDiskSpace && cntTorrents <= option.MaxTorrents {
 		for cntDownloadingTorrents < option.MaxDownloadingTorrents && estimateUploadSpeed <= targetUploadSpeed*2 && len(candidateTorrents) > 0 {
 			candidateTorrent := candidateTorrents[0]
 			candidateTorrents = candidateTorrents[1:]
@@ -425,6 +426,7 @@ func rateSiteTorrent(siteTorrent *site.Torrent, brushOption *BrushOptionStruct) 
 	if siteTorrent.IsActive ||
 		siteTorrent.HasHnR ||
 		siteTorrent.DownloadMultiplier != 0 ||
+		siteTorrent.Size > brushOption.TorrentSizeLimit ||
 		(siteTorrent.DiscountEndTime > 0 && siteTorrent.DiscountEndTime-brushOption.Now < 3600) ||
 		siteTorrent.Seeders == 0 ||
 		siteTorrent.Leechers <= siteTorrent.Seeders {

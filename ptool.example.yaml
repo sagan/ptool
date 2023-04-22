@@ -1,4 +1,4 @@
-iyuutoken: abcdefg
+iyuuToken: abcdefg
 #brushEnableStats: false # 启用刷流统计功能
 #treatZeroFreeDiskSpaceAsError: false # 如启用。BT客户端返回的硬盘剩余空间“0”将被认为是错误值。
 clients:
