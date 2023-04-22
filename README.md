@@ -10,7 +10,7 @@
 * 目前支持的 BT 客户端： qBittorrent 4.1+。
 * 目前支持的 PT 站点：绝大部分使用 nexusphp 的网站。
   * 测试过支持的站点：M-Team(馒头)、柠檬、U2、冬樱、红叶、聆音、铂金家、若干不可说的站点。
-  * 未列出的大部分 np 站点应该也支持。除了个别魔改 np 很厉害的站点（例如城市）尚不支持。
+  * 未列出的大部分 np 站点应该也支持。除了个别魔改 np 很厉害的站点可能不支持。
 * 刷流任务：
   * 不依赖 RSS。直接抓取站点页面上最新的种子。
   * 无需配置选种规则。自动跳过非免费的种子；自动筛选适合刷流的种子。
@@ -29,34 +29,49 @@ username = "admin" # QB Web UI 用户名
 password = "adminadmin" # QB Web UI 密码
 
 [[sites]]
-name = "mteam"
-type = "nexusphp" # 站点类型。目前只支持 nexusphp
-url = "https://kp.m-team.cc/" # 站点首页 URL
+type = "mteam"
 cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
-
 ```
-
-可以使用 ```[[clients]]``` 和 ```[[sites]]``` 区块添加任意多个 BT 客户端和站点。
 
 然后在当前目录下运行 ```ptool brush local mteam``` 即可执行刷流任务。程序会从 M-Team 获取最新的种子、根据一定规则筛选出适合的种子添加到本地的 qBittorrent 客户端里，同时自动从 BT 客户端里删除（已经没有上传的）旧的刷流种子。刷流任务添加到客户端里的种子会放到 ```_brush``` 分类(Category)里。程序只会对这个分类里的种子进行管理或删除等操作。
 
 使用 cron job / 计划任务等方式定时执行上面的刷流任务命令（例如每隔 10 分钟执行一次）即可。
 
 
-
 ## 配置文件
 
-程序支持使用 toml 或 yaml 格式的配置文件（```ptool.toml``` 或 ```ptool.toml```）。
+程序支持使用 toml 或 yaml 格式的配置文件（```ptool.toml``` 或 ```ptool.toml```），推荐使用前者。
 
-配置文件可以之间放到程序启动时的当前目录下，也可以选择放到当前操作系统用户主目录下的 ".config/ptool/" 路径下（推荐）：
+配置文件可以直接放到程序启动时的当前目录(cwd)下，也可以选择放到当前操作系统用户主目录下的 ".config/ptool/" 路径下（推荐）：
 
 * Linux: ```~/.config/ptool/ptool.toml```
 * Windows: ```%USERPROFILE%\.config\ptool\ptool.toml```
 
 也可以通过启动程序时传入命令行参数 ```--config ptool.toml``` 手动指定使用的配置文件路径。
 
+配置文件里可以使用 ```[[clients]]``` 和 ```[[sites]]``` 区块添加任意多个 BT 客户端和站点。
+
+```[[site]]``` 区块有两种配置方式：
+
+```
+# 方式 1（推荐）：直接使用站点 ID 作为类型(type)。无需手动输入站点 url。
+[[sites]]
+type = "mteam"
+cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
+
+# 方式 2：使用通用的 nexusphp 类型，需要手动指定站点 url 和其他参数。
+[[sites]]
+name = "mteam"
+type = "nexusphp" # 站点类型。目前只支持 nexusphp
+url = "https://kp.m-team.cc/" # 站点首页 URL
+cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
+```
+
+推荐使用“方式 1”。程序支持大部分国内的 NexusPHP PT 站点。站点 ID 通常为 PT 网站域名的主体部分（不含次级域名和 TLD 部分），例如 BTSCHOOL (https://pt.btschool.club/)的站点 ID 是 btschool。作为例外，M-TEAM (https://kp.m-team.cc/)的站点 ID 是 mteam 而非 m-team。参考程序代码根目录下的 site/tpl/tpl.go 文件查看所有支持的 PT 站点。
+
 参考程序代码根目录下的 ```ptool.example.toml``` 和 ```ptool.example.yaml``` 示例配置文件了解所有可用的配置项。
 
+配置好站点后，使用 ```ptool status <site> -t``` 测试。如果配置正确且 Cookie 有效，会显示站点当前登录用户的状态信息和网站最新种子列表。
 
 ## 程序功能
 
@@ -72,6 +87,11 @@ ptool <command> args...
 * clientctl : BT 客户端控制。
 * status : 显示 BT 客户端或 PT 站点当前状态信息。
 * stats : 显示刷流任务流量统计。
+* search : 在某个站点搜索指定关键词的种子
+* add : 将某个站点的指定种子添加到 BT 客户端。
+* delete : 从某个 BT 客户端里删除种子及其文件。
+
+输入 ```ptool <command> -h``` 查看对应命令的参数格式和使用说明。
 
 ### 刷流 (brush)
 
@@ -146,6 +166,11 @@ ptool status <clientOrSite>...
 
 * BT 客户端：显示当前下载 / 上传速度和其上限，硬盘剩余可用空间。
 * PT 站点：显示用户名、上传量、下载量。
+
+可选参数：
+
+* -t : 显示 BT 客户端或站点的种子列表（BT 客户端：当前活动的种子；PT 站点：最新种子）。
+* -f : 显示完整的种子列表信息。
 
 ### 显示刷流任务流量统计 (stats)
 

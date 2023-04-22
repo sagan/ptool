@@ -37,6 +37,7 @@ type Status struct {
 	UploadSpeed        int64
 	DownloadSpeedLimit int64 // <= 0 means no limit
 	UploadSpeedLimit   int64 // <= 0 means no limit
+	NoAdd              bool  // if true, brush and other tasks will NOT add any torrents to client
 }
 
 type TorrentOption struct {
@@ -52,7 +53,7 @@ type Client interface {
 	GetTorrents(state string, category string, showAll bool) ([]Torrent, error)
 	AddTorrent(torrentContent []byte, option *TorrentOption, meta map[string](int64)) error
 	ModifyTorrent(infoHash string, option *TorrentOption, meta map[string](int64)) error
-	DeleteTorrents(infoHashes []string) error
+	DeleteTorrents(infoHashes []string, deleteFiles bool) error
 	TorrentRootPathExists(rootFolder string) bool
 	PurgeCache()
 	GetStatus() (*Status, error)
@@ -144,10 +145,11 @@ func ParseMetaFromName(fullname string) (name string, meta map[string](int64)) {
 	return
 }
 
-func TorrentStateIconText(state string) string {
-	switch state {
+func TorrentStateIconText(torrent *Torrent) string {
+	switch torrent.State {
 	case "downloading":
-		return "↓D"
+		process := int64(float64(torrent.SizeCompleted) / float64(torrent.Size) * 100)
+		return fmt.Sprint("↓", process, "%")
 	case "seeding":
 		return "↑U"
 	case "paused":
@@ -174,19 +176,20 @@ func GenerateTorrentTagFromSite(site string) string {
 }
 
 func PrintTorrents(torrents []Torrent, filter string) {
-	fmt.Printf("%-40s  %40s  %25s  %11s  %12s  %12s\n", "Name", "InfoHash", "Tracker", "State", "↓S", "↑S")
+	fmt.Printf("%-40s  %40s  %10s  %6s  %12s  %12s  %25s\n", "Name", "InfoHash", "Size", "State", "↓S", "↑S", "Tracker")
 	for _, torrent := range torrents {
 		if filter != "" && !utils.ContainsI(torrent.Name, filter) && !utils.ContainsI(torrent.InfoHash, filter) {
 			continue
 		}
 		name := torrent.Name
 		utils.PrintStringInWidth(name, 40, true)
-		fmt.Printf("  %40s  %25s  %11s  %10s/s  %10s/s\n",
+		fmt.Printf("  %40s  %10s  %6s  %10s/s  %10s/s  %25s\n",
 			torrent.InfoHash,
-			torrent.TrackerDomain,
-			TorrentStateIconText(torrent.State),
+			utils.BytesSize(float64(torrent.Size)),
+			TorrentStateIconText(&torrent),
 			utils.BytesSize(float64(torrent.DownloadSpeed)),
 			utils.BytesSize(float64(torrent.UploadSpeed)),
+			torrent.TrackerDomain,
 		)
 	}
 }

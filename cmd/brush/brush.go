@@ -34,6 +34,7 @@ var (
 	dryRun   = false
 	paused   = false
 	ordered  = false
+	force    = false
 	maxSites = int64(0)
 )
 
@@ -41,6 +42,7 @@ func init() {
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do not actually controlling client")
 	command.Flags().BoolVarP(&paused, "paused", "p", false, "Add torrents to client in paused state")
 	command.Flags().BoolVarP(&ordered, "ordered", "o", false, "Brush sites provided in order")
+	command.Flags().BoolVarP(&force, "force", "f", false, "Force mode. Ignore NoAdd flag in clients.")
 	command.Flags().Int64Var(&maxSites, "max-sites", 0, "Allowed max succcess sites number, 0 = unlimited")
 	cmd.RootCmd.AddCommand(command)
 }
@@ -78,6 +80,7 @@ func brush(cmd *cobra.Command, args []string) {
 			log.Printf("Failed to get client %s status: %v", clientInstance.GetName(), err)
 			continue
 		}
+		noadd := !force && status.NoAdd
 		if status.FreeSpaceOnDisk == 0 && config.Get().TreatZeroFreeDiskSpaceAsError {
 			log.Warnf("Warn: FreeSpaceOnDisk=0, treat it as an error value.")
 			status.FreeSpaceOnDisk = 1024 * 1024 * 1024 * 1024
@@ -93,6 +96,8 @@ func brush(cmd *cobra.Command, args []string) {
 			)
 		} else if siteInstance.GetSiteConfig().GlobalHnR {
 			log.Printf("Site %s enforces global HnR. Do not fetch site new torrents", sitename)
+		} else if noadd {
+			log.Printf("Client %s in NoAdd status. Do not fetch site new torrents", clientInstance.GetName())
 		} else {
 			siteTorrents, err = siteInstance.GetLatestTorrents(true)
 			if err != nil {
@@ -237,7 +242,7 @@ func brush(cmd *cobra.Command, args []string) {
 			if dryRun {
 				continue
 			}
-			err := clientInstance.DeleteTorrents([]string{torrent.InfoHash})
+			err := clientInstance.DeleteTorrents([]string{torrent.InfoHash}, true)
 			log.Printf("Delete torrent result: error=%v", err)
 			if err == nil {
 				cntDeleteTorrents++
@@ -261,6 +266,11 @@ func brush(cmd *cobra.Command, args []string) {
 			cntSuccessSite++
 		} else {
 			cntSkipSite++
+		}
+		if noadd {
+			log.Printf("Client in NoAdd status. Skip follow sites.")
+			cntSkipSite += int64(len(sitenames) - 1 - i)
+			break
 		}
 		if maxSites > 0 && cntSuccessSite >= maxSites {
 			log.Printf("MaxSites reached. Stop brushing.")

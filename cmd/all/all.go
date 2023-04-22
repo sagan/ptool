@@ -5,6 +5,7 @@ import (
 	_ "github.com/sagan/ptool/cmd/add"
 	_ "github.com/sagan/ptool/cmd/brush"
 	_ "github.com/sagan/ptool/cmd/clientctl"
+	_ "github.com/sagan/ptool/cmd/delete"
 	_ "github.com/sagan/ptool/cmd/iyuu/all"
 	_ "github.com/sagan/ptool/cmd/parsetorrent"
 	_ "github.com/sagan/ptool/cmd/search"

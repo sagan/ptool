@@ -133,7 +133,7 @@ func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 	return err
 }
 
-func (qbclient *Client) DeleteTorrents(infoHashes []string) error {
+func (qbclient *Client) DeleteTorrents(infoHashes []string, deleteFiles bool) error {
 	if len(infoHashes) == 0 {
 		return nil
 	}
@@ -141,9 +141,13 @@ func (qbclient *Client) DeleteTorrents(infoHashes []string) error {
 	if err != nil {
 		return fmt.Errorf("login error: %v", err)
 	}
+	deleteFilesStr := "false"
+	if deleteFiles {
+		deleteFilesStr = "true"
+	}
 	data := url.Values{
 		"hashes":      {strings.Join(infoHashes, "|")},
-		"deleteFiles": {"true"},
+		"deleteFiles": {deleteFilesStr},
 	}
 	return qbclient.apiPost("api/v2/torrents/delete", data)
 }
@@ -270,6 +274,11 @@ func (qbclient *Client) GetStatus() (*client.Status, error) {
 	status.DownloadSpeedLimit = qbclient.data.Server_state.Dl_rate_limit
 	status.UploadSpeedLimit = qbclient.data.Server_state.Up_rate_limit
 	status.FreeSpaceOnDisk = qbclient.data.Server_state.Free_space_on_disk
+	if utils.FindInSlice(qbclient.data.Tags, func(tag string) bool {
+		return strings.ToLower(tag) == "_noadd"
+	}) != nil {
+		status.NoAdd = true
+	}
 	return &status, nil
 }
 

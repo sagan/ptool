@@ -1,8 +1,15 @@
 package qbittorrent
 
+type apiCategoryStruct struct {
+	Name     string `json:"name"`
+	SavePath string `json:"savePath"`
+}
+
 type apiSyncMaindata struct {
-	Server_state apiTransferInfo             `json:"server_state"`
-	Torrents     map[string](apiTorrentInfo) `json:"torrents"`
+	Server_state apiTransferInfo                `json:"server_state"`
+	Tags         []string                       `json:"tags"`
+	Categories   map[string](apiCategoryStruct) `json:"categories"`
+	Torrents     map[string](apiTorrentInfo)    `json:"torrents"`
 }
 
 type apiTransferInfo struct {
