@@ -15,6 +15,7 @@
 # vendor/
 
 # config file
+ptool.toml
 ptool.yaml
 ptool_stats.txt
 

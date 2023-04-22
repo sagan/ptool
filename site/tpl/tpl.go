@@ -188,6 +188,10 @@ var (
 			Type: "nexusphp",
 			Url:  "https://wintersakura.net/",
 		},
+		"xinglin": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://xinglin.one/",
+		},
 		"zmpt": &config.SiteConfigStruct{
 			Type: "nexusphp",
 			Url:  "https://zmpt.cc/",

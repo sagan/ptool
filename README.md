@@ -53,7 +53,7 @@ cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 
 ```[[site]]``` 区块有两种配置方式：
 
-```
+```toml
 # 方式 1（推荐）：直接使用站点 ID 作为类型(type)。无需手动输入站点 url。
 [[sites]]
 type = "mteam"
