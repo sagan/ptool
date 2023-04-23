@@ -133,6 +133,34 @@ func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 	return err
 }
 
+func (qbclient *Client) PauseTorrents(infoHashes []string) error {
+	if len(infoHashes) == 0 {
+		return nil
+	}
+	err := qbclient.login()
+	if err != nil {
+		return fmt.Errorf("login error: %v", err)
+	}
+	data := url.Values{
+		"hashes": {strings.Join(infoHashes, "|")},
+	}
+	return qbclient.apiPost("api/v2/torrents/pause", data)
+}
+
+func (qbclient *Client) ResumeTorrents(infoHashes []string) error {
+	if len(infoHashes) == 0 {
+		return nil
+	}
+	err := qbclient.login()
+	if err != nil {
+		return fmt.Errorf("login error: %v", err)
+	}
+	data := url.Values{
+		"hashes": {strings.Join(infoHashes, "|")},
+	}
+	return qbclient.apiPost("api/v2/torrents/resume", data)
+}
+
 func (qbclient *Client) DeleteTorrents(infoHashes []string, deleteFiles bool) error {
 	if len(infoHashes) == 0 {
 		return nil
@@ -169,19 +197,21 @@ func (qbclient *Client) ModifyTorrent(infoHash string,
 		return fmt.Errorf("torrent not exists")
 	}
 
-	name := option.Name
-	if name == "" {
-		name, _ = client.ParseMetaFromName(qbtorrent.Name)
-	}
-	name = client.GenerateNameWithMeta(name, meta)
-	if name != qbtorrent.Name {
-		data := url.Values{
-			"hash": {infoHash},
-			"name": {name},
+	if option.Name != "" || len(meta) > 0 {
+		name := option.Name
+		if name == "" {
+			name, _ = client.ParseMetaFromName(qbtorrent.Name)
 		}
-		err := qbclient.apiPost("api/v2/torrents/rename", data)
-		if err != nil {
-			return err
+		name = client.GenerateNameWithMeta(name, meta)
+		if name != qbtorrent.Name {
+			data := url.Values{
+				"hash": {infoHash},
+				"name": {name},
+			}
+			err := qbclient.apiPost("api/v2/torrents/rename", data)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -193,6 +223,46 @@ func (qbclient *Client) ModifyTorrent(infoHash string,
 		err := qbclient.apiPost("api/v2/torrents/setCategory", data)
 		if err != nil {
 			return err
+		}
+	}
+
+	if len(option.Tags) > 0 || len(option.RemoveTags) > 0 {
+		qbTags := strings.Split(qbtorrent.Tags, ",")
+		addTags := []string{}
+		removeTags := []string{}
+		for _, addTag := range option.Tags {
+			if utils.FindInSlice(qbTags, func(tag string) bool {
+				return tag == addTag
+			}) == nil {
+				addTags = append(addTags, addTag)
+			}
+		}
+		for _, removeTag := range option.RemoveTags {
+			if utils.FindInSlice(qbTags, func(tag string) bool {
+				return tag == removeTag
+			}) != nil {
+				removeTags = append(removeTags, removeTag)
+			}
+		}
+		if len(addTags) > 0 {
+			data := url.Values{
+				"hashes": {infoHash},
+				"tags":   {strings.Join(addTags, ",")},
+			}
+			err := qbclient.apiPost("api/v2/torrents/addTags", data)
+			if err != nil {
+				return err
+			}
+		}
+		if len(removeTags) > 0 {
+			data := url.Values{
+				"hashes": {infoHash},
+				"tags":   {strings.Join(addTags, ",")},
+			}
+			err := qbclient.apiPost("api/v2/torrents/removeTags", data)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

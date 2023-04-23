@@ -8,6 +8,8 @@ import (
 	_ "github.com/sagan/ptool/cmd/delete"
 	_ "github.com/sagan/ptool/cmd/iyuu/all"
 	_ "github.com/sagan/ptool/cmd/parsetorrent"
+	_ "github.com/sagan/ptool/cmd/pause"
+	_ "github.com/sagan/ptool/cmd/resume"
 	_ "github.com/sagan/ptool/cmd/search"
 	_ "github.com/sagan/ptool/cmd/statscmd"
 	_ "github.com/sagan/ptool/cmd/status"

@@ -44,6 +44,7 @@ type TorrentOption struct {
 	Name               string
 	Category           string
 	Tags               []string
+	RemoveTags         []string // used only in ModifyTorrent
 	DownloadSpeedLimit int64
 	UploadSpeedLimit   int64
 	Paused             bool
@@ -54,6 +55,8 @@ type Client interface {
 	AddTorrent(torrentContent []byte, option *TorrentOption, meta map[string](int64)) error
 	ModifyTorrent(infoHash string, option *TorrentOption, meta map[string](int64)) error
 	DeleteTorrents(infoHashes []string, deleteFiles bool) error
+	PauseTorrents(infoHashes []string) error
+	ResumeTorrents(infoHashes []string) error
 	TorrentRootPathExists(rootFolder string) bool
 	PurgeCache()
 	GetStatus() (*Status, error)
