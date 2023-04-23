@@ -14,4 +14,5 @@ import (
 	_ "github.com/sagan/ptool/cmd/statscmd"
 	_ "github.com/sagan/ptool/cmd/status"
 	_ "github.com/sagan/ptool/cmd/version"
+	_ "github.com/sagan/ptool/cmd/xseedcheck"
 )

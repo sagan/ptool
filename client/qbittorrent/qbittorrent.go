@@ -5,7 +5,6 @@ package qbittorrent
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -95,7 +94,7 @@ func (qbclient *Client) GetClientConfig() *config.ClientConfigStruct {
 func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.TorrentOption, meta map[string](int64)) error {
 	err := qbclient.login()
 	if err != nil {
-		return errors.New("login error " + err.Error())
+		return fmt.Errorf("login error: %v", err)
 	}
 
 	name := client.GenerateNameWithMeta(option.Name, meta)
@@ -302,7 +301,7 @@ func (qbclient *Client) sync() error {
 	}
 	err := qbclient.login()
 	if err != nil {
-		return errors.New("login error " + err.Error())
+		return fmt.Errorf("login error: %v", err)
 	}
 	err = qbclient.apiRequest("api/v2/sync/maindata", &qbclient.data)
 	if err != nil {
@@ -355,7 +354,7 @@ func (qbclient *Client) GetStatus() (*client.Status, error) {
 func (qbclient *Client) GetConfig(variable string) (string, error) {
 	err := qbclient.login()
 	if err != nil {
-		return "", errors.New("login error " + err.Error())
+		return "", fmt.Errorf("login error: %v", err)
 	}
 	switch variable {
 	case "global_download_speed_limit":
@@ -374,7 +373,7 @@ func (qbclient *Client) GetConfig(variable string) (string, error) {
 func (qbclient *Client) SetConfig(variable string, value string) error {
 	err := qbclient.login()
 	if err != nil {
-		return errors.New("login error " + err.Error())
+		return fmt.Errorf("login error: %v", err)
 	}
 	switch variable {
 	case "global_download_speed_limit":
@@ -443,6 +442,28 @@ func (qbclient *Client) GetTorrents(stateFilter string, category string, showAll
 		torrents = append(torrents, torrent)
 	}
 	return torrents, nil
+}
+
+func (qbclient *Client) GetTorrentContents(infoHash string) ([]client.TorrentContentFile, error) {
+	err := qbclient.login()
+	if err != nil {
+		return nil, fmt.Errorf("login error: %v", err)
+	}
+	apiUrl := qbclient.ClientConfig.Url + "api/v2/torrents/files?hash=" + infoHash
+	qbTorrentContents := []apiTorrentContent{}
+	err = utils.FetchJson(apiUrl, &qbTorrentContents, qbclient.HttpClient)
+	if err != nil {
+		return nil, err
+	}
+	torrentContents := []client.TorrentContentFile{}
+	for _, qbTorrentContent := range qbTorrentContents {
+		torrentContents = append(torrentContents, client.TorrentContentFile{
+			Index: qbTorrentContent.Index,
+			Path:  qbTorrentContent.Name,
+			Size:  qbTorrentContent.Size,
+		})
+	}
+	return torrentContents, nil
 }
 
 func NewClient(name string, clientConfig *config.ClientConfigStruct, config *config.ConfigStruct) (client.Client, error) {

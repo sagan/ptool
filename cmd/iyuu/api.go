@@ -7,10 +7,19 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/utils"
 
 	log "github.com/sirupsen/logrus"
 )
+
+// IYUU 部分站点 name 与本程序有差异
+var IYUU_SITE_IDS = map[string](string){
+	"leaguehd":  "lemonhd",
+	"pt0ffcc":   "0ff",
+	"pt2xfree":  "2xFree",
+	"redleaves": "leaves",
+}
 
 type IyuuSite struct {
 	id      int64
@@ -18,11 +27,35 @@ type IyuuSite struct {
 	canBind bool
 }
 
+type IyuuApiSite struct {
+	Id            int64  `json:"id"`
+	Site          string `json:"site"`
+	Base_url      string `json:"base_url"`
+	Nickname      string `json:"nickname"`      // "朋友" / "馒头"
+	Download_page string `json:"download_page"` // torrent download url. params: {passkey}, {authkey}, {} (id)
+	Is_https      int64  `json:"is_https"`      // 1 / 0
+	Reseed_check  string `json:"reseed_check"`  // "passkey"
+}
+
+type IyuuApiResponse struct {
+	Ret  int64            `json:"ret"`
+	Msg  string           `json:"msg"`
+	Data map[string](any) `json:"data"`
+}
+
 type IyuuApiGetUserResponse struct {
 	Ret  int64  `json:"ret"`
 	Msg  string `json:"msg"`
 	Data struct {
 		User map[string](any) `json:"user"`
+	} `json:"data"`
+}
+
+type IyuuApiSitesResponse struct {
+	Ret  int64  `json:"ret"`
+	Msg  string `json:"msg"`
+	Data struct {
+		Sites []IyuuApiSite `json:"sites"`
 	} `json:"data"`
 }
 
@@ -93,4 +126,70 @@ func IyuuApiGetUser(token string) (data map[string](any), err error) {
 	err = utils.FetchJson("https://api.iyuu.cn/index.php?s=App.Api.GetUser&sign="+token,
 		&data, nil)
 	return
+}
+
+func IyuuApiSites(token string) (sites []IyuuApiSite, err error) {
+	resData := &IyuuApiSitesResponse{}
+	err = utils.FetchJson("https://api.iyuu.cn/index.php?s=App.Api.Sites&version="+
+		IYUU_VERSION+"&sign="+token,
+		resData, nil)
+	if err != nil {
+		return nil, err
+	}
+	if resData.Ret != 200 {
+		return nil, fmt.Errorf("iyuu api error: ret=%d, msg=%s", resData.Ret, resData.Msg)
+	}
+	sites = resData.Data.Sites
+	return
+}
+
+func IyuuApiBind(token string, site string, uid int64, passkey string) (data map[string](any), err error) {
+	apiUrl := "https://api.iyuu.cn/index.php?s=App.Api.Bind&token=" + token +
+		"&site=" + site + "&id" + fmt.Sprint(uid) + "&passkey=" + utils.Sha1String(passkey)
+
+	resData := &IyuuApiResponse{}
+	err = utils.FetchJson(apiUrl, &resData, nil)
+	if err != nil {
+		return nil, err
+	}
+	if resData.Ret != 200 {
+		return nil, fmt.Errorf("iyuu api error: ret=%d, msg=%s", resData.Ret, resData.Msg)
+	}
+	return resData.Data, nil
+}
+
+func (site *IyuuApiSite) GetUrl() string {
+	siteUrl := "https://"
+	if site.Is_https == 0 {
+		siteUrl = "http://"
+	}
+	siteUrl += site.Base_url
+	if !strings.Contains(site.Base_url, "/") {
+		siteUrl += "/"
+	}
+	return siteUrl
+}
+
+func GenerateIyuu2LocalSiteMap(iyuuSites []IyuuApiSite,
+	localSites []config.SiteConfigStruct) map[int64]string {
+	iyuu2LocalSiteMap := map[int64](string){} // iyuu sid => local site name
+	for _, iyuuSite := range iyuuSites {
+		localSite := utils.FindInSlice(localSites, func(site config.SiteConfigStruct) bool {
+			if site.Disabled {
+				return false
+			}
+			if site.Url != "" && site.Url == iyuuSite.GetUrl() {
+				return true
+			}
+			name := iyuuSite.Site
+			if IYUU_SITE_IDS[name] != "" {
+				name = IYUU_SITE_IDS[name]
+			}
+			return name == site.GetName()
+		})
+		if localSite != nil {
+			iyuu2LocalSiteMap[iyuuSite.Id] = localSite.GetName()
+		}
+	}
+	return iyuu2LocalSiteMap
 }

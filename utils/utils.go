@@ -243,6 +243,13 @@ func Filter[T any](ss []T, test func(T) bool) (ret []T) {
 	return
 }
 
+func Map[T1 any, T2 any](ss []T1, mapper func(T1) T2) (ret []T2) {
+	for _, s := range ss {
+		ret = append(ret, mapper(s))
+	}
+	return
+}
+
 func MapMaxElementKey[TK comparable, TV constraints.Ordered](m map[TK](TV)) TK {
 	var result TK
 	var resultValue TV
@@ -432,4 +439,8 @@ func Sha1(s []byte) string {
 	h := sha1.New()
 	h.Write(s)
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+func Sha1String(s string) string {
+	return Sha1([]byte(s))
 }

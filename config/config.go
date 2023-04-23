@@ -196,3 +196,11 @@ func GetSiteConfig(name string) *SiteConfigStruct {
 	}
 	return nil
 }
+
+func (siteConfig *SiteConfigStruct) GetName() string {
+	id := siteConfig.Name
+	if id == "" {
+		id = siteConfig.Type
+	}
+	return id
+}

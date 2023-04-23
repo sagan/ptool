@@ -7,6 +7,8 @@ import (
 
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/utils"
+
+	goTorrentParser "github.com/j-muller/go-torrent-parser"
 )
 
 type Torrent struct {
@@ -29,6 +31,12 @@ type Torrent struct {
 	Seeders            int64
 	Leechers           int64
 	Meta               map[string](int64)
+}
+
+type TorrentContentFile struct {
+	Index int64
+	Path  string // full file path
+	Size  int64
 }
 
 type Status struct {
@@ -58,6 +66,7 @@ type Client interface {
 	PauseTorrents(infoHashes []string) error
 	ResumeTorrents(infoHashes []string) error
 	TorrentRootPathExists(rootFolder string) bool
+	GetTorrentContents(infoHash string) ([]TorrentContentFile, error)
 	PurgeCache()
 	GetStatus() (*Status, error)
 	GetName() string
@@ -174,6 +183,17 @@ func (torrent *Torrent) GetSiteFromTag() string {
 	return ""
 }
 
+func (torrent *Torrent) IsFullComplete() bool {
+	return torrent.SizeCompleted == torrent.Size
+}
+
+func (torrent *Torrent) HasTag(tag string) bool {
+	tag = strings.ToLower(tag)
+	return utils.FindInSlice(torrent.Tags, func(t string) bool {
+		return strings.ToLower(t) == tag
+	}) != nil
+}
+
 func GenerateTorrentTagFromSite(site string) string {
 	return "site:" + site
 }
@@ -195,4 +215,22 @@ func PrintTorrents(torrents []Torrent, filter string) {
 			torrent.TrackerDomain,
 		)
 	}
+}
+
+// return 0 if equal; 1 if clientTorrentContents contains all files of torrentContents. -1 in other cases
+func XseedCheckTorrentContents(clientTorrentContents []TorrentContentFile, torrentContents []*goTorrentParser.File) int64 {
+	if len(clientTorrentContents) < len(torrentContents) {
+		return -1
+	}
+	length := len(torrentContents)
+	for i := 0; i < length; i++ {
+		if clientTorrentContents[i].Path != strings.Join(torrentContents[i].Path, "/") ||
+			clientTorrentContents[i].Size != torrentContents[i].Length {
+			return -1
+		}
+	}
+	if length < len(clientTorrentContents) {
+		return 1
+	}
+	return 0
 }
