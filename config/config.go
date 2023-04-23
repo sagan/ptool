@@ -65,6 +65,8 @@ type SiteConfigStruct struct {
 	SelectorTorrentLeechers      string   `yaml:"selectorTorrentLeechers"`
 	SelectorTorrentSnatched      string   `yaml:"selectorTorrentSnatched"`
 	SelectorTorrentSize          string   `yaml:"selectorTorrentSize"`
+	SelectorTorrentProcessBar    string   `yaml:"selectorTorrentProcessBar"`
+	SelectorUserInfo             string   `yaml:"selectorUserInfo"`
 	TorrentUploadSpeedLimitValue int64
 }
 

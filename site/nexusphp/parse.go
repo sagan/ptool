@@ -31,6 +31,7 @@ type TorrentsParserOption struct {
 	SelectorTorrentLeechers     string
 	SelectorTorrentSnatched     string
 	SelectorTorrentSize         string
+	SelectorTorrentProcessBar   string
 }
 
 func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
@@ -286,6 +287,8 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 			downloadMultiplier = 0
 		}
 		if s.Find(`*[title^="seeding"],*[title^="leeching"],*[title^="downloading"],*[title^="uploading"]`).Length() > 0 {
+			isActive = true
+		} else if option.SelectorTorrentProcessBar != "" && s.Find(option.SelectorTorrentProcessBar).Length() > 0 {
 			isActive = true
 		}
 		re := regexp.MustCompile(`(?i)(?P<free>(^|\s)(免费|免費|FREE)\s*)?(剩余|剩餘|限时|限時)(时间|時間)?\s*(?P<time>[YMDHMSymdhms年月天小时時分种鐘秒\d]+)`)

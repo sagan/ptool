@@ -172,9 +172,11 @@ var (
 			TorrentsExtraUrls: []string{"https://www.pttime.org/adults.php"},
 		},
 		"sharkpt": &config.SiteConfigStruct{
-			Type:            "nexusphp",
-			Url:             "https://sharkpt.net/",
-			SelectorTorrent: ".torrent-action-bookmark",
+			Type:                      "nexusphp",
+			Url:                       "https://sharkpt.net/",
+			SelectorTorrent:           ".torrent-action-bookmark",
+			SelectorTorrentProcessBar: ".torrent-progress",
+			SelectorUserInfo:          ".m_nav",
 		},
 		"soulvoice": &config.SiteConfigStruct{
 			Type: "nexusphp",
