@@ -138,7 +138,14 @@ func (npclient *Site) sync() error {
 	npclient.datatime = utils.Now()
 
 	siteStatus := &site.Status{}
-	infoTr := doc.Find("#info_block, .m_nav").First()
+	selectorUserInfo := npclient.SiteConfig.SelectorUserInfo
+	if selectorUserInfo == "" {
+		selectorUserInfo = "#info_block"
+	}
+	infoTr := doc.Find(selectorUserInfo).First()
+	if infoTr.Length() == 0 {
+		infoTr = doc.Find("body") // fallback
+	}
 	infoTxt := infoTr.Text()
 	infoTxt = strings.ReplaceAll(infoTxt, "\n", " ")
 	infoTxt = strings.ReplaceAll(infoTxt, "\r", " ")
@@ -229,6 +236,7 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 			SelectorTorrentLeechers:     siteConfig.SelectorTorrentLeechers,
 			SelectorTorrentSnatched:     siteConfig.SelectorTorrentSnatched,
 			SelectorTorrentSize:         siteConfig.SelectorTorrentSize,
+			SelectorTorrentProcessBar:   siteConfig.SelectorTorrentProcessBar,
 		},
 	}
 	return client, nil
