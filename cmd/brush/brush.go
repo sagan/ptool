@@ -230,6 +230,11 @@ func brush(cmd *cobra.Command, args []string) {
 			clientTorrent := utils.FindInSlice(clientTorrents, func(t client.Torrent) bool {
 				return t.InfoHash == torrent.InfoHash
 			})
+			// double check
+			if clientTorrent == nil || clientTorrent.Category != CAT {
+				log.Warnf("Invalid torrent deletion target: %s", torrent.InfoHash)
+				continue
+			}
 			duration := brushOption.Now - clientTorrent.Atime
 			log.Printf("Delete client %s torrent: %v / %v / %v.", clientInstance.GetName(), torrent.Name, torrent.InfoHash, torrent.Msg)
 			log.Printf("Torrent total downloads / uploads: %s / %s; Lifespan: %s; Average download / upload speed of lifespan: %s/s / %s/s",
