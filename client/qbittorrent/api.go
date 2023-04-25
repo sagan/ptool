@@ -118,3 +118,11 @@ type apiTorrentInfo struct {
 	Uploaded_session   int64   `json:"uploaded_session"`   //	integer	Amount of data uploaded this session
 	Upspeed            int64   `json:"upspeed"`            //	integer	Torrent upload speed (bytes/s)
 }
+
+func (qt *apiTorrentInfo) CanResume() bool {
+	return qt.State == "pausedUP" || qt.State == "pausedDL" || qt.State == "queuedUP" || qt.State == "queuedDL" || qt.State == "error"
+}
+
+func (qt *apiTorrentInfo) CanPause() bool {
+	return !qt.CanResume()
+}

@@ -190,7 +190,7 @@ func brush(cmd *cobra.Command, args []string) {
 			cndAddTorrents++
 			torrentOption := &client.TorrentOption{
 				Name:             torrent.Name,
-				Paused:           paused,
+				Pause:            paused,
 				Category:         CAT,
 				Tags:             []string{client.GenerateTorrentTagFromSite(siteInstance.GetName())},
 				UploadSpeedLimit: siteInstance.GetSiteConfig().TorrentUploadSpeedLimitValue,

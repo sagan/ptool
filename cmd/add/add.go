@@ -56,7 +56,7 @@ func add(cmd *cobra.Command, args []string) {
 			continue
 		}
 		option := &client.TorrentOption{
-			Paused: paused,
+			Pause: paused,
 		}
 		err = clientInstance.AddTorrent(torrentContent, option, nil)
 		if err != nil {

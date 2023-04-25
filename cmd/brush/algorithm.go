@@ -466,6 +466,8 @@ func rateSiteTorrent(siteTorrent *site.Torrent, brushOption *BrushOptionStruct) 
 	}
 	score += float64(siteTorrent.Leechers)
 
+	score *= siteTorrent.UploadMultiplier
+
 	if siteTorrent.Size <= 1024*1024*1024 {
 		score *= 10
 	} else if siteTorrent.Size <= 1024*1024*1024*10 {

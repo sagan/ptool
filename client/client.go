@@ -55,7 +55,8 @@ type TorrentOption struct {
 	RemoveTags         []string // used only in ModifyTorrent
 	DownloadSpeedLimit int64
 	UploadSpeedLimit   int64
-	Paused             bool
+	Pause              bool
+	Resume             bool // use only in ModifyTorrent, to start a paused torrent
 }
 
 type Client interface {

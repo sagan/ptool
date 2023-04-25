@@ -116,7 +116,7 @@ func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 	if option != nil {
 		mp.WriteField("category", option.Category)
 		mp.WriteField("tags", strings.Join(option.Tags, ","))
-		mp.WriteField("paused", fmt.Sprint(option.Paused))
+		mp.WriteField("paused", fmt.Sprint(option.Pause))
 		mp.WriteField("upLimit", fmt.Sprint(option.UploadSpeedLimit))
 		mp.WriteField("dlLimit", fmt.Sprint(option.DownloadSpeedLimit))
 	}
@@ -284,6 +284,16 @@ func (qbclient *Client) ModifyTorrent(infoHash string,
 		err := qbclient.apiPost("api/v2/torrents/setUploadLimit", data)
 		if err != nil {
 			return err
+		}
+	}
+
+	if option.Pause {
+		if qbtorrent.CanPause() {
+			qbclient.PauseTorrents([]string{qbtorrent.Hash})
+		}
+	} else if option.Resume {
+		if qbtorrent.CanResume() {
+			qbclient.ResumeTorrents([]string{qbtorrent.Hash})
 		}
 	}
 
