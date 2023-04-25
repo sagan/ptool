@@ -8,13 +8,21 @@ import (
 	"os"
 	"sync"
 
-	"database/sql"
-
-	_ "github.com/glebarez/go-sqlite"
+	"github.com/glebarez/sqlite"
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/utils"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
+
+type TorrentTraffic struct {
+	Client     string `gorm:"primaryKey"`
+	Day        string `gorm:"primaryKey"`
+	Site       string `gorm:"primaryKey"`
+	Downloaded int64
+	Uploaded   int64
+}
 
 type TorrentStat struct {
 	Client     string `json:"client"`
@@ -38,11 +46,10 @@ type Statistics struct {
 	Uploaded   int64
 }
 type StatDb struct {
-	file   *os.File
-	mu     sync.Mutex
-	open   bool
-	loaded bool
-	sqldb  *sql.DB
+	file  *os.File
+	mu    sync.Mutex
+	open  bool
+	sqldb *gorm.DB
 }
 
 var (
@@ -89,8 +96,6 @@ func (db *StatDb) ShowTrafficStats(client string) {
 	db.prepare()
 
 	now := utils.Now()
-	var rows *sql.Rows
-	sql := ""
 	today := utils.FormatDate(now)
 	yesterday := utils.FormatDate(now - 86400)
 	yesterdayMinus7day := utils.FormatDate(now - 86400*8)
@@ -107,133 +112,99 @@ func (db *StatDb) ShowTrafficStats(client string) {
 		{"today", today, today},
 	}
 
-	clients := []string{}
-	sql = "select DISTINCT client from torrent_traffics order by day desc limit 1000"
-	rows, _ = db.sqldb.Query(sql, client)
-	for rows.Next() {
-		var client string
-		rows.Scan(&client)
-		if client != "" {
-			clients = append(clients, client)
-		}
+	var clientObjs []TorrentTraffic
+	db.sqldb.Distinct("client").Order("day desc").Limit(1000).Find(&clientObjs)
+	if len(clientObjs) > 3 {
+		clientObjs = clientObjs[:3]
 	}
-	rows.Close()
-	if len(clients) > 5 {
-		clients = clients[:5]
-	}
+	clients := utils.Map(clientObjs, func(c TorrentTraffic) string {
+		return c.Client
+	})
 
 	if client == "" {
-		fmt.Printf("%20s:  ", " time \\ clients")
+		fmt.Printf("%-15s  ", `time\clients`)
 		for _, client := range clients {
-			fmt.Printf("%25s  /  ", client+"(↓, ↑)")
+			fmt.Printf("%20s  /  ", client+"(↓, ↑)")
 		}
-		fmt.Printf("%25s\n", "<all>")
+		fmt.Printf("%20s\n", "<all>")
 		for _, timespan := range timespans {
-			sql = `SELECT client, ifnull(sum(downloaded),0), ifnull(sum(uploaded),0) from torrent_traffics where 1=1`
+			records := []TorrentTraffic{}
+			tx := db.sqldb.Table("torrent_traffics").
+				Select("client", "ifnull(sum(downloaded),0) as downloaded", "ifnull(sum(uploaded),0) as uploaded").Group("client")
 			if timespan.startday != "" {
-				sql += " and day >= '" + timespan.startday + "'"
+				tx = tx.Where("day >= ?", timespan.startday)
 			}
 			if timespan.endday != "" {
-				sql += " and day <= '" + timespan.endday + "'"
+				tx = tx.Where("day <= ?", timespan.endday)
 			}
-			sql += " group by client"
-
-			rows, _ := db.sqldb.Query(sql)
+			tx.Find(&records)
 			allDownloaded := int64(0)
 			allUploaded := int64(0)
 			clientsDownloaded := make(map[string](int64))
 			clientsUploaded := make(map[string](int64))
-			for rows.Next() {
-				var client string
-				var downloaded int64
-				var uploaded int64
-				rows.Scan(&client, &downloaded, &uploaded)
-				if client != "" {
-					clientsDownloaded[client] = downloaded
-					clientsUploaded[client] = uploaded
+			for _, record := range records {
+				if record.Client != "" {
+					clientsDownloaded[record.Client] = record.Downloaded
+					clientsUploaded[record.Client] = record.Uploaded
 				}
-				allDownloaded += downloaded
-				allUploaded += uploaded
+				allDownloaded += record.Downloaded
+				allUploaded += record.Uploaded
 			}
-			fmt.Printf("%20s:  ", timespan.name)
+			fmt.Printf("%-15s  ", timespan.name)
 			for _, client := range clients {
-				fmt.Printf("%25s  /  ", "↓"+utils.BytesSize(float64(clientsDownloaded[client]))+", ↑"+utils.BytesSize(float64(clientsUploaded[client])))
+				fmt.Printf("%20s  /  ", "↓"+utils.BytesSize(float64(clientsDownloaded[client]))+", ↑"+utils.BytesSize(float64(clientsUploaded[client])))
 			}
-			fmt.Printf("%25s\n", "↓"+utils.BytesSize(float64(allDownloaded))+", ↑"+utils.BytesSize(float64(allUploaded)))
-			rows.Close()
+			fmt.Printf("%20s\n", "↓"+utils.BytesSize(float64(allDownloaded))+", ↑"+utils.BytesSize(float64(allUploaded)))
 		}
 		return
 	}
 
-	sites := []string{}
-	sql = "select DISTINCT site from torrent_traffics where client = ? order by day desc limit 1000"
-	rows, _ = db.sqldb.Query(sql, client)
-	for rows.Next() {
-		var site string
-		rows.Scan(&site)
-		if site != "" {
-			sites = append(sites, site)
-		}
+	var siteObjs []TorrentTraffic
+	db.sqldb.Distinct("site").Order("day desc").Limit(1000).Find(&siteObjs)
+	if len(siteObjs) > 3 {
+		siteObjs = siteObjs[:3]
 	}
-	rows.Close()
-	if len(sites) > 5 {
-		sites = sites[:5]
-	}
+	sites := utils.Map(siteObjs, func(c TorrentTraffic) string {
+		return c.Site
+	})
 
-	fmt.Printf("%20s:  ", client+" \\ sites")
+	fmt.Printf("%-15s  ", client+`\sites`)
 	for _, site := range sites {
-		fmt.Printf("%25s  /  ", site+"(↓, ↑)")
+		fmt.Printf("%20s  /  ", site+"(↓, ↑)")
 	}
-	fmt.Printf("%25s\n", "<all>")
+	fmt.Printf("%20s\n", "<all>")
 	for _, timespan := range timespans {
-		sql = `SELECT site, ifnull(sum(downloaded),0), ifnull(sum(uploaded),0) from torrent_traffics where client = ?`
+		records := []TorrentTraffic{}
+		tx := db.sqldb.Table("torrent_traffics").
+			Select("site", "ifnull(sum(downloaded),0) downloaded", "ifnull(sum(uploaded),0) uploaded").
+			Group("site").
+			Where("client = ?", client)
 		if timespan.startday != "" {
-			sql += " and day >= '" + timespan.startday + "'"
+			tx = tx.Where("day >= ?", timespan.startday)
 		}
 		if timespan.endday != "" {
-			sql += " and day <= '" + timespan.endday + "'"
+			tx = tx.Where("day <= ?", timespan.endday)
 		}
-		sql += " group by site"
+		tx.Find(&records)
 
-		rows, _ := db.sqldb.Query(sql, client)
 		allDownloaded := int64(0)
 		allUploaded := int64(0)
 		sitesDownloaded := make(map[string](int64))
 		siteUploaded := make(map[string](int64))
-		for rows.Next() {
-			var site string
-			var downloaded int64
-			var uploaded int64
-			rows.Scan(&site, &downloaded, &uploaded)
-			if site != "" {
-				sitesDownloaded[site] = downloaded
-				siteUploaded[site] = uploaded
+		for _, record := range records {
+			if record.Site != "" {
+				sitesDownloaded[record.Site] = record.Downloaded
+				siteUploaded[record.Site] = record.Uploaded
 			}
-			allDownloaded += downloaded
-			allUploaded += uploaded
+			allDownloaded += record.Downloaded
+			allUploaded += record.Uploaded
 		}
-		fmt.Printf("%20s:  ", timespan.name)
+		fmt.Printf("%-15s  ", timespan.name)
 		for _, site := range sites {
-			fmt.Printf("%25s  /  ", "↓"+utils.BytesSize(float64(sitesDownloaded[site]))+", ↑"+utils.BytesSize(float64(siteUploaded[site])))
+			fmt.Printf("%20s  /  ", "↓"+utils.BytesSize(float64(sitesDownloaded[site]))+", ↑"+utils.BytesSize(float64(siteUploaded[site])))
 		}
-		fmt.Printf("%25s\n", "↓"+utils.BytesSize(float64(allDownloaded))+", ↑"+utils.BytesSize(float64(allUploaded)))
-		rows.Close()
+		fmt.Printf("%20s\n", "↓"+utils.BytesSize(float64(allDownloaded))+", ↑"+utils.BytesSize(float64(allUploaded)))
 	}
-}
-
-func (db *StatDb) querySingleRow(sql string, variables ...any) error {
-	rows, err := db.sqldb.Query(sql)
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-	if !rows.Next() {
-		return err
-	}
-	if err := rows.Scan(variables...); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (db *StatDb) prepare() {
@@ -246,21 +217,13 @@ func (db *StatDb) prepare() {
 	if db.sqldb != nil {
 		return
 	}
-	batch := []string{
-		`CREATE TABLE torrent_traffics (
-			client varchar, day varchar, site varchar, downloaded int, uploaded int,
-			primary key(client, day, site)
-		);`,
-	}
-	_db, err := sql.Open("sqlite", ":memory:")
+	_db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("error create stats sqldb: %v", err)
 	}
-	for _, b := range batch {
-		_, err = _db.Exec(b)
-		if err != nil {
-			log.Fatalf("error initialize stats sqldb: %v", err)
-		}
+	err = _db.AutoMigrate(&TorrentTraffic{})
+	if err != nil {
+		log.Fatalf("sql schema init error: %v", err)
 	}
 	db.sqldb = _db
 
@@ -314,16 +277,21 @@ func (db *StatDb) prepare() {
 				downloaded = (time2 - time) * aDownloadSpeed
 				uploaded = (time2 - time) * aUploadSpeed
 			}
-			_, err = db.sqldb.Exec(
-				`INSERT INTO torrent_traffics (client, day, site, downloaded, uploaded) VALUES (?,?,?,?,?)
-				ON CONFLICT(client, day, site) DO UPDATE SET downloaded = downloaded + ?, uploaded = uploaded + ?;
-				`,
-				statRecord.Data.Client, day, statRecord.Data.Site, downloaded, uploaded,
-				downloaded, uploaded,
-			)
-			if err != nil {
-				log.Tracef("StatDb.addAlll insert error: %s", err)
-			}
+			// INSERT INTO torrent_traffics (client, day, site, downloaded, uploaded) VALUES (?,?,?,?,?)
+			//	ON CONFLICT(client, day, site) DO UPDATE SET downloaded = downloaded + ?, uploaded = uploaded + ?;
+			db.sqldb.Clauses(clause.OnConflict{
+				Columns: []clause.Column{{Name: "client"}, {Name: "day"}, {Name: "site"}},
+				DoUpdates: clause.Assignments(map[string]interface{}{
+					"downloaded": gorm.Expr("downloaded + ?", downloaded),
+					"uploaded":   gorm.Expr("uploaded + ?", uploaded),
+				}),
+			}).Create(&TorrentTraffic{
+				Client:     statRecord.Data.Client,
+				Day:        day,
+				Site:       statRecord.Data.Site,
+				Downloaded: downloaded,
+				Uploaded:   uploaded,
+			})
 			time = nexydayTime
 			day = utils.FormatDate(time)
 			nexydayTime += 86400

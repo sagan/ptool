@@ -3,13 +3,18 @@ module github.com/sagan/ptool
 go 1.20
 
 require (
+	github.com/DaRealFreak/cloudflare-bp-go v1.0.4
 	github.com/PuerkitoBio/goquery v1.8.1
-	github.com/glebarez/go-sqlite v1.21.1
+	github.com/glebarez/sqlite v1.8.0
 	github.com/j-muller/go-torrent-parser v0.0.0-20211014072822-db02b4099054
+	github.com/mattn/go-runewidth v0.0.14
+	github.com/pelletier/go-toml/v2 v2.0.7
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.6.1
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
+	golang.org/x/net v0.7.0
 	gopkg.in/yaml.v3 v3.0.1
+	gorm.io/gorm v1.25.0
 )
 
 require (
@@ -24,15 +29,14 @@ require (
 )
 
 require (
-	github.com/DaRealFreak/cloudflare-bp-go v1.0.4 // indirect
 	github.com/EDDYCJY/fake-useragent v0.2.0 // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect
+	github.com/glebarez/go-sqlite v1.21.1 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
-	github.com/mattn/go-runewidth v0.0.14 // indirect
-	github.com/pelletier/go-toml/v2 v2.0.7 // indirect
+	github.com/jinzhu/inflection v1.0.0 // indirect
+	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/zeebo/bencode v1.0.0 // indirect
-	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
 )
