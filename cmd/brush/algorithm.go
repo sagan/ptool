@@ -181,7 +181,8 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 			continue
 		}
 
-		if torrent.State == "error" && torrent.DownloadSpeed < option.SlowUploadSpeedTier {
+		if torrent.State == "error" && (torrent.UploadSpeed < option.SlowUploadSpeedTier ||
+			torrent.UploadSpeed < option.SlowUploadSpeedTier*2 && freespace == 0) {
 			deleteCandidateTorrents = append(deleteCandidateTorrents, candidateClientTorrentStruct{
 				InfoHash:    torrent.InfoHash,
 				Score:       DELETE_TORRENT_IMMEDIATELY_STORE,
@@ -279,7 +280,15 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	// delete torrents
 	for _, deleteTorrent := range deleteCandidateTorrents {
 		torrent := clientTorrentsMap[deleteTorrent.InfoHash].Torrent
-		if (torrent.Ctime > 0 || torrent.Meta["stt"] == 0 || option.Now-torrent.Meta["stt"] < STALL_TORRENT_DELETEION_TIMESPAN) && freespace >= option.MinDiskSpace && deleteTorrent.Score < DELETE_TORRENT_IMMEDIATELY_STORE {
+		shouldDelete := false
+		if deleteTorrent.Score >= DELETE_TORRENT_IMMEDIATELY_STORE || freespace < option.MinDiskSpace {
+			shouldDelete = true
+		} else if torrent.Ctime <= 0 &&
+			torrent.Meta["stt"] > 0 &&
+			option.Now-torrent.Meta["stt"] >= STALL_TORRENT_DELETEION_TIMESPAN {
+			shouldDelete = true
+		}
+		if !shouldDelete {
 			continue
 		}
 		result.DeleteTorrents = append(result.DeleteTorrents, AlgorithmOperationTorrent{

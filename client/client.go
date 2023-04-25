@@ -168,6 +168,8 @@ func TorrentStateIconText(torrent *Torrent) string {
 		return "-P" // may be unicode symbol ⏸
 	case "completed":
 		return "✓C"
+	case "error":
+		return "!e"
 	}
 	return "-"
 }

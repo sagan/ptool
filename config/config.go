@@ -114,7 +114,7 @@ func Get() *ConfigStruct {
 			}
 			for i, client := range Config.Clients {
 				v, err := utils.RAMInBytes(client.BrushMinDiskSpace)
-				if err != nil || v <= 0 {
+				if err != nil || v < 0 {
 					v = DEFAULT_CLIENT_BRUSH_MIN_DISK_SPACE
 				}
 				Config.Clients[i].BrushMinDiskSpaceValue = v
