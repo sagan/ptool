@@ -55,6 +55,16 @@ func xseed(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Errorf("iyuu apiHash error: %v", err)
 	}
-
-	fmt.Printf("len(data)=%d\n", len(data))
+	log.Debugf("len(data)=%d\n", len(data))
+	for infoHash, iyuuRecords := range data {
+		var dbRecord iyuu.Torrent
+		iyuu.Db().First(&dbRecord, "info_hash = ? or same_info_hash = ?", infoHash, infoHash)
+		for _, iyuuRecord := range iyuuRecords {
+			iyuu.Db().Create(&iyuu.Torrent{
+				InfoHash:     infoHash,
+				SameInfoHash: iyuuRecord.Info_hash,
+				Sid:          iyuuRecord.Sid,
+			})
+		}
+	}
 }
