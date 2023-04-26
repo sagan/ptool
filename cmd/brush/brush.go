@@ -153,6 +153,85 @@ func brush(cmd *cobra.Command, args []string) {
 			result.Msg,
 		)
 
+		// delete
+		for _, torrent := range result.DeleteTorrents {
+			clientTorrent := utils.FindInSlice(clientTorrents, func(t client.Torrent) bool {
+				return t.InfoHash == torrent.InfoHash
+			})
+			// double check
+			if clientTorrent == nil || clientTorrent.Category != CAT {
+				log.Warnf("Invalid torrent deletion target: %s", torrent.InfoHash)
+				continue
+			}
+			duration := brushOption.Now - clientTorrent.Atime
+			log.Printf("Delete client %s torrent: %v / %v / %v.", clientInstance.GetName(), torrent.Name, torrent.InfoHash, torrent.Msg)
+			log.Printf("Torrent total downloads / uploads: %s / %s; Lifespan: %s; Average download / upload speed of lifespan: %s/s / %s/s",
+				utils.BytesSize(float64(clientTorrent.Downloaded)),
+				utils.BytesSize(float64(clientTorrent.Uploaded)),
+				utils.GetDurationString(duration),
+				utils.BytesSize(float64(clientTorrent.Downloaded)/float64(duration)),
+				utils.BytesSize(float64(clientTorrent.Uploaded)/float64(duration)),
+			)
+			if dryRun {
+				continue
+			}
+			err := clientInstance.DeleteTorrents([]string{torrent.InfoHash}, true)
+			log.Printf("Delete torrent result: error=%v", err)
+			if err == nil {
+				cntDeleteTorrents++
+				if config.Get().BrushEnableStats {
+					stats.Db.AddTorrentStat(brushOption.Now, 1, &stats.TorrentStat{
+						Client:     clientInstance.GetName(),
+						Site:       clientTorrent.GetSiteFromTag(),
+						InfoHash:   clientTorrent.InfoHash,
+						Category:   clientTorrent.Category,
+						Name:       clientTorrent.Name,
+						Atime:      clientTorrent.Atime,
+						Size:       clientTorrent.Size,
+						Uploaded:   clientTorrent.Uploaded,
+						Downloaded: clientTorrent.Downloaded,
+						Msg:        torrent.Msg,
+					})
+				}
+			}
+		}
+
+		// stall
+		for _, torrent := range result.StallTorrents {
+			log.Printf("Stall client %s torrent: %v / %v / %v", clientInstance.GetName(), torrent.Name, torrent.InfoHash, torrent.Msg)
+			if dryRun {
+				continue
+			}
+			err := clientInstance.ModifyTorrent(torrent.InfoHash, &client.TorrentOption{
+				DownloadSpeedLimit: STALL_DOWNLOAD_SPEED,
+			}, torrent.Meta)
+			log.Printf("Stall torrent result: error=%v", err)
+		}
+
+		// resume
+		if len(result.ResumeTorrents) > 0 {
+			for _, torrent := range result.ResumeTorrents {
+				log.Printf("Resume client %s torrent: %v / %v / %v", clientInstance.GetName(), torrent.Name, torrent.InfoHash, torrent.Msg)
+			}
+			if !dryRun {
+				err := clientInstance.ResumeTorrents(utils.Map(result.ResumeTorrents, func(t AlgorithmOperationTorrent) string {
+					return t.InfoHash
+				}))
+				log.Printf("Resume torrents result: error=%v", err)
+			}
+		}
+
+		// modify
+		for _, torrent := range result.ModifyTorrents {
+			log.Printf("Modify client %s torrent: %v / %v / %v / %v ", clientInstance.GetName(), torrent.Name, torrent.InfoHash, torrent.Msg, torrent.Meta)
+			if dryRun {
+				continue
+			}
+			err := clientInstance.ModifyTorrent(torrent.InfoHash, nil, torrent.Meta)
+			log.Printf("Modify torrent result: error=%v", err)
+		}
+
+		// add
 		cndAddTorrents := 0
 		for _, torrent := range result.AddTorrents {
 			log.Printf("Add site %s torrent to client %s: %s / %s / %v", siteInstance.GetName(), clientInstance.GetName(), torrent.Name, torrent.Msg, torrent.Meta)
@@ -206,67 +285,6 @@ func brush(cmd *cobra.Command, args []string) {
 			}
 		}
 
-		for _, torrent := range result.ModifyTorrents {
-			log.Printf("Modify client %s torrent: %v / %v / %v / %v ", clientInstance.GetName(), torrent.Name, torrent.InfoHash, torrent.Msg, torrent.Meta)
-			if dryRun {
-				continue
-			}
-			err := clientInstance.ModifyTorrent(torrent.InfoHash, nil, torrent.Meta)
-			log.Printf("Modify torrent result: error=%v", err)
-		}
-
-		for _, torrent := range result.StallTorrents {
-			log.Printf("Stall client %s torrent: %v / %v / %v", clientInstance.GetName(), torrent.Name, torrent.InfoHash, torrent.Msg)
-			if dryRun {
-				continue
-			}
-			err := clientInstance.ModifyTorrent(torrent.InfoHash, &client.TorrentOption{
-				DownloadSpeedLimit: STALL_DOWNLOAD_SPEED,
-			}, torrent.Meta)
-			log.Printf("Stall torrent result: error=%v", err)
-		}
-
-		for _, torrent := range result.DeleteTorrents {
-			clientTorrent := utils.FindInSlice(clientTorrents, func(t client.Torrent) bool {
-				return t.InfoHash == torrent.InfoHash
-			})
-			// double check
-			if clientTorrent == nil || clientTorrent.Category != CAT {
-				log.Warnf("Invalid torrent deletion target: %s", torrent.InfoHash)
-				continue
-			}
-			duration := brushOption.Now - clientTorrent.Atime
-			log.Printf("Delete client %s torrent: %v / %v / %v.", clientInstance.GetName(), torrent.Name, torrent.InfoHash, torrent.Msg)
-			log.Printf("Torrent total downloads / uploads: %s / %s; Lifespan: %s; Average download / upload speed of lifespan: %s/s / %s/s",
-				utils.BytesSize(float64(clientTorrent.Downloaded)),
-				utils.BytesSize(float64(clientTorrent.Uploaded)),
-				utils.GetDurationString(duration),
-				utils.BytesSize(float64(clientTorrent.Downloaded)/float64(duration)),
-				utils.BytesSize(float64(clientTorrent.Uploaded)/float64(duration)),
-			)
-			if dryRun {
-				continue
-			}
-			err := clientInstance.DeleteTorrents([]string{torrent.InfoHash}, true)
-			log.Printf("Delete torrent result: error=%v", err)
-			if err == nil {
-				cntDeleteTorrents++
-				if config.Get().BrushEnableStats {
-					stats.Db.AddTorrentStat(brushOption.Now, 1, &stats.TorrentStat{
-						Client:     clientInstance.GetName(),
-						Site:       clientTorrent.GetSiteFromTag(),
-						InfoHash:   clientTorrent.InfoHash,
-						Category:   clientTorrent.Category,
-						Name:       clientTorrent.Name,
-						Atime:      clientTorrent.Atime,
-						Size:       clientTorrent.Size,
-						Uploaded:   clientTorrent.Uploaded,
-						Downloaded: clientTorrent.Downloaded,
-						Msg:        torrent.Msg,
-					})
-				}
-			}
-		}
 		if len(result.AddTorrents) > 0 {
 			cntSuccessSite++
 		} else {

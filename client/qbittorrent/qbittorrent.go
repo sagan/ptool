@@ -445,6 +445,7 @@ func (qbclient *Client) GetTorrents(stateFilter string, category string, showAll
 			Seeders:            qbtorrent.Num_complete,
 			Size:               qbtorrent.Size,
 			SizeCompleted:      qbtorrent.Completed,
+			SizeTotal:          qbtorrent.Total_size,
 			Leechers:           qbtorrent.Num_incomplete,
 			Meta:               make(map[string]int64),
 		}
@@ -468,9 +469,10 @@ func (qbclient *Client) GetTorrentContents(infoHash string) ([]client.TorrentCon
 	torrentContents := []client.TorrentContentFile{}
 	for _, qbTorrentContent := range qbTorrentContents {
 		torrentContents = append(torrentContents, client.TorrentContentFile{
-			Index: qbTorrentContent.Index,
-			Path:  qbTorrentContent.Name,
-			Size:  qbTorrentContent.Size,
+			Index:    qbTorrentContent.Index,
+			Path:     qbTorrentContent.Name,
+			Size:     qbTorrentContent.Size,
+			Complete: qbTorrentContent.Is_seed,
 		})
 	}
 	return torrentContents, nil

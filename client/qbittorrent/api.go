@@ -5,7 +5,7 @@ type apiTorrentContent struct {
 	Name         string  `json:"name"`         // File name (including relative path)
 	Size         int64   `json:"size"`         // File size (bytes)
 	Progress     float64 `json:"progress"`     // File progress (percentage/100)
-	Priority     int64   `json:"priority"`     // File priority. See possible values here below
+	Priority     int64   `json:"priority"`     // File priority. 0: Do not download. 7 (max), 6(high), 1(normal) prio
 	Is_seed      bool    `json:"is_seed"`      // True if file is seeding/complete
 	Piece_range  []int64 `json:"piece_range"`  // array	The first number is the starting piece index and the second number is the ending piece index (inclusive)
 	Availability float64 `json:"availability"` // Percentage of file pieces currently available (percentage/100)

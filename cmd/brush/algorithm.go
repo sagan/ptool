@@ -23,6 +23,7 @@ const (
 	STALL_TORRENT_DELETEION_TIMESPAN      = int64(30 * 60) // stalled torrent will be deleted after this time passed
 	BANDWIDTH_FULL_PERCENT                = float64(0.8)
 	DELETE_TORRENT_IMMEDIATELY_STORE      = float64(99999)
+	RESUME_TORRENTS_FREE_DISK_SPACE_TIER  = int64(5 * 1024 * 1024 * 1024) // 5GB
 )
 
 type BrushOptionStruct struct {
@@ -58,10 +59,11 @@ type AlgorithmOperationTorrent struct {
 }
 
 type AlgorithmResult struct {
-	AddTorrents    []AlgorithmAddTorrent       // new torrents that will be added to client
-	ModifyTorrents []AlgorithmModifyTorrent    // modify meta info of these torrents
-	StallTorrents  []AlgorithmModifyTorrent    // torrents that will stop downloading but still uploading
 	DeleteTorrents []AlgorithmOperationTorrent // torrents that will be removed from client
+	StallTorrents  []AlgorithmModifyTorrent    // torrents that will stop downloading but still uploading
+	ResumeTorrents []AlgorithmOperationTorrent // resume paused / errored torrents
+	ModifyTorrents []AlgorithmModifyTorrent    // modify meta info of these torrents
+	AddTorrents    []AlgorithmAddTorrent       // new torrents that will be added to client
 	CanAddMore     bool                        // client is able to add more torrents
 	Msg            string
 }
@@ -86,16 +88,22 @@ type clientTorrentInfoStruct struct {
 	Torrent             *client.Torrent
 	ModifyFlag          bool
 	StallFlag           bool
+	ResumeFlag          bool
 	DeleteCandidateFlag bool
 	DeleteFlag          bool
 }
 
 func countAsDownloading(torrent *client.Torrent, now int64) bool {
-	return notStalled(torrent) && (torrent.DownloadSpeed >= STALL_DOWNLOAD_SPEED || now-torrent.Atime <= NEW_TORRENTS_TIMESPAN)
+	return !torrent.IsComplete() && torrent.Meta["stt"] == 0 &&
+		(torrent.DownloadSpeed >= STALL_DOWNLOAD_SPEED || now-torrent.Atime <= NEW_TORRENTS_TIMESPAN)
 }
 
-func notStalled(torrent *client.Torrent) bool {
+func canStallTorrent(torrent *client.Torrent) bool {
 	return torrent.State == "downloading" && torrent.Meta["stt"] == 0
+}
+
+func isTorrentStalled(torrent *client.Torrent) bool {
+	return !torrent.IsComplete() && torrent.Meta["stt"] > 0
 }
 
 /*
@@ -116,6 +124,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	var candidateTorrents []candidateTorrentStruct
 	var modifyTorrents []AlgorithmModifyTorrent
 	var stallTorrents []AlgorithmModifyTorrent
+	var resumeTorrents []AlgorithmOperationTorrent
 	var deleteCandidateTorrents []candidateClientTorrentStruct
 	clientTorrentsMap := make(map[string](*clientTorrentInfoStruct))
 	siteTorrentsMap := make(map[string](*site.Torrent))
@@ -163,7 +172,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 
 		// mark torrents that discount time ends as stall
 		if torrent.Meta["dcet"] > 0 && torrent.Meta["dcet"]-option.Now <= 3600 && torrent.Ctime <= 0 {
-			if notStalled(&torrent) {
+			if canStallTorrent(&torrent) {
 				meta := utils.CopyMap(torrent.Meta)
 				meta["stt"] = option.Now
 				stallTorrents = append(stallTorrents, AlgorithmModifyTorrent{
@@ -205,7 +214,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 				if option.Now-torrent.Meta["sct"] >= SLOW_TORRENTS_CHECK_TIMESPAN {
 					averageUploadSpeedSinceSct := (torrent.Uploaded - torrent.Meta["sctu"]) / (option.Now - torrent.Meta["sct"])
 					if averageUploadSpeedSinceSct < option.SlowUploadSpeedTier {
-						if notStalled(&torrent) &&
+						if canStallTorrent(&torrent) &&
 							torrent.DownloadSpeed >= RATIO_CHECK_MIN_DOWNLOAD_SPEED &&
 							float64(torrent.UploadSpeed)/float64(torrent.DownloadSpeed) < option.MinRatio &&
 							option.Now-torrent.Atime >= NEW_TORRENTS_STALL_EXEMPTION_TIMESPAN {
@@ -308,7 +317,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	// if still not enough free space, delete ALL stalled incomplete torrents
 	if freespace <= option.MinDiskSpace {
 		for _, torrent := range clientTorrents {
-			if clientTorrentsMap[torrent.InfoHash].DeleteFlag || torrent.Ctime > 0 || torrent.Meta["stt"] == 0 {
+			if clientTorrentsMap[torrent.InfoHash].DeleteFlag || !isTorrentStalled(&torrent) {
 				continue
 			}
 			result.DeleteTorrents = append(result.DeleteTorrents, AlgorithmOperationTorrent{
@@ -362,7 +371,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 			if clientTorrentsMap[torrent.InfoHash].DeleteFlag || clientTorrentsMap[torrent.InfoHash].StallFlag {
 				continue
 			}
-			if notStalled(&torrent) {
+			if canStallTorrent(&torrent) {
 				meta := utils.CopyMap(torrent.Meta)
 				meta["stt"] = option.Now
 				stallTorrents = append(stallTorrents, AlgorithmModifyTorrent{
@@ -376,6 +385,22 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 		}
 	}
 
+	// mark torrents as resume
+	if freespace >= utils.Max(option.MinDiskSpace, RESUME_TORRENTS_FREE_DISK_SPACE_TIER) {
+		for _, torrent := range clientTorrents {
+			if torrent.State != "error" || torrent.UploadSpeed < option.SlowUploadSpeedTier*4 ||
+				isTorrentStalled(&torrent) || clientTorrentsMap[torrent.InfoHash].ResumeFlag {
+				continue
+			}
+			resumeTorrents = append(resumeTorrents, AlgorithmOperationTorrent{
+				InfoHash: torrent.InfoHash,
+				Name:     torrent.Name,
+				Msg:      "resume fast uploading errored torrent",
+			})
+			clientTorrentsMap[torrent.InfoHash].ResumeFlag = true
+		}
+	}
+
 	// stall torrents
 	for _, stallTorrent := range stallTorrents {
 		if clientTorrentsMap[stallTorrent.InfoHash].DeleteFlag {
@@ -384,6 +409,18 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 		result.StallTorrents = append(result.StallTorrents, stallTorrent)
 		if countAsDownloading(clientTorrentsMap[stallTorrent.InfoHash].Torrent, option.Now) {
 			cntDownloadingTorrents--
+		}
+	}
+
+	// resume torrents
+	for _, resumeTorrent := range resumeTorrents {
+		if clientTorrentsMap[resumeTorrent.InfoHash].DeleteFlag ||
+			clientTorrentsMap[resumeTorrent.InfoHash].StallFlag {
+			continue
+		}
+		result.ResumeTorrents = append(result.ResumeTorrents, resumeTorrent)
+		if !countAsDownloading(clientTorrentsMap[resumeTorrent.InfoHash].Torrent, option.Now) {
+			cntDownloadingTorrents++
 		}
 	}
 

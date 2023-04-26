@@ -26,7 +26,8 @@ type Torrent struct {
 	Uploaded           int64
 	UploadSpeed        int64
 	UploadedSpeedLimit int64 // -1 means no limit
-	Size               int64
+	Size               int64 // size of torrent files that selected for downloading
+	SizeTotal          int64 // Total size of all file in the torrent (including unselected ones)
 	SizeCompleted      int64
 	Seeders            int64
 	Leechers           int64
@@ -34,9 +35,10 @@ type Torrent struct {
 }
 
 type TorrentContentFile struct {
-	Index int64
-	Path  string // full file path
-	Size  int64
+	Index    int64
+	Path     string // full file path
+	Size     int64
+	Complete bool // true if file is fullly downloaded
 }
 
 type Status struct {
@@ -186,8 +188,12 @@ func (torrent *Torrent) GetSiteFromTag() string {
 	return ""
 }
 
-func (torrent *Torrent) IsFullComplete() bool {
+func (torrent *Torrent) IsComplete() bool {
 	return torrent.SizeCompleted == torrent.Size
+}
+
+func (torrent *Torrent) IsFullComplete() bool {
+	return torrent.SizeCompleted == torrent.SizeTotal
 }
 
 func (torrent *Torrent) HasTag(tag string) bool {
