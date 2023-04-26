@@ -31,28 +31,34 @@ func sites(cmd *cobra.Command, args []string) {
 	log.Print(config.ConfigFile, " ", args)
 	log.Print("token", config.Get().IyuuToken)
 
-	iyuuSites, err := iyuu.IyuuApiSites(config.Get().IyuuToken)
-	log.Printf("Iyuu sites: error=%v, len(sites)=%v\n", err, len(iyuuSites))
+	iyuuApiSites, err := iyuu.IyuuApiSites(config.Get().IyuuToken)
+	if err != nil {
+		log.Fatalf("Failed to get iyuu sites: %v", err)
+	}
+	iyuuSites := utils.Map(iyuuApiSites, func(site iyuu.IyuuApiSite) iyuu.Site {
+		return site.ToSite()
+	})
+	log.Printf("Iyuu sites: len(sites)=%v\n", len(iyuuSites))
 	iyuu2LocalSiteMap := iyuu.GenerateIyuu2LocalSiteMap(iyuuSites, config.Get().Sites)
 
 	fmt.Printf("%-10s  %20s  %7s  %20s  %40s\n", "Nickname", "SiteName", "SiteId", "LocalSite", "SiteUrl")
 	for _, iyuuSite := range iyuuSites {
-		if iyuu2LocalSiteMap[iyuuSite.Id] == "" {
+		if iyuu2LocalSiteMap[iyuuSite.Sid] == "" {
 			continue
 		}
 		utils.PrintStringInWidth(iyuuSite.Nickname, 10, true)
-		fmt.Printf("  %20s  %7d  %20s  %40s\n", iyuuSite.Site, iyuuSite.Id,
-			iyuu2LocalSiteMap[iyuuSite.Id], iyuuSite.GetUrl())
+		fmt.Printf("  %20s  %7d  %20s  %40s\n", iyuuSite.Name, iyuuSite.Sid,
+			iyuu2LocalSiteMap[iyuuSite.Sid], iyuuSite.Url)
 	}
 
 	if showAll {
 		for _, iyuuSite := range iyuuSites {
-			if iyuu2LocalSiteMap[iyuuSite.Id] != "" {
+			if iyuu2LocalSiteMap[iyuuSite.Sid] != "" {
 				continue
 			}
 			utils.PrintStringInWidth(iyuuSite.Nickname, 10, true)
-			fmt.Printf("  %20s  %7d  %20s  %40s\n", iyuuSite.Site, iyuuSite.Id,
-				"X (None)", iyuuSite.GetUrl())
+			fmt.Printf("  %20s  %7d  %20s  %40s\n", iyuuSite.Name, iyuuSite.Sid,
+				"X (None)", iyuuSite.Url)
 		}
 	}
 }

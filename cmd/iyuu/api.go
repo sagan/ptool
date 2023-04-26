@@ -21,12 +21,6 @@ var IYUU_SITE_IDS = map[string](string){
 	"redleaves": "leaves",
 }
 
-type IyuuSite struct {
-	id      int64
-	name    string
-	canBind bool
-}
-
 type IyuuApiSite struct {
 	Id            int64  `json:"id"`
 	Site          string `json:"site"`
@@ -75,17 +69,6 @@ type IyuuTorrentInfoHash struct {
 }
 
 const IYUU_VERSION = "2.0.0"
-
-var ITUU_SITES = []IyuuSite{
-	{2, "pthome", true},
-	{7, "hdhome", true},
-	{9, "ourbits", true},
-	{10, "hddolby", true},
-	{25, "chdbits", true},
-	{61, "hdai", true},
-	{68, "audiences", true},
-	{80, "zhuque", true},
-}
 
 // https://api.iyuu.cn/docs.php?service=App.Api.Infohash&detail=1&type=fold
 func IyuuApiHash(token string, infoHashes []string) (map[string]([]IyuuTorrentInfoHash), error) {
@@ -170,7 +153,18 @@ func (site *IyuuApiSite) GetUrl() string {
 	return siteUrl
 }
 
-func GenerateIyuu2LocalSiteMap(iyuuSites []IyuuApiSite,
+func (iyuuApiSite IyuuApiSite) ToSite() Site {
+	return Site{
+		Sid:          iyuuApiSite.Id,
+		Name:         iyuuApiSite.Site,
+		Nickname:     iyuuApiSite.Nickname,
+		Url:          iyuuApiSite.GetUrl(),
+		DownloadPage: iyuuApiSite.Download_page,
+	}
+}
+
+// return iyuuSid => localSiteName map
+func GenerateIyuu2LocalSiteMap(iyuuSites []Site,
 	localSites []config.SiteConfigStruct) map[int64]string {
 	iyuu2LocalSiteMap := map[int64](string){} // iyuu sid => local site name
 	for _, iyuuSite := range iyuuSites {
@@ -178,17 +172,17 @@ func GenerateIyuu2LocalSiteMap(iyuuSites []IyuuApiSite,
 			if site.Disabled {
 				return false
 			}
-			if site.Url != "" && site.Url == iyuuSite.GetUrl() {
+			if site.Url != "" && site.Url == iyuuSite.Url {
 				return true
 			}
-			name := iyuuSite.Site
+			name := iyuuSite.Name
 			if IYUU_SITE_IDS[name] != "" {
 				name = IYUU_SITE_IDS[name]
 			}
 			return name == site.GetName()
 		})
 		if localSite != nil {
-			iyuu2LocalSiteMap[iyuuSite.Id] = localSite.GetName()
+			iyuu2LocalSiteMap[iyuuSite.Sid] = localSite.GetName()
 		}
 	}
 	return iyuu2LocalSiteMap

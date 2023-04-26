@@ -14,16 +14,26 @@ import (
 
 // gorm "torrents" table
 type Torrent struct {
-	InfoHash     string `gorm:"primaryKey"`
-	SameInfoHash string `gorm:"unique"`
-	Sid          int64  // iyuu site id
+	InfoHash       string `gorm:"primaryKey"`
+	Sid            int64  // iyuu site id
+	Tid            int64  // torrent id of site
+	TargetInfoHash string `gorm:"index"` // original (target) torrent info hash
+	// Site           Site   `gorm:"foreignKey:Sid;references:sid"` // do not use gorm associations feature
 }
 
 // gorm "sites" table
 type Site struct {
-	Sid  int64 `gorm:"primaryKey"`
-	Name string
-	Url  string
+	Sid          int64  `gorm:"primaryKey"`
+	Name         string `gorm:"index"`
+	Nickname     string
+	Url          string // site homepage url. eg. https://hdvideo.one/
+	DownloadPage string // (relative) torrent download url. eg. "download.php?id={}&passkey={passkey}"
+}
+
+// gorm "metas" table
+type Meta struct {
+	Key   string `gorm:"primaryKey"` // keys: lastUpdateTime
+	Value string
 }
 
 var (
@@ -50,11 +60,12 @@ func Db() *gorm.DB {
 		return db
 	}
 	dbfile := config.ConfigDir + "/iyuu.db"
+	log.Tracef("iyuu open db file %s", dbfile)
 	_db, err := gorm.Open(sqlite.Open(dbfile), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("error create iyuu sqldb: %v", err)
 	}
-	err = _db.AutoMigrate(&Site{}, &Torrent{})
+	err = _db.AutoMigrate(&Site{}, &Torrent{}, &Meta{})
 	if err != nil {
 		log.Fatalf("iyuu sql schema init error: %v", err)
 	}
