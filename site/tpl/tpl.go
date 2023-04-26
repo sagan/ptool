@@ -80,6 +80,10 @@ var (
 			Type: "nexusphp",
 			Url:  "https://hdfans.org/",
 		},
+		"hdhome": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://hdhome.org/",
+		},
 		"hdmayi": &config.SiteConfigStruct{
 			Type: "nexusphp",
 			Url:  "http://hdmayi.com/",
