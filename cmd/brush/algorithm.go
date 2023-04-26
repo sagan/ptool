@@ -281,7 +281,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	for _, deleteTorrent := range deleteCandidateTorrents {
 		torrent := clientTorrentsMap[deleteTorrent.InfoHash].Torrent
 		shouldDelete := false
-		if deleteTorrent.Score >= DELETE_TORRENT_IMMEDIATELY_STORE || freespace < option.MinDiskSpace {
+		if deleteTorrent.Score >= DELETE_TORRENT_IMMEDIATELY_STORE || freespace <= option.MinDiskSpace {
 			shouldDelete = true
 		} else if torrent.Ctime <= 0 &&
 			torrent.Meta["stt"] > 0 &&
@@ -306,7 +306,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	}
 
 	// if still not enough free space, delete ALL stalled incomplete torrents
-	if freespace < option.MinDiskSpace {
+	if freespace <= option.MinDiskSpace {
 		for _, torrent := range clientTorrents {
 			if clientTorrentsMap[torrent.InfoHash].DeleteFlag || torrent.Ctime > 0 || torrent.Meta["stt"] == 0 {
 				continue
@@ -412,7 +412,10 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 		}
 	}
 
-	if cntTorrents <= option.MaxTorrents && cntDownloadingTorrents < option.MaxDownloadingTorrents && estimateUploadSpeed <= targetUploadSpeed*2 {
+	if cntTorrents <= option.MaxTorrents &&
+		cntDownloadingTorrents < option.MaxDownloadingTorrents &&
+		estimateUploadSpeed <= targetUploadSpeed*2 &&
+		freespace > option.MinDiskSpace {
 		result.CanAddMore = true
 	}
 
