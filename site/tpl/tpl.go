@@ -130,6 +130,7 @@ var (
 			Type:              "nexusphp",
 			Url:               "https://leaves.red/",
 			TorrentsExtraUrls: []string{"https://leaves.red/special.php"},
+			SearchUrl:         `https://leaves.red/search.php?search=%s&search_area=0`,
 		},
 		"lemonhd": &config.SiteConfigStruct{
 			Type:        "nexusphp",
