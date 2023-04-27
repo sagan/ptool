@@ -2,6 +2,7 @@ package xseedcheck
 
 import (
 	"fmt"
+	"strings"
 
 	goTorrentParser "github.com/j-muller/go-torrent-parser"
 	"github.com/sagan/ptool/client"
@@ -19,7 +20,12 @@ Only filename and size will be comared. Not the file contents themselves.`,
 	Run:  xseedcheck,
 }
 
+var (
+	showFull = false
+)
+
 func init() {
+	command.Flags().BoolVarP(&showFull, "full", "f", false, "show full comparison result")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -67,5 +73,19 @@ func xseedcheck(cmd *cobra.Command, args []string) {
 			torrentFileName,
 			clientName,
 		)
+	}
+
+	if showFull {
+		fmt.Printf("\n")
+		fmt.Printf("Client: %s torrent\n", infoHash)
+		for _, clientTorrentFile := range clientTorrentContents {
+			fmt.Printf("%-15d %s\n", clientTorrentFile.Size, clientTorrentFile.Path)
+		}
+
+		fmt.Printf("\n")
+		fmt.Printf("File: %s\n", torrentFileName)
+		for _, tfile := range torrentInfo.Files {
+			fmt.Printf("%-15d %s\n", tfile.Length, strings.Join(tfile.Path, "/"))
+		}
 	}
 }

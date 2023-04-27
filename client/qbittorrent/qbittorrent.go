@@ -17,6 +17,7 @@ import (
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/utils"
+	"golang.org/x/exp/slices"
 )
 
 type Client struct {
@@ -124,7 +125,7 @@ func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 	mp.WriteField("root_folder", "true")
 	if option != nil {
 		mp.WriteField("category", option.Category)
-		mp.WriteField("tags", strings.Join(option.Tags, ","))
+		mp.WriteField("tags", strings.Join(option.Tags, ",")) // qb 4.3.2+ new
 		mp.WriteField("paused", fmt.Sprint(option.Pause))
 		mp.WriteField("upLimit", fmt.Sprint(option.UploadSpeedLimit))
 		mp.WriteField("dlLimit", fmt.Sprint(option.DownloadSpeedLimit))
@@ -366,16 +367,12 @@ func (qbclient *Client) ModifyTorrent(infoHash string,
 		addTags := []string{}
 		removeTags := []string{}
 		for _, addTag := range option.Tags {
-			if utils.FindInSlice(qbTags, func(tag string) bool {
-				return tag == addTag
-			}) == nil {
+			if slices.Index(qbTags, addTag) == -1 {
 				addTags = append(addTags, addTag)
 			}
 		}
 		for _, removeTag := range option.RemoveTags {
-			if utils.FindInSlice(qbTags, func(tag string) bool {
-				return tag == removeTag
-			}) != nil {
+			if slices.Index(qbTags, removeTag) != -1 {
 				removeTags = append(removeTags, removeTag)
 			}
 		}
@@ -594,7 +591,7 @@ func (qbclient *Client) GetTorrentContents(infoHash string) ([]client.TorrentCon
 	for _, qbTorrentContent := range qbTorrentContents {
 		torrentContents = append(torrentContents, client.TorrentContentFile{
 			Index:    qbTorrentContent.Index,
-			Path:     qbTorrentContent.Name,
+			Path:     strings.ReplaceAll(qbTorrentContent.Name, "\\", "/"),
 			Size:     qbTorrentContent.Size,
 			Complete: qbTorrentContent.Is_seed,
 		})

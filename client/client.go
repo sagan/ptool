@@ -7,6 +7,7 @@ import (
 
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/utils"
+	"golang.org/x/exp/slices"
 
 	goTorrentParser "github.com/j-muller/go-torrent-parser"
 )
@@ -213,9 +214,9 @@ func (torrent *Torrent) IsFullComplete() bool {
 
 func (torrent *Torrent) HasTag(tag string) bool {
 	tag = strings.ToLower(tag)
-	return utils.FindInSlice(torrent.Tags, func(t string) bool {
+	return slices.IndexFunc(torrent.Tags, func(t string) bool {
 		return strings.ToLower(t) == tag
-	}) != nil
+	}) != -1
 }
 
 func GenerateTorrentTagFromSite(site string) string {

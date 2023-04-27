@@ -16,6 +16,7 @@ import (
 // IYUU 部分站点 name 与本程序有差异
 var IYUU_SITE_IDS = map[string](string){
 	"leaguehd":  "lemonhd",
+	"m-team":    "mteam",
 	"pt0ffcc":   "0ff",
 	"pt2xfree":  "2xFree",
 	"redleaves": "leaves",
