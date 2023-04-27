@@ -62,12 +62,24 @@ type TorrentOption struct {
 }
 
 type Client interface {
+	GetTorrent(infoHash string) (*Torrent, error)
+	// state: downloading|uploading|paused|completed|_completed|_done|_error|_all
 	GetTorrents(state string, category string, showAll bool) ([]Torrent, error)
 	AddTorrent(torrentContent []byte, option *TorrentOption, meta map[string](int64)) error
 	ModifyTorrent(infoHash string, option *TorrentOption, meta map[string](int64)) error
 	DeleteTorrents(infoHashes []string, deleteFiles bool) error
 	PauseTorrents(infoHashes []string) error
 	ResumeTorrents(infoHashes []string) error
+	ReannounceTorrents(infoHashes []string) error
+	PauseAllTorrents() error
+	ResumeAllTorrents() error
+	ReannounceAllTorrents() error
+	GetTags() ([]string, error)
+	CreateTags(tags ...string) error
+	DeleteTags(tags ...string) error
+	GetCategories() ([]string, error)
+	SetTorrentsCatetory(infoHashes []string, category string) error
+	SetAllTorrentsCatetory(category string) error
 	TorrentRootPathExists(rootFolder string) bool
 	GetTorrentContents(infoHash string) ([]TorrentContentFile, error)
 	PurgeCache()
@@ -242,4 +254,15 @@ func XseedCheckTorrentContents(clientTorrentContents []TorrentContentFile, torre
 		return 1
 	}
 	return 0
+}
+
+func GetClientTorrentInfoHashes(clientInstance Client, stateFilter string, category string) ([]string, error) {
+	torrents, err := clientInstance.GetTorrents(stateFilter, category, true)
+	if err != nil {
+		return nil, err
+	}
+	infoHashes := utils.Map(torrents, func(torrent Torrent) string {
+		return torrent.InfoHash
+	})
+	return infoHashes, nil
 }

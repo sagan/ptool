@@ -1,5 +1,12 @@
 package qbittorrent
 
+import (
+	"strings"
+
+	"github.com/sagan/ptool/client"
+	"github.com/sagan/ptool/utils"
+)
+
 type apiTorrentContent struct {
 	Index        int64   `json:"index"`        // File index
 	Name         string  `json:"name"`         // File name (including relative path)
@@ -17,10 +24,10 @@ type apiCategoryStruct struct {
 }
 
 type apiSyncMaindata struct {
-	Server_state apiTransferInfo                `json:"server_state"`
-	Tags         []string                       `json:"tags"`
-	Categories   map[string](apiCategoryStruct) `json:"categories"`
-	Torrents     map[string](apiTorrentInfo)    `json:"torrents"`
+	Server_state apiTransferInfo                 `json:"server_state"`
+	Tags         []string                        `json:"tags"`
+	Categories   map[string](*apiCategoryStruct) `json:"categories"`
+	Torrents     map[string](*apiTorrentInfo)    `json:"torrents"`
 }
 
 type apiTransferInfo struct {
@@ -125,4 +132,48 @@ func (qt *apiTorrentInfo) CanResume() bool {
 
 func (qt *apiTorrentInfo) CanPause() bool {
 	return !qt.CanResume()
+}
+
+func (qbtorrent *apiTorrentInfo) ToTorrentState() string {
+	state := ""
+	switch qbtorrent.State {
+	case "stalledUP", "checkingUP", "queuedUP", "forcedUP", "uploading":
+		state = "seeding"
+	case "metaDL", "allocating", "stalledDL", "checkingDL", "queuedDL", "forcedDL", "downloading":
+		state = "downloading"
+	case "pausedUP":
+		state = "completed"
+	case "pausedDL":
+		state = "paused"
+	default:
+		state = qbtorrent.State
+	}
+	return state
+}
+
+func (qbtorrent *apiTorrentInfo) ToTorrent() *client.Torrent {
+	torrent := &client.Torrent{
+		InfoHash:           qbtorrent.Hash,
+		Name:               qbtorrent.Name,
+		TrackerDomain:      utils.ParseUrlHostname(qbtorrent.Tracker),
+		State:              qbtorrent.ToTorrentState(),
+		Atime:              qbtorrent.Added_on,
+		Ctime:              qbtorrent.Completion_on,
+		Downloaded:         qbtorrent.Downloaded,
+		DownloadSpeed:      qbtorrent.Dlspeed,
+		DownloadSpeedLimit: qbtorrent.Dl_limit,
+		Uploaded:           qbtorrent.Uploaded,
+		UploadSpeed:        qbtorrent.Upspeed,
+		UploadedSpeedLimit: qbtorrent.Up_limit,
+		Category:           qbtorrent.Category,
+		Tags:               strings.Split(qbtorrent.Tags, ","),
+		Seeders:            qbtorrent.Num_complete,
+		Size:               qbtorrent.Size,
+		SizeCompleted:      qbtorrent.Completed,
+		SizeTotal:          qbtorrent.Total_size,
+		Leechers:           qbtorrent.Num_incomplete,
+		Meta:               make(map[string]int64),
+	}
+	torrent.Name, torrent.Meta = client.ParseMetaFromName(torrent.Name)
+	return torrent
 }

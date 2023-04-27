@@ -1,4 +1,4 @@
-package pause
+package reannounce
 
 import (
 	"os"
@@ -12,20 +12,20 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "pause <client> <infoHash>...",
-	Short: "Pause torrents of client.",
-	Long: `Pause torrents of client.
+	Use:   "reannounce <client> <infoHash>...",
+	Short: "Reannounce torrents of client.",
+	Long: `Reannounce torrents of client.
 infoHashes...: infoHash list of torrents. It's possible to use some special values to target multiple torrents:
 _all, _completed (or _done), _error`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
-	Run:  pause,
+	Run:  reannounce,
 }
 
 func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func pause(cmd *cobra.Command, args []string) {
+func reannounce(cmd *cobra.Command, args []string) {
 	clientInstance, err := client.CreateClient(args[0])
 	if err != nil {
 		log.Fatal(err)
@@ -35,7 +35,7 @@ func pause(cmd *cobra.Command, args []string) {
 	for _, arg := range args {
 		if strings.HasPrefix(arg, "_") {
 			if arg == "_all" {
-				err = clientInstance.PauseAllTorrents()
+				err = clientInstance.ReannounceAllTorrents()
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -50,7 +50,7 @@ func pause(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	err = clientInstance.PauseTorrents(infoHashes)
+	err = clientInstance.ReannounceTorrents(infoHashes)
 	if err != nil {
 		log.Fatal(err)
 	}

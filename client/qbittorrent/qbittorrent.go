@@ -160,6 +160,126 @@ func (qbclient *Client) ResumeTorrents(infoHashes []string) error {
 	return qbclient.apiPost("api/v2/torrents/resume", data)
 }
 
+func (qbclient *Client) ReannounceTorrents(infoHashes []string) error {
+	if len(infoHashes) == 0 {
+		return nil
+	}
+	err := qbclient.login()
+	if err != nil {
+		return fmt.Errorf("login error: %v", err)
+	}
+	data := url.Values{
+		"hashes": {strings.Join(infoHashes, "|")},
+	}
+	return qbclient.apiPost("api/v2/torrents/reannounce", data)
+}
+
+func (qbclient *Client) PauseAllTorrents() error {
+	err := qbclient.login()
+	if err != nil {
+		return fmt.Errorf("login error: %v", err)
+	}
+	data := url.Values{
+		"hashes": {"all"},
+	}
+	return qbclient.apiPost("api/v2/torrents/pause", data)
+}
+
+func (qbclient *Client) ResumeAllTorrents() error {
+	err := qbclient.login()
+	if err != nil {
+		return fmt.Errorf("login error: %v", err)
+	}
+	data := url.Values{
+		"hashes": {"all"},
+	}
+	return qbclient.apiPost("api/v2/torrents/resume", data)
+}
+
+func (qbclient *Client) ReannounceAllTorrents() error {
+	err := qbclient.login()
+	if err != nil {
+		return fmt.Errorf("login error: %v", err)
+	}
+	data := url.Values{
+		"hashes": {"all"},
+	}
+	return qbclient.apiPost("api/v2/torrents/reannounce", data)
+}
+
+func (qbclient *Client) GetTags() ([]string, error) {
+	err := qbclient.login()
+	if err != nil {
+		return nil, fmt.Errorf("login error: %v", err)
+	}
+	var tags []string
+	err = qbclient.apiRequest("api/v2/torrents/tags", &tags)
+	return tags, err
+}
+
+func (qbclient *Client) CreateTags(tags ...string) error {
+	err := qbclient.login()
+	if err != nil {
+		return fmt.Errorf("login error: %v", err)
+	}
+	data := url.Values{
+		"tags": {strings.Join(tags, ",")},
+	}
+	return qbclient.apiPost("api/v2/torrents/createTags", data)
+}
+
+func (qbclient *Client) DeleteTags(tags ...string) error {
+	err := qbclient.login()
+	if err != nil {
+		return fmt.Errorf("login error: %v", err)
+	}
+	data := url.Values{
+		"tags": {strings.Join(tags, ",")},
+	}
+	return qbclient.apiPost("api/v2/torrents/deleteTags", data)
+}
+
+func (qbclient *Client) GetCategories() ([]string, error) {
+	err := qbclient.login()
+	if err != nil {
+		return nil, fmt.Errorf("login error: %v", err)
+	}
+	var categories map[string](apiCategoryStruct)
+	err = qbclient.apiRequest("api/v2/torrents/categories", &categories)
+	if err != nil {
+		return nil, err
+	}
+	cats := []string{}
+	for _, category := range categories {
+		cats = append(cats, category.Name)
+	}
+	return cats, nil
+}
+
+func (qbclient *Client) SetTorrentsCatetory(infoHashes []string, category string) error {
+	err := qbclient.login()
+	if err != nil {
+		return fmt.Errorf("login error: %v", err)
+	}
+	data := url.Values{
+		"hashes":   {strings.Join(infoHashes, "|")},
+		"category": {category},
+	}
+	return qbclient.apiPost("api/v2/torrents/setCategory", data)
+}
+
+func (qbclient *Client) SetAllTorrentsCatetory(category string) error {
+	err := qbclient.login()
+	if err != nil {
+		return fmt.Errorf("login error: %v", err)
+	}
+	data := url.Values{
+		"hashes":   {"all"},
+		"category": {category},
+	}
+	return qbclient.apiPost("api/v2/torrents/setCategory", data)
+}
+
 func (qbclient *Client) DeleteTorrents(infoHashes []string, deleteFiles bool) error {
 	if len(infoHashes) == 0 {
 		return nil
@@ -306,7 +426,7 @@ func (qbclient *Client) PurgeCache() {
 }
 
 func (qbclient *Client) sync() error {
-	if utils.Now()-qbclient.datatime <= 15 {
+	if qbclient.datatime > 0 {
 		return nil
 	}
 	err := qbclient.login()
@@ -397,6 +517,18 @@ func (qbclient *Client) SetConfig(variable string, value string) error {
 	}
 }
 
+func (qbclient *Client) GetTorrent(infoHash string) (*client.Torrent, error) {
+	err := qbclient.sync()
+	if err != nil {
+		return nil, err
+	}
+	qbtorrent := qbclient.data.Torrents[infoHash]
+	if qbtorrent == nil {
+		return nil, nil
+	}
+	return qbtorrent.ToTorrent(), nil
+}
+
 func (qbclient *Client) GetTorrents(stateFilter string, category string, showAll bool) ([]client.Torrent, error) {
 	torrents := make([]client.Torrent, 0)
 	err := qbclient.sync()
@@ -411,46 +543,22 @@ func (qbclient *Client) GetTorrents(stateFilter string, category string, showAll
 		if !showAll && qbtorrent.Dlspeed <= 1024 && qbtorrent.Upspeed <= 1024 {
 			continue
 		}
-		state := ""
-		switch qbtorrent.State {
-		case "forcedUP", "stalledUP", "queuedUP", "uploading":
-			state = "seeding"
-		case "metaDL", "stalledDL", "checkingDL", "forcedDL", "downloading":
-			state = "downloading"
-		case "pausedUP":
-			state = "completed"
-		case "pausedDL":
-			state = "paused"
-		default:
-			state = qbtorrent.State
+		state := qbtorrent.ToTorrentState()
+		if stateFilter != "" && stateFilter != "_all" {
+			if stateFilter == "_completed" || stateFilter == "_done" {
+				if state != "completed" && state != "seeding" {
+					continue
+				}
+			} else if stateFilter == "_error" {
+				if state != "error" && state != "missingFiles" && state != "unknown" {
+					continue
+				}
+			} else if stateFilter != state {
+				continue
+			}
 		}
-		if stateFilter != "" && stateFilter != state {
-			continue
-		}
-		torrent := client.Torrent{
-			InfoHash:           qbtorrent.Hash,
-			Name:               qbtorrent.Name,
-			TrackerDomain:      utils.ParseUrlHostname(qbtorrent.Tracker),
-			State:              state,
-			Atime:              qbtorrent.Added_on,
-			Ctime:              qbtorrent.Completion_on,
-			Downloaded:         qbtorrent.Downloaded,
-			DownloadSpeed:      qbtorrent.Dlspeed,
-			DownloadSpeedLimit: qbtorrent.Dl_limit,
-			Uploaded:           qbtorrent.Uploaded,
-			UploadSpeed:        qbtorrent.Upspeed,
-			UploadedSpeedLimit: qbtorrent.Up_limit,
-			Category:           qbtorrent.Category,
-			Tags:               strings.Split(qbtorrent.Tags, ","),
-			Seeders:            qbtorrent.Num_complete,
-			Size:               qbtorrent.Size,
-			SizeCompleted:      qbtorrent.Completed,
-			SizeTotal:          qbtorrent.Total_size,
-			Leechers:           qbtorrent.Num_incomplete,
-			Meta:               make(map[string]int64),
-		}
-		torrent.Name, torrent.Meta = client.ParseMetaFromName(torrent.Name)
-		torrents = append(torrents, torrent)
+		torrent := qbtorrent.ToTorrent()
+		torrents = append(torrents, *torrent)
 	}
 	return torrents, nil
 }

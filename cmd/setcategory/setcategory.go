@@ -1,4 +1,4 @@
-package pause
+package setcategory
 
 import (
 	"os"
@@ -12,30 +12,31 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "pause <client> <infoHash>...",
-	Short: "Pause torrents of client.",
-	Long: `Pause torrents of client.
-infoHashes...: infoHash list of torrents. It's possible to use some special values to target multiple torrents:
-_all, _completed (or _done), _error`,
-	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
-	Run:  pause,
+	Use:   "setcategory <client> <category> <infoHashes>...",
+	Short: "Set category of torrents in client.",
+	Long:  `Set category of torrents in client.`,
+	Args:  cobra.MatchAll(cobra.MinimumNArgs(3), cobra.OnlyValidArgs),
+	Run:   createtags,
 }
 
 func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func pause(cmd *cobra.Command, args []string) {
+func createtags(cmd *cobra.Command, args []string) {
 	clientInstance, err := client.CreateClient(args[0])
 	if err != nil {
 		log.Fatal(err)
 	}
-	args = args[1:]
+
+	cat := args[1]
+
+	args = args[2:]
 	infoHashes := []string{}
 	for _, arg := range args {
 		if strings.HasPrefix(arg, "_") {
 			if arg == "_all" {
-				err = clientInstance.PauseAllTorrents()
+				err = clientInstance.SetAllTorrentsCatetory(cat)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -50,8 +51,8 @@ func pause(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	err = clientInstance.PauseTorrents(infoHashes)
+	err = clientInstance.SetTorrentsCatetory(infoHashes, cat)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to set torrents category: %v", err)
 	}
 }

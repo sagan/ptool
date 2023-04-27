@@ -74,7 +74,7 @@ func xseed(cmd *cobra.Command, args []string) {
 	var clientTorrentsMap = make(map[string]([]iyuu.Torrent))
 	iyuu.Db().Find(&sites)
 	iyuu.Db().Where("target_info_hash in ?", allTorrentsInfoHashes).Find(&clientTorrents)
-	site2LocalMap := iyuu.GenerateIyuu2LocalSiteMap(sites, config.Get().Sites)
+	// site2LocalMap := iyuu.GenerateIyuu2LocalSiteMap(sites, config.Get().Sites)
 	for _, torrent := range clientTorrents {
 		list := clientTorrentsMap[torrent.TargetInfoHash]
 		list = append(list, torrent)

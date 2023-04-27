@@ -122,7 +122,7 @@ func status(cmd *cobra.Command, args []string) {
 				hasError = true
 			}
 			if response.ClientStatus != nil {
-				fmt.Printf("Client %s ↓ Speed/Limit: %s/s / %s/s; ↑ Speed/Limit: %s/s / %s/s; Free disk space: %s\n",
+				fmt.Printf("Client %s ↓ Speed/Limit: %s/s / %s/s; ↑ Speed/Limit: %s/s / %s/s; Free disk space: %s",
 					response.Name,
 					utils.BytesSize(float64(response.ClientStatus.DownloadSpeed)),
 					utils.BytesSize(float64(response.ClientStatus.DownloadSpeedLimit)),
@@ -130,6 +130,10 @@ func status(cmd *cobra.Command, args []string) {
 					utils.BytesSize(float64(response.ClientStatus.UploadSpeedLimit)),
 					utils.BytesSize(float64(response.ClientStatus.FreeSpaceOnDisk)),
 				)
+				if len(response.ClientTorrents) > 0 {
+					fmt.Printf(" / Torrents: %d", len(response.ClientTorrents))
+				}
+				fmt.Printf("\n")
 			} else {
 				fmt.Printf("Client %s: failed to get status\n", response.Name)
 			}
@@ -145,12 +149,16 @@ func status(cmd *cobra.Command, args []string) {
 				hasError = true
 			}
 			if response.SiteStatus != nil {
-				fmt.Printf("Site %s: %s ↑ %s / ↓ %s\n",
+				fmt.Printf("Site %s: %s ↑ %s / ↓ %s",
 					response.Name,
 					response.SiteStatus.UserName,
 					utils.BytesSize(float64(response.SiteStatus.UserUploaded)),
 					utils.BytesSize(float64(response.SiteStatus.UserDownloaded)),
 				)
+				if len(response.SiteTorrents) > 0 {
+					fmt.Printf(" / Torrents: %d", len(response.SiteTorrents))
+				}
+				fmt.Printf("\n")
 			} else {
 				fmt.Printf("Site %s: failed to get status\n", response.Name)
 			}
