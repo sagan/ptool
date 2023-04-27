@@ -24,7 +24,7 @@ type apiCategoryStruct struct {
 }
 
 type apiSyncMaindata struct {
-	Server_state apiTransferInfo                 `json:"server_state"`
+	Server_state *apiTransferInfo                `json:"server_state"`
 	Tags         []string                        `json:"tags"`
 	Categories   map[string](*apiCategoryStruct) `json:"categories"`
 	Torrents     map[string](*apiTorrentInfo)    `json:"torrents"`
