@@ -18,7 +18,7 @@ const (
 	DEFAULT_CLIENT_BRUSH_MIN_DISK_SPACE             = int64(5 * 1024 * 1024 * 1024)
 	DEFAULT_CLIENT_BRUSH_SLOW_UPLOAD_SPEED_TIER     = int64(100 * 1024)
 	DEFAULT_CLIENT_BRUSH_MAX_DOWNLOADING_TORRENTS   = int64(6)
-	DEFAULT_CLIENT_BRUSH_MAX_TORRENTS               = int64(500)
+	DEFAULT_CLIENT_BRUSH_MAX_TORRENTS               = int64(9999)
 	DEFAULT_CLIENT_BRUSH_MIN_RATION                 = float64(0.2)
 	DEFAULT_CLIENT_BRUSH_DEFAULT_UPLOAD_SPEED_LIMIT = int64(10 * 1024 * 1024)
 	DEFAULT_CLIENT_BRUSH_TORRENT_SIZE_LIMIT         = int64(1024 * 1024 * 1024 * 1024 * 1024) // 1PB, that's say, unlimited
@@ -69,6 +69,9 @@ type SiteConfigStruct struct {
 	SelectorTorrentSize          string   `yaml:"selectorTorrentSize"`
 	SelectorTorrentProcessBar    string   `yaml:"selectorTorrentProcessBar"`
 	SelectorUserInfo             string   `yaml:"selectorUserInfo"`
+	SelectorUserInfoUserName     string   `yaml:"selectorUserInfoUserName"`
+	SelectorUserInfoUploaded     string   `yaml:"selectorUserInfoUploaded"`
+	SelectorUserInfoDownloaded   string   `yaml:"selectorUserInfoDownloaded"`
 	TorrentUploadSpeedLimitValue int64
 }
 

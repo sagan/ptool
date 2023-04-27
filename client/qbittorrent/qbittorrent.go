@@ -72,9 +72,18 @@ func (qbclient *Client) login() error {
 	if qbclient.Logined {
 		return nil
 	}
+	username := qbclient.ClientConfig.Username
+	password := qbclient.ClientConfig.Password
+	// use qb default
+	if username == "" {
+		username = "admin"
+	}
+	if username == "admin" && password == "" {
+		password = "adminadmin"
+	}
 	data := url.Values{
-		"username": {qbclient.ClientConfig.Username},
-		"password": {qbclient.ClientConfig.Password},
+		"username": {username},
+		"password": {password},
 	}
 	err := qbclient.apiPost("api/v2/auth/login", data)
 	if err == nil {

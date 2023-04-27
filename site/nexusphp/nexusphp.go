@@ -135,6 +135,7 @@ func (npclient *Site) sync() error {
 	if err != nil {
 		return fmt.Errorf("failed to get site page dom: %v", err)
 	}
+	html := doc.Find("html")
 	npclient.datatime = utils.Now()
 
 	siteStatus := &site.Status{}
@@ -149,24 +150,45 @@ func (npclient *Site) sync() error {
 	infoTxt := infoTr.Text()
 	infoTxt = strings.ReplaceAll(infoTxt, "\n", " ")
 	infoTxt = strings.ReplaceAll(infoTxt, "\r", " ")
-	re := regexp.MustCompile(`(上傳量|上傳|上传量|上传)[：:\s]+(?P<s>[.\s0-9KMGTEPBkmgtepib]+)`)
-	m := re.FindStringSubmatch(infoTxt)
-	if m != nil {
-		ss := strings.ReplaceAll(m[re.SubexpIndex("s")], " ", "")
-		s, _ := utils.RAMInBytes(ss)
+
+	var sstr string
+
+	sstr = ""
+	if npclient.SiteConfig.SelectorUserInfoUploaded != "" {
+		sstr = utils.DomSelectorText(html, npclient.SiteConfig.SelectorUserInfoUploaded)
+	} else {
+		re := regexp.MustCompile(`(上傳量|上傳|上传量|上传)[：:\s]+(?P<s>[.\s0-9KMGTEPBkmgtepib]+)`)
+		m := re.FindStringSubmatch(infoTxt)
+		if m != nil {
+			sstr = strings.ReplaceAll(strings.TrimSpace(m[re.SubexpIndex("s")]), " ", "")
+		}
+	}
+	if sstr != "" {
+		s, _ := utils.RAMInBytes(sstr)
 		siteStatus.UserUploaded = s
 	}
-	re = regexp.MustCompile(`(下載量|下載|下载量|下载)[：:\s]+(?P<s>[.\s0-9KMGTEPBkmgtepib]+)`)
-	m = re.FindStringSubmatch(infoTxt)
-	if m != nil {
-		ss := strings.ReplaceAll(m[re.SubexpIndex("s")], " ", "")
-		s, _ := utils.RAMInBytes(ss)
+
+	sstr = ""
+	if npclient.SiteConfig.SelectorUserInfoDownloaded != "" {
+		sstr = utils.DomSelectorText(html, npclient.SiteConfig.SelectorUserInfoDownloaded)
+	} else {
+		re := regexp.MustCompile(`(下載量|下載|下载量|下载)[：:\s]+(?P<s>[.\s0-9KMGTEPBkmgtepib]+)`)
+		m := re.FindStringSubmatch(infoTxt)
+		if m != nil {
+			sstr = strings.ReplaceAll(strings.TrimSpace(m[re.SubexpIndex("s")]), " ", "")
+		}
+	}
+	if sstr != "" {
+		s, _ := utils.RAMInBytes(sstr)
 		siteStatus.UserDownloaded = s
 	}
-	userEl := doc.Find("*[href*=\"userdetails.php?\"]").First()
-	if userEl.Length() > 0 {
-		siteStatus.UserName = userEl.Text()
+
+	if npclient.SiteConfig.SelectorUserInfoUserName != "" {
+		siteStatus.UserName = utils.DomSelectorText(html, npclient.SiteConfig.SelectorUserInfoUserName)
+	} else {
+		siteStatus.UserName = doc.Find(`*[href*="userdetails.php?"]`).First().Text()
 	}
+
 	// possibly parsing error or some problem
 	if siteStatus.UserName == "" && siteStatus.UserDownloaded == 0 && siteStatus.UserUploaded == 0 {
 		if log.GetLevel() >= log.TraceLevel {

@@ -19,25 +19,52 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "xseed client",
-	Short: "Cross seed",
-	Long:  `Cross seed`,
+	Use:   "xseed <client>...",
+	Short: "Cross seed.",
+	Long:  `Cross seed. By default it will add xseed torrents from All sites unless --include-sites or --exclude-sites flag is set`,
 	Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	Run:   xseed,
 }
 
 var (
-	dryRun = false
+	includeSites = ""
+	excludeSites = ""
+	dryRun       = false
+	paused       = false
+	check        = false
 )
 
 func init() {
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do not actually controlling client")
+	command.Flags().BoolVarP(&paused, "paused", "p", false, "Add xseed torrents to client in paused state")
+	command.Flags().BoolVar(&check, "check-hash", false, "Let client do hash checking when add xseed torrents")
+	command.Flags().StringVar(&includeSites, "include-sites", "", "Only add xseed torrents from these sites (comma-separated)")
+	command.Flags().StringVar(&excludeSites, "exclude-sites", "", "Do NOT add xseed torrents from these sites (comma-separated)")
 	iyuu.Command.AddCommand(command)
 }
 
 func xseed(cmd *cobra.Command, args []string) {
-	log.Print(config.ConfigFile, " ", args)
-	log.Print("token", config.Get().IyuuToken)
+	log.Tracef("iyuu token: %s", config.Get().IyuuToken)
+	if config.Get().IyuuToken == "" {
+		log.Fatalf("You must config iyuuToken in ptool.yaml to use iyuu functions")
+	}
+
+	includeSitesMode := false
+	includeSitesFlag := map[string](bool){}
+	excludeSitesFlag := map[string](bool){}
+	if includeSites != "" && excludeSites != "" {
+		log.Fatalf("--include-sites and --exclude-sites flags can NOT be both set")
+	}
+	if includeSites != "" {
+		includeSitesMode = true
+		for _, site := range strings.Split(includeSites, ",") {
+			includeSitesFlag[site] = true
+		}
+	} else if excludeSites != "" {
+		for _, site := range strings.Split(excludeSites, ",") {
+			excludeSitesFlag[site] = true
+		}
+	}
 
 	clientNames := args
 	clientInstanceMap := map[string](client.Client){} // clientName => clientInstance
@@ -61,7 +88,13 @@ func xseed(cmd *cobra.Command, args []string) {
 				!torrent.HasTag("_xseed") && !strings.HasPrefix(torrent.Category, "_")
 		})
 		sort.Slice(torrents, func(i, j int) bool {
-			return torrents[i].Size < torrents[j].Size
+			if torrents[i].Size != torrents[j].Size {
+				return torrents[i].Size < torrents[j].Size
+			}
+			if torrents[i].Atime != torrents[j].Atime {
+				return torrents[i].Atime < torrents[j].Atime
+			}
+			return torrents[i].TrackerDomain < torrents[j].TrackerDomain
 		})
 		infoHashes := []string{}
 		tsize := int64(0)
@@ -105,16 +138,15 @@ func xseed(cmd *cobra.Command, args []string) {
 
 	siteInstancesMap := map[string](site.Site){}
 	for _, clientName := range clientNames {
-		log.Tracef("Start xseeding client %s", clientName)
+		log.Printf("Start xseeding client %s", clientName)
 		clientInstance := clientInstanceMap[clientName]
 		for _, infoHash := range clientInfoHashesMap[clientName] {
 			targetTorrent, err := clientInstance.GetTorrent(infoHash)
 			if err != nil {
-				log.Tracef("Failed to get target torrent %s info from client: %v", infoHash, err)
+				log.Errorf("Failed to get target torrent %s info from client: %v", infoHash, err)
 				continue
 			}
-			log.Tracef("client torrent %s _ %s: name=%s, savePath=%s",
-				infoHash,
+			log.Tracef("client torrent %s: name=%s, savePath=%s",
 				targetTorrent.InfoHash, targetTorrent.Name, targetTorrent.SavePath,
 			)
 			targetTorrentContentFiles, err := clientInstance.GetTorrentContents(infoHash)
@@ -124,15 +156,15 @@ func xseed(cmd *cobra.Command, args []string) {
 			}
 			xseedTorrents := clientTorrentsMap[infoHash]
 			if len(xseedTorrents) == 0 {
-				log.Tracef("torrent %s skipped or has no xseed candidates", infoHash)
+				log.Debugf("torrent %s skipped or has no xseed candidates", infoHash)
 				continue
 			} else {
-				log.Tracef("torrent %s has %d xseed candidates", infoHash, len(xseedTorrents))
+				log.Debugf("torrent %s has %d xseed candidates", infoHash, len(xseedTorrents))
 			}
 			for _, xseedTorrent := range xseedTorrents {
 				clientExistingTorrent, err := clientInstance.GetTorrent(xseedTorrent.InfoHash)
 				if err != nil {
-					log.Tracef("Failed to get client existing torrent info for %s", xseedTorrent.InfoHash)
+					log.Errorf("Failed to get client existing torrent info for %s", xseedTorrent.InfoHash)
 					continue
 				}
 				if clientExistingTorrent != nil {
@@ -144,38 +176,43 @@ func xseed(cmd *cobra.Command, args []string) {
 					}
 					continue
 				}
-				if site2LocalMap[xseedTorrent.Sid] == "" {
+				sitename := site2LocalMap[xseedTorrent.Sid]
+				if sitename == "" {
 					log.Tracef("torrent %s xseed candidate torrent %s site sid %d not found in local",
 						infoHash, xseedTorrent.InfoHash, xseedTorrent.Sid,
 					)
 					continue
 				}
-				if siteInstancesMap[site2LocalMap[xseedTorrent.Sid]] == nil {
-					siteInstance, err := site.CreateSite(site2LocalMap[xseedTorrent.Sid])
+				if (includeSitesMode && !includeSitesFlag[sitename]) || (!includeSitesMode && excludeSitesFlag[sitename]) {
+					log.Tracef("skip site %d torrent", sitename)
+					continue
+				}
+				if siteInstancesMap[sitename] == nil {
+					siteInstance, err := site.CreateSite(sitename)
 					if err != nil {
 						log.Fatalf("Failed to create iyuu sid %d (local %s) site instance: %v",
-							xseedTorrent.Sid,
-							site2LocalMap[xseedTorrent.Sid],
-							err,
-						)
+							xseedTorrent.Sid, sitename, err)
 					}
-					siteInstancesMap[site2LocalMap[xseedTorrent.Sid]] = siteInstance
+					siteInstancesMap[sitename] = siteInstance
 				}
-				siteInstance := siteInstancesMap[site2LocalMap[xseedTorrent.Sid]]
-				log.Tracef("Xseed torrent %s from site %s (iyuu sid %d) / tid %d",
+				siteInstance := siteInstancesMap[sitename]
+				log.Printf("Xseed torrent %s from site %s (iyuu sid %d) / tid %d",
 					xseedTorrent.InfoHash,
 					siteInstance.GetName(),
 					xseedTorrent.Sid,
 					xseedTorrent.Tid,
 				)
+				if dryRun {
+					continue
+				}
 				xseedTorrentContent, err := siteInstance.DownloadTorrentById(fmt.Sprint(xseedTorrent.Tid))
 				if err != nil {
-					log.Tracef("Failed to download torrent from site: %v", err)
+					log.Errorf("Failed to download torrent from site: %v", err)
 					continue
 				}
 				xseedTorrentInfo, err := goTorrentParser.Parse(bytes.NewReader(xseedTorrentContent))
 				if err != nil {
-					log.Tracef("Failed to parse xseed torrent contents")
+					log.Errorf("Failed to parse xseed torrent contents: %v", err)
 					continue
 				}
 				compareResult := client.XseedCheckTorrentContents(targetTorrentContentFiles, xseedTorrentInfo.Files)
@@ -185,8 +222,10 @@ func xseed(cmd *cobra.Command, args []string) {
 				}
 				err = clientInstance.AddTorrent(xseedTorrentContent, &client.TorrentOption{
 					SavePath:     targetTorrent.SavePath,
-					Tags:         []string{"xseed"},
-					SkipChecking: true,
+					Category:     targetTorrent.Category,
+					Tags:         []string{"xseed", "site:" + siteInstance.GetName()},
+					Pause:        paused,
+					SkipChecking: !check,
 				}, nil)
 				log.Infof("Add xseed torrent %s result: error=%v", xseedTorrent.InfoHash, err)
 				utils.Sleep(2)

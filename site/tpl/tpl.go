@@ -84,10 +84,6 @@ var (
 			Type: "nexusphp",
 			Url:  "https://hdhome.org/",
 		},
-		"hdmayi": &config.SiteConfigStruct{
-			Type: "nexusphp",
-			Url:  "http://hdmayi.com/",
-		},
 		"hdcity": &config.SiteConfigStruct{
 			Type:                       "nexusphp",
 			Url:                        "https://hdcity.city/",
@@ -97,6 +93,13 @@ var (
 			SelectorTorrentSeeders:     `a[title="种子数"] font`,
 			SelectorTorrentLeechers:    ``,
 			SelectorTorrentSnatched:    `a[title="完成数"]@text`,
+			SelectorUserInfoUserName:   `#bottomnav a[href="userdetails"] strong`,
+			SelectorUserInfoUploaded:   `#bottomnav a[href="userdetails"] i[title="上传量："]@after`,
+			SelectorUserInfoDownloaded: `#bottomnav a[href="userdetails"] i[title="下载量："]@after`,
+		},
+		"hdmayi": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "http://hdmayi.com/",
 		},
 		"hdtime": &config.SiteConfigStruct{
 			Type: "nexusphp",

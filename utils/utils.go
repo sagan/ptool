@@ -55,7 +55,11 @@ func FetchJson(url string, v any, client *http.Client) error {
 		return err
 	}
 	defer res.Body.Close()
-	return json.Unmarshal(body, &v)
+	err = json.Unmarshal(body, &v)
+	if err != nil {
+		log.Tracef("FetchJson failed to unmarshal, response body: %s", string(body))
+	}
+	return err
 }
 
 func FetchUrl(url string, cookie string, client *http.Client) (*http.Response, error) {
@@ -337,19 +341,24 @@ func DomHtml(el *goquery.Selection) string {
 }
 
 /*
- * DIY 了个 @text 选择器语法。用于选择某个 Element 里的第一个 TEXT_NODE
+ * DIY 了几个选择器语法（附加在标准CSS选择器字符串末尾）
+ * @text 用于选择某个 Element 里的第一个 TEXT_NODE
+ * @after 用于选择某个 Element 后面的 TEXT_NODE
  */
 func DomSelectorText(el *goquery.Selection, selector string) (text string) {
-	isTextNode := false
+	isTextNode := int64(0)
 	if strings.HasSuffix(selector, "@text") {
-		isTextNode = true
+		isTextNode = 1
 		selector = selector[:len(selector)-5]
+	} else if strings.HasSuffix(selector, "@after") {
+		isTextNode = 2
+		selector = selector[:len(selector)-6]
 	}
 	el = el.Find(selector)
 	if el.Length() == 0 {
 		return
 	}
-	if isTextNode {
+	if isTextNode == 1 {
 		elNode := el.Get(0)
 		node := elNode.FirstChild
 		for node != nil {
@@ -358,6 +367,11 @@ func DomSelectorText(el *goquery.Selection, selector string) (text string) {
 				break
 			}
 			node = node.NextSibling
+		}
+	} else if isTextNode == 2 {
+		elNode := el.Get(0).NextSibling
+		if elNode != nil {
+			text = SanitizeText(elNode.Data)
 		}
 	} else {
 		text = DomSanitizedText(el)
@@ -423,7 +437,11 @@ func PostUrlForJson(url string, data url.Values, v any, client *http.Client) err
 	if res.StatusCode != 200 {
 		return fmt.Errorf("PostUrlForJson response error: status=%d", res.StatusCode)
 	}
-	return json.Unmarshal(body, &v)
+	err = json.Unmarshal(body, &v)
+	if err != nil {
+		log.Tracef("PostUrlForJson failed to unmarshal, response body: %s", string(body))
+	}
+	return err
 }
 
 func CopySlice[T any](src []T) []T {

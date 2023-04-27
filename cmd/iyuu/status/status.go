@@ -22,8 +22,10 @@ func init() {
 }
 
 func status(cmd *cobra.Command, args []string) {
-	log.Print(config.ConfigFile, " ", args)
-	log.Print("token", config.Get().IyuuToken)
+	log.Tracef("iyuu token: %s", config.Get().IyuuToken)
+	if config.Get().IyuuToken == "" {
+		log.Fatalf("You must config iyuuToken in ptool.yaml to use iyuu functions")
+	}
 
 	data, err := iyuu.IyuuApiGetUser(config.Get().IyuuToken)
 	fmt.Printf("Iyuu status: error=%v, user=%v", err, data)
