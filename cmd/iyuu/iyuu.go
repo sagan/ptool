@@ -30,7 +30,7 @@ type Site struct {
 	DownloadPage string // (relative) torrent download url. eg. "download.php?id={}&passkey={passkey}"
 }
 
-// gorm "metas" table
+// gorm "meta" (not metas!) table
 type Meta struct {
 	Key   string `gorm:"primaryKey"` // keys: lastUpdateTime
 	Value string

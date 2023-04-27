@@ -25,7 +25,8 @@ import (
 )
 
 var (
-	ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36"
+	// use latest Chrome stable version on Windows 11
+	ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36"
 )
 
 func ContainsI(str string, substr string) bool {
@@ -48,12 +49,10 @@ func FetchJson(url string, v any, client *http.Client) error {
 	if err != nil {
 		return err
 	}
+	log.Tracef("FetchJson response: len=%d", res.ContentLength)
 	body, _ := io.ReadAll(res.Body)
 	if err != nil {
 		return err
-	}
-	if log.GetLevel() >= log.TraceLevel {
-		log.Tracef("FetchJson response: %s", string(body))
 	}
 	defer res.Body.Close()
 	return json.Unmarshal(body, &v)
@@ -75,16 +74,16 @@ func FetchUrl(url string, cookie string, client *http.Client) (*http.Response, e
 	if client == nil {
 		client = http.DefaultClient
 	}
-	resp, error := client.Do(req)
+	res, error := client.Do(req)
 	if error != nil {
 		return nil, fmt.Errorf("failed to fetch url: %v", error)
 	}
-	log.Tracef("FetchUrl resp status=%d", resp.StatusCode)
-	if resp.StatusCode != 200 {
-		defer resp.Body.Close()
-		return nil, fmt.Errorf("failed to fetch url: status=%d", resp.StatusCode)
+	log.Tracef("FetchUrl response status=%d", res.StatusCode)
+	if res.StatusCode != 200 {
+		defer res.Body.Close()
+		return nil, fmt.Errorf("failed to fetch url: status=%d", res.StatusCode)
 	}
-	return resp, nil
+	return res, nil
 }
 
 func GetUrlDoc(url string, cookie string, client *http.Client) (*goquery.Document, error) {
@@ -411,20 +410,18 @@ func PostUrlForJson(url string, data url.Values, v any, client *http.Client) err
 		client = http.DefaultClient
 	}
 	log.Tracef("PostUrlForJson request url=%s, data=%v", url, data)
-	resp, err := client.PostForm(url, data)
+	res, err := client.PostForm(url, data)
 	if err != nil {
 		return err
 	}
-	body, _ := io.ReadAll(resp.Body)
+	log.Tracef("PostUrlForJson response: len=%d", res.ContentLength)
+	body, _ := io.ReadAll(res.Body)
 	if err != nil {
 		return err
 	}
-	if log.GetLevel() >= log.TraceLevel {
-		log.Tracef("PostUrlForJson response: %s", string(body))
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("PostUrlForJson response error: status=%d", resp.StatusCode)
+	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		return fmt.Errorf("PostUrlForJson response error: status=%d", res.StatusCode)
 	}
 	return json.Unmarshal(body, &v)
 }

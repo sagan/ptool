@@ -19,6 +19,7 @@ type Torrent struct {
 	Atime              int64  // timestamp torrent added
 	Ctime              int64  // timestamp torrent completed. <=0 if not completed.
 	Category           string
+	SavePath           string
 	Tags               []string
 	Downloaded         int64
 	DownloadSpeed      int64
@@ -53,10 +54,12 @@ type Status struct {
 type TorrentOption struct {
 	Name               string
 	Category           string
+	SavePath           string
 	Tags               []string
 	RemoveTags         []string // used only in ModifyTorrent
 	DownloadSpeedLimit int64
 	UploadSpeedLimit   int64
+	SkipChecking       bool
 	Pause              bool
 	Resume             bool // use only in ModifyTorrent, to start a paused torrent
 }

@@ -119,6 +119,13 @@ func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 		mp.WriteField("paused", fmt.Sprint(option.Pause))
 		mp.WriteField("upLimit", fmt.Sprint(option.UploadSpeedLimit))
 		mp.WriteField("dlLimit", fmt.Sprint(option.DownloadSpeedLimit))
+		if option.SavePath != "" {
+			mp.WriteField("savepath", option.SavePath)
+			mp.WriteField("autoTMM", "false")
+		}
+		if option.SkipChecking {
+			mp.WriteField("skip_checking", "true")
+		}
 	}
 	resp, err := qbclient.HttpClient.Post(qbclient.ClientConfig.Url+"api/v2/torrents/add",
 		mp.FormDataContentType(), body)

@@ -12,6 +12,8 @@ import (
 )
 
 const (
+	BRUSH_CAT = "_brush"
+
 	DEFAULT_SITE_TIMEZONE                           = "Asia/Shanghai"
 	DEFAULT_CLIENT_BRUSH_MIN_DISK_SPACE             = int64(5 * 1024 * 1024 * 1024)
 	DEFAULT_CLIENT_BRUSH_SLOW_UPLOAD_SPEED_TIER     = int64(100 * 1024)

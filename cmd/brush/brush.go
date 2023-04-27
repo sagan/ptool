@@ -18,10 +18,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
-	CAT = "_brush"
-)
-
 var command = &cobra.Command{
 	Use:   "brush <client> <site>...",
 	Short: "Brush site using client.",
@@ -105,7 +101,7 @@ func brush(cmd *cobra.Command, args []string) {
 			}
 		}
 
-		clientTorrents, err := clientInstance.GetTorrents("", CAT, true)
+		clientTorrents, err := clientInstance.GetTorrents("", config.BRUSH_CAT, true)
 		if err != nil {
 			log.Printf("Failed to get client %s torrents: %v ", clientInstance.GetName(), err)
 			continue
@@ -159,7 +155,7 @@ func brush(cmd *cobra.Command, args []string) {
 				return t.InfoHash == torrent.InfoHash
 			})
 			// double check
-			if clientTorrent == nil || clientTorrent.Category != CAT {
+			if clientTorrent == nil || clientTorrent.Category != config.BRUSH_CAT {
 				log.Warnf("Invalid torrent deletion target: %s", torrent.InfoHash)
 				continue
 			}
@@ -270,7 +266,7 @@ func brush(cmd *cobra.Command, args []string) {
 			torrentOption := &client.TorrentOption{
 				Name:             torrent.Name,
 				Pause:            paused,
-				Category:         CAT,
+				Category:         config.BRUSH_CAT,
 				Tags:             []string{client.GenerateTorrentTagFromSite(siteInstance.GetName())},
 				UploadSpeedLimit: siteInstance.GetSiteConfig().TorrentUploadSpeedLimitValue,
 			}

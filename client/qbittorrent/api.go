@@ -166,6 +166,7 @@ func (qbtorrent *apiTorrentInfo) ToTorrent() *client.Torrent {
 		UploadSpeed:        qbtorrent.Upspeed,
 		UploadedSpeedLimit: qbtorrent.Up_limit,
 		Category:           qbtorrent.Category,
+		SavePath:           qbtorrent.Save_path,
 		Tags:               strings.Split(qbtorrent.Tags, ","),
 		Seeders:            qbtorrent.Num_complete,
 		Size:               qbtorrent.Size,
