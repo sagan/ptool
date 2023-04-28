@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"runtime"
 
+	"github.com/spf13/cobra"
+
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/config"
-	"github.com/spf13/cobra"
 )
 
 var command = &cobra.Command{

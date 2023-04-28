@@ -6,15 +6,14 @@ import (
 	"sort"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+	"golang.org/x/exp/slices"
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/utils"
-	"github.com/spf13/cobra"
-
-	"golang.org/x/exp/slices"
 )
 
 var (

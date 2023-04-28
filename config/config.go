@@ -6,9 +6,10 @@ import (
 	"sync"
 
 	toml "github.com/pelletier/go-toml/v2"
-	"github.com/sagan/ptool/utils"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
+
+	"github.com/sagan/ptool/utils"
 )
 
 const (

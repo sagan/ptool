@@ -5,11 +5,11 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/sagan/ptool/config"
-	"github.com/sagan/ptool/utils"
+	goTorrentParser "github.com/j-muller/go-torrent-parser"
 	"golang.org/x/exp/slices"
 
-	goTorrentParser "github.com/j-muller/go-torrent-parser"
+	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/utils"
 )
 
 type Torrent struct {

@@ -3,12 +3,12 @@ package search
 import (
 	"strings"
 
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/utils"
-	"github.com/spf13/cobra"
-
-	log "github.com/sirupsen/logrus"
 )
 
 var command = &cobra.Command{

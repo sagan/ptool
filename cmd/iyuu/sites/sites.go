@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/cmd/iyuu"
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/utils"
-	"github.com/spf13/cobra"
 )
 
 var command = &cobra.Command{

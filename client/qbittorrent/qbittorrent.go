@@ -14,10 +14,11 @@ import (
 	"net/url"
 	"strings"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/utils"
-	"golang.org/x/exp/slices"
 )
 
 type Client struct {

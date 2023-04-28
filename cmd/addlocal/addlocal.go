@@ -1,25 +1,22 @@
 package add
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"strings"
 
-	goTorrentParser "github.com/j-muller/go-torrent-parser"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
-	"github.com/sagan/ptool/site"
 )
 
 var command = &cobra.Command{
-	Use:   "add <client> <site> <torrentIdOrUrl>...",
-	Short: "Add site torrents to client",
-	Long:  `Add site torrents to client.`,
-	Args:  cobra.MatchAll(cobra.MinimumNArgs(3), cobra.OnlyValidArgs),
+	Use:   "addlocal <client> <filename.torrent>...",
+	Short: "Add local torrents to client",
+	Long:  `Add local torrents to client.`,
+	Args:  cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	Run:   add,
 }
 
@@ -41,12 +38,8 @@ func add(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	siteInstance, err := site.CreateSite(args[1])
-	if err != nil {
-		log.Fatal(err)
-	}
 	errCnt := int64(0)
-	torrentIds := args[2:]
+	torrentFiles := args[1:]
 	option := &client.TorrentOption{
 		Pause:    paused,
 		Category: setCategory,
@@ -55,26 +48,20 @@ func add(cmd *cobra.Command, args []string) {
 		option.Tags = strings.Split(addTags, ",")
 	}
 
-	for _, torrentId := range torrentIds {
-		torrentContent, err := siteInstance.DownloadTorrent(torrentId)
+	for _, torrentFile := range torrentFiles {
+		torrentContent, err := os.ReadFile(torrentFile)
 		if err != nil {
-			fmt.Printf("add site %s torrent %s error: failed to get site torrent: %v\n", siteInstance.GetName(), torrentId, err)
-			errCnt++
-			continue
-		}
-		tinfo, err := goTorrentParser.Parse(bytes.NewReader(torrentContent))
-		if err != nil {
-			fmt.Printf("add site %s torrent %s error: failed to parse torrent: %v\n", siteInstance.GetName(), torrentId, err)
+			fmt.Printf("torrent %s: failed to read file (%v)\n", torrentFile, err)
 			errCnt++
 			continue
 		}
 		err = clientInstance.AddTorrent(torrentContent, option, nil)
 		if err != nil {
-			fmt.Printf("add site %s torrent %s error: failed to add torrent to client: %v\n", siteInstance.GetName(), torrentId, err)
+			fmt.Printf("torrent %s: failed to add to client (%v)\n", torrentFile, err)
 			errCnt++
 			continue
 		}
-		fmt.Printf("add site %s torrent %s success. infoHash=%s\n", siteInstance.GetName(), torrentId, tinfo.InfoHash)
+		fmt.Printf("torrent %s: added to client\n", torrentFile)
 	}
 	if errCnt > 0 {
 		os.Exit(1)

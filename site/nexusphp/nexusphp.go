@@ -11,10 +11,11 @@ import (
 
 	cloudflarebp "github.com/DaRealFreak/cloudflare-bp-go"
 	"github.com/PuerkitoBio/goquery"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/utils"
-	log "github.com/sirupsen/logrus"
 )
 
 type Site struct {

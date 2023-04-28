@@ -8,6 +8,7 @@ import (
 
 	goTorrentParser "github.com/j-muller/go-torrent-parser"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
@@ -15,7 +16,6 @@ import (
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/stats"
 	"github.com/sagan/ptool/utils"
-	"github.com/spf13/cobra"
 )
 
 var command = &cobra.Command{

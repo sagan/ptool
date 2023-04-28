@@ -5,10 +5,11 @@ import (
 	"strings"
 
 	goTorrentParser "github.com/j-muller/go-torrent-parser"
-	"github.com/sagan/ptool/client"
-	"github.com/sagan/ptool/cmd"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"github.com/sagan/ptool/client"
+	"github.com/sagan/ptool/cmd"
 )
 
 var command = &cobra.Command{

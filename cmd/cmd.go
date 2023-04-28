@@ -2,13 +2,12 @@ package cmd
 
 import (
 	"os"
-
 	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/config"
-	"github.com/spf13/cobra"
 )
 
 // Root represents the base command when called without any subcommands

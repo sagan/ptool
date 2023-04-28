@@ -3,13 +3,13 @@ package iyuu
 import (
 	"sync"
 
-	"github.com/sagan/ptool/cmd"
-	"github.com/sagan/ptool/config"
-	"github.com/spf13/cobra"
-
 	"github.com/glebarez/sqlite"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 	"gorm.io/gorm"
+
+	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/config"
 )
 
 // gorm "torrents" table

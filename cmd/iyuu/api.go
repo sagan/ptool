@@ -7,10 +7,10 @@ import (
 	"sort"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/utils"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // IYUU 部分站点 name 与本程序有差异

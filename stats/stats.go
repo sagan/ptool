@@ -9,11 +9,12 @@ import (
 	"sync"
 
 	"github.com/glebarez/sqlite"
-	"github.com/sagan/ptool/config"
-	"github.com/sagan/ptool/utils"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/utils"
 )
 
 type TorrentTraffic struct {

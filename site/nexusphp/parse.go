@@ -7,10 +7,11 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/sagan/ptool/site"
-	"github.com/sagan/ptool/utils"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/html"
+
+	"github.com/sagan/ptool/site"
+	"github.com/sagan/ptool/utils"
 )
 
 const (
