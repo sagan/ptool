@@ -10,8 +10,8 @@ import (
 
 var command = &cobra.Command{
 	Use:   "deletetags <client> <tags>...",
-	Short: "Delete tags from client.",
-	Long:  `Delete tags from client.`,
+	Short: "Delete tags from client",
+	Long:  `Delete tags from client`,
 	Args:  cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	Run:   deletetags,
 }

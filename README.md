@@ -1,6 +1,6 @@
 # ptool
 
-自用的 PT (private tracker) 网站辅助工具。提供全自动刷流(brush)、BT客户端控制等功能。
+自用的 PT (private tracker) 网站辅助工具。提供全自动刷流(brush)、BT客户端控制、自动辅种(使用 iyuu 接口)等功能。
 
 主要特性：
 
@@ -11,7 +11,7 @@
 * 目前支持的 PT 站点：绝大部分使用 nexusphp 的网站。
   * 测试过支持的站点：M-Team(馒头)、柠檬、U2、冬樱、红叶、聆音、铂金家、若干不可说的站点。
   * 未列出的大部分 np 站点应该也支持。除了个别魔改 np 很厉害的站点可能不支持。
-* 刷流任务：
+* 刷流功能(brush)：
   * 不依赖 RSS。直接抓取站点页面上最新的种子。
   * 无需配置选种规则。自动跳过非免费的种子；自动筛选适合刷流的种子。
   * 无需配置删种规则。自动删除已无刷流价值的种子；硬盘空间不足时也会自动删种。
@@ -81,17 +81,19 @@ cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 ptool <command> args...
 ```
 
-支持的 &lt;command&gt; :
+部分常用的 &lt;command&gt; 包括:
 
 * brush : 刷流。
+* iyuu : 使用 iyuu 接口自动辅种。
 * clientctl : BT 客户端控制。
 * status : 显示 BT 客户端或 PT 站点当前状态信息。
 * stats : 显示刷流任务流量统计。
 * search : 在某个站点搜索指定关键词的种子
 * add : 将某个站点的指定种子添加到 BT 客户端。
+* addlocal : 将本地的种子文件添加到 BT 客户端。
 * delete : 从某个 BT 客户端里删除种子及其文件。
 
-输入 ```ptool <command> -h``` 查看对应命令的参数格式和使用说明。
+运行 ```ptool``` 查看程序支持的所有命令列表；运行 ```ptool <command> -h``` 查看指定命令的参数格式和使用说明。
 
 ### 刷流 (brush)
 
@@ -129,6 +131,42 @@ ptool brush local mteam
 
 
 刷流任务添加到客户端里的种子会放到 ```_brush``` 分类里。程序只会对这个分类里的种子进行管理或删除等操作。不会干扰 BT 客户端里其它正常的下载任务。如果需要永久保留某个刷流任务添加的种子（防止其被自动删除），在 BT 客户端里更改其分类即可。
+
+### 自动辅种 (iyuu)
+
+iyuu 命令通过 [iyuu 接口](https://api.iyuu.cn/docs.php) 提供自动辅种功能。
+
+#### iyuu 配置
+
+如果是第一次使用 iyuu，首先需要在 [iyuu 网站](https://iyuu.cn/) 上微信扫码申请IYUU令牌（token）。在本程序的配置文件 ptool.toml 里配置 iyuu token：
+
+```
+iyuuToken = "IYUU0011223344..."
+```
+
+然后使用 iyuu 支持的任意合作站点的 uid 和 passkey 激活和绑定(bind) iyuu token，命令格式如下：
+
+```
+ptool iyuu bind --site zhuque --uid 123456 --passkey 0123456789abcdef
+```
+
+所有参数均必须提供
+
+* --site : 用于验证的 PT 站点名。可以使用 `ptool iyuu sites -b` 命令查询 iyuu 支持的合作站点列表。
+* --uid : 对应 PT 站点的用户 uid（数字）。在 PT 网站的个人页面获取。
+* --passkey : 对应 PT 站点的用户 passkey。在 PT 网站的个人页面获取。
+
+使用 ```ptool iyuu status``` 查询当前 iyuu token 的激活和绑定状态。
+
+#### 使用 iyuu 自动辅种
+
+```
+ptool iyuu xseed <client>...
+```
+
+可以提供多个 client。程序会获取这些 client 里正在做种的种子信息，通过 iyuu 接口查询可以辅种的种子并将其自动添加到对应客户端里。注意只有在本程序的 ptool.toml 配置文件里添加的站点才会被辅种。
+
+iyuu xseed 子命令支持很多可选参数。运行 ```ptool iyuu xseed -h``` 查看所有可选参数使用说明。
 
 ### BT 客户端控制 (clientctl)
 

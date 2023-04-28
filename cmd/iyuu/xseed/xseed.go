@@ -45,8 +45,8 @@ var (
 )
 
 func init() {
-	command.Flags().BoolVar(&slowMode, "slow", false, "Slow mode. wait after handling a xseed torrent. For dev / test purpose.")
-	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do not actually controlling client")
+	command.Flags().BoolVar(&slowMode, "slow", false, "Slow mode. wait after handling each xseed torrent. For dev / test purpose.")
+	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do NOT actually add xseed torrents to client")
 	command.Flags().BoolVarP(&paused, "paused", "p", false, "Add xseed torrents to client in paused state")
 	command.Flags().BoolVar(&check, "check-hash", false, "Let client do hash checking when add xseed torrents")
 	command.Flags().Int64Var(&maxXseedTorrents, "max-xseed-torrents", 0, "Number limit of xseed torrents added. Default = unlimited")

@@ -54,5 +54,5 @@ func init() {
 
 	// global flags
 	RootCmd.PersistentFlags().StringVar(&config.ConfigFile, "config", configFile, "config file ([ptool.toml])")
-	RootCmd.PersistentFlags().CountVarP(&config.VerboseLevel, "", "v", "verbose (-v, -vv, -vvv)")
+	RootCmd.PersistentFlags().CountVarP(&config.VerboseLevel, "verbose", "v", "verbose (-v, -vv, -vvv)")
 }

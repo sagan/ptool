@@ -29,8 +29,8 @@ var (
 var command = &cobra.Command{
 	Use: "status <clientOrSites>...",
 	// Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
-	Short: "Show clients or site status.",
-	Long:  `Show clients or site status.`,
+	Short: "Show clients or sites status",
+	Long:  `Show clients or sites status`,
 	Run:   status,
 }
 

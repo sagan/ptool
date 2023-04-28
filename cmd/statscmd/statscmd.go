@@ -14,7 +14,8 @@ import (
 var command = &cobra.Command{
 	Use:   "stats [clients...] [flags]",
 	Short: "Show client statistics",
-	Long: `Show client brushing traffic statistics. Only torrents added by ptool (of this machine) will be counted.
+	Long: `Show client brushing traffic statistics
+Only torrents added by ptool (of this machine) will be counted.
 The traffic info of a torrent will ONLY be recorded when it's been DELETED from the client.
 To use this command, you must manually enable the statistics feature by add the "brushEnableStats: true" line to your ptool.yaml config file.
 `,

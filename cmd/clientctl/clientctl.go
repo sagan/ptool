@@ -17,8 +17,8 @@ import (
 var command = &cobra.Command{
 	Use: "clientctl [<variable>[=value] ...]",
 	// Args:  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
-	Short: "Get or set client config.",
-	Long:  `Get or set client config.`,
+	Short: "Get or set client config",
+	Long:  `Get or set client config`,
 	Run:   clientctl,
 }
 

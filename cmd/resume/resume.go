@@ -13,8 +13,8 @@ import (
 
 var command = &cobra.Command{
 	Use:   "resume <client> <infoHash>...",
-	Short: "Resume torrents of client.",
-	Long: `Resume torrents of client.
+	Short: "Resume torrents of client",
+	Long: `Resume torrents of client
 infoHashes...: infoHash list of torrents. It's possible to use some special values to target multiple torrents:
 _all, _completed (or _done), _error
 `,

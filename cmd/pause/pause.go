@@ -13,8 +13,8 @@ import (
 
 var command = &cobra.Command{
 	Use:   "pause <client> <infoHash>...",
-	Short: "Pause torrents of client.",
-	Long: `Pause torrents of client.
+	Short: "Pause torrents of client",
+	Long: `Pause torrents of client
 infoHashes...: infoHash list of torrents. It's possible to use some special values to target multiple torrents:
 _all, _completed (or _done), _error`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
