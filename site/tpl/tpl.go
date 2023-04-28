@@ -87,6 +87,7 @@ var (
 		"hdcity": &config.SiteConfigStruct{
 			Type:                       "nexusphp",
 			Url:                        "https://hdcity.city/",
+			SearchUrl:                  "https://hdcity.city/pt?iwannaseethis=%s",
 			SelectorTorrentDetailsLink: `a[href^="t-"]`,
 			SelectorTorrentTime:        `.trtop > div:nth-last-child(2)@text`,
 			SelectorTorrentSize:        `.trbo > div:nth-child(3)@text`,

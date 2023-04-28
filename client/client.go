@@ -212,6 +212,10 @@ func (torrent *Torrent) IsFullComplete() bool {
 	return torrent.SizeCompleted == torrent.SizeTotal
 }
 
+func (torrent *Torrent) IsFull() bool {
+	return torrent.Size == torrent.SizeTotal
+}
+
 func (torrent *Torrent) HasTag(tag string) bool {
 	tag = strings.ToLower(tag)
 	return slices.IndexFunc(torrent.Tags, func(t string) bool {

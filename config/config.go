@@ -13,6 +13,7 @@ import (
 
 const (
 	BRUSH_CAT = "_brush"
+	XSEED_TAG = "_xseed"
 
 	DEFAULT_SITE_TIMEZONE                           = "Asia/Shanghai"
 	DEFAULT_CLIENT_BRUSH_MIN_DISK_SPACE             = int64(5 * 1024 * 1024 * 1024)

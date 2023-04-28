@@ -27,17 +27,21 @@ var command = &cobra.Command{
 }
 
 var (
-	includeSites      = ""
-	excludeSites      = ""
-	category          = ""
-	setCategory       = ""
-	tag               = ""
-	dryRun            = false
-	paused            = false
-	check             = false
-	slowMode          = false
-	minTorrentSizeStr = ""
-	maxXseedTorrents  = int64(0)
+	dryRun                 = false
+	paused                 = false
+	check                  = false
+	slowMode               = false
+	maxXseedTorrents       = int64(0)
+	iyuuRequestMaxTorrents = int64(0)
+	includeSites           = ""
+	excludeSites           = ""
+	category               = ""
+	setCategory            = ""
+	tag                    = ""
+	filter                 = ""
+	minTorrentSizeStr      = ""
+	maxTorrentSizeStr      = ""
+	iyuuRequestServer      = ""
 )
 
 func init() {
@@ -45,13 +49,17 @@ func init() {
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do not actually controlling client")
 	command.Flags().BoolVarP(&paused, "paused", "p", false, "Add xseed torrents to client in paused state")
 	command.Flags().BoolVar(&check, "check-hash", false, "Let client do hash checking when add xseed torrents")
+	command.Flags().Int64Var(&maxXseedTorrents, "max-xseed-torrents", 0, "Number limit of xseed torrents added. Default = unlimited")
+	command.Flags().Int64Var(&iyuuRequestMaxTorrents, "max-request-torrents", 2000, "Number limit of target torrents sent to iyuu server at once")
 	command.Flags().StringVar(&includeSites, "include-sites", "", "Only add xseed torrents from these sites (comma-separated)")
 	command.Flags().StringVar(&excludeSites, "exclude-sites", "", "Do NOT add xseed torrents from these sites (comma-separated)")
 	command.Flags().StringVar(&category, "category", "", "Only xseed torrents that belongs to this category")
 	command.Flags().StringVar(&tag, "tag", "", "Only xseed torrents that has this tag")
+	command.Flags().StringVar(&filter, "filter", "", "Only xseed torrents which name contains this")
 	command.Flags().StringVar(&setCategory, "set-category", "", "Manually set category of added xseed torrent. By Default it uses the original torrent's")
-	command.Flags().StringVar(&minTorrentSizeStr, "min-torrent-size", "1GB", "Torrents with size less than this value will NOT be xseeded.")
-	command.Flags().Int64Var(&maxXseedTorrents, "max-xseed-torrents", 0, "Number limit of xseed torrents added. Default = unlimited")
+	command.Flags().StringVar(&minTorrentSizeStr, "min-torrent-size", "1GB", "Torrents with size smaller than (<) this value will NOT be xseeded.")
+	command.Flags().StringVar(&maxTorrentSizeStr, "max-torrent-size", "1PB", "Torrents with size larger than (>=) this value will NOT be xseeded.")
+	command.Flags().StringVar(&iyuuRequestServer, "request-server", "auto", "Whether send request to iyuu server to update local xseed db. Possible values: auto|yes|no")
 	iyuu.Command.AddCommand(command)
 }
 
@@ -78,12 +86,18 @@ func xseed(cmd *cobra.Command, args []string) {
 		}
 	}
 	minTorrentSize, _ := utils.RAMInBytes(minTorrentSizeStr)
+	maxTorrentSize, _ := utils.RAMInBytes(maxTorrentSizeStr)
+	if iyuuRequestServer != "auto" && iyuuRequestServer != "yes" && iyuuRequestServer != "no" {
+		log.Fatalf("Invalid --request-server flag value %s", iyuuRequestServer)
+	}
+	filter = strings.ToLower(filter)
 
 	clientNames := args
 	clientInstanceMap := map[string](client.Client){} // clientName => clientInstance
 	clientInfoHashesMap := map[string]([]string){}
 	reqInfoHashes := []string{}
 
+	cntCandidateTargetTorrents := int64(0)
 	cntTargetTorrents := int64(0)
 	cntXseedTorrents := int64(0)
 	cntSucccessXseedTorrents := int64(0)
@@ -101,18 +115,7 @@ func xseed(cmd *cobra.Command, args []string) {
 			continue
 		}
 		torrents = utils.Filter(torrents, func(torrent client.Torrent) bool {
-			if category != "" {
-				if torrent.Category != category {
-					return false
-				}
-			} else if strings.HasPrefix(torrent.Category, "_") {
-				return false
-			}
-			if tag != "" && !torrent.HasTag(tag) {
-				return false
-			}
-			return torrent.State == "seeding" && torrent.IsFullComplete() &&
-				!torrent.HasTag("_xseed") && torrent.Size >= minTorrentSize
+			return torrent.IsFull() && torrent.Category != config.XSEED_TAG && !torrent.HasTag(config.XSEED_TAG)
 		})
 		sort.Slice(torrents, func(i, j int) bool {
 			if torrents[i].Size != torrents[j].Size {
@@ -126,28 +129,57 @@ func xseed(cmd *cobra.Command, args []string) {
 		infoHashes := []string{}
 		tsize := int64(0)
 		for _, torrent := range torrents {
-			infoHashes = append(infoHashes, torrent.InfoHash)
 			// same size torrents may be identical (manually xseeded before)
 			if torrent.Size != tsize {
 				reqInfoHashes = append(reqInfoHashes, torrent.InfoHash)
 				tsize = torrent.Size
 			}
+			if category != "" {
+				if torrent.Category != category {
+					continue
+				}
+			} else if strings.HasPrefix(torrent.Category, "_") {
+				continue
+			}
+			if tag != "" && !torrent.HasTag(tag) {
+				continue
+			}
+			if torrent.State != "seeding" || !torrent.IsFullComplete() ||
+				torrent.Size < minTorrentSize || torrent.Size >= maxTorrentSize {
+				continue
+			}
+			if filter != "" && !strings.Contains(torrent.Name, filter) {
+				continue
+			}
+			infoHashes = append(infoHashes, torrent.InfoHash)
+			cntCandidateTargetTorrents++
 		}
 		clientInfoHashesMap[clientName] = infoHashes
 	}
 
-	reqInfoHashes = utils.UniqueSlice(reqInfoHashes)
-	if len(reqInfoHashes) == 0 {
+	if cntCandidateTargetTorrents == 0 {
 		fmt.Printf("No cadidate torrents to to xseed.")
 		return
 	}
 
-	var lastUpdateTime iyuu.Meta
-	iyuu.Db().Where("key = ?", "lastUpdateTime").First(&lastUpdateTime)
-	if lastUpdateTime.Value == "" || utils.Now()-utils.ParseInt(lastUpdateTime.Value) >= 3600 {
+	reqInfoHashes = utils.UniqueSlice(reqInfoHashes)
+	if len(reqInfoHashes) > int(iyuuRequestMaxTorrents) {
+		reqInfoHashes = reqInfoHashes[:iyuuRequestMaxTorrents]
+	}
+	doRequestServer := false
+	if iyuuRequestServer == "auto" {
+		var lastUpdateTime iyuu.Meta
+		iyuu.Db().Where("key = ?", "lastUpdateTime").First(&lastUpdateTime)
+		if lastUpdateTime.Value == "" || utils.Now()-utils.ParseInt(lastUpdateTime.Value) >= 7200 {
+			doRequestServer = true
+		} else {
+			log.Tracef("Fetched iyuu xseed data recently. Do not fetch this time")
+		}
+	} else if iyuuRequestServer == "yes" {
+		doRequestServer = true
+	}
+	if doRequestServer {
 		updateIyuuDatabase(config.Config.IyuuToken, reqInfoHashes)
-	} else {
-		log.Tracef("Fetched iyuu xseed data recently. Do not fetch this time")
 	}
 
 	var sites []iyuu.Site
