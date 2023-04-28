@@ -58,6 +58,11 @@ func sites(cmd *cobra.Command, args []string) {
 	log.Printf("Iyuu sites: len(sites)=%v\n", len(iyuuSites))
 	iyuu2LocalSiteMap := iyuu.GenerateIyuu2LocalSiteMap(iyuuSites, config.Get().Sites)
 
+	if showAll {
+		fmt.Printf("<all iyuu supported sites>\n")
+	} else {
+		fmt.Printf("<local sites supported by iyuu> (add -a flag to show all iyuu sites)\n")
+	}
 	fmt.Printf("%-10s  %20s  %7s  %20s  %40s\n", "Nickname", "SiteName", "SiteId", "LocalSite", "SiteUrl")
 	for _, iyuuSite := range iyuuSites {
 		if iyuu2LocalSiteMap[iyuuSite.Sid] == "" {
