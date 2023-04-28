@@ -39,6 +39,7 @@ type Site interface {
 	DownloadTorrent(url string) ([]byte, error)
 	DownloadTorrentById(id string) ([]byte, error)
 	GetLatestTorrents(full bool) ([]Torrent, error)
+	GetAllTorrents(sort string, desc bool, pageMarker string) (torrents []Torrent, nextPageMarker string, err error)
 	SearchTorrents(keyword string) ([]Torrent, error)
 	GetStatus() (*Status, error)
 	PurgeCache()

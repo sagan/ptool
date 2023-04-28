@@ -120,6 +120,72 @@ func (npclient *Site) GetLatestTorrents(full bool) ([]site.Torrent, error) {
 	return latestTorrents, nil
 }
 
+func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string) (torrents []site.Torrent, nextPageMarker string, err error) {
+	sortFields := map[string](string){
+		"name": "1",
+		"size": "5",
+	}
+	if sortFields[sort] == "" {
+		err = fmt.Errorf("unsupported sort field: %s", sort)
+		return
+	}
+
+	// 颠倒排序。从np最后一页开始获取。目的是跳过站点的置顶种子
+	sortOrder := "desc"
+	if desc {
+		sortOrder = "asc"
+	}
+	page := int64(0)
+	if pageMarker != "" {
+		page = utils.ParseInt(pageMarker)
+	}
+	pageUrl := "torrents.php?sort=" + sortFields[sort] + "&type=" + sortOrder + "&page=" + fmt.Sprint(page)
+	now := utils.Now()
+	doc, error := utils.GetUrlDoc(npclient.SiteConfig.Url+pageUrl, npclient.SiteConfig.Cookie, npclient.HttpClient)
+	if error != nil {
+		err = fmt.Errorf("failed to fetch torrents page dom: %v", error)
+		return
+	}
+
+	if pageMarker == "" {
+		paginationEls := doc.Find(`*[href*="sort=` + sortFields[sort] + `&type=` + sortOrder + `&page="]`)
+		lastPage := int64(0)
+		pageRegexp := regexp.MustCompile(`&page=(?P<page>\d+)`)
+		paginationEls.Each(func(i int, s *goquery.Selection) {
+			m := pageRegexp.FindStringSubmatch(s.AttrOr("href", ""))
+			if m != nil {
+				page := utils.ParseInt(m[pageRegexp.SubexpIndex("page")])
+				if page > lastPage {
+					lastPage = page
+				}
+			}
+		})
+		if lastPage > 0 {
+			page = lastPage
+			pageUrl := "torrents.php?sort=" + sortFields[sort] + "&type=" + sortOrder + "&page=" + fmt.Sprint(page)
+			now = utils.Now()
+			doc, error = utils.GetUrlDoc(npclient.SiteConfig.Url+pageUrl, npclient.SiteConfig.Cookie, npclient.HttpClient)
+			if error != nil {
+				err = fmt.Errorf("failed to fetch torrents page dom: %v", error)
+				return
+			}
+		}
+	}
+
+	torrents, err = npclient.parseTorrentsFromDoc(doc, now)
+	if err != nil {
+		return
+	}
+	if page > 0 {
+		nextPageMarker = fmt.Sprint(page - 1)
+	}
+	for i, j := 0, len(torrents)-1; i < j; i, j = i+1, j-1 {
+		torrents[i], torrents[j] = torrents[j], torrents[i]
+	}
+
+	return
+}
+
 func (npclient *Site) parseTorrentsFromDoc(doc *goquery.Document, datatime int64) ([]site.Torrent, error) {
 	return parseTorrents(doc, npclient.torrentsParserOption, datatime)
 }

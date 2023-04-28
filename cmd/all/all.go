@@ -9,6 +9,7 @@ import (
 	_ "github.com/sagan/ptool/cmd/createtags"
 	_ "github.com/sagan/ptool/cmd/delete"
 	_ "github.com/sagan/ptool/cmd/deletetags"
+	_ "github.com/sagan/ptool/cmd/ebookgod"
 	_ "github.com/sagan/ptool/cmd/getcategories"
 	_ "github.com/sagan/ptool/cmd/gettags"
 	_ "github.com/sagan/ptool/cmd/iyuu/all"
