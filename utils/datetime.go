@@ -11,8 +11,9 @@ func ExtractTime(str string, location *time.Location) (time int64) {
 	timeRegexp := regexp.MustCompile(`(?P<time>\d{4}-\d{2}-\d{2}\s*\d{2}:\d{2}:\d{2})`)
 	m := timeRegexp.FindStringSubmatch(str)
 	if m != nil {
-		time, _ = ParseTime(m[timeRegexp.SubexpIndex("time")], location)
+		str = m[timeRegexp.SubexpIndex("time")]
 	}
+	time, _ = ParseTime(str, location)
 	return
 }
 
@@ -117,6 +118,8 @@ func ParseTime(str string, location *time.Location) (int64, error) {
 }
 
 func ParseTimeDuration(str string) (int64, error) {
+	str = strings.ReplaceAll(str, "年", "y")
+	str = strings.ReplaceAll(str, "月", "M")
 	str = strings.ReplaceAll(str, "周", "w")
 	str = strings.ReplaceAll(str, "天", "d")
 	str = strings.ReplaceAll(str, "日", "d")
@@ -128,6 +131,7 @@ func ParseTimeDuration(str string) (int64, error) {
 	str = strings.ReplaceAll(str, "分鐘", "m")
 	str = strings.ReplaceAll(str, "分", "m")
 	str = strings.ReplaceAll(str, "秒", "s")
+	str = strings.TrimSuffix(str, "前")
 	td, error := ParseDuration(str)
 	if error == nil {
 		return int64(td.Seconds()), nil

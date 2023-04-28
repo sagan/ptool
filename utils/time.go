@@ -19,6 +19,8 @@ var unitMap = map[string]int64{
 	"h":  int64(time.Hour),
 	"d":  int64(time.Hour) * 24,
 	"w":  int64(time.Hour) * 168,
+	"M":  int64(time.Hour) * 24 * 30,
+	"y":  int64(time.Hour) * 24 * 365,
 }
 
 // ParseDuration parses a duration string.

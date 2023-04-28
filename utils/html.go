@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"golang.org/x/net/html"
@@ -63,6 +64,23 @@ func DomSelectorText(el *goquery.Selection, selector string) (text string) {
 		text = DomSanitizedText(el)
 	}
 	return
+}
+
+// try to extract absoulte time from DOM
+func DomTime(s *goquery.Selection, location *time.Location) int64 {
+	time, err := ParseTime(DomSanitizedText(s), location)
+	if err == nil {
+		return time
+	}
+	time, err = ParseTime(s.AttrOr("title", ""), location)
+	if err == nil {
+		return time
+	}
+	time, err = ParseTime(s.Find("*[title]").AttrOr("title", ""), location)
+	if err == nil {
+		return time
+	}
+	return 0
 }
 
 func GetUrlDoc(url string, cookie string, client *http.Client) (*goquery.Document, error) {

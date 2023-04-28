@@ -23,7 +23,9 @@ const (
 type TorrentsParserOption struct {
 	location                    *time.Location
 	siteurl                     string
+	selectorTorrentsListHeader  string
 	selectorTorrentsList        string
+	selectorTorrentBlock        string
 	selectorTorrent             string
 	selectorTorrentDownloadLink string
 	selectorTorrentDetailsLink  string
@@ -117,25 +119,6 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		containerEl.AttrOr("class", ""),
 	)
 
-	headerEl := containerEl.Children().First()
-	if headerEl.Find(option.selectorTorrent).Length() > 0 {
-		// it's not header
-		el := containerEl
-		for el.Parent().Length() > 0 && el.Prev().Length() == 0 {
-			el = el.Parent()
-		}
-		headerEl = el.Prev()
-	}
-	if headerEl.Length() == 0 {
-		err = fmt.Errorf("cann't find headerEl")
-		return
-	}
-	log.Tracef("nptr: header node=%v, id=%v, class=%v\n",
-		headerEl.Get(0),
-		headerEl.AttrOr("id", ""),
-		headerEl.AttrOr("class", ""),
-	)
-
 	fieldColumIndex := map[string]int{
 		"time":     -1,
 		"size":     -1,
@@ -145,41 +128,72 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		"title":    -1,
 		"process":  -1,
 	}
-	headerEl.Children().Each(func(i int, s *goquery.Selection) {
-		text := utils.DomSanitizedText(s)
-		if text == "進度" || text == "进度" {
-			fieldColumIndex["process"] = i
-			return
-		} else if text == "標題" || text == "标题" {
-			fieldColumIndex["title"] = i
-			return
-		} else if text == "大小" {
-			fieldColumIndex["size"] = i
-			return
-		} else if text == "时间" || text == "存活" {
-			fieldColumIndex["time"] = i
-			return
-		} else if text == "上传" || text == "种子" {
-			fieldColumIndex["seeders"] = i
-			return
-		} else if text == "下载" {
-			fieldColumIndex["leechers"] = i
-			return
-		} else if text == "完成" {
-			fieldColumIndex["snatched"] = i
-			return
-		}
-		for field := range fieldColumIndex {
-			if s.Find(`img[alt="`+field+`"],`+
-				`img[alt="`+strings.ToUpper(field)+`"],`+
-				`img[alt="`+utils.Capitalize(field)+`"]`).Length() > 0 {
-				fieldColumIndex[field] = i
-				break
+	var headerEl *goquery.Selection
+	if option.selectorTorrentsListHeader != "" {
+		headerEl = containerEl.Find(option.selectorTorrentsListHeader).First()
+	} else {
+		headerEl = containerEl.Children().First()
+		if headerEl.Find(option.selectorTorrent).Length() > 0 {
+			// it's not header
+			el := containerEl
+			for el.Parent().Length() > 0 && el.Prev().Length() == 0 {
+				el = el.Parent()
 			}
+			headerEl = el.Prev()
 		}
-	})
+		if headerEl.Length() == 0 {
+			err = fmt.Errorf("cann't find headerEl")
+			return
+		}
+		log.Tracef("nptr: header node=%v, id=%v, class=%v\n",
+			headerEl.Get(0),
+			headerEl.AttrOr("id", ""),
+			headerEl.AttrOr("class", ""),
+		)
+	}
+	if headerEl != nil {
+		headerEl.Children().Each(func(i int, s *goquery.Selection) {
+			text := utils.DomSanitizedText(s)
+			if text == "進度" || text == "进度" {
+				fieldColumIndex["process"] = i
+				return
+			} else if text == "標題" || text == "标题" {
+				fieldColumIndex["title"] = i
+				return
+			} else if text == "大小" {
+				fieldColumIndex["size"] = i
+				return
+			} else if text == "时间" || text == "存活" {
+				fieldColumIndex["time"] = i
+				return
+			} else if text == "上传" || text == "种子" {
+				fieldColumIndex["seeders"] = i
+				return
+			} else if text == "下载" {
+				fieldColumIndex["leechers"] = i
+				return
+			} else if text == "完成" {
+				fieldColumIndex["snatched"] = i
+				return
+			}
+			for field := range fieldColumIndex {
+				if s.Find(`img[alt="`+field+`"],`+
+					`img[alt="`+strings.ToUpper(field)+`"],`+
+					`img[alt="`+utils.Capitalize(field)+`"]`).Length() > 0 {
+					fieldColumIndex[field] = i
+					break
+				}
+			}
+		})
+	}
 
-	containerEl.Children().Each(func(i int, s *goquery.Selection) {
+	var torrentBlocks *goquery.Selection
+	if option.selectorTorrentBlock != "" {
+		torrentBlocks = containerEl.Find(option.selectorTorrentBlock)
+	} else {
+		torrentBlocks = containerEl.Children()
+	}
+	torrentBlocks.Each(func(i int, s *goquery.Selection) {
 		if s.Find(option.selectorTorrent).Length() == 0 {
 			return
 		}
@@ -225,7 +239,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 				case "snatched":
 					snatched = utils.ParseInt(text)
 				case "time":
-					time = domTime(s, option.location)
+					time = utils.DomTime(s, option.location)
 				}
 			}
 		})
@@ -292,7 +306,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		} else if option.SelectorTorrentProcessBar != "" && s.Find(option.SelectorTorrentProcessBar).Length() > 0 {
 			isActive = true
 		}
-		re := regexp.MustCompile(`(?i)(?P<free>(^|\s)(免费|免費|FREE)\s*)?(剩余|剩餘|限时|限時)(时间|時間)?\s*(?P<time>[YMDHMSymdhms年月天小时時分种鐘秒\d]+)`)
+		re := regexp.MustCompile(`(?i)(?P<free>(^|\s)(免费|免費|FREE)\s*)?(剩余|剩餘|限时|限時)(时间|時間)?\s*(?P<time>[YMDHMSymdhms年月周天小时時分种鐘秒\d]+)`)
 		m := re.FindStringSubmatch(utils.DomRemovedSpecialCharsText(s))
 		if m != nil {
 			if m[re.SubexpIndex("free")] != "" {
@@ -349,20 +363,4 @@ func domCheckTextTagExisting(node *goquery.Selection, str string) (existing bool
 		return true
 	})
 	return
-}
-
-func domTime(s *goquery.Selection, location *time.Location) int64 {
-	time, err := utils.ParseTime(utils.DomSanitizedText(s), location)
-	if err == nil {
-		return time
-	}
-	time, err = utils.ParseTime(s.AttrOr("title", ""), location)
-	if err == nil {
-		return time
-	}
-	time, err = utils.ParseTime(s.Find("*[title]").AttrOr("title", ""), location)
-	if err == nil {
-		return time
-	}
-	return 0
 }

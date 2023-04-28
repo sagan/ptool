@@ -18,7 +18,7 @@ var IYUU_SITE_IDS = map[string](string){
 	"leaguehd":  "lemonhd",
 	"m-team":    "mteam",
 	"pt0ffcc":   "0ff",
-	"pt2xfree":  "2xFree",
+	"pt2xfree":  "2xfree",
 	"redleaves": "leaves",
 }
 
@@ -30,6 +30,12 @@ type IyuuApiSite struct {
 	Download_page string `json:"download_page"` // torrent download url. params: {passkey}, {authkey}, {} (id)
 	Is_https      int64  `json:"is_https"`      // 1 / 0
 	Reseed_check  string `json:"reseed_check"`  // "passkey"
+}
+
+type IyuuApiRecommendSite struct {
+	Id         int64  `json:"id"`
+	Site       string `json:"site"`
+	Bind_check string `json:"bind_check"`
 }
 
 type IyuuApiResponse struct {
@@ -51,6 +57,14 @@ type IyuuApiSitesResponse struct {
 	Msg  string `json:"msg"`
 	Data struct {
 		Sites []IyuuApiSite `json:"sites"`
+	} `json:"data"`
+}
+
+type IyuuGetRecommendSitesResponse struct {
+	Ret  int64  `json:"ret"`
+	Msg  string `json:"msg"`
+	Data struct {
+		Recommend []IyuuApiRecommendSite `json:"recommend"`
 	} `json:"data"`
 }
 
@@ -112,9 +126,9 @@ func IyuuApiGetUser(token string) (data map[string](any), err error) {
 	return
 }
 
-func IyuuApiSites(token string) (sites []IyuuApiSite, err error) {
+func IyuuApiSites(token string) ([]IyuuApiSite, error) {
 	resData := &IyuuApiSitesResponse{}
-	err = utils.FetchJson("https://api.iyuu.cn/index.php?s=App.Api.Sites&version="+
+	err := utils.FetchJson("https://api.iyuu.cn/index.php?s=App.Api.Sites&version="+
 		IYUU_VERSION+"&sign="+token,
 		resData, nil)
 	if err != nil {
@@ -123,16 +137,15 @@ func IyuuApiSites(token string) (sites []IyuuApiSite, err error) {
 	if resData.Ret != 200 {
 		return nil, fmt.Errorf("iyuu api error: ret=%d, msg=%s", resData.Ret, resData.Msg)
 	}
-	sites = resData.Data.Sites
-	return
+	return resData.Data.Sites, nil
 }
 
-func IyuuApiBind(token string, site string, uid int64, passkey string) (data map[string](any), err error) {
+func IyuuApiBind(token string, site string, uid int64, passkey string) (map[string](any), error) {
 	apiUrl := "https://api.iyuu.cn/index.php?s=App.Api.Bind&token=" + token +
-		"&site=" + site + "&id" + fmt.Sprint(uid) + "&passkey=" + utils.Sha1String(passkey)
+		"&site=" + site + "&id=" + fmt.Sprint(uid) + "&passkey=" + utils.Sha1String(passkey)
 
 	resData := &IyuuApiResponse{}
-	err = utils.FetchJson(apiUrl, &resData, nil)
+	err := utils.FetchJson(apiUrl, &resData, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -140,6 +153,20 @@ func IyuuApiBind(token string, site string, uid int64, passkey string) (data map
 		return nil, fmt.Errorf("iyuu api error: ret=%d, msg=%s", resData.Ret, resData.Msg)
 	}
 	return resData.Data, nil
+}
+
+func IyuuApiGetRecommendSites() ([]IyuuApiRecommendSite, error) {
+	apiUrl := "https://api.iyuu.cn/index.php?s=App.Api.GetRecommendSites"
+
+	var resData *IyuuGetRecommendSitesResponse
+	err := utils.FetchJson(apiUrl, &resData, nil)
+	if err != nil {
+		return nil, err
+	}
+	if resData.Ret != 200 {
+		return nil, fmt.Errorf("iyuu api error: ret=%d, msg=%s", resData.Ret, resData.Msg)
+	}
+	return resData.Data.Recommend, nil
 }
 
 func (site *IyuuApiSite) GetUrl() string {

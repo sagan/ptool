@@ -65,8 +65,12 @@ var (
 			Url:  "https://gainbound.net/",
 		},
 		"haidan": &config.SiteConfigStruct{
-			Type: "nexusphp",
-			Url:  "https://www.haidan.video/",
+			Type:                       "nexusphp",
+			Url:                        "https://www.haidan.video/",
+			SelectorTorrentsListHeader: `none`, // do NOT exists
+			SelectorTorrentsList:       `.torrent_panel_inner`,
+			SelectorTorrentBlock:       `.torrent_wrap`,
+			SelectorTorrentTime:        `.time_col span:last-child`,
 		},
 		"hdatmos": &config.SiteConfigStruct{
 			Type: "nexusphp",
