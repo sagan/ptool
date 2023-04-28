@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"sync"
 
 	"github.com/glebarez/sqlite"
@@ -115,6 +116,12 @@ func (db *StatDb) ShowTrafficStats(client string) {
 
 	var clientObjs []TorrentTraffic
 	db.sqldb.Distinct("client").Order("day desc").Limit(1000).Find(&clientObjs)
+	sort.Slice(clientObjs, func(i, j int) bool {
+		if clientObjs[i].Uploaded != clientObjs[j].Uploaded {
+			return clientObjs[i].Uploaded > clientObjs[j].Uploaded
+		}
+		return clientObjs[i].Downloaded+clientObjs[i].Uploaded > clientObjs[j].Downloaded+clientObjs[j].Uploaded
+	})
 	if len(clientObjs) > 3 {
 		clientObjs = clientObjs[:3]
 	}
@@ -165,6 +172,12 @@ func (db *StatDb) ShowTrafficStats(client string) {
 	if len(siteObjs) > 3 {
 		siteObjs = siteObjs[:3]
 	}
+	sort.Slice(siteObjs, func(i, j int) bool {
+		if siteObjs[i].Uploaded != siteObjs[j].Uploaded {
+			return siteObjs[i].Uploaded > siteObjs[j].Uploaded
+		}
+		return siteObjs[i].Downloaded+siteObjs[i].Uploaded > siteObjs[j].Downloaded+siteObjs[j].Uploaded
+	})
 	sites := utils.Map(siteObjs, func(c TorrentTraffic) string {
 		return c.Site
 	})
