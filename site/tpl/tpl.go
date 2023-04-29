@@ -64,6 +64,14 @@ var (
 			Type: "nexusphp",
 			Url:  "https://gainbound.net/",
 		},
+		"gamegamept": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://www.gamegamept.com/",
+		},
+		"gtk": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://pt.gtk.pw/",
+		},
 		"haidan": &config.SiteConfigStruct{
 			Type:                       "nexusphp",
 			Url:                        "https://www.haidan.video/",
