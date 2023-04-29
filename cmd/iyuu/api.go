@@ -8,19 +8,12 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/exp/slices"
 
 	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/utils"
 )
-
-// IYUU 部分站点 name 与本程序有差异
-var IYUU_SITE_IDS = map[string](string){
-	"leaguehd":  "lemonhd",
-	"m-team":    "mteam",
-	"pt0ffcc":   "0ff",
-	"pt2xfree":  "2xfree",
-	"redleaves": "leaves",
-}
 
 type IyuuApiSite struct {
 	Id            int64  `json:"id"`
@@ -196,18 +189,15 @@ func GenerateIyuu2LocalSiteMap(iyuuSites []Site,
 	localSites []config.SiteConfigStruct) map[int64]string {
 	iyuu2LocalSiteMap := map[int64](string){} // iyuu sid => local site name
 	for _, iyuuSite := range iyuuSites {
-		localSite := utils.FindInSlice(localSites, func(site config.SiteConfigStruct) bool {
-			if site.Disabled {
+		localSite := utils.FindInSlice(localSites, func(siteConfig config.SiteConfigStruct) bool {
+			if siteConfig.Disabled {
 				return false
 			}
-			if site.Url != "" && site.Url == iyuuSite.Url {
+			if siteConfig.Url != "" && siteConfig.Url == iyuuSite.Url {
 				return true
 			}
-			name := iyuuSite.Name
-			if IYUU_SITE_IDS[name] != "" {
-				name = IYUU_SITE_IDS[name]
-			}
-			return name == site.GetName()
+			regInfo := site.GetConfigSiteReginfo(siteConfig.GetName())
+			return regInfo != nil && (regInfo.Name == iyuuSite.Name || slices.Index(regInfo.Aliases, iyuuSite.Name) != -1)
 		})
 		if localSite != nil {
 			iyuu2LocalSiteMap[iyuuSite.Sid] = localSite.GetName()

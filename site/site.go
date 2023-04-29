@@ -47,48 +47,48 @@ type Site interface {
 
 type RegInfo struct {
 	Name    string
+	Aliases []string
 	Creator func(string, *config.SiteConfigStruct, *config.ConfigStruct) (Site, error)
 }
 
 type SiteCreator func(*RegInfo) (Site, error)
 
 var (
-	Registry []*RegInfo = make([]*RegInfo, 0)
+	registryMap = make(map[string](*RegInfo))
 )
 
 func Register(regInfo *RegInfo) {
-	Registry = append(Registry, regInfo)
-}
-
-func Find(name string) (*RegInfo, error) {
-	for _, item := range Registry {
-		if item.Name == name {
-			return item, nil
-		}
+	registryMap[regInfo.Name] = regInfo
+	for _, alias := range regInfo.Aliases {
+		registryMap[alias] = regInfo
 	}
-	return nil, fmt.Errorf("didn't find site %q", name)
 }
 
 func CreateSiteInternal(name string,
 	siteConfig *config.SiteConfigStruct, config *config.ConfigStruct) (Site, error) {
-	regInfo, err := Find(siteConfig.Type)
-	if err != nil {
-		return nil, fmt.Errorf("unsupported site type %s", siteConfig.Type)
+	regInfo := registryMap[siteConfig.Type]
+	if regInfo == nil {
+		return nil, fmt.Errorf("unsupported site type %s", name)
 	}
 	return regInfo.Creator(name, siteConfig, config)
 }
 
-func SiteExists(name string) bool {
-	siteConfig := config.GetSiteConfig(name)
-	return siteConfig != nil
+func GetConfigSiteReginfo(name string) *RegInfo {
+	for _, siteConfig := range config.Get().Sites {
+		if siteConfig.GetName() == name {
+			return registryMap[siteConfig.Type]
+		}
+	}
+	return nil
 }
 
 func CreateSite(name string) (Site, error) {
-	siteConfig := config.GetSiteConfig(name)
-	if siteConfig == nil {
-		return nil, fmt.Errorf("site %s not existed", name)
+	for _, siteConfig := range config.Get().Sites {
+		if siteConfig.GetName() == name {
+			return CreateSiteInternal(name, &siteConfig, config.Get())
+		}
 	}
-	return CreateSiteInternal(name, siteConfig, config.Get())
+	return nil, fmt.Errorf("site %s not found", name)
 }
 
 func Print(siteTorrents []Torrent) {

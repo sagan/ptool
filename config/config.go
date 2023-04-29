@@ -29,9 +29,9 @@ const (
 )
 
 type ClientConfigStruct struct {
+	Type                              string  `yaml:"type"`
 	Name                              string  `yaml:"name"`
 	Disabled                          bool    `yaml:"disabled"`
-	Type                              string  `yaml:"type"`
 	Url                               string  `yaml:"url"`
 	Username                          string  `yaml:"username"`
 	Password                          string  `yaml:"password"`
@@ -49,9 +49,10 @@ type ClientConfigStruct struct {
 }
 
 type SiteConfigStruct struct {
-	Name                         string   `yaml:"name"`
+	Type                         string `yaml:"type"`
+	Name                         string `yaml:"name"`
+	Aliases                      []string
 	Disabled                     bool     `yaml:"disabled"`
-	Type                         string   `yaml:"type"`
 	Url                          string   `yaml:"url"`
 	TorrentsUrl                  string   `yaml:"torrentsUrl"`
 	SearchUrl                    string   `yaml:"searchUrl"`
@@ -194,15 +195,6 @@ func GetClientConfig(name string) *ClientConfigStruct {
 	for _, client := range Get().Clients {
 		if client.Name == name {
 			return &client
-		}
-	}
-	return nil
-}
-
-func GetSiteConfig(name string) *SiteConfigStruct {
-	for _, site := range Get().Sites {
-		if site.Name == name {
-			return &site
 		}
 	}
 	return nil

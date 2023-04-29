@@ -9,11 +9,12 @@ import (
 	"time"
 
 	"golang.org/x/exp/constraints"
+	"golang.org/x/exp/slices"
 )
 
 // https://stackoverflow.com/questions/23350173
 // copy none-empty field values from src to dst. dst and src must be pointors of same type of plain struct
-func Assign(dst any, src any) {
+func Assign(dst any, src any, excludeFieldIndexes []int) {
 	dstValue := reflect.ValueOf(dst).Elem()
 	srcValue := reflect.ValueOf(src).Elem()
 
@@ -22,6 +23,9 @@ func Assign(dst any, src any) {
 		srcField := srcValue.Field(i)
 		fieldType := dstField.Type()
 		srcValue := reflect.Value(srcField)
+		if slices.Index(excludeFieldIndexes, i) != -1 {
+			continue
+		}
 		if fieldType.Kind() == reflect.String && srcValue.String() == "" {
 			continue
 		}

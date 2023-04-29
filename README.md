@@ -40,7 +40,7 @@ cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 
 ## 配置文件
 
-程序支持使用 toml 或 yaml 格式的配置文件（```ptool.toml``` 或 ```ptool.toml```），推荐使用前者。
+程序支持使用 toml 或 yaml 格式的配置文件（```ptool.toml``` 或 ```ptool.yaml```），推荐使用前者。
 
 配置文件可以直接放到程序启动时的当前目录(cwd)下，也可以选择放到当前操作系统用户主目录下的 ".config/ptool/" 路径下（推荐）：
 
@@ -54,12 +54,12 @@ cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 ```[[site]]``` 区块有两种配置方式：
 
 ```toml
-# 方式 1（推荐）：直接使用站点 ID 作为类型(type)。无需手动输入站点 url。
+# 方式 1（推荐）：直接使用站点 ID 或 alias 作为类型(type)。无需手动输入站点 url。站点名称(name)默认使用 type。
 [[sites]]
 type = "mteam"
 cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 
-# 方式 2：使用通用的 nexusphp 类型，需要手动指定站点 url 和其他参数。
+# 方式 2：使用通用的 nexusphp 类型，需要手动指定站点名称(name)、站点 url 和其他参数。
 [[sites]]
 name = "mteam"
 type = "nexusphp" # 站点类型。目前只支持 nexusphp
@@ -67,7 +67,7 @@ url = "https://kp.m-team.cc/" # 站点首页 URL
 cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 ```
 
-推荐使用“方式 1”。程序支持大部分国内的 NexusPHP PT 站点。站点 ID 通常为 PT 网站域名的主体部分（不含次级域名和 TLD 部分），例如 BTSCHOOL (https://pt.btschool.club/)的站点 ID 是 btschool。作为例外，M-TEAM (https://kp.m-team.cc/)的站点 ID 是 mteam 而非 m-team。参考程序代码根目录下的 site/tpl/tpl.go 文件查看所有支持的 PT 站点。
+推荐使用“方式 1”。程序内置了对大部分国内 NexusPHP PT 站点的支持。站点 ID 通常为 PT 网站域名的主体部分（不含次级域名和 TLD 部分），例如 BTSCHOOL ( https://pt.btschool.club/ )的站点 ID 是 btschool。部分 PT 网站也可以使用别名(alias)配置，例如 M-TEAM ( https://kp.m-team.cc/ )在本程序配置文件里的 type 设为 "m-team" 或 "mteam" 均可。参考程序代码根目录下的 site/tpl/tpl.go 文件查看所有支持的 PT 站点。
 
 参考程序代码根目录下的 ```ptool.example.toml``` 和 ```ptool.example.yaml``` 示例配置文件了解所有可用的配置项。
 

@@ -84,7 +84,7 @@ func status(cmd *cobra.Command, args []string) {
 			}
 			go fetchClientStatus(clientInstance, showTorrents, showFull, category, ch)
 			cnt++
-		} else if site.SiteExists(name) {
+		} else if site.GetConfigSiteReginfo(name) != nil {
 			siteInstance, err := site.CreateSite(name)
 			if err != nil {
 				log.Errorf("Error: failed to create site %s: %v\n", name, err)

@@ -11,16 +11,18 @@ import (
 var (
 	SITES = map[string](*config.SiteConfigStruct){
 		"0ff": &config.SiteConfigStruct{
-			Type: "nexusphp",
-			Url:  "https://pt.0ff.cc/",
+			Type:    "nexusphp",
+			Aliases: []string{"pt0ffcc"},
+			Url:     "https://pt.0ff.cc/",
 		},
 		"1ptba": &config.SiteConfigStruct{
 			Type: "nexusphp",
 			Url:  "https://1ptba.com/",
 		},
 		"2xfree": &config.SiteConfigStruct{
-			Type: "nexusphp",
-			Url:  "https://pt.2xfree.org/",
+			Type:    "nexusphp",
+			Aliases: []string{"pt2xfree"},
+			Url:     "https://pt.2xfree.org/",
 		},
 		"3wmg": &config.SiteConfigStruct{
 			Type: "nexusphp",
@@ -119,8 +121,9 @@ var (
 			Url:  "https://hdtime.org/",
 		},
 		"hdupt": &config.SiteConfigStruct{
-			Type: "nexusphp",
-			Url:  "https://pt.hdupt.com/",
+			Type:    "nexusphp",
+			Aliases: []string{"upxin"},
+			Url:     "https://pt.hdupt.com/",
 		},
 		"hdvideo": &config.SiteConfigStruct{
 			Type: "nexusphp",
@@ -148,17 +151,20 @@ var (
 		},
 		"leaves": &config.SiteConfigStruct{
 			Type:              "nexusphp",
+			Aliases:           []string{"redleaves"},
 			Url:               "https://leaves.red/",
 			TorrentsExtraUrls: []string{"https://leaves.red/special.php"},
 			SearchUrl:         `https://leaves.red/search.php?search=%s&search_area=0`,
 		},
 		"lemonhd": &config.SiteConfigStruct{
 			Type:        "nexusphp",
+			Aliases:     []string{"leaguehd"},
 			Url:         "https://lemonhd.org/",
 			TorrentsUrl: "https://lemonhd.org/torrents_new.php",
 		},
-		"mteam": &config.SiteConfigStruct{
+		"m-team": &config.SiteConfigStruct{
 			Type:              "nexusphp",
+			Aliases:           []string{"mteam"},
 			Url:               "https://kp.m-team.cc/",
 			TorrentsExtraUrls: []string{"https://kp.m-team.cc/adult.php"},
 		},
@@ -204,8 +210,9 @@ var (
 			Url:  "https://pt.soulvoice.club/",
 		},
 		"u2": &config.SiteConfigStruct{
-			Type: "nexusphp",
-			Url:  "https://u2.dmhy.org/",
+			Type:    "nexusphp",
+			Aliases: []string{"dmhy"},
+			Url:     "https://u2.dmhy.org/",
 		},
 		"ubits": &config.SiteConfigStruct{
 			Type: "nexusphp",
@@ -227,9 +234,13 @@ var (
 )
 
 func init() {
-	for name := range SITES {
+	for name, config := range SITES {
+		for _, alias := range config.Aliases {
+			SITES[alias] = SITES[name]
+		}
 		site.Register(&site.RegInfo{
 			Name:    name,
+			Aliases: config.Aliases,
 			Creator: create,
 		})
 	}
@@ -237,7 +248,7 @@ func init() {
 
 func create(name string, siteConfig *config.SiteConfigStruct, globalConfig *config.ConfigStruct) (
 	site.Site, error) {
-	sc := *siteConfig
-	utils.Assign(&sc, SITES[name])
+	sc := *SITES[siteConfig.Type]           // copy
+	utils.Assign(&sc, siteConfig, []int{0}) // field 0: type
 	return site.CreateSiteInternal(name, &sc, globalConfig)
 }
