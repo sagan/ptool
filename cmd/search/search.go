@@ -35,5 +35,5 @@ func search(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	site.PrintTorrents(torrents, "", now)
+	site.PrintTorrents(torrents, "", now, false)
 }

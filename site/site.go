@@ -36,8 +36,8 @@ type Status struct {
 type Site interface {
 	GetName() string
 	GetSiteConfig() *config.SiteConfigStruct
-	DownloadTorrent(url string) ([]byte, error)
-	DownloadTorrentById(id string) ([]byte, error)
+	DownloadTorrent(url string) (content []byte, filename string, err error)
+	DownloadTorrentById(id string) (content []byte, filename string, err error)
 	GetLatestTorrents(full bool) ([]Torrent, error)
 	GetAllTorrents(sort string, desc bool, pageMarker string) (torrents []Torrent, nextPageMarker string, err error)
 	SearchTorrents(keyword string) ([]Torrent, error)
@@ -105,8 +105,10 @@ func Print(siteTorrents []Torrent) {
 	}
 }
 
-func PrintTorrents(torrents []Torrent, filter string, now int64) {
-	fmt.Printf("%-40s  %10s  %-13s  %19s  %4s  %4s  %4s  %10s  %2s\n", "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "P")
+func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool) {
+	if !noHeader {
+		fmt.Printf("%-40s  %10s  %-13s  %19s  %4s  %4s  %4s  %10s  %2s\n", "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "P")
+	}
 	for _, torrent := range torrents {
 		if filter != "" && !utils.ContainsI(torrent.Name, filter) {
 			continue

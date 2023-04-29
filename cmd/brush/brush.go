@@ -234,7 +234,7 @@ func brush(cmd *cobra.Command, args []string) {
 			if dryRun {
 				continue
 			}
-			torrentdata, err := siteInstance.DownloadTorrent(torrent.DownloadUrl)
+			torrentdata, _, err := siteInstance.DownloadTorrent(torrent.DownloadUrl)
 			if err != nil {
 				log.Printf("Failed to download: %s. Skip \n", err)
 				continue

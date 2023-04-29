@@ -16,7 +16,7 @@ var (
 )
 
 func FetchJson(url string, v any, client *http.Client) error {
-	res, err := FetchUrl(url, "", client)
+	res, _, err := FetchUrl(url, "", client)
 	if err != nil {
 		return err
 	}
@@ -33,14 +33,14 @@ func FetchJson(url string, v any, client *http.Client) error {
 	return err
 }
 
-func FetchUrl(url string, cookie string, client *http.Client) (*http.Response, error) {
+func FetchUrl(url string, cookie string, client *http.Client) (*http.Response, http.Header, error) {
 	log.Tracef("FetchUrl url=%s hasCookie=%t", url, cookie != "")
 	if client == nil {
 		client = http.DefaultClient
 	}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	SetHttpRequestBrowserHeaders(req)
 	if cookie != "" {
@@ -51,14 +51,14 @@ func FetchUrl(url string, cookie string, client *http.Client) (*http.Response, e
 	}
 	res, error := client.Do(req)
 	if error != nil {
-		return nil, fmt.Errorf("failed to fetch url: %v", error)
+		return nil, nil, fmt.Errorf("failed to fetch url: %v", error)
 	}
 	log.Tracef("FetchUrl response status=%d", res.StatusCode)
 	if res.StatusCode != 200 {
 		defer res.Body.Close()
-		return nil, fmt.Errorf("failed to fetch url: status=%d", res.StatusCode)
+		return nil, res.Header, fmt.Errorf("failed to fetch url: status=%d", res.StatusCode)
 	}
-	return res, nil
+	return res, res.Header, nil
 }
 
 func ParseUrlHostname(urlStr string) string {

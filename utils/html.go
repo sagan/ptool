@@ -84,7 +84,7 @@ func DomTime(s *goquery.Selection, location *time.Location) int64 {
 }
 
 func GetUrlDoc(url string, cookie string, client *http.Client) (*goquery.Document, error) {
-	res, err := FetchUrl(url, cookie, client)
+	res, _, err := FetchUrl(url, cookie, client)
 	if err != nil {
 		return nil, fmt.Errorf("can not fetch site data %v", err)
 	}

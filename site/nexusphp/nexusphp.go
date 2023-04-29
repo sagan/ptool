@@ -3,6 +3,7 @@ package nexusphp
 import (
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -66,7 +67,7 @@ func (npclient *Site) SearchTorrents(keyword string) ([]site.Torrent, error) {
 	return npclient.parseTorrentsFromDoc(doc, utils.Now())
 }
 
-func (npclient *Site) DownloadTorrent(url string) ([]byte, error) {
+func (npclient *Site) DownloadTorrent(url string) ([]byte, string, error) {
 	if regexp.MustCompile(`^\d+$`).MatchString(url) {
 		return npclient.DownloadTorrentById(url)
 	}
@@ -77,21 +78,35 @@ func (npclient *Site) DownloadTorrent(url string) ([]byte, error) {
 			return npclient.DownloadTorrentById(m[idRegexp.SubexpIndex("id")])
 		}
 	}
-	res, err := utils.FetchUrl(url, npclient.SiteConfig.Cookie, npclient.HttpClient)
+	res, header, err := utils.FetchUrl(url, npclient.SiteConfig.Cookie, npclient.HttpClient)
 	if err != nil {
-		return nil, fmt.Errorf("can not fetch torrents from site: %v", err)
+		return nil, "", fmt.Errorf("can not fetch torrents from site: %v", err)
 	}
+	filename := ""
+	_, params, err := mime.ParseMediaType(header.Get("content-disposition"))
+	if err == nil {
+		filename = params["filename"]
+	}
+
 	defer res.Body.Close()
-	return io.ReadAll(res.Body)
+	data, err := io.ReadAll(res.Body)
+	return data, filename, err
 }
 
-func (npclient *Site) DownloadTorrentById(id string) ([]byte, error) {
-	res, err := utils.FetchUrl(npclient.SiteConfig.Url+"download.php?https=1&id="+fmt.Sprint(id), npclient.SiteConfig.Cookie, npclient.HttpClient)
+func (npclient *Site) DownloadTorrentById(id string) ([]byte, string, error) {
+	res, header, err := utils.FetchUrl(npclient.SiteConfig.Url+"download.php?https=1&id="+fmt.Sprint(id), npclient.SiteConfig.Cookie, npclient.HttpClient)
 	if err != nil {
-		return nil, fmt.Errorf("can not fetch torrents from site: %v", err)
+		return nil, "", fmt.Errorf("can not fetch torrents from site: %v", err)
 	}
+	filename := ""
+	_, params, err := mime.ParseMediaType(header.Get("content-disposition"))
+	if err == nil {
+		filename = params["filename"]
+	}
+
 	defer res.Body.Close()
-	return io.ReadAll(res.Body)
+	data, err := io.ReadAll(res.Body)
+	return data, filename, err
 }
 
 func (npclient *Site) GetStatus() (*site.Status, error) {
@@ -174,6 +189,7 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string) 
 
 	torrents, err = npclient.parseTorrentsFromDoc(doc, now)
 	if err != nil {
+		log.Tracef("Failed to get torrents from doc: %v", err)
 		return
 	}
 	if page > 0 {

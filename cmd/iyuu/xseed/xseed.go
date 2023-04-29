@@ -270,7 +270,7 @@ mainloop:
 				if dryRun {
 					continue
 				}
-				xseedTorrentContent, err := siteInstance.DownloadTorrentById(fmt.Sprint(xseedTorrent.Tid))
+				xseedTorrentContent, _, err := siteInstance.DownloadTorrentById(fmt.Sprint(xseedTorrent.Tid))
 				if err != nil {
 					log.Errorf("Failed to download torrent from site: %v", err)
 					continue
