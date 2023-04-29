@@ -248,7 +248,7 @@ mainloop:
 					continue
 				}
 				if (includeSitesMode && !includeSitesFlag[sitename]) || (!includeSitesMode && excludeSitesFlag[sitename]) {
-					log.Tracef("skip site %d torrent", sitename)
+					log.Tracef("skip site %s torrent", sitename)
 					continue
 				}
 				if siteInstancesMap[sitename] == nil {

@@ -116,11 +116,11 @@ mainloop:
 		cntAllTorrents += int64(len(torrents))
 		for _, torrent := range torrents {
 			if torrent.Size < minTorrentSize {
-				log.Tracef("Skip torrent %s due to size %d < minTorrentSize", torrent.Name, torrent.Size, minTorrentSize)
+				log.Tracef("Skip torrent %s due to size %d < minTorrentSize", torrent.Name, torrent.Size)
 				continue
 			}
 			if torrent.Size >= maxTorrentSize {
-				log.Tracef("Skip torrent %s due to size %d >= maxTorrentSize", torrent.Name, torrent.Size, maxTorrentSize)
+				log.Tracef("Skip torrent %s due to size %d >= maxTorrentSize", torrent.Name, torrent.Size)
 				break mainloop
 			}
 			if !includeDownloaded && torrent.IsActive {
