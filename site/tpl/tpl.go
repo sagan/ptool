@@ -199,6 +199,10 @@ var (
 			Type: "nexusphp",
 			Url:  "https://u2.dmhy.org/",
 		},
+		"ubits": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://ubits.club/",
+		},
 		"wintersakura": &config.SiteConfigStruct{
 			Type: "nexusphp",
 			Url:  "https://wintersakura.net/",
