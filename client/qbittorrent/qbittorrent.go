@@ -178,6 +178,20 @@ func (qbclient *Client) ResumeTorrents(infoHashes []string) error {
 	return qbclient.apiPost("api/v2/torrents/resume", data)
 }
 
+func (qbclient *Client) RecheckTorrents(infoHashes []string) error {
+	if len(infoHashes) == 0 {
+		return nil
+	}
+	err := qbclient.login()
+	if err != nil {
+		return fmt.Errorf("login error: %v", err)
+	}
+	data := url.Values{
+		"hashes": {strings.Join(infoHashes, "|")},
+	}
+	return qbclient.apiPost("api/v2/torrents/recheck", data)
+}
+
 func (qbclient *Client) ReannounceTorrents(infoHashes []string) error {
 	if len(infoHashes) == 0 {
 		return nil
@@ -212,6 +226,17 @@ func (qbclient *Client) ResumeAllTorrents() error {
 		"hashes": {"all"},
 	}
 	return qbclient.apiPost("api/v2/torrents/resume", data)
+}
+
+func (qbclient *Client) RecheckAllTorrents() error {
+	err := qbclient.login()
+	if err != nil {
+		return fmt.Errorf("login error: %v", err)
+	}
+	data := url.Values{
+		"hashes": {"all"},
+	}
+	return qbclient.apiPost("api/v2/torrents/recheck", data)
 }
 
 func (qbclient *Client) ReannounceAllTorrents() error {

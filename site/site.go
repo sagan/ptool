@@ -36,7 +36,9 @@ type Status struct {
 type Site interface {
 	GetName() string
 	GetSiteConfig() *config.SiteConfigStruct
+	// download torrent by original id (eg. 12345), sitename.id (eg. mteam.12345), or torrent download url
 	DownloadTorrent(url string) (content []byte, filename string, err error)
+	// download torrent by torrent original id (eg. 12345)
 	DownloadTorrentById(id string) (content []byte, filename string, err error)
 	GetLatestTorrents(full bool) ([]Torrent, error)
 	GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (torrents []Torrent, nextPageMarker string, err error)
@@ -85,23 +87,19 @@ func GetConfigSiteReginfo(name string) *RegInfo {
 func CreateSite(name string) (Site, error) {
 	for _, siteConfig := range config.Get().Sites {
 		if siteConfig.GetName() == name {
-			return CreateSiteInternal(name, &siteConfig, config.Get())
+			return CreateSiteInternal(name, siteConfig, config.Get())
 		}
 	}
 	return nil, fmt.Errorf("site %s not found", name)
 }
 
-func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool, siteName string) {
+func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool) {
 	if !noHeader {
 		fmt.Printf("%-40s  %10s  %-13s  %19s  %4s  %4s  %4s  %20s  %2s\n", "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "P")
 	}
 	for _, torrent := range torrents {
 		if filter != "" && !utils.ContainsI(torrent.Name, filter) {
 			continue
-		}
-		torrentId := torrent.Id
-		if siteName != "" {
-			torrentId = siteName + "." + torrentId
 		}
 		freeStr := ""
 		if torrent.HasHnR {
@@ -131,7 +129,7 @@ func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool, 
 			fmt.Sprint(torrent.Seeders),
 			fmt.Sprint(torrent.Leechers),
 			fmt.Sprint(torrent.Snatched),
-			torrentId,
+			torrent.Id,
 			process,
 		)
 	}

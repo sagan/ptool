@@ -51,11 +51,11 @@ func init() {
 	command.Flags().BoolVar(&check, "check-hash", false, "Let client do hash checking when add xseed torrents")
 	command.Flags().Int64Var(&maxXseedTorrents, "max-xseed-torrents", 0, "Number limit of xseed torrents added. Default = unlimited")
 	command.Flags().Int64Var(&iyuuRequestMaxTorrents, "max-request-torrents", 2000, "Number limit of target torrents sent to iyuu server at once")
-	command.Flags().StringVar(&includeSites, "include-sites", "", "Only add xseed torrents from these sites (comma-separated)")
-	command.Flags().StringVar(&excludeSites, "exclude-sites", "", "Do NOT add xseed torrents from these sites (comma-separated)")
+	command.Flags().StringVar(&includeSites, "include-sites", "", "Only add xseed torrents from these sites or groups (comma-separated)")
+	command.Flags().StringVar(&excludeSites, "exclude-sites", "", "Do NOT add xseed torrents from these sites or groups (comma-separated)")
 	command.Flags().StringVar(&category, "category", "", "Only xseed torrents that belongs to this category")
 	command.Flags().StringVar(&tag, "tag", "", "Only xseed torrents that has this tag")
-	command.Flags().StringVar(&filter, "filter", "", "Only xseed torrents which name contains this")
+	command.Flags().StringVarP(&filter, "filter", "f", "", "Only xseed torrents which name contains this")
 	command.Flags().StringVar(&setCategory, "set-category", "", "Manually set category of added xseed torrent. By Default it uses the original torrent's")
 	command.Flags().StringVar(&minTorrentSizeStr, "min-torrent-size", "1GB", "Torrents with size smaller than (<) this value will NOT be xseeded.")
 	command.Flags().StringVar(&maxTorrentSizeStr, "max-torrent-size", "1PB", "Torrents with size larger than (>=) this value will NOT be xseeded.")
@@ -77,11 +77,13 @@ func xseed(cmd *cobra.Command, args []string) {
 	}
 	if includeSites != "" {
 		includeSitesMode = true
-		for _, site := range strings.Split(includeSites, ",") {
+		sites := config.ParseGroupAndOtherNames(strings.Split(includeSites, ","))
+		for _, site := range sites {
 			includeSitesFlag[site] = true
 		}
 	} else if excludeSites != "" {
-		for _, site := range strings.Split(excludeSites, ",") {
+		sites := config.ParseGroupAndOtherNames(strings.Split(excludeSites, ","))
+		for _, site := range sites {
 			excludeSitesFlag[site] = true
 		}
 	}
@@ -179,7 +181,7 @@ func xseed(cmd *cobra.Command, args []string) {
 		doRequestServer = true
 	}
 	if doRequestServer {
-		updateIyuuDatabase(config.Config.IyuuToken, reqInfoHashes)
+		updateIyuuDatabase(config.Get().IyuuToken, reqInfoHashes)
 	}
 
 	var sites []iyuu.Site

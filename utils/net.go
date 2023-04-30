@@ -11,12 +11,27 @@ import (
 )
 
 var (
-	// use latest Chrome stable version on Windows 11
-	ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36"
+	// 最新稳定版 Chrome (en-US) 在 Windows 11 x64 环境下访问网页的默认请求 headers
+	CHROME_HTTP_REQUEST_HEADERS = map[string](string){
+		"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+		// "Accept-Encoding":           "gzip, deflate, br",
+		"Accept-Language":           "en-US,en;q=0.9",
+		"Cache-Control":             "max-age=0",
+		"Connection":                "keep-alive",
+		"sec-ch-ua":                 `"Chromium";v="112", "Google Chrome";v="112", "Not:A-Brand";v="99"`,
+		"sec-ch-ua-mobile":          "?0",
+		"sec-ch-ua-platform":        `"Windows"`,
+		"Sec-Fetch-Dest":            "document",
+		"Sec-Fetch-Mode":            "navigate",
+		"Sec-Fetch-Site":            "none",
+		"Sec-Fetch-User":            "?1",
+		"Upgrade-Insecure-Requests": "1",
+		"User-Agent":                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36",
+	}
 )
 
 func FetchJson(url string, v any, client *http.Client) error {
-	res, _, err := FetchUrl(url, "", client)
+	res, _, err := FetchUrl(url, "", client, "")
 	if err != nil {
 		return err
 	}
@@ -33,7 +48,7 @@ func FetchJson(url string, v any, client *http.Client) error {
 	return err
 }
 
-func FetchUrl(url string, cookie string, client *http.Client) (*http.Response, http.Header, error) {
+func FetchUrl(url string, cookie string, client *http.Client, ua string) (*http.Response, http.Header, error) {
 	log.Tracef("FetchUrl url=%s hasCookie=%t", url, cookie != "")
 	if client == nil {
 		client = http.DefaultClient
@@ -42,7 +57,7 @@ func FetchUrl(url string, cookie string, client *http.Client) (*http.Response, h
 	if err != nil {
 		return nil, nil, err
 	}
-	SetHttpRequestBrowserHeaders(req)
+	SetHttpRequestBrowserHeaders(req, ua)
 	if cookie != "" {
 		req.Header.Set("Cookie", cookie)
 	}
@@ -95,10 +110,11 @@ func PostUrlForJson(url string, data url.Values, v any, client *http.Client) err
 	return err
 }
 
-func SetHttpRequestBrowserHeaders(req *http.Request) {
-	req.Header.Set("User-Agent", ua)
-	req.Header.Set("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
-	req.Header.Set("accept-language", "en")
-	req.Header.Set("cache-control", "no-cache")
-	req.Header.Set("pragma", "no-cache")
+func SetHttpRequestBrowserHeaders(req *http.Request, ua string) {
+	for key, value := range CHROME_HTTP_REQUEST_HEADERS {
+		req.Header.Set(key, value)
+	}
+	if ua != "" {
+		req.Header.Set("User-Agent", ua)
+	}
 }

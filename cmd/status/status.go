@@ -27,11 +27,13 @@ var (
 )
 
 var command = &cobra.Command{
-	Use: "status <clientOrSites>...",
+	Use: "status <clientOrSiteOrGroup>...",
 	// Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	Short: "Show clients or sites status",
-	Long:  `Show clients or sites status`,
-	Run:   status,
+	Long: `Show clients or sites status
+clientOrSiteOrGroup: name of a client, site, group, or "_all" which means all sites
+`,
+	Run: status,
 }
 
 func init() {
@@ -62,8 +64,10 @@ func status(cmd *cobra.Command, args []string) {
 			}
 		}
 	}
+	names = config.ParseGroupAndOtherNames(names)
+
 	if len(names) == 0 {
-		log.Fatal("Usage: status ...clientOrSites")
+		log.Fatal("No sites or clients provided")
 	}
 	now := utils.Now()
 	hasError := false
@@ -162,7 +166,7 @@ func status(cmd *cobra.Command, args []string) {
 				fmt.Printf("Site %s: failed to get status\n", response.Name)
 			}
 			if response.SiteTorrents != nil {
-				site.PrintTorrents(response.SiteTorrents, filter, now, false, response.Name)
+				site.PrintTorrents(response.SiteTorrents, filter, now, false)
 				if i != len(responses)-1 {
 					fmt.Printf("\n")
 				}

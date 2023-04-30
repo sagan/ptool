@@ -17,6 +17,7 @@ type Torrent struct {
 	Name               string
 	TrackerDomain      string
 	State              string // simplifiec state: seeding|downloading|completed|paused
+	LowLevelState      string // original state value returned by bt client
 	Atime              int64  // timestamp torrent added
 	Ctime              int64  // timestamp torrent completed. <=0 if not completed.
 	Category           string
@@ -74,9 +75,11 @@ type Client interface {
 	DeleteTorrents(infoHashes []string, deleteFiles bool) error
 	PauseTorrents(infoHashes []string) error
 	ResumeTorrents(infoHashes []string) error
+	RecheckTorrents(infoHashes []string) error
 	ReannounceTorrents(infoHashes []string) error
 	PauseAllTorrents() error
 	ResumeAllTorrents() error
+	RecheckAllTorrents() error
 	ReannounceAllTorrents() error
 	GetTags() ([]string, error)
 	CreateTags(tags ...string) error
@@ -187,6 +190,8 @@ func TorrentStateIconText(torrent *Torrent) string {
 		return "-P" // may be unicode symbol ⏸
 	case "completed":
 		return "✓C"
+	case "checking":
+		return "→c"
 	case "error":
 		return "!e"
 	}

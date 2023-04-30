@@ -1,6 +1,7 @@
 package search
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
@@ -8,41 +9,99 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/utils"
 )
 
+type SearchResult struct {
+	site     string
+	torrents []site.Torrent
+	err      error
+}
+
 var command = &cobra.Command{
-	Use:   "search <site> <keyword>",
+	Use:   "search <siteOrGroup> <keyword>",
 	Short: "Search torrents by keyword in a site",
-	Long:  `Search torrents by keyword in a site`,
-	Args:  cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
-	Run:   search,
+	Long: `Search torrents by keyword in a site
+siteOrGroup: name of a site or group. Can use "_all" to use all sites.
+`,
+	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
+	Run:  search,
 }
 
 var (
-	largestFlag = false
-	baseUrl     = ""
+	largestFlag       = false
+	maxResults        = int64(0)
+	perSiteMaxREsults = int64(0)
+	baseUrl           = ""
 )
 
 func init() {
 	command.Flags().BoolVarP(&largestFlag, "largest", "l", false, "Sort search result by torrent size in desc order")
+	command.Flags().Int64VarP(&maxResults, "max-results", "m", 100, "Number limit of search result of all sites combined. 0 = unlimited")
+	command.Flags().Int64VarP(&perSiteMaxREsults, "per-site-max-results", "p", 0, "Number limit of search result of any single site. Default(0) = unlimited")
 	command.Flags().StringVar(&baseUrl, "base-url", "", "Manually set the base url of search page. eg. adult.php or https://kp.m-team.cc/adult.php for M-Team site")
 	cmd.RootCmd.AddCommand(command)
 }
 
 func search(cmd *cobra.Command, args []string) {
-	siteInstance, err := site.CreateSite(args[0])
-	if err != nil {
-		log.Fatal(err)
+	sitenames := config.GetGroupSites(args[0])
+	if sitenames == nil {
+		sitenames = []string{args[0]}
+	}
+	if len(sitenames) == 0 {
+		log.Fatalf("No search sites provided")
+	}
+	siteInstancesMap := map[string](site.Site){}
+	for _, sitename := range sitenames {
+		siteInstance, err := site.CreateSite(sitename)
+		if err != nil {
+			log.Fatalf("Failed to create site %s: %v", sitename, err)
+		}
+		siteInstancesMap[sitename] = siteInstance
 	}
 	keyword := strings.Join(args[1:], " ")
 	now := utils.Now()
 
-	torrents, err := siteInstance.SearchTorrents(keyword, baseUrl)
-	if err != nil {
-		log.Fatal(err)
+	ch := make(chan SearchResult, len(sitenames))
+	for _, sitename := range sitenames {
+		go func(sitename string) {
+			torrents, err := siteInstancesMap[sitename].SearchTorrents(keyword, baseUrl)
+			ch <- SearchResult{sitename, torrents, err}
+		}(sitename)
 	}
+
+	torrents := []site.Torrent{}
+	errorStr := ""
+	cntSuccessSites := int64(0)
+	cntNoResultSites := int64(0)
+	cntErrorSites := int64(0)
+	for i := 0; i < len(sitenames); i++ {
+		searchResult := <-ch
+		if searchResult.err != nil {
+			cntErrorSites++
+			errorStr += fmt.Sprintf("failed to search site %s: %v", searchResult.site, searchResult.err)
+		} else if len(searchResult.torrents) == 0 {
+			cntNoResultSites++
+		} else {
+			cntSuccessSites++
+			siteTorrents := searchResult.torrents
+			if largestFlag {
+				sort.Slice(siteTorrents, func(i, j int) bool {
+					if siteTorrents[i].Size != siteTorrents[j].Size {
+						return siteTorrents[i].Size > siteTorrents[j].Size
+					}
+					return siteTorrents[i].Seeders > siteTorrents[j].Seeders
+				})
+			}
+			if perSiteMaxREsults > 0 && len(siteTorrents) > int(perSiteMaxREsults) {
+				siteTorrents = siteTorrents[:perSiteMaxREsults]
+			}
+			torrents = append(torrents, siteTorrents...)
+		}
+	}
+
 	if largestFlag {
 		sort.Slice(torrents, func(i, j int) bool {
 			if torrents[i].Size != torrents[j].Size {
@@ -51,5 +110,16 @@ func search(cmd *cobra.Command, args []string) {
 			return torrents[i].Seeders > torrents[j].Seeders
 		})
 	}
-	site.PrintTorrents(torrents, "", now, false, siteInstance.GetName())
+	if maxResults > 0 && len(torrents) > int(maxResults) {
+		torrents = torrents[:maxResults]
+	}
+
+	fmt.Printf("Done searching %d sites. Success / NoResult / Error sites: %d / %d / %d. Showing %d result\n", cntSuccessSites+cntErrorSites+cntNoResultSites,
+		cntSuccessSites, cntNoResultSites, cntErrorSites, len(torrents))
+	if errorStr != "" {
+		log.Warnf("Errors encountered: %s", errorStr)
+	}
+	fmt.Printf("\n")
+
+	site.PrintTorrents(torrents, "", now, false)
 }

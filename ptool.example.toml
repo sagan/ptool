@@ -1,4 +1,5 @@
-iyuuToken = "abcdefg"
+iyuuToken = "" # iyuu token。用于自动辅种功能
+#userAgent = "" #  所有站点默认使用的 ua。
 #brushEnableStats = false # 启用刷流统计功能
 #treatZeroFreeDiskSpaceAsError = false # 如启用。BT客户端返回的硬盘剩余空间“0”将被认为是错误值。
 
@@ -17,9 +18,8 @@ password = "adminadmin"
 #brushTorrentSizeLimit = "1PB" #刷流：种子大小限制。大小超过此值的种子不会被选择。
 
 [[sites]]
-name = "mt"
-type = "nexusphp"
-url = "https://kp.m-team.cc/"
+type = "mteam"
 cookie = "cookie_here"
+#userAgent = "" # 部分站点 cookie 绑定 ua。默认使用 Chrome ua。
 #brushUrl = "https://kp.m-team.cc/adult.php" # 单独设置刷流种子列表页 url。如不指定，np 使用 torrents.php
 #timezone = "Asia/Shanghai" # 网站页面显示时间的时区

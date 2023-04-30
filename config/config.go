@@ -29,6 +29,11 @@ const (
 	VERSION                                         = "0.0.1"
 )
 
+type GroupConfigStruct struct {
+	Name  string   `yaml:"name"`
+	Sites []string `yaml:"sites"`
+}
+
 type ClientConfigStruct struct {
 	Type                              string  `yaml:"type"`
 	Name                              string  `yaml:"name"`
@@ -50,15 +55,17 @@ type ClientConfigStruct struct {
 }
 
 type SiteConfigStruct struct {
-	Type                         string `yaml:"type"`
-	Name                         string `yaml:"name"`
-	Aliases                      []string
+	Type                         string   `yaml:"type"`
+	Name                         string   `yaml:"name"`
+	Aliases                      []string // for internal use only
+	Comment                      string   `yaml:"comment"`
 	Disabled                     bool     `yaml:"disabled"`
 	Url                          string   `yaml:"url"`
 	TorrentsUrl                  string   `yaml:"torrentsUrl"`
 	SearchUrl                    string   `yaml:"searchUrl"`
 	TorrentsExtraUrls            []string `yaml:"torrentsExtraUrls"`
 	Cookie                       string   `yaml:"cookie"`
+	UserAgent                    string   `yaml:"userAgent"`
 	TorrentUploadSpeedLimit      string   `yaml:"uploadSpeedLimit"`
 	GlobalHnR                    bool     `yaml:"globalHnR"`
 	Timezone                     string   `yaml:"timezone"`
@@ -82,19 +89,21 @@ type SiteConfigStruct struct {
 }
 
 type ConfigStruct struct {
-	IyuuToken                     string               `yaml:"iyuuToken"`
-	BrushEnableStats              bool                 `yaml:"brushEnableStats"`
-	TreatZeroFreeDiskSpaceAsError bool                 `yaml:"treatZeroFreeDiskSpaceAsError"`
-	Clients                       []ClientConfigStruct `yaml:"clients"`
-	Sites                         []SiteConfigStruct   `yaml:"sites"`
+	IyuuToken                     string                `yaml:"iyuuToken"`
+	UserAgent                     string                `yaml:"userAgent"`
+	BrushEnableStats              bool                  `yaml:"brushEnableStats"`
+	TreatZeroFreeDiskSpaceAsError bool                  `yaml:"treatZeroFreeDiskSpaceAsError"`
+	Clients                       []*ClientConfigStruct `yaml:"clients"`
+	Sites                         []*SiteConfigStruct   `yaml:"sites"`
+	Groups                        []*GroupConfigStruct  `yaml:"groups"`
 }
 
 var (
 	VerboseLevel               = 0
 	ConfigDir                  = ""
 	ConfigFile                 = ""
-	ConfigLoaded               = false
-	Config       *ConfigStruct = &ConfigStruct{}
+	configLoaded               = false
+	configData   *ConfigStruct = &ConfigStruct{}
 	mu           sync.Mutex
 )
 
@@ -103,19 +112,19 @@ func init() {
 }
 
 func Get() *ConfigStruct {
-	if !ConfigLoaded {
+	if !configLoaded {
 		mu.Lock()
-		if !ConfigLoaded {
+		if !configLoaded {
 			log.Debugf("Read config file %s", ConfigFile)
 			file, err := os.ReadFile(ConfigFile)
 			if err == nil {
 				if strings.HasSuffix(ConfigFile, ".yaml") {
-					err = yaml.Unmarshal(file, &Config)
+					err = yaml.Unmarshal(file, &configData)
 					if err != nil {
 						log.Fatalf("Error parsing config file: %v", err)
 					}
 				} else if strings.HasSuffix(ConfigFile, ".toml") {
-					err = toml.Unmarshal(file, &Config)
+					err = toml.Unmarshal(file, &configData)
 					if err != nil {
 						log.Fatalf("Error parsing config file: %v", err)
 					}
@@ -123,98 +132,136 @@ func Get() *ConfigStruct {
 					log.Fatalf("Unsupported config file format. Neither toml nor yaml.")
 				}
 			}
-			for i, client := range Config.Clients {
+			for _, client := range configData.Clients {
 				v, err := utils.RAMInBytes(client.BrushMinDiskSpace)
 				if err != nil || v < 0 {
 					v = DEFAULT_CLIENT_BRUSH_MIN_DISK_SPACE
 				}
-				Config.Clients[i].BrushMinDiskSpaceValue = v
+				client.BrushMinDiskSpaceValue = v
 
 				v, err = utils.RAMInBytes(client.BrushSlowUploadSpeedTier)
 				if err != nil || v <= 0 {
 					v = DEFAULT_CLIENT_BRUSH_SLOW_UPLOAD_SPEED_TIER
 				}
-				Config.Clients[i].BrushSlowUploadSpeedTierValue = v
+				client.BrushSlowUploadSpeedTierValue = v
 
 				v, err = utils.RAMInBytes(client.BrushDefaultUploadSpeedLimit)
 				if err != nil || v <= 0 {
 					v = DEFAULT_CLIENT_BRUSH_DEFAULT_UPLOAD_SPEED_LIMIT
 				}
-				Config.Clients[i].BrushDefaultUploadSpeedLimitValue = v
+				client.BrushDefaultUploadSpeedLimitValue = v
 
 				v, err = utils.RAMInBytes(client.BrushTorrentSizeLimit)
 				if err != nil || v <= 0 {
 					v = DEFAULT_CLIENT_BRUSH_TORRENT_SIZE_LIMIT
 				}
-				Config.Clients[i].BrushTorrentSizeLimitValue = v
+				client.BrushTorrentSizeLimitValue = v
 
 				if client.Url != "" {
 					urlObj, err := url.Parse(client.Url)
 					if err != nil {
 						log.Fatalf("Failed to parse client %s url config: %v", client.Name, err)
 					}
-					Config.Clients[i].Url = urlObj.String()
+					client.Url = urlObj.String()
 				}
 
 				if client.BrushMaxDownloadingTorrents == 0 {
-					Config.Clients[i].BrushMaxDownloadingTorrents = DEFAULT_CLIENT_BRUSH_MAX_DOWNLOADING_TORRENTS
+					client.BrushMaxDownloadingTorrents = DEFAULT_CLIENT_BRUSH_MAX_DOWNLOADING_TORRENTS
 				}
 
 				if client.BrushMaxTorrents == 0 {
-					Config.Clients[i].BrushMaxTorrents = DEFAULT_CLIENT_BRUSH_MAX_TORRENTS
+					client.BrushMaxTorrents = DEFAULT_CLIENT_BRUSH_MAX_TORRENTS
 				}
 
 				if client.BrushMinRatio == 0 {
-					Config.Clients[i].BrushMinRatio = DEFAULT_CLIENT_BRUSH_MIN_RATION
+					client.BrushMinRatio = DEFAULT_CLIENT_BRUSH_MIN_RATION
 				}
 
 				if client.Name == "" {
-					Config.Clients[i].Name = client.Type
+					client.Name = client.Type
 				}
 			}
-			for i, site := range Config.Sites {
+			for _, site := range configData.Sites {
 				v, err := utils.RAMInBytes(site.TorrentUploadSpeedLimit)
 				if err != nil || v <= 0 {
 					v = DEFAULT_SITE_TORRENT_UPLOAD_SPEED_LIMIT
 				}
-				Config.Sites[i].TorrentUploadSpeedLimitValue = v
+				site.TorrentUploadSpeedLimitValue = v
 
 				if site.Name == "" {
-					Config.Sites[i].Name = site.Type
+					site.Name = site.Type
+				}
+
+				if site.UserAgent == "" {
+					site.UserAgent = configData.UserAgent
 				}
 
 				if site.Url != "" {
 					urlObj, err := url.Parse(site.Url)
 					if err != nil {
-						log.Fatalf("Failed to parse site %s url config: %v", Config.Sites[i].Name, err)
+						log.Fatalf("Failed to parse site %s url config: %v", site.Name, err)
 					}
-					Config.Sites[i].Url = urlObj.String()
+					site.Url = urlObj.String()
 				}
 
 				if site.Timezone == "" {
-					Config.Sites[i].Timezone = DEFAULT_SITE_TIMEZONE
+					site.Timezone = DEFAULT_SITE_TIMEZONE
 				}
 			}
-			ConfigLoaded = true
+			configLoaded = true
 		}
-		Config.Clients = utils.Filter(Config.Clients, func(c ClientConfigStruct) bool {
+		configData.Clients = utils.Filter(configData.Clients, func(c *ClientConfigStruct) bool {
 			return !c.Disabled
 		})
-		Config.Sites = utils.Filter(Config.Sites, func(s SiteConfigStruct) bool {
+		configData.Sites = utils.Filter(configData.Sites, func(s *SiteConfigStruct) bool {
 			return !s.Disabled
 		})
 		mu.Unlock()
 	}
-	return Config
+	return configData
 }
 
 func GetClientConfig(name string) *ClientConfigStruct {
 	for _, client := range Get().Clients {
 		if client.Name == name {
-			return &client
+			return client
 		}
 	}
 	return nil
+}
+
+// if name is a group, return it's sites, otherwise return nil
+func GetGroupSites(name string) []string {
+	if name == "_all" { // special group of all sites
+		sitenames := []string{}
+		for _, siteConfig := range Get().Sites {
+			if siteConfig.Disabled {
+				continue
+			}
+			sitenames = append(sitenames, siteConfig.GetName())
+		}
+		return sitenames
+	}
+	for _, group := range Get().Groups {
+		if group.Name == name {
+			return group.Sites
+		}
+	}
+	return nil
+}
+
+// parse an slice of groupOrOther names, expand group name to site names, return the final slice of names
+func ParseGroupAndOtherNames(names []string) []string {
+	names2 := []string{}
+	for _, name := range names {
+		groupSites := GetGroupSites(name)
+		if groupSites != nil {
+			names2 = append(names2, groupSites...)
+		} else {
+			names2 = append(names2, name)
+		}
+	}
+	return utils.UniqueSlice(names2)
 }
 
 func (siteConfig *SiteConfigStruct) GetName() string {

@@ -137,14 +137,16 @@ func (qt *apiTorrentInfo) CanPause() bool {
 func (qbtorrent *apiTorrentInfo) ToTorrentState() string {
 	state := ""
 	switch qbtorrent.State {
-	case "stalledUP", "checkingUP", "queuedUP", "forcedUP", "uploading":
+	case "stalledUP", "queuedUP", "forcedUP", "uploading":
 		state = "seeding"
-	case "metaDL", "allocating", "stalledDL", "checkingDL", "queuedDL", "forcedDL", "downloading":
+	case "metaDL", "allocating", "stalledDL", "queuedDL", "forcedDL", "downloading":
 		state = "downloading"
 	case "pausedUP":
 		state = "completed"
 	case "pausedDL":
 		state = "paused"
+	case "checkingUP", "checkingDL", "checkingResumeData":
+		state = "checking"
 	default:
 		state = qbtorrent.State
 	}
@@ -157,6 +159,7 @@ func (qbtorrent *apiTorrentInfo) ToTorrent() *client.Torrent {
 		Name:               qbtorrent.Name,
 		TrackerDomain:      utils.ParseUrlHostname(qbtorrent.Tracker),
 		State:              qbtorrent.ToTorrentState(),
+		LowLevelState:      qbtorrent.State,
 		Atime:              qbtorrent.Added_on,
 		Ctime:              qbtorrent.Completion_on,
 		Downloaded:         qbtorrent.Downloaded,

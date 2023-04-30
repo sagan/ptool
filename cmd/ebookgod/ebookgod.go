@@ -25,7 +25,7 @@ var command = &cobra.Command{
 }
 
 var (
-	addPaused         = false
+	addAutoStart      = false
 	includeDead       = false
 	includeDownloaded = false
 	maxTorrents       = int64(0)
@@ -43,14 +43,14 @@ var (
 )
 
 func init() {
-	command.Flags().BoolVar(&addPaused, "add-paused", false, "Add torrents to client in paused state")
+	command.Flags().BoolVar(&addAutoStart, "add-auto-start", false, "By default the added torrents in client will be in paused state unless this flag is set")
 	command.Flags().BoolVar(&includeDead, "include-dead", false, "Do NOT skip dead (seeders == 0) torrents")
 	command.Flags().BoolVar(&includeDownloaded, "include-downloaded", false, "Do NOT skip torrents that has been downloaded before")
-	command.Flags().Int64Var(&maxTorrents, "max-torrents", 100, "Number limit of torrents handled. Default = 100. <=0 means unlimited")
-	command.Flags().StringVar(&action, "action", "show", "Choose action for found torrents: show (print torrent details) | printid (print torrent id to stdout of file) | download (download torrent) | add (add torrent to client)")
+	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "m", 100, "Number limit of torrents handled. Default = 100. <=0 means unlimited")
+	command.Flags().StringVar(&action, "action", "show", "Choose action for found torrents: show (print torrent details) | printid (print torrent id to stdout or file) | download (download torrent) | add (add torrent to client)")
 	command.Flags().StringVar(&minTorrentSizeStr, "min-torrent-size", "0", "Skip torrents with size smaller than (<) this value")
 	command.Flags().StringVar(&maxTorrentSizeStr, "max-torrent-size", "100MB", "Skip torrents with size large than (>=) this value")
-	command.Flags().StringVar(&filter, "filter", "", "If set, skip torrents which name does NOT contains this string")
+	command.Flags().StringVarP(&filter, "filter", "f", "", "If set, skip torrents which name does NOT contains this string")
 	command.Flags().StringVar(&startPage, "start-page", "", "Start fetching torrents from here (should be the returned LastPage value last time you run this command)")
 	command.Flags().StringVar(&downloadDir, "download-dir", ".", "Used with '--action add'. Set the local dir of downloaded torrents. Default = current dir")
 	command.Flags().StringVar(&addClient, "add-client", "", "Used with '--action add'. Set the client. Required in this action")
@@ -83,7 +83,7 @@ func ebookgod(cmd *cobra.Command, args []string) {
 		}
 		clientAddTorrentOption = &client.TorrentOption{
 			Category: addCategory,
-			Pause:    addPaused,
+			Pause:    !addAutoStart,
 		}
 		if addTags != "" {
 			clientAddTorrentOption.Tags = strings.Split(addTags, ",")
@@ -140,7 +140,7 @@ mainloop:
 			cntTorrents++
 
 			if action == "show" {
-				site.PrintTorrents([]site.Torrent{torrent}, "", now, cntTorrents != 1, siteInstance.GetName())
+				site.PrintTorrents([]site.Torrent{torrent}, "", now, cntTorrents != 1)
 			} else if action == "printid" {
 				str := fmt.Sprintf("%s\n", torrent.Id)
 				if outputFileFd != nil {
@@ -149,7 +149,7 @@ mainloop:
 					fmt.Printf(str)
 				}
 			} else {
-				torrentContent, filename, err := siteInstance.DownloadTorrentById(torrent.Id)
+				torrentContent, filename, err := siteInstance.DownloadTorrent(torrent.Id)
 				if err != nil {
 					fmt.Printf("torrent %s (%s): failed to download: %v\n", torrent.Id, torrent.Name, err)
 				} else {

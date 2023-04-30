@@ -186,10 +186,10 @@ func (iyuuApiSite IyuuApiSite) ToSite() Site {
 
 // return iyuuSid => localSiteName map
 func GenerateIyuu2LocalSiteMap(iyuuSites []Site,
-	localSites []config.SiteConfigStruct) map[int64]string {
+	localSites []*config.SiteConfigStruct) map[int64]string {
 	iyuu2LocalSiteMap := map[int64](string){} // iyuu sid => local site name
 	for _, iyuuSite := range iyuuSites {
-		localSite := utils.FindInSlice(localSites, func(siteConfig config.SiteConfigStruct) bool {
+		localSite := utils.FindInSlice(localSites, func(siteConfig *config.SiteConfigStruct) bool {
 			if siteConfig.Disabled {
 				return false
 			}
@@ -200,7 +200,7 @@ func GenerateIyuu2LocalSiteMap(iyuuSites []Site,
 			return regInfo != nil && (regInfo.Name == iyuuSite.Name || slices.Index(regInfo.Aliases, iyuuSite.Name) != -1)
 		})
 		if localSite != nil {
-			iyuu2LocalSiteMap[iyuuSite.Sid] = localSite.GetName()
+			iyuu2LocalSiteMap[iyuuSite.Sid] = (*localSite).GetName()
 		}
 	}
 	return iyuu2LocalSiteMap

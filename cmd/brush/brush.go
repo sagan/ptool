@@ -19,7 +19,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "brush <client> <site>...",
+	Use:   "brush <client> <siteOrGroup>...",
 	Short: "Brush sites using client",
 	Long:  `Brush sites using client`,
 	Args:  cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
@@ -48,7 +48,7 @@ func brush(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	sitenames := args[1:]
+	sitenames := config.ParseGroupAndOtherNames(args[1:])
 
 	if !ordered {
 		rand.Shuffle(len(sitenames), func(i, j int) { sitenames[i], sitenames[j] = sitenames[j], sitenames[i] })

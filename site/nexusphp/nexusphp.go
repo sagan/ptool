@@ -59,7 +59,7 @@ func (npclient *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Tor
 	}
 	searchUrl = strings.Replace(searchUrl, "%s", url.PathEscape(keyword), 1)
 
-	doc, err := utils.GetUrlDoc(searchUrl, npclient.SiteConfig.Cookie, npclient.HttpClient)
+	doc, err := utils.GetUrlDoc(searchUrl, npclient.SiteConfig.Cookie, npclient.HttpClient, npclient.SiteConfig.UserAgent)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse site page dom: %v", err)
 	}
@@ -67,7 +67,11 @@ func (npclient *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Tor
 }
 
 func (npclient *Site) DownloadTorrent(url string) ([]byte, string, error) {
-	if regexp.MustCompile(`^\d+$`).MatchString(url) {
+	if !utils.IsUrl(url) {
+		sitenamePrefix := npclient.GetName() + "."
+		if strings.HasPrefix(url, sitenamePrefix) {
+			url = url[len(sitenamePrefix):]
+		}
 		return npclient.DownloadTorrentById(url)
 	}
 	if !strings.Contains(url, "/download.php") {
@@ -77,7 +81,7 @@ func (npclient *Site) DownloadTorrent(url string) ([]byte, string, error) {
 			return npclient.DownloadTorrentById(m[idRegexp.SubexpIndex("id")])
 		}
 	}
-	res, header, err := utils.FetchUrl(url, npclient.SiteConfig.Cookie, npclient.HttpClient)
+	res, header, err := utils.FetchUrl(url, npclient.SiteConfig.Cookie, npclient.HttpClient, npclient.SiteConfig.UserAgent)
 	if err != nil {
 		return nil, "", fmt.Errorf("can not fetch torrents from site: %v", err)
 	}
@@ -93,7 +97,7 @@ func (npclient *Site) DownloadTorrent(url string) ([]byte, string, error) {
 }
 
 func (npclient *Site) DownloadTorrentById(id string) ([]byte, string, error) {
-	res, header, err := utils.FetchUrl(npclient.SiteConfig.Url+"download.php?https=1&id="+fmt.Sprint(id), npclient.SiteConfig.Cookie, npclient.HttpClient)
+	res, header, err := utils.FetchUrl(npclient.SiteConfig.Url+"download.php?https=1&id="+fmt.Sprint(id), npclient.SiteConfig.Cookie, npclient.HttpClient, npclient.SiteConfig.UserAgent)
 	if err != nil {
 		return nil, "", fmt.Errorf("can not fetch torrents from site: %v", err)
 	}
@@ -161,7 +165,7 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 
 	queryString := "sort=" + sortFields[sort] + "&type=" + sortOrder + "&page=" + fmt.Sprint(page)
 	now := utils.Now()
-	doc, error := utils.GetUrlDoc(pageUrl+queryString, npclient.SiteConfig.Cookie, npclient.HttpClient)
+	doc, error := utils.GetUrlDoc(pageUrl+queryString, npclient.SiteConfig.Cookie, npclient.HttpClient, npclient.SiteConfig.UserAgent)
 	if error != nil {
 		err = fmt.Errorf("failed to fetch torrents page dom: %v", error)
 		return
@@ -184,7 +188,7 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 			page = lastPage
 			queryString := "sort=" + sortFields[sort] + "&type=" + sortOrder + "&page=" + fmt.Sprint(page)
 			now = utils.Now()
-			doc, error = utils.GetUrlDoc(pageUrl+queryString, npclient.SiteConfig.Cookie, npclient.HttpClient)
+			doc, error = utils.GetUrlDoc(pageUrl+queryString, npclient.SiteConfig.Cookie, npclient.HttpClient, npclient.SiteConfig.UserAgent)
 			if error != nil {
 				err = fmt.Errorf("failed to fetch torrents page dom: %v", error)
 				return
@@ -208,7 +212,7 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 }
 
 func (npclient *Site) parseTorrentsFromDoc(doc *goquery.Document, datatime int64) ([]site.Torrent, error) {
-	return parseTorrents(doc, npclient.torrentsParserOption, datatime)
+	return parseTorrents(doc, npclient.torrentsParserOption, datatime, npclient.GetName())
 }
 
 func (npclient *Site) sync() error {
@@ -219,7 +223,7 @@ func (npclient *Site) sync() error {
 	if url == "" {
 		url = npclient.SiteConfig.Url + "torrents.php"
 	}
-	doc, err := utils.GetUrlDoc(url, npclient.SiteConfig.Cookie, npclient.HttpClient)
+	doc, err := utils.GetUrlDoc(url, npclient.SiteConfig.Cookie, npclient.HttpClient, npclient.SiteConfig.UserAgent)
 	if err != nil {
 		return fmt.Errorf("failed to get site page dom: %v", err)
 	}
@@ -301,7 +305,7 @@ func (npclient *Site) syncExtra() error {
 
 	extraTorrents := make([]site.Torrent, 0)
 	for _, extraUrl := range npclient.SiteConfig.TorrentsExtraUrls {
-		doc, err := utils.GetUrlDoc(extraUrl, npclient.SiteConfig.Cookie, npclient.HttpClient)
+		doc, err := utils.GetUrlDoc(extraUrl, npclient.SiteConfig.Cookie, npclient.HttpClient, npclient.SiteConfig.UserAgent)
 		if err != nil {
 			log.Errorf("failed to parse site page dom: %v", err)
 			continue
@@ -326,8 +330,11 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 	if err != nil {
 		return nil, fmt.Errorf("invalid site timezone: %s", siteConfig.Timezone)
 	}
+	// ua := ""
 	httpClient := &http.Client{}
-	httpClient.Transport = cloudflarebp.AddCloudFlareByPass(httpClient.Transport)
+	httpClient.Transport = cloudflarebp.AddCloudFlareByPass(httpClient.Transport, cloudflarebp.Options{
+		AddMissingHeaders: false,
+	})
 	client := &Site{
 		Name:       name,
 		Location:   location,
