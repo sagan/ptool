@@ -90,7 +90,7 @@ func PostUrlForJson(url string, data url.Values, v any, client *http.Client) err
 	}
 	err = json.Unmarshal(body, &v)
 	if err != nil {
-		log.Tracef("PostUrlForJson failed to unmarshal, response body: %s", string(body))
+		log.Tracef("PostUrlForJson error encountered when unmarshaling: %v", err)
 	}
 	return err
 }

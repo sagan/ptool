@@ -39,6 +39,7 @@ var (
 	startPage         = ""
 	downloadDir       = ""
 	outputFile        = ""
+	baseUrl           = ""
 )
 
 func init() {
@@ -56,6 +57,7 @@ func init() {
 	command.Flags().StringVar(&addCategory, "add-category", "", "Used with '--action add'. Set the category when adding torrent to client")
 	command.Flags().StringVar(&addTags, "add-tags", "", "Used with '--action add'. Set the tags when adding torrent to client (comma-separated)")
 	command.Flags().StringVar(&outputFile, "output-file", "", "Used with '--action printid'. Set the output file. (If not set, will use stdout)")
+	command.Flags().StringVar(&baseUrl, "base-url", "", "Manually set the base url of torrents list page. eg. adult.php or https://kp.m-team.cc/adult.php for M-Team site")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -107,7 +109,7 @@ mainloop:
 	for true {
 		now := utils.Now()
 		lastMarker = marker
-		torrents, marker, err = siteInstance.GetAllTorrents("size", false, marker)
+		torrents, marker, err = siteInstance.GetAllTorrents("size", false, marker, baseUrl)
 
 		if err != nil {
 			log.Errorf("Failed to fetch next page torrents: %v", err)

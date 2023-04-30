@@ -22,10 +22,12 @@ var command = &cobra.Command{
 
 var (
 	largestFlag = false
+	baseUrl     = ""
 )
 
 func init() {
 	command.Flags().BoolVarP(&largestFlag, "largest", "l", false, "Sort search result by torrent size in desc order")
+	command.Flags().StringVar(&baseUrl, "base-url", "", "Manually set the base url of search page. eg. adult.php or https://kp.m-team.cc/adult.php for M-Team site")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -37,7 +39,7 @@ func search(cmd *cobra.Command, args []string) {
 	keyword := strings.Join(args[1:], " ")
 	now := utils.Now()
 
-	torrents, err := siteInstance.SearchTorrents(keyword)
+	torrents, err := siteInstance.SearchTorrents(keyword, baseUrl)
 	if err != nil {
 		log.Fatal(err)
 	}

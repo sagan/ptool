@@ -1,6 +1,7 @@
 package config
 
 import (
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -147,6 +148,14 @@ func Get() *ConfigStruct {
 				}
 				Config.Clients[i].BrushTorrentSizeLimitValue = v
 
+				if client.Url != "" {
+					urlObj, err := url.Parse(client.Url)
+					if err != nil {
+						log.Fatalf("Failed to parse client %s url config: %v", client.Name, err)
+					}
+					Config.Clients[i].Url = urlObj.String()
+				}
+
 				if client.BrushMaxDownloadingTorrents == 0 {
 					Config.Clients[i].BrushMaxDownloadingTorrents = DEFAULT_CLIENT_BRUSH_MAX_DOWNLOADING_TORRENTS
 				}
@@ -172,6 +181,14 @@ func Get() *ConfigStruct {
 
 				if site.Name == "" {
 					Config.Sites[i].Name = site.Type
+				}
+
+				if site.Url != "" {
+					urlObj, err := url.Parse(site.Url)
+					if err != nil {
+						log.Fatalf("Failed to parse site %s url config: %v", Config.Sites[i].Name, err)
+					}
+					Config.Sites[i].Url = urlObj.String()
 				}
 
 				if site.Timezone == "" {
@@ -206,4 +223,28 @@ func (siteConfig *SiteConfigStruct) GetName() string {
 		id = siteConfig.Type
 	}
 	return id
+}
+
+// parse a site internal url (eg. special.php), return absolute url
+func (siteConfig *SiteConfigStruct) ParseSiteUrl(siteUrl string, appendQueryStringDelimiter bool) string {
+	pageUrl := ""
+	if siteUrl != "" {
+		if utils.IsUrl(siteUrl) {
+			pageUrl = siteUrl
+		} else {
+			if strings.HasPrefix(siteUrl, "/") {
+				siteUrl = siteUrl[1:]
+			}
+			pageUrl = siteConfig.Url + siteUrl
+		}
+	}
+
+	if appendQueryStringDelimiter {
+		if strings.Contains(pageUrl, "?") {
+			pageUrl += "&"
+		} else {
+			pageUrl += "?"
+		}
+	}
+	return pageUrl
 }

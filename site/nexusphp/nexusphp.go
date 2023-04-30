@@ -45,17 +45,16 @@ func (npclient *Site) GetSiteConfig() *config.SiteConfigStruct {
 	return npclient.SiteConfig
 }
 
-func (npclient *Site) SearchTorrents(keyword string) ([]site.Torrent, error) {
-	searchUrl := npclient.SiteConfig.SearchUrl
-	if searchUrl == "" {
-		searchUrl = npclient.SiteConfig.Url + "torrents.php"
-	}
-	if !strings.Contains(searchUrl, "%s") {
-		if strings.Contains(searchUrl, "?") {
-			searchUrl += "&"
+func (npclient *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Torrent, error) {
+	if baseUrl == "" {
+		if npclient.SiteConfig.SearchUrl != "" {
+			baseUrl = npclient.SiteConfig.SearchUrl
 		} else {
-			searchUrl += "?"
+			baseUrl = "torrents.php"
 		}
+	}
+	searchUrl := npclient.SiteConfig.ParseSiteUrl(baseUrl, true)
+	if !strings.Contains(searchUrl, "%s") {
 		searchUrl += "search=%s"
 	}
 	searchUrl = strings.Replace(searchUrl, "%s", url.PathEscape(keyword), 1)
@@ -135,7 +134,7 @@ func (npclient *Site) GetLatestTorrents(full bool) ([]site.Torrent, error) {
 	return latestTorrents, nil
 }
 
-func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string) (torrents []site.Torrent, nextPageMarker string, err error) {
+func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (torrents []site.Torrent, nextPageMarker string, err error) {
 	sortFields := map[string](string){
 		"name": "1",
 		"size": "5",
@@ -154,9 +153,15 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string) 
 	if pageMarker != "" {
 		page = utils.ParseInt(pageMarker)
 	}
-	pageUrl := "torrents.php?sort=" + sortFields[sort] + "&type=" + sortOrder + "&page=" + fmt.Sprint(page)
+
+	if baseUrl == "" {
+		baseUrl = "torrents.php"
+	}
+	pageUrl := npclient.SiteConfig.ParseSiteUrl(baseUrl, true)
+
+	queryString := "sort=" + sortFields[sort] + "&type=" + sortOrder + "&page=" + fmt.Sprint(page)
 	now := utils.Now()
-	doc, error := utils.GetUrlDoc(npclient.SiteConfig.Url+pageUrl, npclient.SiteConfig.Cookie, npclient.HttpClient)
+	doc, error := utils.GetUrlDoc(pageUrl+queryString, npclient.SiteConfig.Cookie, npclient.HttpClient)
 	if error != nil {
 		err = fmt.Errorf("failed to fetch torrents page dom: %v", error)
 		return
@@ -177,9 +182,9 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string) 
 		})
 		if lastPage > 0 {
 			page = lastPage
-			pageUrl := "torrents.php?sort=" + sortFields[sort] + "&type=" + sortOrder + "&page=" + fmt.Sprint(page)
+			queryString := "sort=" + sortFields[sort] + "&type=" + sortOrder + "&page=" + fmt.Sprint(page)
 			now = utils.Now()
-			doc, error = utils.GetUrlDoc(npclient.SiteConfig.Url+pageUrl, npclient.SiteConfig.Cookie, npclient.HttpClient)
+			doc, error = utils.GetUrlDoc(pageUrl+queryString, npclient.SiteConfig.Cookie, npclient.HttpClient)
 			if error != nil {
 				err = fmt.Errorf("failed to fetch torrents page dom: %v", error)
 				return

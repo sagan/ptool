@@ -82,6 +82,10 @@ var (
 			SelectorTorrentBlock:       `.torrent_wrap`,
 			SelectorTorrentTime:        `.time_col span:last-child`,
 		},
+		"hdarea": &config.SiteConfigStruct{
+			Type: "nexusphp",
+			Url:  "https://www.hdarea.co/",
+		},
 		"hdatmos": &config.SiteConfigStruct{
 			Type: "nexusphp",
 			Url:  "https://hdatmos.club/",
