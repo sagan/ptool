@@ -274,9 +274,9 @@ func (npclient *Site) sync() error {
 
 	// possibly parsing error or some problem
 	if siteStatus.UserName == "" && siteStatus.UserDownloaded == 0 && siteStatus.UserUploaded == 0 {
-		if log.GetLevel() >= log.TraceLevel {
-			log.Tracef("Site GetStatus got no data, possible a parser error")
-		}
+		log.TraceFn(func() []any {
+			return []any{"Site GetStatus got no data, possible a parser error"}
+		})
 	}
 	npclient.siteStatus = siteStatus
 

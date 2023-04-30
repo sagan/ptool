@@ -346,14 +346,15 @@ func updateIyuuDatabase(token string, infoHashes []string) error {
 				return record.Info_hash
 			})
 			iyuu.Db().Where("info_hash in ?", infoHashes).Delete(&iyuu.Torrent{})
-			for _, iyuuRecord := range iyuuRecords {
-				iyuu.Db().Create(&iyuu.Torrent{
+			iyuuTorrents := utils.Map(iyuuRecords, func(iyuuRecord iyuu.IyuuTorrentInfoHash) iyuu.Torrent {
+				return iyuu.Torrent{
 					InfoHash:       iyuuRecord.Info_hash,
 					Sid:            iyuuRecord.Sid,
 					Tid:            iyuuRecord.Torrent_id,
 					TargetInfoHash: targetInfoHash,
-				})
-			}
+				}
+			})
+			iyuu.Db().Create(&iyuuTorrents)
 		}
 
 		iyuu.Db().Clauses(clause.OnConflict{

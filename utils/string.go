@@ -19,6 +19,10 @@ func ContainsI(str string, substr string) bool {
 	)
 }
 
+func IsUrl(str string) bool {
+	return strings.HasPrefix(str, "http://") || strings.HasPrefix(str, "https://")
+}
+
 func ParseInt(str string) int64 {
 	str = strings.ReplaceAll(str, ",", "")
 	v, _ := strconv.ParseInt(str, 10, 0)

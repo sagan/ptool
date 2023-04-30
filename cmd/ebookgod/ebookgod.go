@@ -138,7 +138,7 @@ mainloop:
 			cntTorrents++
 
 			if action == "show" {
-				site.PrintTorrents([]site.Torrent{torrent}, "", now, cntTorrents != 1)
+				site.PrintTorrents([]site.Torrent{torrent}, "", now, cntTorrents != 1, siteInstance.GetName())
 			} else if action == "printid" {
 				str := fmt.Sprintf("%s\n", torrent.Id)
 				if outputFileFd != nil {

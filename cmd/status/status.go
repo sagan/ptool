@@ -162,7 +162,7 @@ func status(cmd *cobra.Command, args []string) {
 				fmt.Printf("Site %s: failed to get status\n", response.Name)
 			}
 			if response.SiteTorrents != nil {
-				site.PrintTorrents(response.SiteTorrents, filter, now, false)
+				site.PrintTorrents(response.SiteTorrents, filter, now, false, response.Name)
 				if i != len(responses)-1 {
 					fmt.Printf("\n")
 				}

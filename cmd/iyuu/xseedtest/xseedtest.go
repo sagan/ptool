@@ -10,8 +10,8 @@ import (
 
 var command = &cobra.Command{
 	Use:   "xseedtest",
-	Short: "Cross seed",
-	Long:  `Cross seed`,
+	Short: "Cross seed test",
+	Long:  `Cross seed test`,
 	Run:   xseed,
 }
 

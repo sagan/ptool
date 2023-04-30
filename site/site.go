@@ -91,27 +91,17 @@ func CreateSite(name string) (Site, error) {
 	return nil, fmt.Errorf("site %s not found", name)
 }
 
-func Print(siteTorrents []Torrent) {
-	for _, siteTorrent := range siteTorrents {
-		fmt.Printf(
-			"%s, %s, %s, %d, %d, HR=%t\n",
-			siteTorrent.Name,
-			utils.FormatTime(siteTorrent.Time),
-			utils.BytesSize(float64(siteTorrent.Size)),
-			siteTorrent.Seeders,
-			siteTorrent.Leechers,
-			siteTorrent.HasHnR,
-		)
-	}
-}
-
-func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool) {
+func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool, siteName string) {
 	if !noHeader {
-		fmt.Printf("%-40s  %10s  %-13s  %19s  %4s  %4s  %4s  %10s  %2s\n", "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "P")
+		fmt.Printf("%-40s  %10s  %-13s  %19s  %4s  %4s  %4s  %20s  %2s\n", "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "P")
 	}
 	for _, torrent := range torrents {
 		if filter != "" && !utils.ContainsI(torrent.Name, filter) {
 			continue
+		}
+		torrentId := torrent.Id
+		if siteName != "" {
+			torrentId = siteName + "." + torrentId
 		}
 		freeStr := ""
 		if torrent.HasHnR {
@@ -134,14 +124,14 @@ func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool) 
 			process = "0%"
 		}
 		utils.PrintStringInWidth(name, 40, true)
-		fmt.Printf("  %10s  %-13s  %19s  %4s  %4s  %4s  %10s  %2s\n",
+		fmt.Printf("  %10s  %-13s  %19s  %4s  %4s  %4s  %20s  %2s\n",
 			utils.BytesSize(float64(torrent.Size)),
 			freeStr,
 			utils.FormatTime(torrent.Time),
 			fmt.Sprint(torrent.Seeders),
 			fmt.Sprint(torrent.Leechers),
 			fmt.Sprint(torrent.Snatched),
-			torrent.Id,
+			torrentId,
 			process,
 		)
 	}

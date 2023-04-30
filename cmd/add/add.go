@@ -13,25 +13,28 @@ import (
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/site"
+	"github.com/sagan/ptool/utils"
 )
 
 var command = &cobra.Command{
-	Use:   "add <client> <site> <torrentIdOrUrl>...",
+	Use:   "add <client> <torrentIdOrUrl>...",
 	Short: "Add site torrents to client",
 	Long:  `Add site torrents to client.`,
-	Args:  cobra.MatchAll(cobra.MinimumNArgs(3), cobra.OnlyValidArgs),
+	Args:  cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	Run:   add,
 }
 
 var (
 	paused      = false
-	setCategory = ""
+	addCategory = ""
+	defaultSite = ""
 	addTags     = ""
 )
 
 func init() {
 	command.Flags().BoolVarP(&paused, "paused", "p", false, "Add torrents to client in paused state")
-	command.Flags().StringVar(&setCategory, "set-category", "", "Set category of added torrents.")
+	command.Flags().StringVar(&addCategory, "add-category", "", "Set category of added torrents.")
+	command.Flags().StringVar(&defaultSite, "site", "", "Set default site of torrents")
 	command.Flags().StringVar(&addTags, "add-tags", "", "Add tags to added torrent (comma-separated).")
 	cmd.RootCmd.AddCommand(command)
 }
@@ -41,21 +44,40 @@ func add(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	siteInstance, err := site.CreateSite(args[1])
-	if err != nil {
-		log.Fatal(err)
-	}
+
+	siteInstanceMap := make(map[string](site.Site))
 	errCnt := int64(0)
-	torrentIds := args[2:]
+	torrentIds := args[1:]
 	option := &client.TorrentOption{
 		Pause:    paused,
-		Category: setCategory,
+		Category: addCategory,
 	}
 	if addTags != "" {
 		option.Tags = strings.Split(addTags, ",")
 	}
 
 	for _, torrentId := range torrentIds {
+		siteName := defaultSite
+		if !utils.IsUrl(torrentId) {
+			i := strings.Index(torrentId, ".")
+			if i != -1 && i < len(torrentId)-1 {
+				siteName = torrentId[:i]
+				torrentId = torrentId[i+1:]
+			}
+		}
+		if siteName == "" {
+			fmt.Printf("torrent %s: no site provided", torrentId)
+			errCnt++
+			continue
+		}
+		if siteInstanceMap[siteName] == nil {
+			siteInstance, err := site.CreateSite(siteName)
+			if err != nil {
+				log.Fatalf("Failed to create site %s: %v", siteName, err)
+			}
+			siteInstanceMap[siteName] = siteInstance
+		}
+		siteInstance := siteInstanceMap[siteName]
 		torrentContent, _, err := siteInstance.DownloadTorrent(torrentId)
 		if err != nil {
 			fmt.Printf("add site %s torrent %s error: failed to get site torrent: %v\n", siteInstance.GetName(), torrentId, err)
