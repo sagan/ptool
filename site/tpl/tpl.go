@@ -274,6 +274,11 @@ var (
 			Url:     "https://ubits.club/",
 			Comment: "你堡",
 		},
+		"ultrahd": &config.SiteConfigStruct{
+			Type:    "nexusphp",
+			Url:     "https://ultrahd.net/",
+			Comment: "UltraHD",
+		},
 		"wintersakura": &config.SiteConfigStruct{
 			Type:    "nexusphp",
 			Url:     "https://wintersakura.net/",
