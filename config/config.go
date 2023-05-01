@@ -26,7 +26,6 @@ const (
 	DEFAULT_CLIENT_BRUSH_DEFAULT_UPLOAD_SPEED_LIMIT = int64(10 * 1024 * 1024)
 	DEFAULT_CLIENT_BRUSH_TORRENT_SIZE_LIMIT         = int64(1024 * 1024 * 1024 * 1024 * 1024) // 1PB, that's say, unlimited
 	DEFAULT_SITE_TORRENT_UPLOAD_SPEED_LIMIT         = int64(10 * 1024 * 1024)
-	VERSION                                         = "0.0.1"
 )
 
 type GroupConfigStruct struct {
