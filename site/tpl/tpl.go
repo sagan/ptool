@@ -71,6 +71,11 @@ var (
 			Url:     "https://cyanbug.net/",
 			Comment: "大青虫",
 		},
+		"dhtclub": &config.SiteConfigStruct{
+			Type:    "nexusphp",
+			Url:     "https://pt.dhtclub.com/",
+			Comment: "DHTCLUB PT",
+		},
 		"discfan": &config.SiteConfigStruct{
 			Type:    "nexusphp",
 			Url:     "https://discfan.net/",
@@ -180,6 +185,16 @@ var (
 			Url:     "https://www.icc2022.com/",
 			Comment: "冰淇淋",
 		},
+		"ilolicon": &config.SiteConfigStruct{
+			Type:    "nexusphp",
+			Url:     "https://share.ilolicon.com/",
+			Comment: "ilolicon PT",
+		},
+		"itzmx": &config.SiteConfigStruct{
+			Type:    "nexusphp",
+			Url:     "https://pt.itzmx.com/",
+			Comment: "PT分享站",
+		},
 		"joyhd": &config.SiteConfigStruct{
 			Type:    "nexusphp",
 			Url:     "https://www.joyhd.net/",
@@ -221,7 +236,7 @@ var (
 		"oshen": &config.SiteConfigStruct{
 			Type:    "nexusphp",
 			Url:     "https://www.oshen.win/",
-			Comment: "奥申",
+			Comment: "奥申，欧神",
 		},
 		"piggo": &config.SiteConfigStruct{
 			Type:    "nexusphp",
@@ -278,6 +293,11 @@ var (
 			Type:    "nexusphp",
 			Url:     "https://ultrahd.net/",
 			Comment: "UltraHD",
+		},
+		"uploads": &config.SiteConfigStruct{
+			Type:    "nexusphp",
+			Url:     "http://uploads.ltd/",
+			Comment: "Uploads 上传 | LTD 无限",
 		},
 		"wintersakura": &config.SiteConfigStruct{
 			Type:    "nexusphp",
