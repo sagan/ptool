@@ -64,7 +64,7 @@ func status(cmd *cobra.Command, args []string) {
 			}
 		}
 	}
-	names = config.ParseGroupAndOtherNames(names)
+	names = config.ParseGroupAndOtherNames(names...)
 
 	if len(names) == 0 {
 		log.Fatal("No sites or clients provided")

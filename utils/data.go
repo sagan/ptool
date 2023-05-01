@@ -71,3 +71,17 @@ func UniqueSlice[T comparable](slice []T) []T {
 	}
 	return list
 }
+
+// return de-duplicated slice that every member has unique key
+func UniqueSliceFn[TS any, TK comparable](slice []TS, keyFunc func(TS) TK) []TS {
+	keys := make(map[TK]bool)
+	list := []TS{}
+	for _, entry := range slice {
+		key := keyFunc(entry)
+		if !keys[key] {
+			keys[key] = true
+			list = append(list, entry)
+		}
+	}
+	return list
+}

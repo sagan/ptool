@@ -16,7 +16,7 @@ type Torrent struct {
 	InfoHash           string
 	Name               string
 	TrackerDomain      string
-	State              string // simplifiec state: seeding|downloading|completed|paused
+	State              string // simplified state: seeding|downloading|completed|paused|checking|<any others>...
 	LowLevelState      string // original state value returned by bt client
 	Atime              int64  // timestamp torrent added
 	Ctime              int64  // timestamp torrent completed. <=0 if not completed.
@@ -68,8 +68,8 @@ type TorrentOption struct {
 
 type Client interface {
 	GetTorrent(infoHash string) (*Torrent, error)
-	// state: downloading|uploading|paused|completed|_completed|_done|_error|_all
-	GetTorrents(state string, category string, showAll bool) ([]Torrent, error)
+	// stateFilter: _all|_active|_done, or any state value (possibly with a _ prefix)
+	GetTorrents(stateFilter string, category string, showAll bool) ([]Torrent, error)
 	AddTorrent(torrentContent []byte, option *TorrentOption, meta map[string](int64)) error
 	ModifyTorrent(infoHash string, option *TorrentOption, meta map[string](int64)) error
 	DeleteTorrents(infoHashes []string, deleteFiles bool) error
@@ -105,7 +105,8 @@ type RegInfo struct {
 type ClientCreator func(*RegInfo) (Client, error)
 
 var (
-	Registry []*RegInfo = make([]*RegInfo, 0)
+	Registry      []*RegInfo = make([]*RegInfo, 0)
+	PSEUDO_STATES            = []string{"_all", "_active", "_done"}
 )
 
 func Register(regInfo *RegInfo) {

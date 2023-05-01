@@ -251,7 +251,7 @@ func GetGroupSites(name string) []string {
 }
 
 // parse an slice of groupOrOther names, expand group name to site names, return the final slice of names
-func ParseGroupAndOtherNames(names []string) []string {
+func ParseGroupAndOtherNames(names ...string) []string {
 	names2 := []string{}
 	for _, name := range names {
 		groupSites := GetGroupSites(name)

@@ -15,8 +15,8 @@ var command = &cobra.Command{
 	Use:   "setcategory <client> <category> <infoHashes>...",
 	Short: "Set category of torrents in client",
 	Long: `Set category of torrents in client
-infoHashes...: infoHash list of torrents. It's possible to use some special values to target multiple torrents:
-_all, _completed (or _done), _error`,
+<infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
+_all, _active, _done,  _downloading, _seeding, _paused, _completed, _error`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(3), cobra.OnlyValidArgs),
 	Run:  createtags,
 }
@@ -50,6 +50,8 @@ func createtags(cmd *cobra.Command, args []string) {
 			} else {
 				infoHashes = append(infoHashes, hashes...)
 			}
+		} else {
+			infoHashes = append(infoHashes, arg)
 		}
 	}
 

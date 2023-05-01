@@ -77,12 +77,12 @@ func xseed(cmd *cobra.Command, args []string) {
 	}
 	if includeSites != "" {
 		includeSitesMode = true
-		sites := config.ParseGroupAndOtherNames(strings.Split(includeSites, ","))
+		sites := config.ParseGroupAndOtherNames(strings.Split(includeSites, ",")...)
 		for _, site := range sites {
 			includeSitesFlag[site] = true
 		}
 	} else if excludeSites != "" {
-		sites := config.ParseGroupAndOtherNames(strings.Split(excludeSites, ","))
+		sites := config.ParseGroupAndOtherNames(strings.Split(excludeSites, ",")...)
 		for _, site := range sites {
 			excludeSitesFlag[site] = true
 		}

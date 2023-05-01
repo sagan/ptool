@@ -147,6 +147,8 @@ func (qbtorrent *apiTorrentInfo) ToTorrentState() string {
 		state = "paused"
 	case "checkingUP", "checkingDL", "checkingResumeData":
 		state = "checking"
+	case "error", "missingFiles", "unknown":
+		state = "error"
 	default:
 		state = qbtorrent.State
 	}

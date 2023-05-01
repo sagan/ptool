@@ -15,8 +15,8 @@ var command = &cobra.Command{
 	Use:   "resume <client> <infoHash>...",
 	Short: "Resume torrents of client",
 	Long: `Resume torrents of client
-infoHashes...: infoHash list of torrents. It's possible to use some special values to target multiple torrents:
-_all, _completed (or _done), _error
+<infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
+_all, _active, _done,  _downloading, _seeding, _paused, _completed, _error
 `,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	Run:  resume,
@@ -48,6 +48,8 @@ func resume(cmd *cobra.Command, args []string) {
 			} else {
 				infoHashes = append(infoHashes, hashes...)
 			}
+		} else {
+			infoHashes = append(infoHashes, arg)
 		}
 	}
 

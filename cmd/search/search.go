@@ -46,7 +46,7 @@ func init() {
 }
 
 func search(cmd *cobra.Command, args []string) {
-	sitenames := config.GetGroupSites(args[0])
+	sitenames := config.ParseGroupAndOtherNames(args[0])
 	if sitenames == nil {
 		sitenames = []string{args[0]}
 	}

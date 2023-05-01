@@ -569,6 +569,9 @@ func (qbclient *Client) GetTorrent(infoHash string) (*client.Torrent, error) {
 }
 
 func (qbclient *Client) GetTorrents(stateFilter string, category string, showAll bool) ([]client.Torrent, error) {
+	if strings.HasPrefix(stateFilter, "_") && slices.Index(client.PSEUDO_STATES, stateFilter) == -1 {
+		stateFilter = stateFilter[1:]
+	}
 	torrents := make([]client.Torrent, 0)
 	err := qbclient.sync()
 	if err != nil {
@@ -579,17 +582,13 @@ func (qbclient *Client) GetTorrents(stateFilter string, category string, showAll
 		if category != "" && category != qbtorrent.Category {
 			continue
 		}
-		if !showAll && qbtorrent.Dlspeed <= 1024 && qbtorrent.Upspeed <= 1024 {
+		if (!showAll || stateFilter == "_active") && qbtorrent.Dlspeed <= 1024 && qbtorrent.Upspeed <= 1024 {
 			continue
 		}
 		state := qbtorrent.ToTorrentState()
-		if stateFilter != "" && stateFilter != "_all" {
-			if stateFilter == "_completed" || stateFilter == "_done" {
+		if stateFilter != "" && stateFilter != "_all" && stateFilter != "_active" {
+			if stateFilter == "_done" {
 				if state != "completed" && state != "seeding" {
-					continue
-				}
-			} else if stateFilter == "_error" {
-				if state != "error" && state != "missingFiles" && state != "unknown" {
 					continue
 				}
 			} else if stateFilter != state {

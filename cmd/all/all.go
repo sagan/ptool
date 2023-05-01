@@ -20,6 +20,7 @@ import (
 	_ "github.com/sagan/ptool/cmd/resume"
 	_ "github.com/sagan/ptool/cmd/search"
 	_ "github.com/sagan/ptool/cmd/setcategory"
+	_ "github.com/sagan/ptool/cmd/show"
 	_ "github.com/sagan/ptool/cmd/sites"
 	_ "github.com/sagan/ptool/cmd/statscmd"
 	_ "github.com/sagan/ptool/cmd/status"
