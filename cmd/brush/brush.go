@@ -48,7 +48,7 @@ func brush(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	sitenames := config.ParseGroupAndOtherNames(args[1:]...)
+	sitenames := config.ParseGroupAndOtherNamesWithoutDeduplicate(args[1:]...)
 
 	if !ordered {
 		rand.Shuffle(len(sitenames), func(i, j int) { sitenames[i], sitenames[j] = sitenames[j], sitenames[i] })

@@ -1,10 +1,10 @@
 # ptool
 
-自用的 PT (private tracker) 网站辅助工具。提供全自动刷流(brush)、BT客户端控制、自动辅种(使用 iyuu 接口)等功能。
+自用的 PT (private tracker) 网站辅助工具。提供全自动刷流(brush)、自动辅种(使用 iyuu 接口)、BT客户端控制等功能。
 
 主要特性：
 
-* 使用 Go 开发的纯 CLI 程序。单文件可执行程序，没有外部依赖。
+* 使用 Go 开发的纯 CLI 程序。单文件可执行程序，没有外部依赖。支持 Windows / Linux、x64 / arm64 等多种环境、架构。
 * 无状态(stateless)：程序自身不保存任何状态、不在后台持续运行。“刷流”等任务需要使用 cron job 等方式定时运行本程序。
 * 使用简单。只需5分钟时间，配置 BT 客户端地址、PT 网站地址和 cookie 即可开始全自动刷流。
 * 目前支持的 BT 客户端： qBittorrent 4.1+。
@@ -37,7 +37,6 @@ cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 
 使用 cron job / 计划任务等方式定时执行上面的刷流任务命令（例如每隔 10 分钟执行一次）即可。
 
-
 ## 配置文件
 
 程序支持使用 toml 或 yaml 格式的配置文件（```ptool.toml``` 或 ```ptool.yaml```），推荐使用前者。
@@ -67,7 +66,7 @@ url = "https://kp.m-team.cc/" # 站点首页 URL
 cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 ```
 
-推荐使用“方式 1”。程序内置了对大部分国内 NexusPHP PT 站点的支持。站点 ID 通常为 PT 网站域名的主体部分（不含次级域名和 TLD 部分），例如 BTSCHOOL ( https://pt.btschool.club/ )的站点 ID 是 btschool。部分 PT 网站也可以使用别名(alias)配置，例如 M-TEAM ( https://kp.m-team.cc/ )在本程序配置文件里的 type 设为 "m-team" 或 "mteam" 均可。参考程序代码根目录下的 site/tpl/tpl.go 文件查看所有支持的 PT 站点。
+推荐使用“方式 1”。程序内置了对大部分国内 NexusPHP PT 站点的支持。站点 ID 通常为 PT 网站域名的主体部分（不含次级域名和 TLD 部分），例如 BTSCHOOL ( https://pt.btschool.club/ )的站点 ID 是 btschool。部分 PT 网站也可以使用别名(alias)配置，例如 M-TEAM ( https://kp.m-team.cc/ )在本程序配置文件里的 type 设为 "m-team" 或 "mteam" 均可。运行 ```ptool sites``` 查看所有本程序内置支持的 PT 站点列表。本程序没有内置支持的 PT 站点必须通过“方式 2”配置。 
 
 参考程序代码根目录下的 ```ptool.example.toml``` 和 ```ptool.example.yaml``` 示例配置文件了解所有可用的配置项。
 
@@ -81,17 +80,19 @@ cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 ptool <command> args...
 ```
 
-部分常用的 &lt;command&gt; 包括:
+所有可用的 &lt;command&gt; 包括:
 
-* brush : 刷流。
+* brush : 自动刷流。
 * iyuu : 使用 iyuu 接口自动辅种。
-* clientctl : BT 客户端控制。
 * status : 显示 BT 客户端或 PT 站点当前状态信息。
 * stats : 显示刷流任务流量统计。
 * search : 在某个站点搜索指定关键词的种子
 * add : 将某个站点的指定种子添加到 BT 客户端。
 * addlocal : 将本地的种子文件添加到 BT 客户端。
-* delete : 从某个 BT 客户端里删除种子及其文件。
+* BT 客户端控制命令集: clientctl / show / pause / resume / delete / reannounce / recheck / getcategories / setcategory / gettags / createtags /deletetags
+* parsetorrent : 显示种子(torrent)文件信息
+* sites : 显示本程序内置支持的所有 PT 站点列表。
+* version : 显示本程序版本信息。
 
 运行 ```ptool``` 查看程序支持的所有命令列表；运行 ```ptool <command> -h``` 查看指定命令的参数格式和使用说明。
 
@@ -134,7 +135,7 @@ ptool brush local mteam
 
 ### 自动辅种 (iyuu)
 
-iyuu 命令通过 [iyuu 接口](https://api.iyuu.cn/docs.php) 提供自动辅种功能。
+iyuu 命令通过 [iyuu 接口](https://api.iyuu.cn/docs.php) 提供自动辅种(cross seed)功能。
 
 #### iyuu 配置
 
@@ -168,7 +169,11 @@ ptool iyuu xseed <client>...
 
 iyuu xseed 子命令支持很多可选参数。运行 ```ptool iyuu xseed -h``` 查看所有可选参数使用说明。
 
-### BT 客户端控制 (clientctl)
+### BT 客户端控制命令集
+
+提供了一系列管理、控制 BT 客户端的命令。
+
+#### 读取/修改 BT 客户端配置 (clientctl)
 
 ```
 ptool clientctl <client> [<option>[=value] ...]
@@ -190,6 +195,54 @@ ptool clientctl local
 
 # 设置 local 客户端的全局上传速度限制为 10MB/s
 ptool clientctl local global_upload_speed_limit=10M
+```
+
+#### 显示信息 / 暂停 / 恢复 / 删除 / 强制汇报 / 强制检测Hash 客户端里种子 (show / pause / resume / delete / reannounce / recheck)
+
+命令格式均为：
+
+```
+ptool <command> <infoHash>...
+```
+
+参数为指定的 BT 客户端里需要操作的种子的 infoHash 列表。也可以使用以下特殊值参数操作多个种子：
+
+* _all : 所有种子
+* _done : 所有已完成的种子（无论是否正在做种）
+* _active : 当前正在活动（上传或下载）的种子
+* _error : 状态为“出错”的种子
+* _downloading / _seeding / _paused / _complete : 状态为正在下载 / 做种 / 暂停下载 / 已完成的种子
+
+示例：
+
+```
+# 强制立即汇报所有种子
+ptool reannounce local _all
+
+# 恢复下载/做种所有种子
+ptool resume local _all
+
+# 从客户端删除指定种子（默认同时删除文件）
+ptool delete local 31a615d5984cb63c6f999f72bb3961dce49c194a
+```
+
+#### 管理 BT 客户端里的的种子分类 / 标签 (getcategories / setcategory / gettags / createtags /deletetags)
+
+```
+# 获取所有分类
+ptool getcategories <client>
+
+# 修改种子的所属分类
+ptool setcategory <client> <category> <infoHashes>...
+
+# 获取所有标签(tag)
+ptool gettags <client>
+
+# 创建新的标签
+ptool createtags <client> <tags>...
+
+# 删除标签
+ptool deletetags <client> <tags>...
 ```
 
 ### 显示 BT 客户端或 PT 站点状态 (status)
@@ -216,6 +269,71 @@ ptool status <clientOrSite>...
 ptool stats [client...]
 ```
 
-显示 BT 客户端的刷流任务流量统计信息（下载流量、上传流量总和）。本功能默认不启用，如需启用，在 ptool.yaml 配置文件的最上方里增加一行：```brushEnableStats: true``` 配置项。启用刷流统计后，刷流任务会使用 ptool.yaml 配置文件相同目录下的 "ptool_stats.txt" 文件存储所需保存的信息。
+显示 BT 客户端的刷流任务流量统计信息（下载流量、上传流量总和）。本功能默认不启用，如需启用，在 ptool.toml 配置文件的最上方里增加一行：```brushEnableStats: true``` 配置项。启用刷流统计后，刷流任务会使用 ptool.toml 配置文件相同目录下的 "ptool_stats.txt" 文件存储所需保存的信息。
 
 只有刷流任务添加和管理的 BT 客户端的种子（即 ```_brush``` 分类的种子）的流量信息会被记录和统计。目前设计只有在刷流任务从 BT 客户端删除某个种子时才会记录和统计该种子产生的流量信息。
+
+### 添加站点种子到 BT 客户端 (add)
+
+```
+ptool add <client> <torrentIdOrUrl>...
+```
+
+示例：
+
+```
+ptool add local mteam.488424
+ptool add local --site mteam 488424
+ptool add local --site mteam "https://kp.m-team.cc/details.php?id=488424"
+ptool add local --site mteam "https://kp.m-team.cc/download.php?id=488424"
+```
+
+以上几条命令均可以将 M-Team 站点上ID为 [488424](https://kp.m-team.cc/details.php?id=488424&hit=1)  的种子添加到 "local" BT客户端。
+
+### 添加本地种子到 BT 客户端 (addlocal)
+
+```
+ptool addlocal <client> <filename.torrent>...
+```
+
+将本地硬盘里的种子文件添加的 BT 客户端。
+
+
+### 搜索 PT 站点种子 (search)
+
+```
+ptool search <sites> <keyword>
+```
+
+&lt;sites&gt; 参数为需要所搜索的 PT 站点，可以使用 "," 分割提供多个站点。可以使用 "_all" 搜索所有已配置的 PT 站点。
+
+可以用 ```ptool add``` 命令将搜索结果列表中的种子添加到 BT 客户端。
+
+### 电子书战神 (ebookgod)
+
+提供一个 ebookgod 命令用于批量下载 PT 网站里体积最小的种子做种。
+
+```
+# 默认显示 PT 站点上找到的体积最小的 100 个种子列表
+ptool ebookgod <site>
+
+# 下载找到的种子到当前目录
+ptool ebookgod <site> --action download
+
+
+# 直接将种子添加到 "local" BT 客户端里
+ptool ebookgod <site> --action add --add-client local
+```
+
+参数：
+* -m int : 最多下载多少个种子。默认 100.
+* --min-torrent-size string : 种子大小的最小值限制。默认为 0。
+* --max-torrent-size string : 种子大小的最大值限制。默认为 "100MB"。
+
+### 显示种子文件信息 (parsetorrent)
+
+```
+ptool parsetorrent file.torrent...
+```
+
+显示本地硬盘里的种子文件的元信息。

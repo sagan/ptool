@@ -250,8 +250,7 @@ func GetGroupSites(name string) []string {
 	return nil
 }
 
-// parse an slice of groupOrOther names, expand group name to site names, return the final slice of names
-func ParseGroupAndOtherNames(names ...string) []string {
+func ParseGroupAndOtherNamesWithoutDeduplicate(names ...string) []string {
 	names2 := []string{}
 	for _, name := range names {
 		groupSites := GetGroupSites(name)
@@ -261,7 +260,13 @@ func ParseGroupAndOtherNames(names ...string) []string {
 			names2 = append(names2, name)
 		}
 	}
-	return utils.UniqueSlice(names2)
+	return names2
+}
+
+// parse an slice of groupOrOther names, expand group name to site names, return the final slice of names
+func ParseGroupAndOtherNames(names ...string) []string {
+	names = ParseGroupAndOtherNamesWithoutDeduplicate(names...)
+	return utils.UniqueSlice(names)
 }
 
 func (siteConfig *SiteConfigStruct) GetName() string {

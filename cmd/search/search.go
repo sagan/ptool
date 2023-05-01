@@ -21,10 +21,10 @@ type SearchResult struct {
 }
 
 var command = &cobra.Command{
-	Use:   "search <siteOrGroup> <keyword>",
+	Use:   "search <siteOrGroups> <keyword>",
 	Short: "Search torrents by keyword in a site",
 	Long: `Search torrents by keyword in a site
-siteOrGroup: name of a site or group. Can use "_all" to use all sites.
+siteOrGroups: A comma-separated name list of sites or groups. Can use "_all" to search all sites.
 `,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	Run:  search,
@@ -46,13 +46,8 @@ func init() {
 }
 
 func search(cmd *cobra.Command, args []string) {
-	sitenames := config.ParseGroupAndOtherNames(args[0])
-	if sitenames == nil {
-		sitenames = []string{args[0]}
-	}
-	if len(sitenames) == 0 {
-		log.Fatalf("No search sites provided")
-	}
+	sitenames := config.ParseGroupAndOtherNames(strings.Split(args[0], ",")...)
+
 	siteInstancesMap := map[string](site.Site){}
 	for _, sitename := range sitenames {
 		siteInstance, err := site.CreateSite(sitename)

@@ -14,9 +14,9 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "parsetorrent file.torrent",
-	Short: "Parse torrent file and show it's content",
-	Long:  `Parse torrent file and show it's content`,
+	Use:   "parsetorrent file.torrent...",
+	Short: "Parse torrent files and show their content",
+	Long:  `Parse torrent files and show their content`,
 	Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	Run:   parsetorrent,
 }
