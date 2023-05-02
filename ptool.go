@@ -1,6 +1,8 @@
 package main
 
 import (
+	_ "time/tzdata"
+
 	"github.com/sagan/ptool/cmd"
 
 	_ "github.com/sagan/ptool/client/all"

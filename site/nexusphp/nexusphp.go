@@ -328,11 +328,18 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 	}
 	location, err := time.LoadLocation(siteConfig.Timezone)
 	if err != nil {
-		return nil, fmt.Errorf("invalid site timezone: %s", siteConfig.Timezone)
+		return nil, fmt.Errorf("invalid site timezone %s: %v", siteConfig.Timezone, err)
 	}
-	// ua := ""
 	httpClient := &http.Client{}
-	httpClient.Transport = cloudflarebp.AddCloudFlareByPass(httpClient.Transport, cloudflarebp.Options{
+	transport := &http.Transport{}
+	if config.SiteProxy != "" {
+		proxyUrl, err := url.Parse(config.SiteProxy)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse siteProxy %s: %v", config.SiteProxy, err)
+		}
+		transport.Proxy = http.ProxyURL(proxyUrl)
+	}
+	httpClient.Transport = cloudflarebp.AddCloudFlareByPass(transport, cloudflarebp.Options{
 		AddMissingHeaders: false,
 	})
 	client := &Site{

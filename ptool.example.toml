@@ -1,4 +1,5 @@
 iyuuToken = "" # iyuu token。用于自动辅种功能
+#siteProxy = "http://127.0.0.1:1080" # 使用代理访问 PT 站点。（不适用于访问 BT 客户端）
 #userAgent = "" #  所有站点默认使用的 ua。
 #brushEnableStats = false # 启用刷流统计功能
 #treatZeroFreeDiskSpaceAsError = false # 如启用。BT客户端返回的硬盘剩余空间“0”将被认为是错误值。
