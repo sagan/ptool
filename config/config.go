@@ -65,6 +65,7 @@ type SiteConfigStruct struct {
 	TorrentsExtraUrls            []string `yaml:"torrentsExtraUrls"`
 	Cookie                       string   `yaml:"cookie"`
 	UserAgent                    string   `yaml:"userAgent"`
+	Proxy                        string   `yaml:"proxy"`
 	TorrentUploadSpeedLimit      string   `yaml:"uploadSpeedLimit"`
 	GlobalHnR                    bool     `yaml:"globalHnR"`
 	Timezone                     string   `yaml:"timezone"`

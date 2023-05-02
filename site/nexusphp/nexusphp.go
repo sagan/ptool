@@ -332,10 +332,14 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 	}
 	httpClient := &http.Client{}
 	transport := &http.Transport{}
-	if config.SiteProxy != "" {
-		proxyUrl, err := url.Parse(config.SiteProxy)
+	proxy := siteConfig.Proxy
+	if proxy == "" {
+		proxy = config.SiteProxy
+	}
+	if proxy != "" {
+		proxyUrl, err := url.Parse(proxy)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse siteProxy %s: %v", config.SiteProxy, err)
+			return nil, fmt.Errorf("failed to parse siteProxy %s: %v", proxy, err)
 		}
 		transport.Proxy = http.ProxyURL(proxyUrl)
 	}

@@ -21,6 +21,7 @@ password = "adminadmin"
 [[sites]]
 type = "mteam"
 cookie = "cookie_here"
+#proxy = "http://127.0.0.1:1080" # 访问该站点使用的代理。优先级高于全局的 siteProxy 配置。
 #userAgent = "" # 部分站点 cookie 绑定 ua。默认使用 Chrome ua。
 #brushUrl = "https://kp.m-team.cc/adult.php" # 单独设置刷流种子列表页 url。如不指定，np 使用 torrents.php
 #timezone = "Asia/Shanghai" # 网站页面显示时间的时区
