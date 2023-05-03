@@ -317,8 +317,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	}
 
 	// if still not enough free space, delete ALL stalled incomplete torrents
-	if (freespace >= 0 && freespace+freespaceChange <= option.MinDiskSpace) ||
-		(freespace == -1 && freespaceChange <= option.MinDiskSpace) {
+	if freespace >= 0 && freespace+freespaceChange <= option.MinDiskSpace {
 		for _, torrent := range clientTorrents {
 			if clientTorrentsMap[torrent.InfoHash].DeleteFlag || !isTorrentStalled(&torrent) {
 				continue
@@ -369,8 +368,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	}
 
 	// if still not enough free space, mark ALL torrents as stall
-	if (freespace >= 0 && freespace+freespaceChange < option.MinDiskSpace) ||
-		(freespace == -1 && freespaceChange < option.MinDiskSpace) {
+	if freespace >= 0 && freespace+freespaceChange < option.MinDiskSpace {
 		for _, torrent := range clientTorrents {
 			if clientTorrentsMap[torrent.InfoHash].DeleteFlag || clientTorrentsMap[torrent.InfoHash].StallFlag {
 				continue
