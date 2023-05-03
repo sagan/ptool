@@ -488,13 +488,16 @@ func rateSiteTorrent(siteTorrent *site.Torrent, brushOption *BrushOptionStruct) 
 		score = 0
 		return
 	}
-	if brushOption.Now-siteTorrent.Time >= 86400 {
-		score = 0
-		return
-	} else if brushOption.Now-siteTorrent.Time >= 7200 {
-		if siteTorrent.Leechers < 500 {
+	// 部分站点定期将旧种重新置顶免费。这类种子仍然可以获得很好的上传速度。
+	if brushOption.Now-siteTorrent.Time <= 86400*30 {
+		if brushOption.Now-siteTorrent.Time >= 86400 {
 			score = 0
 			return
+		} else if brushOption.Now-siteTorrent.Time >= 7200 {
+			if siteTorrent.Leechers < 500 {
+				score = 0
+				return
+			}
 		}
 	}
 
