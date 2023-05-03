@@ -56,3 +56,23 @@ func SanitizeText(text string) string {
 	text = strings.TrimSpace(text)
 	return text
 }
+
+// append a proper ? or & to url
+func AppendUrlQueryStringDelimiter(url string) string {
+	if !strings.HasSuffix(url, "?") {
+		if !strings.Contains(url, "?") {
+			url += "?"
+		} else if !strings.HasSuffix(url, "&") {
+			url += "&"
+		}
+	}
+	return url
+}
+
+func AppendUrlQueryString(url string, qs string) string {
+	url = AppendUrlQueryStringDelimiter(url)
+	if strings.HasPrefix(qs, "?") || strings.HasPrefix(qs, "&") {
+		qs = qs[1:]
+	}
+	return url + qs
+}

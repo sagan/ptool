@@ -81,6 +81,8 @@ func (npclient *Site) DownloadTorrent(url string) ([]byte, string, error) {
 			return npclient.DownloadTorrentById(m[idRegexp.SubexpIndex("id")])
 		}
 	}
+	// skip NP download notice. see https://github.com/xiaomlove/nexusphp/blob/php8/public/download.php
+	url = utils.AppendUrlQueryString(url, "letdown=1")
 	res, header, err := utils.FetchUrl(url, npclient.SiteConfig.Cookie, npclient.HttpClient, npclient.SiteConfig.UserAgent)
 	if err != nil {
 		return nil, "", fmt.Errorf("can not fetch torrents from site: %v", err)
@@ -97,7 +99,7 @@ func (npclient *Site) DownloadTorrent(url string) ([]byte, string, error) {
 }
 
 func (npclient *Site) DownloadTorrentById(id string) ([]byte, string, error) {
-	res, header, err := utils.FetchUrl(npclient.SiteConfig.Url+"download.php?https=1&id="+fmt.Sprint(id), npclient.SiteConfig.Cookie, npclient.HttpClient, npclient.SiteConfig.UserAgent)
+	res, header, err := utils.FetchUrl(npclient.SiteConfig.Url+"download.php?https=1&letdown=1&id="+fmt.Sprint(id), npclient.SiteConfig.Cookie, npclient.HttpClient, npclient.SiteConfig.UserAgent)
 	if err != nil {
 		return nil, "", fmt.Errorf("can not fetch torrents from site: %v", err)
 	}

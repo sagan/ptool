@@ -292,11 +292,7 @@ func (siteConfig *SiteConfigStruct) ParseSiteUrl(siteUrl string, appendQueryStri
 	}
 
 	if appendQueryStringDelimiter {
-		if strings.Contains(pageUrl, "?") {
-			pageUrl += "&"
-		} else {
-			pageUrl += "?"
-		}
+		pageUrl = utils.AppendUrlQueryStringDelimiter(pageUrl)
 	}
 	return pageUrl
 }
