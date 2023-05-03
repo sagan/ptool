@@ -77,10 +77,6 @@ func brush(cmd *cobra.Command, args []string) {
 			continue
 		}
 		noadd := !force && status.NoAdd
-		if status.FreeSpaceOnDisk == 0 && config.Get().TreatZeroFreeDiskSpaceAsError {
-			log.Warnf("Warn: FreeSpaceOnDisk=0, treat it as an error value.")
-			status.FreeSpaceOnDisk = 1024 * 1024 * 1024 * 1024
-		}
 		var siteTorrents []site.Torrent
 		if status.UploadSpeedLimit > 0 && (status.UploadSpeedLimit < SLOW_UPLOAD_SPEED ||
 			(float64(status.UploadSpeed)/float64(status.UploadSpeedLimit)) >= BANDWIDTH_FULL_PERCENT) {

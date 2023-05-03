@@ -45,7 +45,7 @@ type TorrentContentFile struct {
 }
 
 type Status struct {
-	FreeSpaceOnDisk    int64 // -1 means unknown / unlimited
+	FreeSpaceOnDisk    int64 // -1 means unknown
 	DownloadSpeed      int64
 	UploadSpeed        int64
 	DownloadSpeedLimit int64 // <= 0 means no limit

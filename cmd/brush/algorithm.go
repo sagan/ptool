@@ -59,13 +59,14 @@ type AlgorithmOperationTorrent struct {
 }
 
 type AlgorithmResult struct {
-	DeleteTorrents []AlgorithmOperationTorrent // torrents that will be removed from client
-	StallTorrents  []AlgorithmModifyTorrent    // torrents that will stop downloading but still uploading
-	ResumeTorrents []AlgorithmOperationTorrent // resume paused / errored torrents
-	ModifyTorrents []AlgorithmModifyTorrent    // modify meta info of these torrents
-	AddTorrents    []AlgorithmAddTorrent       // new torrents that will be added to client
-	CanAddMore     bool                        // client is able to add more torrents
-	Msg            string
+	DeleteTorrents  []AlgorithmOperationTorrent // torrents that will be removed from client
+	StallTorrents   []AlgorithmModifyTorrent    // torrents that will stop downloading but still uploading
+	ResumeTorrents  []AlgorithmOperationTorrent // resume paused / errored torrents
+	ModifyTorrents  []AlgorithmModifyTorrent    // modify meta info of these torrents
+	AddTorrents     []AlgorithmAddTorrent       // new torrents that will be added to client
+	CanAddMore      bool                        // client is able to add more torrents
+	FreeSpaceChange int64                       // estimated free space change after apply above operations
+	Msg             string
 }
 
 type candidateTorrentStruct struct {
@@ -119,6 +120,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	cntTorrents := int64(len(clientTorrents))
 	cntDownloadingTorrents := int64(0)
 	freespace := clientStatus.FreeSpaceOnDisk
+	freespaceChange := int64(0)
 	estimateUploadSpeed := clientStatus.UploadSpeed
 
 	var candidateTorrents []candidateTorrentStruct
@@ -290,7 +292,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	for _, deleteTorrent := range deleteCandidateTorrents {
 		torrent := clientTorrentsMap[deleteTorrent.InfoHash].Torrent
 		shouldDelete := false
-		if deleteTorrent.Score >= DELETE_TORRENT_IMMEDIATELY_STORE || freespace <= option.MinDiskSpace {
+		if deleteTorrent.Score >= DELETE_TORRENT_IMMEDIATELY_STORE || (freespace >= 0 && freespace <= option.MinDiskSpace) {
 			shouldDelete = true
 		} else if torrent.Ctime <= 0 &&
 			torrent.Meta["stt"] > 0 &&
@@ -305,7 +307,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 			Name:     torrent.Name,
 			Msg:      deleteTorrent.Msg,
 		})
-		freespace += torrent.SizeCompleted
+		freespaceChange += torrent.SizeCompleted
 		estimateUploadSpeed -= torrent.UploadSpeed
 		clientTorrentsMap[torrent.InfoHash].DeleteFlag = true
 		if countAsDownloading(torrent, option.Now) {
@@ -315,7 +317,8 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	}
 
 	// if still not enough free space, delete ALL stalled incomplete torrents
-	if freespace <= option.MinDiskSpace {
+	if (freespace >= 0 && freespace+freespaceChange <= option.MinDiskSpace) ||
+		(freespace == -1 && freespaceChange <= option.MinDiskSpace) {
 		for _, torrent := range clientTorrents {
 			if clientTorrentsMap[torrent.InfoHash].DeleteFlag || !isTorrentStalled(&torrent) {
 				continue
@@ -325,7 +328,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 				Name:     torrent.Name,
 				Msg:      "delete stalled incomplete torrents due to insufficient disk space",
 			})
-			freespace += torrent.SizeCompleted
+			freespaceChange += torrent.SizeCompleted
 			estimateUploadSpeed -= torrent.UploadSpeed
 			clientTorrentsMap[torrent.InfoHash].DeleteFlag = true
 			if countAsDownloading(&torrent, option.Now) {
@@ -351,7 +354,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 				Name:     torrent.Name,
 				Msg:      deleteTorrent.Msg + " (delete due to max torrents limit)",
 			})
-			freespace += torrent.SizeCompleted
+			freespaceChange += torrent.SizeCompleted
 			estimateUploadSpeed -= torrent.UploadSpeed
 			clientTorrentsMap[torrent.InfoHash].DeleteFlag = true
 			if countAsDownloading(torrent, option.Now) {
@@ -366,7 +369,8 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	}
 
 	// if still not enough free space, mark ALL torrents as stall
-	if freespace < option.MinDiskSpace {
+	if (freespace >= 0 && freespace+freespaceChange < option.MinDiskSpace) ||
+		(freespace == -1 && freespaceChange < option.MinDiskSpace) {
 		for _, torrent := range clientTorrents {
 			if clientTorrentsMap[torrent.InfoHash].DeleteFlag || clientTorrentsMap[torrent.InfoHash].StallFlag {
 				continue
@@ -386,7 +390,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	}
 
 	// mark torrents as resume
-	if freespace >= utils.Max(option.MinDiskSpace, RESUME_TORRENTS_FREE_DISK_SPACE_TIER) {
+	if freespace+freespaceChange >= utils.Max(option.MinDiskSpace, RESUME_TORRENTS_FREE_DISK_SPACE_TIER) {
 		for _, torrent := range clientTorrents {
 			if torrent.State != "error" || torrent.UploadSpeed < option.SlowUploadSpeedTier*4 ||
 				isTorrentStalled(&torrent) || clientTorrentsMap[torrent.InfoHash].ResumeFlag {
@@ -433,7 +437,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	}
 
 	// add new torrents
-	if freespace > option.MinDiskSpace && cntTorrents <= option.MaxTorrents {
+	if (freespace == -1 || freespace+freespaceChange > option.MinDiskSpace) && cntTorrents <= option.MaxTorrents {
 		for cntDownloadingTorrents < option.MaxDownloadingTorrents && estimateUploadSpeed <= targetUploadSpeed*2 && len(candidateTorrents) > 0 {
 			candidateTorrent := candidateTorrents[0]
 			candidateTorrents = candidateTorrents[1:]
@@ -449,10 +453,12 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 		}
 	}
 
+	result.FreeSpaceChange = freespaceChange
+
 	if cntTorrents <= option.MaxTorrents &&
 		cntDownloadingTorrents < option.MaxDownloadingTorrents &&
 		estimateUploadSpeed <= targetUploadSpeed*2 &&
-		freespace > option.MinDiskSpace {
+		(freespace == -1 || freespace+freespaceChange > option.MinDiskSpace) {
 		result.CanAddMore = true
 	}
 

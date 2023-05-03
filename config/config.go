@@ -89,14 +89,13 @@ type SiteConfigStruct struct {
 }
 
 type ConfigStruct struct {
-	IyuuToken                     string                `yaml:"iyuuToken"`
-	SiteProxy                     string                `yaml:"siteProxy"`
-	UserAgent                     string                `yaml:"userAgent"`
-	BrushEnableStats              bool                  `yaml:"brushEnableStats"`
-	TreatZeroFreeDiskSpaceAsError bool                  `yaml:"treatZeroFreeDiskSpaceAsError"`
-	Clients                       []*ClientConfigStruct `yaml:"clients"`
-	Sites                         []*SiteConfigStruct   `yaml:"sites"`
-	Groups                        []*GroupConfigStruct  `yaml:"groups"`
+	IyuuToken        string                `yaml:"iyuuToken"`
+	SiteProxy        string                `yaml:"siteProxy"`
+	UserAgent        string                `yaml:"userAgent"`
+	BrushEnableStats bool                  `yaml:"brushEnableStats"`
+	Clients          []*ClientConfigStruct `yaml:"clients"`
+	Sites            []*SiteConfigStruct   `yaml:"sites"`
+	Groups           []*GroupConfigStruct  `yaml:"groups"`
 }
 
 var (
