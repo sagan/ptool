@@ -170,7 +170,7 @@ mainloop:
 				log.Tracef("Skip torrent %s due to too few seeders", torrent.Name)
 				continue
 			}
-			if torrent.Seeders > maxSeeders {
+			if maxSeeders > 0 && torrent.Seeders > maxSeeders {
 				log.Tracef("Skip torrent %s due to too more seeders", torrent.Name)
 				continue
 			}
