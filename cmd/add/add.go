@@ -81,7 +81,7 @@ func add(cmd *cobra.Command, args []string) {
 				sitename = hostnameSiteMap[hostname]
 			}
 			if sitename == "" {
-				log.Warnf("torrent %s: url does not match any site. will use provided default site")
+				log.Warnf("torrent %s: url does not match any site. will use provided default site", torrentId)
 			} else {
 				siteName = sitename
 			}
