@@ -26,7 +26,6 @@ var command = &cobra.Command{
 
 var (
 	addAutoStart      = false
-	includeDead       = false
 	includeDownloaded = false
 	maxTorrents       = int64(0)
 	addCategory       = ""
@@ -35,6 +34,8 @@ var (
 	filter            = ""
 	minTorrentSizeStr = ""
 	maxTorrentSizeStr = ""
+	minSeeders        = int64(0)
+	maxSeeders        = int64(0)
 	action            = ""
 	startPage         = ""
 	downloadDir       = ""
@@ -44,12 +45,13 @@ var (
 
 func init() {
 	command.Flags().BoolVar(&addAutoStart, "add-auto-start", false, "By default the added torrents in client will be in paused state unless this flag is set")
-	command.Flags().BoolVar(&includeDead, "include-dead", false, "Do NOT skip dead (seeders == 0) torrents")
 	command.Flags().BoolVar(&includeDownloaded, "include-downloaded", false, "Do NOT skip torrents that has been downloaded before")
 	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "m", 100, "Number limit of torrents handled. Default = 100. <=0 means unlimited")
 	command.Flags().StringVar(&action, "action", "show", "Choose action for found torrents: show (print torrent details) | printid (print torrent id to stdout or file) | download (download torrent) | add (add torrent to client)")
 	command.Flags().StringVar(&minTorrentSizeStr, "min-torrent-size", "0", "Skip torrents with size smaller than (<) this value")
 	command.Flags().StringVar(&maxTorrentSizeStr, "max-torrent-size", "100MB", "Skip torrents with size large than (>=) this value")
+	command.Flags().Int64VarP(&minSeeders, "min-seeders", "", 1, "Skip torrents with seeders less than (<) this value")
+	command.Flags().Int64VarP(&maxSeeders, "max-seeders", "", 0, "Skip torrents with seeders large than (>) this value. Default(0) = no limit")
 	command.Flags().StringVarP(&filter, "filter", "f", "", "If set, skip torrents which name does NOT contains this string")
 	command.Flags().StringVar(&startPage, "start-page", "", "Start fetching torrents from here (should be the returned LastPage value last time you run this command)")
 	command.Flags().StringVar(&downloadDir, "download-dir", ".", "Used with '--action add'. Set the local dir of downloaded torrents. Default = current dir")
@@ -129,8 +131,12 @@ mainloop:
 				log.Tracef("Skip active torrent %s", torrent.Name)
 				continue
 			}
-			if !includeDead && torrent.Seeders == 0 {
-				log.Tracef("Skip dead torrent %s", torrent.Name)
+			if torrent.Seeders < minSeeders {
+				log.Tracef("Skip torrent %s due to too few seeders", torrent.Name)
+				continue
+			}
+			if torrent.Seeders > maxSeeders {
+				log.Tracef("Skip torrent %s due to too more seeders", torrent.Name)
 				continue
 			}
 			if filter != "" && !utils.ContainsI(torrent.Name, filter) {

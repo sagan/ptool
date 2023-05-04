@@ -27,6 +27,7 @@ const (
 )
 
 type BrushOptionStruct struct {
+	AllowNoneFree           bool
 	MinDiskSpace            int64
 	SlowUploadSpeedTier     int64
 	TorrentUploadSpeedLimit int64
@@ -478,7 +479,7 @@ func rateSiteTorrent(siteTorrent *site.Torrent, brushOption *BrushOptionStruct) 
 	}
 	if siteTorrent.IsActive ||
 		siteTorrent.HasHnR ||
-		siteTorrent.DownloadMultiplier != 0 ||
+		(!brushOption.AllowNoneFree && siteTorrent.DownloadMultiplier != 0) ||
 		siteTorrent.Size > brushOption.TorrentSizeLimit ||
 		(siteTorrent.DiscountEndTime > 0 && siteTorrent.DiscountEndTime-brushOption.Now < 3600) ||
 		siteTorrent.Seeders == 0 ||
@@ -514,6 +515,9 @@ func rateSiteTorrent(siteTorrent *site.Torrent, brushOption *BrushOptionStruct) 
 	score += float64(siteTorrent.Leechers)
 
 	score *= siteTorrent.UploadMultiplier
+	if siteTorrent.DownloadMultiplier != 0 {
+		score *= 0.5
+	}
 
 	if siteTorrent.Size <= 1024*1024*1024 {
 		score *= 10

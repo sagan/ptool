@@ -69,6 +69,7 @@ type SiteConfigStruct struct {
 	TorrentUploadSpeedLimit      string   `yaml:"uploadSpeedLimit"`
 	GlobalHnR                    bool     `yaml:"globalHnR"`
 	Timezone                     string   `yaml:"timezone"`
+	BrushAllowNoneFree           bool     `yaml:"brushAllowNoneFree"`
 	SelectorTorrentsListHeader   string   `yaml:"selectorTorrentsListHeader"`
 	SelectorTorrentsList         string   `yaml:"selectorTorrentsList"`
 	SelectorTorrentBlock         string   `yaml:"selectorTorrentBlock"` // dom block of a torrent in list
