@@ -41,6 +41,7 @@ type Site interface {
 	// download torrent by torrent original id (eg. 12345)
 	DownloadTorrentById(id string) (content []byte, filename string, err error)
 	GetLatestTorrents(full bool) ([]Torrent, error)
+	// sort: size|name|none(or "")
 	GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (torrents []Torrent, nextPageMarker string, err error)
 	SearchTorrents(keyword string, baseUrl string) ([]Torrent, error)
 	GetStatus() (*Status, error)
