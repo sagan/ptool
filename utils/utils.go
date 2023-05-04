@@ -3,6 +3,8 @@ package utils
 import (
 	"crypto/sha1"
 	"encoding/hex"
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -83,4 +85,19 @@ func Sha1String(s string) string {
 
 func Sleep(seconds int64) {
 	time.Sleep(time.Duration(seconds) * time.Second)
+}
+
+// return a none-existing filename
+func GetNewFilename(filename string) string {
+	if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
+		return filename
+	}
+	id := int64(0)
+	for {
+		id++
+		filenameWithId := fmt.Sprintf("%s (%d)", filename, id)
+		if _, err := os.Stat(filenameWithId); errors.Is(err, os.ErrNotExist) {
+			return filenameWithId
+		}
+	}
 }

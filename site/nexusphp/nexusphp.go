@@ -68,11 +68,8 @@ func (npclient *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Tor
 
 func (npclient *Site) DownloadTorrent(url string) ([]byte, string, error) {
 	if !utils.IsUrl(url) {
-		sitenamePrefix := npclient.GetName() + "."
-		if strings.HasPrefix(url, sitenamePrefix) {
-			url = url[len(sitenamePrefix):]
-		}
-		return npclient.DownloadTorrentById(url)
+		id := strings.TrimPrefix(url, npclient.GetName()+".")
+		return npclient.DownloadTorrentById(id)
 	}
 	if !strings.Contains(url, "/download.php") {
 		idRegexp := regexp.MustCompile(`[?&]id=(?P<id>\d+)`)
@@ -107,6 +104,9 @@ func (npclient *Site) DownloadTorrentById(id string) ([]byte, string, error) {
 	_, params, err := mime.ParseMediaType(header.Get("content-disposition"))
 	if err == nil {
 		filename = params["filename"]
+		if filename != "" {
+			filename = fmt.Sprintf("%s.%s.%s", npclient.GetName(), id, filename)
+		}
 	}
 
 	defer res.Body.Close()
@@ -142,14 +142,17 @@ func (npclient *Site) GetLatestTorrents(full bool) ([]site.Torrent, error) {
 
 func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (torrents []site.Torrent, nextPageMarker string, err error) {
 	sortFields := map[string](string){
-		"name": "1",
-		"size": "5",
+		"name":     "1",
+		"time":     "4",
+		"size":     "5",
+		"seeders":  "7",
+		"leechers": "8",
+		"snatched": "6",
 	}
-	if sortFields[sort] == "" {
+	if sort != "" && sort != "none" && sortFields[sort] == "" {
 		err = fmt.Errorf("unsupported sort field: %s", sort)
 		return
 	}
-
 	// 颠倒排序。从np最后一页开始获取。目的是跳过站点的置顶种子
 	sortOrder := "desc"
 	if desc {
@@ -159,22 +162,24 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 	if pageMarker != "" {
 		page = utils.ParseInt(pageMarker)
 	}
-
 	if baseUrl == "" {
 		baseUrl = "torrents.php"
 	}
 	pageUrl := npclient.SiteConfig.ParseSiteUrl(baseUrl, true)
-
-	queryString := "sort=" + sortFields[sort] + "&type=" + sortOrder + "&page=" + fmt.Sprint(page)
+	queryString := ""
+	if sort != "" && sort != "none" {
+		queryString += "sort=" + sortFields[sort] + "&type=" + sortOrder + "&"
+	}
+	pageStr := "page=" + fmt.Sprint(page)
 	now := utils.Now()
-	doc, error := utils.GetUrlDoc(pageUrl+queryString, npclient.SiteConfig.Cookie, npclient.HttpClient, npclient.SiteConfig.UserAgent)
+	doc, error := utils.GetUrlDoc(pageUrl+queryString+pageStr, npclient.SiteConfig.Cookie, npclient.HttpClient, npclient.SiteConfig.UserAgent)
 	if error != nil {
 		err = fmt.Errorf("failed to fetch torrents page dom: %v", error)
 		return
 	}
 
 	if pageMarker == "" {
-		paginationEls := doc.Find(`*[href*="sort=` + sortFields[sort] + `&type=` + sortOrder + `&page="]`)
+		paginationEls := doc.Find(`*[href*="&page="]`)
 		lastPage := int64(0)
 		pageRegexp := regexp.MustCompile(`&page=(?P<page>\d+)`)
 		paginationEls.Each(func(i int, s *goquery.Selection) {
@@ -188,9 +193,9 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 		})
 		if lastPage > 0 {
 			page = lastPage
-			queryString := "sort=" + sortFields[sort] + "&type=" + sortOrder + "&page=" + fmt.Sprint(page)
+			pageStr = "page=" + fmt.Sprint(page)
 			now = utils.Now()
-			doc, error = utils.GetUrlDoc(pageUrl+queryString, npclient.SiteConfig.Cookie, npclient.HttpClient, npclient.SiteConfig.UserAgent)
+			doc, error = utils.GetUrlDoc(pageUrl+queryString+pageStr, npclient.SiteConfig.Cookie, npclient.HttpClient, npclient.SiteConfig.UserAgent)
 			if error != nil {
 				err = fmt.Errorf("failed to fetch torrents page dom: %v", error)
 				return

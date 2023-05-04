@@ -105,8 +105,7 @@ type RegInfo struct {
 type ClientCreator func(*RegInfo) (Client, error)
 
 var (
-	Registry      []*RegInfo = make([]*RegInfo, 0)
-	PSEUDO_STATES            = []string{"_all", "_active", "_done"}
+	Registry []*RegInfo = make([]*RegInfo, 0)
 )
 
 func Register(regInfo *RegInfo) {
@@ -270,13 +269,56 @@ func XseedCheckTorrentContents(clientTorrentContents []TorrentContentFile, torre
 	return 0
 }
 
-func GetClientTorrentInfoHashes(clientInstance Client, stateFilter string, category string) ([]string, error) {
-	torrents, err := clientInstance.GetTorrents(stateFilter, category, true)
+// parse torrents that meet criterion. specially, return nil slice if all torrents selected
+func SelectTorrents(clientInstance Client, category string, tag string, filter string,
+	hashOrStateFilters ...string) ([]string, error) {
+	if slices.Index(hashOrStateFilters, "_all") != -1 {
+		return nil, nil
+	}
+
+	torrents, err := clientInstance.GetTorrents("", category, true)
 	if err != nil {
 		return nil, err
 	}
-	infoHashes := utils.Map(torrents, func(torrent Torrent) string {
-		return torrent.InfoHash
+	torrents = utils.Filter(torrents, func(torrent Torrent) bool {
+		if tag != "" && !torrent.HasTag(tag) {
+			return false
+		}
+		if filter != "" && !utils.ContainsI(torrent.Name, filter) {
+			return false
+		}
+		return true
 	})
+
+	infoHashes := []string{}
+	for _, arg := range hashOrStateFilters {
+		if strings.HasPrefix(arg, "_") {
+			for _, torrent := range torrents {
+				if torrent.MatchStateFilter(arg) {
+					infoHashes = append(infoHashes, torrent.InfoHash)
+				}
+			}
+		} else {
+			infoHashes = append(infoHashes, arg)
+		}
+	}
+	infoHashes = utils.UniqueSlice(infoHashes)
 	return infoHashes, nil
+}
+
+func (torrent *Torrent) MatchStateFilter(stateFilter string) bool {
+	if stateFilter == "" || stateFilter == "_all" {
+		return true
+	}
+	if strings.HasPrefix(stateFilter, "_") {
+		switch stateFilter {
+		case "_active":
+			return torrent.DownloadSpeed >= 1024 || torrent.UploadSpeed >= 1024
+		case "_done":
+			return torrent.State == "completed" || torrent.State == "seeding"
+		default:
+			stateFilter = stateFilter[1:]
+		}
+	}
+	return stateFilter != torrent.State
 }

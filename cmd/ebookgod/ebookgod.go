@@ -12,52 +12,65 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/cmd/common"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/utils"
 )
 
 var command = &cobra.Command{
 	Use:   "ebookgod <site>",
-	Short: "Batch download the smallest torrents from a site",
-	Long:  `Batch download the smallest torrents from a site`,
+	Short: "Batch download the smallest (or by any other order) torrents from a site",
+	Long:  `Batch download the smallest (or by any other order) torrents from a site`,
 	Args:  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 	Run:   ebookgod,
 }
 
 var (
-	addAutoStart      = false
-	includeDead       = false
-	includeDownloaded = false
-	maxTorrents       = int64(0)
-	addCategory       = ""
-	addClient         = ""
-	addTags           = ""
-	filter            = ""
-	minTorrentSizeStr = ""
-	maxTorrentSizeStr = ""
-	action            = ""
-	startPage         = ""
-	downloadDir       = ""
-	outputFile        = ""
-	baseUrl           = ""
+	addAutoStart                                       = false
+	includeDead                                        = false
+	includeDownloaded                                  = false
+	freeOnly                                           = false
+	allowBreak                                         = false
+	maxTorrents                                        = int64(0)
+	addCategory                                        = ""
+	addClient                                          = ""
+	addTags                                            = ""
+	filter                                             = ""
+	minTorrentSizeStr                                  = ""
+	maxTorrentSizeStr                                  = ""
+	freeTimeAtLeastStr                                 = ""
+	action                                             = ""
+	startPage                                          = ""
+	downloadDir                                        = ""
+	outputFile                                         = ""
+	baseUrl                                            = ""
+	sortFieldEnumFlag  common.SiteTorrentSortFieldEnum = "size"
+	orderEnumFlag      common.OrderEnum                = "asc"
 )
 
 func init() {
-	command.Flags().BoolVar(&addAutoStart, "add-auto-start", false, "By default the added torrents in client will be in paused state unless this flag is set")
-	command.Flags().BoolVar(&includeDead, "include-dead", false, "Do NOT skip dead (seeders == 0) torrents")
-	command.Flags().BoolVar(&includeDownloaded, "include-downloaded", false, "Do NOT skip torrents that has been downloaded before")
+	command.Flags().BoolVarP(&freeOnly, "free", "", false, "Only show FREE torrents")
+	command.Flags().BoolVarP(&allowBreak, "break", "", false, "Break (stop finding more torrents) if all torrents of current page does not meet criterion")
+	command.Flags().BoolVarP(&addAutoStart, "add-auto-start", "", false, "By default the added torrents in client will be in paused state unless this flag is set")
+	command.Flags().BoolVarP(&includeDead, "include-dead", "", false, "Do NOT skip dead (seeders == 0) torrents")
+	command.Flags().BoolVarP(&includeDownloaded, "include-downloaded", "", false, "Do NOT skip torrents that has been downloaded before")
 	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "m", 100, "Number limit of torrents handled. Default = 100. <=0 means unlimited")
-	command.Flags().StringVar(&action, "action", "show", "Choose action for found torrents: show (print torrent details) | printid (print torrent id to stdout or file) | download (download torrent) | add (add torrent to client)")
-	command.Flags().StringVar(&minTorrentSizeStr, "min-torrent-size", "0", "Skip torrents with size smaller than (<) this value")
-	command.Flags().StringVar(&maxTorrentSizeStr, "max-torrent-size", "100MB", "Skip torrents with size large than (>=) this value")
+	command.Flags().StringVarP(&action, "action", "", "show", "Choose action for found torrents: show (print torrent details) | printid (print torrent id to stdout or file) | download (download torrent) | add (add torrent to client)")
+	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "0", "Skip torrents with size smaller than (<) this value")
+	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "100MB", "Skip torrents with size large than (>=) this value. 0 == unlimited")
+	command.Flags().StringVarP(&freeTimeAtLeastStr, "free-time", "", "", "Used with --free. Set the allowed minimal remaining torrent free time. eg. 12h, 1d")
 	command.Flags().StringVarP(&filter, "filter", "f", "", "If set, skip torrents which name does NOT contains this string")
-	command.Flags().StringVar(&startPage, "start-page", "", "Start fetching torrents from here (should be the returned LastPage value last time you run this command)")
-	command.Flags().StringVar(&downloadDir, "download-dir", ".", "Used with '--action add'. Set the local dir of downloaded torrents. Default = current dir")
-	command.Flags().StringVar(&addClient, "add-client", "", "Used with '--action add'. Set the client. Required in this action")
-	command.Flags().StringVar(&addCategory, "add-category", "", "Used with '--action add'. Set the category when adding torrent to client")
-	command.Flags().StringVar(&addTags, "add-tags", "", "Used with '--action add'. Set the tags when adding torrent to client (comma-separated)")
-	command.Flags().StringVar(&outputFile, "output-file", "", "Used with '--action printid'. Set the output file. (If not set, will use stdout)")
-	command.Flags().StringVar(&baseUrl, "base-url", "", "Manually set the base url of torrents list page. eg. adult.php or https://kp.m-team.cc/adult.php for M-Team site")
+	command.Flags().StringVarP(&startPage, "start-page", "", "", "Start fetching torrents from here (should be the returned LastPage value last time you run this command)")
+	command.Flags().StringVarP(&downloadDir, "download-dir", "", ".", "Used with '--action add'. Set the local dir of downloaded torrents. Default = current dir")
+	command.Flags().StringVarP(&addClient, "add-client", "", "", "Used with '--action add'. Set the client. Required in this action")
+	command.Flags().StringVarP(&addCategory, "add-category", "", "", "Used with '--action add'. Set the category when adding torrent to client")
+	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Used with '--action add'. Set the tags when adding torrent to client (comma-separated)")
+	command.Flags().StringVarP(&outputFile, "output-file", "", "", "Used with '--action printid'. Set the output file. (If not set, will use stdout)")
+	command.Flags().StringVarP(&baseUrl, "base-url", "", "", "Manually set the base url of torrents list page. eg. adult.php or https://kp.m-team.cc/adult.php for M-Team site")
+	command.Flags().VarP(&sortFieldEnumFlag, "sort", "s", "Manually Set the sort field, "+common.SiteTorrentSortFieldEnumTip)
+	command.Flags().VarP(&orderEnumFlag, "order", "o", "Manually Set the sort order, "+common.OrderEnumTip)
+	command.RegisterFlagCompletionFunc("sort", common.SiteTorrentSortFieldEnumCompletion)
+	command.RegisterFlagCompletionFunc("order", common.OrderEnumCompletion)
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -98,6 +111,18 @@ func ebookgod(cmd *cobra.Command, args []string) {
 	}
 	minTorrentSize, _ := utils.RAMInBytes(minTorrentSizeStr)
 	maxTorrentSize, _ := utils.RAMInBytes(maxTorrentSizeStr)
+	desc := false
+	if orderEnumFlag == "desc" {
+		desc = true
+	}
+	freeTimeAtLeast := int64(0)
+	if freeTimeAtLeastStr != "" {
+		t, err := utils.ParseTimeDuration(freeTimeAtLeastStr)
+		if err != nil {
+			log.Fatalf("Invalid --free-time value %s: %v", freeTimeAtLeastStr, err)
+		}
+		freeTimeAtLeast = t
+	}
 
 	cntTorrents := int64(0)
 	cntAllTorrents := int64(0)
@@ -106,10 +131,12 @@ func ebookgod(cmd *cobra.Command, args []string) {
 	var marker = startPage
 	var lastMarker = ""
 mainloop:
-	for true {
+	for {
 		now := utils.Now()
 		lastMarker = marker
-		torrents, marker, err = siteInstance.GetAllTorrents("size", false, marker, baseUrl)
+		log.Debugf("Get torrents with page parker '%s'", marker)
+		torrents, marker, err = siteInstance.GetAllTorrents(sortFieldEnumFlag.String(), desc, marker, baseUrl)
+		cntTorrentsThisPage := 0
 
 		if err != nil {
 			log.Errorf("Failed to fetch next page torrents: %v", err)
@@ -119,11 +146,19 @@ mainloop:
 		for _, torrent := range torrents {
 			if torrent.Size < minTorrentSize {
 				log.Tracef("Skip torrent %s due to size %d < minTorrentSize", torrent.Name, torrent.Size)
-				continue
+				if sortFieldEnumFlag == "size" && desc {
+					break mainloop
+				} else {
+					continue
+				}
 			}
-			if torrent.Size >= maxTorrentSize {
+			if maxTorrentSize > 0 && torrent.Size >= maxTorrentSize {
 				log.Tracef("Skip torrent %s due to size %d >= maxTorrentSize", torrent.Name, torrent.Size)
-				break mainloop
+				if sortFieldEnumFlag == "size" && !desc {
+					break mainloop
+				} else {
+					continue
+				}
 			}
 			if !includeDownloaded && torrent.IsActive {
 				log.Tracef("Skip active torrent %s", torrent.Name)
@@ -137,7 +172,18 @@ mainloop:
 				log.Tracef("Skip torrent %s due to filter %s does NOT match", torrent.Name, filter)
 				continue
 			}
+			if freeOnly {
+				if torrent.DownloadMultiplier != 0 {
+					log.Tracef("Skip none-free torrent %s", torrent.Name)
+					continue
+				}
+				if freeTimeAtLeast > 0 && torrent.DiscountEndTime > 0 && torrent.DiscountEndTime < now+freeTimeAtLeast {
+					log.Tracef("Skip torrent %s which remaining free time is too short", torrent.Name)
+					continue
+				}
+			}
 			cntTorrents++
+			cntTorrentsThisPage++
 
 			if action == "show" {
 				site.PrintTorrents([]site.Torrent{torrent}, "", now, cntTorrents != 1)
@@ -146,7 +192,7 @@ mainloop:
 				if outputFileFd != nil {
 					outputFileFd.WriteString(str)
 				} else {
-					fmt.Printf(str)
+					fmt.Printf("%s", str)
 				}
 			} else {
 				torrentContent, filename, err := siteInstance.DownloadTorrent(torrent.Id)
@@ -154,7 +200,6 @@ mainloop:
 					fmt.Printf("torrent %s (%s): failed to download: %v\n", torrent.Id, torrent.Name, err)
 				} else {
 					if action == "download" {
-						filename = fmt.Sprintf("%s.%s.%s.torrent", siteInstance.GetName(), torrent.Id, filename)
 						err := os.WriteFile(downloadDir+"/"+filename, torrentContent, 0777)
 						if err != nil {
 							fmt.Printf("torrent %s: failed to write to %s/file %s: %v\n", torrent.Id, downloadDir, filename, err)
@@ -178,6 +223,13 @@ mainloop:
 		}
 		if marker == "" {
 			break
+		}
+		if cntTorrentsThisPage == 0 {
+			if allowBreak {
+				break
+			} else {
+				log.Warning("Warning, current page has no required torrents. Press Ctrl + C to abort")
+			}
 		}
 		utils.Sleep(3)
 	}
