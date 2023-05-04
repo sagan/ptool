@@ -18,7 +18,16 @@ _all, _active, _done,  _downloading, _seeding, _paused, _completed, _error`,
 	Run:  pause,
 }
 
+var (
+	category = ""
+	tag      = ""
+	filter   = ""
+)
+
 func init() {
+	command.Flags().StringVarP(&filter, "filter", "f", "", "filter torrents by name")
+	command.Flags().StringVarP(&category, "category", "c", "", "filter torrents by category")
+	command.Flags().StringVarP(&tag, "tag", "t", "", "filter torrents by tag")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -28,7 +37,7 @@ func pause(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 	args = args[1:]
-	infoHashes, err := client.SelectTorrents(clientInstance, "", "", "", args...)
+	infoHashes, err := client.SelectTorrents(clientInstance, category, tag, filter, args...)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -37,7 +46,7 @@ func pause(cmd *cobra.Command, args []string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-	} else {
+	} else if len(infoHashes) > 0 {
 		err = clientInstance.PauseTorrents(infoHashes)
 		if err != nil {
 			log.Fatal(err)

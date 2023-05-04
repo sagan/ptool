@@ -18,7 +18,16 @@ _all, _active, _done,  _downloading, _seeding, _paused, _completed, _error`,
 	Run:  createtags,
 }
 
+var (
+	category = ""
+	tag      = ""
+	filter   = ""
+)
+
 func init() {
+	command.Flags().StringVarP(&filter, "filter", "f", "", "filter torrents by name")
+	command.Flags().StringVarP(&category, "category", "c", "", "filter torrents by category")
+	command.Flags().StringVarP(&tag, "tag", "t", "", "filter torrents by tag")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -29,7 +38,7 @@ func createtags(cmd *cobra.Command, args []string) {
 	}
 	cat := args[1]
 	args = args[2:]
-	infoHashes, err := client.SelectTorrents(clientInstance, "", "", "", args...)
+	infoHashes, err := client.SelectTorrents(clientInstance, category, tag, filter, args...)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -38,7 +47,7 @@ func createtags(cmd *cobra.Command, args []string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-	} else {
+	} else if len(infoHashes) > 0 {
 		err = clientInstance.SetTorrentsCatetory(infoHashes, cat)
 		if err != nil {
 			log.Fatal(err)

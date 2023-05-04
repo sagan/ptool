@@ -206,6 +206,36 @@ func (qbclient *Client) ReannounceTorrents(infoHashes []string) error {
 	return qbclient.apiPost("api/v2/torrents/reannounce", data)
 }
 
+func (qbclient *Client) AddTagsToTorrents(infoHashes []string, tags []string) error {
+	if len(infoHashes) == 0 || len(tags) == 0 {
+		return nil
+	}
+	err := qbclient.login()
+	if err != nil {
+		return fmt.Errorf("login error: %v", err)
+	}
+	data := url.Values{
+		"hashes": {strings.Join(infoHashes, "|")},
+		"tags":   {strings.Join(tags, ",")},
+	}
+	return qbclient.apiPost("api/v2/torrents/addTags", data)
+}
+
+func (qbclient *Client) RemoveTagsFromTorrents(infoHashes []string, tags []string) error {
+	if len(infoHashes) == 0 || len(tags) == 0 {
+		return nil
+	}
+	err := qbclient.login()
+	if err != nil {
+		return fmt.Errorf("login error: %v", err)
+	}
+	data := url.Values{
+		"hashes": {strings.Join(infoHashes, "|")},
+		"tags":   {strings.Join(tags, ",")},
+	}
+	return qbclient.apiPost("api/v2/torrents/removeTags", data)
+}
+
 func (qbclient *Client) PauseAllTorrents() error {
 	err := qbclient.login()
 	if err != nil {
@@ -248,6 +278,36 @@ func (qbclient *Client) ReannounceAllTorrents() error {
 		"hashes": {"all"},
 	}
 	return qbclient.apiPost("api/v2/torrents/reannounce", data)
+}
+
+func (qbclient *Client) AddTagsToAllTorrents(tags []string) error {
+	if len(tags) == 0 {
+		return nil
+	}
+	err := qbclient.login()
+	if err != nil {
+		return fmt.Errorf("login error: %v", err)
+	}
+	data := url.Values{
+		"hashes": {"all"},
+		"tags":   {strings.Join(tags, ",")},
+	}
+	return qbclient.apiPost("api/v2/torrents/addTags", data)
+}
+
+func (qbclient *Client) RemoveTagsFromAllTorrents(tags []string) error {
+	if len(tags) == 0 {
+		return nil
+	}
+	err := qbclient.login()
+	if err != nil {
+		return fmt.Errorf("login error: %v", err)
+	}
+	data := url.Values{
+		"hashes": {"all"},
+		"tags":   {strings.Join(tags, ",")},
+	}
+	return qbclient.apiPost("api/v2/torrents/removeTags", data)
 }
 
 func (qbclient *Client) GetTags() ([]string, error) {
@@ -300,6 +360,9 @@ func (qbclient *Client) GetCategories() ([]string, error) {
 }
 
 func (qbclient *Client) SetTorrentsCatetory(infoHashes []string, category string) error {
+	if len(infoHashes) == 0 {
+		return nil
+	}
 	err := qbclient.login()
 	if err != nil {
 		return fmt.Errorf("login error: %v", err)

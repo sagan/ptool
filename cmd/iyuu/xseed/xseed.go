@@ -45,21 +45,21 @@ var (
 )
 
 func init() {
-	command.Flags().BoolVar(&slowMode, "slow", false, "Slow mode. wait after handling each xseed torrent. For dev / test purpose.")
+	command.Flags().BoolVarP(&slowMode, "slow", "", false, "Slow mode. wait after handling each xseed torrent. For dev / test purpose.")
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do NOT actually add xseed torrents to client")
 	command.Flags().BoolVarP(&paused, "paused", "p", false, "Add xseed torrents to client in paused state")
-	command.Flags().BoolVar(&check, "check-hash", false, "Let client do hash checking when add xseed torrents")
-	command.Flags().Int64Var(&maxXseedTorrents, "max-xseed-torrents", 0, "Number limit of xseed torrents added. Default = unlimited")
-	command.Flags().Int64Var(&iyuuRequestMaxTorrents, "max-request-torrents", 2000, "Number limit of target torrents sent to iyuu server at once")
-	command.Flags().StringVar(&includeSites, "include-sites", "", "Only add xseed torrents from these sites or groups (comma-separated)")
-	command.Flags().StringVar(&excludeSites, "exclude-sites", "", "Do NOT add xseed torrents from these sites or groups (comma-separated)")
-	command.Flags().StringVar(&category, "category", "", "Only xseed torrents that belongs to this category")
-	command.Flags().StringVar(&tag, "tag", "", "Only xseed torrents that has this tag")
+	command.Flags().BoolVarP(&check, "check-hash", "", false, "Let client do hash checking when add xseed torrents")
+	command.Flags().Int64VarP(&maxXseedTorrents, "max-xseed-torrents", "", 0, "Number limit of xseed torrents added. Default = unlimited")
+	command.Flags().Int64VarP(&iyuuRequestMaxTorrents, "max-request-torrents", "", 2000, "Number limit of target torrents sent to iyuu server at once")
+	command.Flags().StringVarP(&includeSites, "include-sites", "", "", "Only add xseed torrents from these sites or groups (comma-separated)")
+	command.Flags().StringVarP(&excludeSites, "exclude-sites", "", "", "Do NOT add xseed torrents from these sites or groups (comma-separated)")
+	command.Flags().StringVarP(&category, "category", "c", "", "Only xseed torrents that belongs to this category")
+	command.Flags().StringVarP(&tag, "tag", "t", "", "Only xseed torrents that has this tag")
 	command.Flags().StringVarP(&filter, "filter", "f", "", "Only xseed torrents which name contains this")
-	command.Flags().StringVar(&setCategory, "set-category", "", "Manually set category of added xseed torrent. By Default it uses the original torrent's")
-	command.Flags().StringVar(&minTorrentSizeStr, "min-torrent-size", "1GB", "Torrents with size smaller than (<) this value will NOT be xseeded.")
-	command.Flags().StringVar(&maxTorrentSizeStr, "max-torrent-size", "1PB", "Torrents with size larger than (>=) this value will NOT be xseeded.")
-	command.Flags().StringVar(&iyuuRequestServer, "request-server", "auto", "Whether send request to iyuu server to update local xseed db. Possible values: auto|yes|no")
+	command.Flags().StringVarP(&setCategory, "set-category", "", "", "Manually set category of added xseed torrent. By Default it uses the original torrent's")
+	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "1GB", "Torrents with size smaller than (<) this value will NOT be xseeded.")
+	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "1PB", "Torrents with size larger than (>=) this value will NOT be xseeded.")
+	command.Flags().StringVarP(&iyuuRequestServer, "request-server", "", "auto", "Whether send request to iyuu server to update local xseed db. Possible values: auto|yes|no")
 	iyuu.Command.AddCommand(command)
 }
 
@@ -199,10 +199,11 @@ func xseed(cmd *cobra.Command, args []string) {
 
 	siteInstancesMap := map[string](site.Site){}
 mainloop:
-	for _, clientName := range clientNames {
-		log.Printf("Start xseeding client %s", clientName)
+	for i, clientName := range clientNames {
+		log.Printf("Start xseeding client %d/%d: %s", i+1, len(clientName)+1, clientName)
 		clientInstance := clientInstanceMap[clientName]
-		for _, infoHash := range clientInfoHashesMap[clientName] {
+		cnt := len(clientInfoHashesMap[clientName])
+		for i, infoHash := range clientInfoHashesMap[clientName] {
 			if slowMode {
 				utils.Sleep(3)
 			}
@@ -212,7 +213,8 @@ mainloop:
 				continue
 			}
 			cntTargetTorrents++
-			log.Tracef("client torrent %s: name=%s, savePath=%s",
+			log.Tracef("client torrent %d/%d - %s: name=%s, savePath=%s",
+				i+1, cnt+1,
 				targetTorrent.InfoHash, targetTorrent.Name, targetTorrent.SavePath,
 			)
 			targetTorrentContentFiles, err := clientInstance.GetTorrentContents(infoHash)
@@ -325,15 +327,16 @@ func updateIyuuDatabase(token string, infoHashes []string) error {
 		log.Errorf("failed to get iyuu sites: %v", err)
 	} else {
 		iyuu.Db().Where("1 = 1").Delete(&iyuu.Site{})
-		for _, iyuuSite := range iyuuSites {
-			iyuu.Db().Create(&iyuu.Site{
+		iyuuSiteRecords := utils.Map(iyuuSites, func(iyuuSite iyuu.IyuuApiSite) iyuu.Site {
+			return iyuu.Site{
 				Sid:          iyuuSite.Id,
 				Name:         iyuuSite.Site,
 				Nickname:     iyuuSite.Nickname,
 				Url:          iyuuSite.GetUrl(),
 				DownloadPage: iyuuSite.Download_page,
-			})
-		}
+			}
+		})
+		iyuu.Db().Create(&iyuuSiteRecords)
 	}
 
 	// update xseed torrents data

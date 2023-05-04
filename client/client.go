@@ -77,10 +77,14 @@ type Client interface {
 	ResumeTorrents(infoHashes []string) error
 	RecheckTorrents(infoHashes []string) error
 	ReannounceTorrents(infoHashes []string) error
+	AddTagsToTorrents(infoHashes []string, tags []string) error
+	RemoveTagsFromTorrents(infoHashes []string, tags []string) error
 	PauseAllTorrents() error
 	ResumeAllTorrents() error
 	RecheckAllTorrents() error
 	ReannounceAllTorrents() error
+	AddTagsToAllTorrents(tags []string) error
+	RemoveTagsFromAllTorrents(tags []string) error
 	GetTags() ([]string, error)
 	CreateTags(tags ...string) error
 	DeleteTags(tags ...string) error

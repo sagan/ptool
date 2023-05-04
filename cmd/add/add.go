@@ -3,6 +3,7 @@ package add
 import (
 	"bytes"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/site"
+	"github.com/sagan/ptool/site/tpl"
 	"github.com/sagan/ptool/utils"
 )
 
@@ -33,9 +35,9 @@ var (
 
 func init() {
 	command.Flags().BoolVarP(&paused, "paused", "p", false, "Add torrents to client in paused state")
-	command.Flags().StringVar(&addCategory, "add-category", "", "Set category of added torrents.")
-	command.Flags().StringVar(&defaultSite, "site", "", "Set default site of torrents")
-	command.Flags().StringVar(&addTags, "add-tags", "", "Add tags to added torrent (comma-separated).")
+	command.Flags().StringVarP(&addCategory, "add-category", "", "", "Set category of added torrents.")
+	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of torrents")
+	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Add tags to added torrent (comma-separated).")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -45,6 +47,7 @@ func add(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 
+	hostnameSiteMap := map[string](string){}
 	siteInstanceMap := make(map[string](site.Site))
 	errCnt := int64(0)
 	torrentIds := args[1:]
@@ -64,9 +67,27 @@ func add(cmd *cobra.Command, args []string) {
 				siteName = torrentId[:i]
 				torrentId = torrentId[i+1:]
 			}
+		} else {
+			urlObj, err := url.Parse(torrentId)
+			if err != nil || urlObj.Hostname() == "" {
+				fmt.Printf("torrent %s: failed to parse url (err=%v)", torrentId, err)
+				continue
+			}
+			hostname := urlObj.Hostname()
+			sitename := ""
+			ok := false
+			if sitename, ok = hostnameSiteMap[hostname]; !ok {
+				hostnameSiteMap[hostname] = tpl.GuessSiteByHostname(hostname, defaultSite)
+				sitename = hostnameSiteMap[hostname]
+			}
+			if sitename == "" {
+				log.Warnf("torrent %s: url does not match any site. will use provided default site")
+			} else {
+				siteName = sitename
+			}
 		}
 		if siteName == "" {
-			fmt.Printf("torrent %s: no site provided", torrentId)
+			fmt.Printf("torrent %s: no site found or provided\n", torrentId)
 			errCnt++
 			continue
 		}

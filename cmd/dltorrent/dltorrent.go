@@ -2,6 +2,7 @@ package dltorrent
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 
@@ -10,6 +11,7 @@ import (
 
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/site"
+	"github.com/sagan/ptool/site/tpl"
 	"github.com/sagan/ptool/utils"
 )
 
@@ -37,6 +39,8 @@ func dltorrent(cmd *cobra.Command, args []string) {
 	errCnt := int64(0)
 	torrentIds := args
 
+	hostnameSiteMap := map[string](string){}
+
 	for _, torrentId := range torrentIds {
 		siteName := defaultSite
 		if !utils.IsUrl(torrentId) {
@@ -44,6 +48,24 @@ func dltorrent(cmd *cobra.Command, args []string) {
 			if i != -1 && i < len(torrentId)-1 {
 				siteName = torrentId[:i]
 				torrentId = torrentId[i+1:]
+			}
+		} else {
+			urlObj, err := url.Parse(torrentId)
+			if err != nil || urlObj.Hostname() == "" {
+				fmt.Printf("torrent %s: failed to parse url (err=%v)", torrentId, err)
+				continue
+			}
+			hostname := urlObj.Hostname()
+			sitename := ""
+			ok := false
+			if sitename, ok = hostnameSiteMap[hostname]; !ok {
+				hostnameSiteMap[hostname] = tpl.GuessSiteByHostname(hostname, defaultSite)
+				sitename = hostnameSiteMap[hostname]
+			}
+			if sitename == "" {
+				log.Warnf("torrent %s: url does not match any site. will use provided default site")
+			} else {
+				siteName = sitename
 			}
 		}
 		if siteName == "" {

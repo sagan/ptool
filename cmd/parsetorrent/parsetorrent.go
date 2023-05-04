@@ -26,7 +26,7 @@ var (
 )
 
 func init() {
-	command.Flags().BoolVar(&showAll, "all", false, "show all info.")
+	command.Flags().BoolVarP(&showAll, "all", "a", false, "show all info.")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -43,9 +43,15 @@ func parsetorrent(cmd *cobra.Command, args []string) {
 		if len(torrentInfo.Announce) > 0 {
 			trackerHostname = utils.ParseUrlHostname(torrentInfo.Announce[0])
 		}
-		fmt.Printf("Torrent %s: infohash = %s  tracker = %s //%s\n", torrentFileName, torrentInfo.InfoHash, trackerHostname, torrentInfo.Comment)
+		size := int64(0)
+		for _, file := range torrentInfo.Files {
+			size += file.Length
+		}
+		fmt.Printf("Torrent %s: infohash = %s ; size = %s ; tracker = %s // %s\n", torrentFileName, torrentInfo.InfoHash, utils.BytesSize(float64(size)),
+			trackerHostname, torrentInfo.Comment)
 
 		if showAll {
+			fmt.Printf("RawSize = %d ; FullTrackerUrls: %s\n", size, strings.Join(torrentInfo.Announce, " | "))
 			fmt.Printf("\n")
 			for i, file := range torrentInfo.Files {
 				fmt.Printf("%d. %s\n", i, strings.Join(file.Path, "/"))

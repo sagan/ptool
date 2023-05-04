@@ -28,8 +28,8 @@ var (
 
 func init() {
 	command.Flags().BoolVarP(&paused, "paused", "p", false, "Add torrents to client in paused state")
-	command.Flags().StringVar(&setCategory, "set-category", "", "Set category of added torrents.")
-	command.Flags().StringVar(&addTags, "add-tags", "", "Add tags to added torrent (comma-separated).")
+	command.Flags().StringVarP(&setCategory, "set-category", "", "", "Set category of added torrents.")
+	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Add tags to added torrent (comma-separated).")
 	cmd.RootCmd.AddCommand(command)
 }
 

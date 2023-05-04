@@ -29,7 +29,7 @@ var (
 )
 
 func init() {
-	command.Flags().BoolVar(&showRaw, "raw", false, "show raw config data")
+	command.Flags().BoolVarP(&showRaw, "raw", "", false, "show raw config data")
 	cmd.RootCmd.AddCommand(command)
 }
 

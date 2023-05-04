@@ -37,8 +37,8 @@ clientOrSiteOrGroup: name of a client, site, group, or "_all" which means all si
 }
 
 func init() {
-	command.Flags().StringVar(&filter, "filter", "", "filter client torrents by name")
-	command.Flags().StringVar(&category, "category", "", "filter client torrents by category")
+	command.Flags().StringVarP(&filter, "filter", "", "", "filter client torrents by name")
+	command.Flags().StringVarP(&category, "category", "", "", "filter client torrents by category")
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "show all clients / sites.")
 	command.Flags().BoolVarP(&showAllClients, "clients", "c", false, "show all clients.")
 	command.Flags().BoolVarP(&showAllSites, "sites", "s", false, "show all sites.")

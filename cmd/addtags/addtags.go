@@ -1,6 +1,8 @@
-package reannounce
+package addtags
 
 import (
+	"strings"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -9,13 +11,14 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "reannounce <client> <infoHash>...",
-	Short: "Reannounce torrents of client",
-	Long: `Reannounce torrents of client
+	Use:   "addtags <client> <tags> <infoHash>...",
+	Short: "Add tags to torrents in client",
+	Long: `Add tags to torrents in client
+<tags> : comma-seperated tags list
 <infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
 _all, _active, _done,  _downloading, _seeding, _paused, _completed, _error`,
-	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
-	Run:  reannounce,
+	Args: cobra.MatchAll(cobra.MinimumNArgs(3), cobra.OnlyValidArgs),
+	Run:  addtags,
 }
 
 var (
@@ -31,23 +34,24 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func reannounce(cmd *cobra.Command, args []string) {
+func addtags(cmd *cobra.Command, args []string) {
 	clientInstance, err := client.CreateClient(args[0])
 	if err != nil {
 		log.Fatal(err)
 	}
-	args = args[1:]
+	tags := strings.Split(args[1], ",")
+	args = args[2:]
 	infoHashes, err := client.SelectTorrents(clientInstance, category, tag, filter, args...)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if infoHashes == nil {
-		err = clientInstance.ReannounceAllTorrents()
+		err = clientInstance.AddTagsToAllTorrents(tags)
 		if err != nil {
 			log.Fatal(err)
 		}
 	} else if len(infoHashes) > 0 {
-		err = clientInstance.ReannounceTorrents(infoHashes)
+		err = clientInstance.AddTagsToTorrents(infoHashes, tags)
 		if err != nil {
 			log.Fatal(err)
 		}

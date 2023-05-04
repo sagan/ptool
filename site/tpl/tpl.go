@@ -3,11 +3,13 @@ package tpl
 // 站点模板
 
 import (
+	"net/url"
 	"sort"
 
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/utils"
+	"golang.org/x/exp/slices"
 )
 
 var (
@@ -343,4 +345,51 @@ func create(name string, siteConfig *config.SiteConfigStruct, globalConfig *conf
 	sc := *SITES[siteConfig.Type]           // copy
 	utils.Assign(&sc, siteConfig, []int{0}) // field 0: type
 	return site.CreateSiteInternal(name, &sc, globalConfig)
+}
+
+func FindSiteTypesByUrl(urlStr string) []string {
+	urlObj, err := url.Parse(urlStr)
+	if err != nil {
+		return nil
+	}
+	return FindSiteTypesByHostname(urlObj.Hostname())
+}
+
+func FindSiteTypesByHostname(hostname string) []string {
+	if hostname == "" {
+		return nil
+	}
+	for sitename, site := range SITES {
+		siteUrlObj, err := url.Parse(site.Url)
+		if err != nil {
+			continue
+		}
+		if hostname != siteUrlObj.Hostname() {
+			continue
+		}
+		types := utils.CopySlice(site.Aliases)
+		types = append(types, sitename)
+		return types
+	}
+	return nil
+}
+
+func GuessSiteByHostname(hostname string, defaultSite string) string {
+	// prefer defaultSite
+	defaultSiteConfig := config.GeSiteConfig(defaultSite)
+	if defaultSiteConfig != nil && defaultSiteConfig.Url != "" {
+		urlObj, err := url.Parse(defaultSiteConfig.Url)
+		if err == nil && urlObj.Hostname() == hostname {
+			return defaultSite
+		}
+	}
+	sitename := site.GetConfigSiteNameByHostname(hostname)
+	if sitename != "" {
+		return sitename
+	}
+	siteTypes := FindSiteTypesByHostname(hostname)
+	if defaultSiteConfig != nil && slices.Index(siteTypes, defaultSiteConfig.Type) != -1 {
+		return defaultSite
+	}
+	return site.GetConfigSiteNameByTypes(siteTypes...)
 }

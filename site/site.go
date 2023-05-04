@@ -2,9 +2,11 @@ package site
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/utils"
+	"golang.org/x/exp/slices"
 )
 
 type Torrent struct {
@@ -134,6 +136,28 @@ func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool) 
 			process,
 		)
 	}
+}
+
+func GetConfigSiteNameByHostname(hostname string) string {
+	for _, siteConfig := range config.Get().Sites {
+		urlObj, err := url.Parse(siteConfig.Url)
+		if err != nil {
+			continue
+		}
+		if hostname == urlObj.Hostname() {
+			return siteConfig.GetName()
+		}
+	}
+	return ""
+}
+
+func GetConfigSiteNameByTypes(types ...string) string {
+	for _, siteConfig := range config.Get().Sites {
+		if slices.Index(types, siteConfig.Type) != -1 {
+			return siteConfig.GetName()
+		}
+	}
+	return ""
 }
 
 func init() {

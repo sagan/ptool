@@ -231,6 +231,15 @@ func GetClientConfig(name string) *ClientConfigStruct {
 	return nil
 }
 
+func GeSiteConfig(name string) *SiteConfigStruct {
+	for _, site := range Get().Sites {
+		if site.GetName() == name {
+			return site
+		}
+	}
+	return nil
+}
+
 // if name is a group, return it's sites, otherwise return nil
 func GetGroupSites(name string) []string {
 	if name == "_all" { // special group of all sites

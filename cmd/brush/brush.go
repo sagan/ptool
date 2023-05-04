@@ -39,7 +39,7 @@ func init() {
 	command.Flags().BoolVarP(&paused, "paused", "p", false, "Add torrents to client in paused state")
 	command.Flags().BoolVarP(&ordered, "ordered", "o", false, "Brush sites provided in order")
 	command.Flags().BoolVarP(&force, "force", "f", false, "Force mode. Ignore NoAdd flag in clients.")
-	command.Flags().Int64Var(&maxSites, "max-sites", 0, "Allowed max succcess sites number, 0 = unlimited")
+	command.Flags().Int64VarP(&maxSites, "max-sites", "", 0, "Allowed max succcess sites number, 0 = unlimited")
 	cmd.RootCmd.AddCommand(command)
 }
 
