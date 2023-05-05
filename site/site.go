@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
+	cloudflarebp "github.com/DaRealFreak/cloudflare-bp-go"
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/utils"
 	"golang.org/x/exp/slices"
@@ -163,8 +164,28 @@ func GetConfigSiteNameByTypes(types ...string) string {
 	return ""
 }
 
+func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, config *config.ConfigStruct) (*http.Client, error) {
+	httpClient := &http.Client{}
+	transport := &http.Transport{}
+	proxy := siteConfig.Proxy
+	if proxy == "" {
+		proxy = config.SiteProxy
+	}
+	if proxy != "" {
+		proxyUrl, err := url.Parse(proxy)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse siteProxy %s: %v", proxy, err)
+		}
+		transport.Proxy = http.ProxyURL(proxyUrl)
+	}
+	httpClient.Transport = cloudflarebp.AddCloudFlareByPass(transport, cloudflarebp.Options{
+		AddMissingHeaders: false,
+	})
+	return httpClient, nil
+}
+
 // general download torrent func
-func DownloadTorrentByUrl(siteInstance Site, httpClient *http.Client, torrentUrl string) ([]byte, string, error) {
+func DownloadTorrentByUrl(siteInstance Site, httpClient *http.Client, torrentUrl string, torrentId string) ([]byte, string, error) {
 	res, header, err := utils.FetchUrl(torrentUrl, siteInstance.GetSiteConfig().Cookie, httpClient,
 		siteInstance.GetSiteConfig().UserAgent)
 	if err != nil {
@@ -182,10 +203,14 @@ func DownloadTorrentByUrl(siteInstance Site, httpClient *http.Client, torrentUrl
 			filename = unescapedFilename
 		}
 	}
+	filenamePrefix := siteInstance.GetName()
+	if torrentId != "" {
+		filenamePrefix += "." + torrentId
+	}
 	if filename != "" {
-		filename = fmt.Sprintf("%s.%s", siteInstance.GetName(), filename)
+		filename = fmt.Sprintf("%s.%s", filenamePrefix, filename)
 	} else {
-		filename = fmt.Sprintf("%s.torrent", siteInstance.GetName())
+		filename = fmt.Sprintf("%s.torrent", filenamePrefix)
 	}
 
 	defer res.Body.Close()

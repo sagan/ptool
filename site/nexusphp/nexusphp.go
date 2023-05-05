@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	cloudflarebp "github.com/DaRealFreak/cloudflare-bp-go"
 	"github.com/PuerkitoBio/goquery"
 	log "github.com/sirupsen/logrus"
 
@@ -78,12 +77,12 @@ func (npclient *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error)
 	}
 	// skip NP download notice. see https://github.com/xiaomlove/nexusphp/blob/php8/public/download.php
 	torrentUrl = utils.AppendUrlQueryString(torrentUrl, "letdown=1")
-	return site.DownloadTorrentByUrl(npclient, npclient.HttpClient, torrentUrl)
+	return site.DownloadTorrentByUrl(npclient, npclient.HttpClient, torrentUrl, "")
 }
 
 func (npclient *Site) DownloadTorrentById(id string) ([]byte, string, error) {
 	torrentUrl := npclient.SiteConfig.Url + "download.php?https=1&letdown=1&id=" + id
-	return site.DownloadTorrentByUrl(npclient, npclient.HttpClient, torrentUrl)
+	return site.DownloadTorrentByUrl(npclient, npclient.HttpClient, torrentUrl, id)
 }
 
 func (npclient *Site) GetStatus() (*site.Status, error) {
@@ -309,22 +308,10 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 	if err != nil {
 		return nil, fmt.Errorf("invalid site timezone %s: %v", siteConfig.Timezone, err)
 	}
-	httpClient := &http.Client{}
-	transport := &http.Transport{}
-	proxy := siteConfig.Proxy
-	if proxy == "" {
-		proxy = config.SiteProxy
+	httpClient, err := site.CreateSiteHttpClient(siteConfig, config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create site http client: %v", err)
 	}
-	if proxy != "" {
-		proxyUrl, err := url.Parse(proxy)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse siteProxy %s: %v", proxy, err)
-		}
-		transport.Proxy = http.ProxyURL(proxyUrl)
-	}
-	httpClient.Transport = cloudflarebp.AddCloudFlareByPass(transport, cloudflarebp.Options{
-		AddMissingHeaders: false,
-	})
 	site := &Site{
 		Name:       name,
 		Location:   location,

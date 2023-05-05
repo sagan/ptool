@@ -94,6 +94,12 @@ var (
 			Url:     "https://www.gamegamept.com/",
 			Comment: "GGPT",
 		},
+		"greatposterwall": &config.SiteConfigStruct{
+			Type:    "gazellepw",
+			Aliases: []string{"gpw"},
+			Url:     "https://greatposterwall.com/",
+			Comment: "海豹",
+		},
 		"gtk": &config.SiteConfigStruct{
 			Type:    "nexusphp",
 			Aliases: []string{"ptgtk"},

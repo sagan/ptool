@@ -7,12 +7,9 @@ package tnode
 import (
 	"fmt"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strings"
 	"time"
-
-	cloudflarebp "github.com/DaRealFreak/cloudflare-bp-go"
 
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
@@ -67,12 +64,12 @@ func (tnsite *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error) {
 			return tnsite.DownloadTorrentById(m[idRegexp.SubexpIndex("id")])
 		}
 	}
-	return site.DownloadTorrentByUrl(tnsite, tnsite.HttpClient, torrentUrl)
+	return site.DownloadTorrentByUrl(tnsite, tnsite.HttpClient, torrentUrl, "")
 }
 
 func (tnsite *Site) DownloadTorrentById(id string) ([]byte, string, error) {
 	torrentUrl := tnsite.SiteConfig.Url + "api/torrent/download/" + id
-	return site.DownloadTorrentByUrl(tnsite, tnsite.HttpClient, torrentUrl)
+	return site.DownloadTorrentByUrl(tnsite, tnsite.HttpClient, torrentUrl, id)
 }
 
 func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.ConfigStruct) (site.Site, error) {
@@ -83,22 +80,10 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 	if err != nil {
 		return nil, fmt.Errorf("invalid site timezone %s: %v", siteConfig.Timezone, err)
 	}
-	httpClient := &http.Client{}
-	transport := &http.Transport{}
-	proxy := siteConfig.Proxy
-	if proxy == "" {
-		proxy = config.SiteProxy
+	httpClient, err := site.CreateSiteHttpClient(siteConfig, config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create site http client: %v", err)
 	}
-	if proxy != "" {
-		proxyUrl, err := url.Parse(proxy)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse siteProxy %s: %v", proxy, err)
-		}
-		transport.Proxy = http.ProxyURL(proxyUrl)
-	}
-	httpClient.Transport = cloudflarebp.AddCloudFlareByPass(transport, cloudflarebp.Options{
-		AddMissingHeaders: false,
-	})
 	site := &Site{
 		Name:       name,
 		Location:   location,
