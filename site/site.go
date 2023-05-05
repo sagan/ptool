@@ -2,6 +2,9 @@ package site
 
 import (
 	"fmt"
+	"io"
+	"mime"
+	"net/http"
 	"net/url"
 
 	"github.com/sagan/ptool/config"
@@ -158,6 +161,36 @@ func GetConfigSiteNameByTypes(types ...string) string {
 		}
 	}
 	return ""
+}
+
+// general download torrent func
+func DownloadTorrentByUrl(siteInstance Site, httpClient *http.Client, torrentUrl string) ([]byte, string, error) {
+	res, header, err := utils.FetchUrl(torrentUrl, siteInstance.GetSiteConfig().Cookie, httpClient,
+		siteInstance.GetSiteConfig().UserAgent)
+	if err != nil {
+		return nil, "", fmt.Errorf("can not fetch torrents from site: %v", err)
+	}
+	mimeType, _, _ := mime.ParseMediaType(header.Get("content-type"))
+	if mimeType != "" && mimeType != "application/octet-stream" && mimeType != "application/x-bittorrent" {
+		return nil, "", fmt.Errorf("server return invalid content-type: %s", mimeType)
+	}
+	filename := ""
+	_, params, err := mime.ParseMediaType(header.Get("content-disposition"))
+	if err == nil {
+		unescapedFilename, err := url.QueryUnescape(params["filename"])
+		if err == nil {
+			filename = unescapedFilename
+		}
+	}
+	if filename != "" {
+		filename = fmt.Sprintf("%s.%s", siteInstance.GetName(), filename)
+	} else {
+		filename = fmt.Sprintf("%s.torrent", siteInstance.GetName())
+	}
+
+	defer res.Body.Close()
+	data, err := io.ReadAll(res.Body)
+	return data, filename, err
 }
 
 func init() {

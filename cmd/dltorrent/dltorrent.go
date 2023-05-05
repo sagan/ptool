@@ -69,7 +69,7 @@ func dltorrent(cmd *cobra.Command, args []string) {
 			}
 		}
 		if siteName == "" {
-			fmt.Printf("torrent %s: no site provided", torrentId)
+			fmt.Printf("torrent %s: no site provided\n", torrentId)
 			errCnt++
 			continue
 		}

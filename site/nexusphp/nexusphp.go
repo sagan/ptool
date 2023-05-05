@@ -2,8 +2,6 @@ package nexusphp
 
 import (
 	"fmt"
-	"io"
-	"mime"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -80,59 +78,12 @@ func (npclient *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error)
 	}
 	// skip NP download notice. see https://github.com/xiaomlove/nexusphp/blob/php8/public/download.php
 	torrentUrl = utils.AppendUrlQueryString(torrentUrl, "letdown=1")
-	res, header, err := utils.FetchUrl(torrentUrl, npclient.SiteConfig.Cookie, npclient.HttpClient, npclient.SiteConfig.UserAgent)
-	if err != nil {
-		return nil, "", fmt.Errorf("can not fetch torrents from site: %v", err)
-	}
-	mimeType, _, _ := mime.ParseMediaType(header.Get("content-type"))
-	if mimeType != "" && mimeType != "application/octet-stream" && mimeType != "application/x-bittorrent" {
-		return nil, "", fmt.Errorf("server return invalid content-type: %s", mimeType)
-	}
-	filename := ""
-	_, params, err := mime.ParseMediaType(header.Get("content-disposition"))
-	if err == nil {
-		unescapedFilename, err := url.QueryUnescape(params["filename"])
-		if err == nil {
-			filename = unescapedFilename
-		}
-	}
-	if filename != "" {
-		filename = fmt.Sprintf("%s.%s", npclient.GetName(), filename)
-	} else {
-		filename = fmt.Sprintf("%s.torrent", npclient.GetName())
-	}
-
-	defer res.Body.Close()
-	data, err := io.ReadAll(res.Body)
-	return data, filename, err
+	return site.DownloadTorrentByUrl(npclient, npclient.HttpClient, torrentUrl)
 }
 
 func (npclient *Site) DownloadTorrentById(id string) ([]byte, string, error) {
-	res, header, err := utils.FetchUrl(npclient.SiteConfig.Url+"download.php?https=1&letdown=1&id="+fmt.Sprint(id), npclient.SiteConfig.Cookie, npclient.HttpClient, npclient.SiteConfig.UserAgent)
-	if err != nil {
-		return nil, "", fmt.Errorf("can not fetch torrents from site: %v", err)
-	}
-	mimeType, _, _ := mime.ParseMediaType(header.Get("content-type"))
-	if mimeType != "" && mimeType != "application/octet-stream" && mimeType != "application/x-bittorrent" {
-		return nil, "", fmt.Errorf("server return invalid content-type: %s", mimeType)
-	}
-	filename := ""
-	_, params, err := mime.ParseMediaType(header.Get("content-disposition"))
-	if err == nil {
-		unescapedFilename, err := url.QueryUnescape(params["filename"])
-		if err == nil {
-			filename = unescapedFilename
-		}
-	}
-	if filename != "" {
-		filename = fmt.Sprintf("%s.%s.%s", npclient.GetName(), id, filename)
-	} else {
-		filename = fmt.Sprintf("%s.%s.torrent", npclient.GetName(), id)
-	}
-
-	defer res.Body.Close()
-	data, err := io.ReadAll(res.Body)
-	return data, filename, err
+	torrentUrl := npclient.SiteConfig.Url + "download.php?https=1&letdown=1&id=" + id
+	return site.DownloadTorrentByUrl(npclient, npclient.HttpClient, torrentUrl)
 }
 
 func (npclient *Site) GetStatus() (*site.Status, error) {
@@ -374,7 +325,7 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 	httpClient.Transport = cloudflarebp.AddCloudFlareByPass(transport, cloudflarebp.Options{
 		AddMissingHeaders: false,
 	})
-	client := &Site{
+	site := &Site{
 		Name:       name,
 		Location:   location,
 		SiteConfig: siteConfig,
@@ -397,7 +348,7 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 			SelectorTorrentProcessBar:   siteConfig.SelectorTorrentProcessBar,
 		},
 	}
-	return client, nil
+	return site, nil
 }
 
 func init() {

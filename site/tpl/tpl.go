@@ -311,6 +311,11 @@ var (
 			Url:     "https://xinglin.one/",
 			Comment: "杏林",
 		},
+		"zhuque": &config.SiteConfigStruct{
+			Type:    "tnode",
+			Url:     "https://zhuque.in/",
+			Comment: "朱雀",
+		},
 		"zmpt": &config.SiteConfigStruct{
 			Type:    "nexusphp",
 			Url:     "https://zmpt.cc/",
