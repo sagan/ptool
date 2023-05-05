@@ -11,13 +11,13 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "removetags <client> <tags> <infoHash>...",
+	Use:   "removetags <client> <tags> [<infoHash>...]",
 	Short: "Remove tags from torrents in client",
 	Long: `Remove tags from torrents in client
 <tags> : comma-seperated tags list
 <infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
 _all, _active, _done,  _downloading, _seeding, _paused, _completed, _error`,
-	Args: cobra.MatchAll(cobra.MinimumNArgs(3), cobra.OnlyValidArgs),
+	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	Run:  removetags,
 }
 
@@ -41,6 +41,9 @@ func removetags(cmd *cobra.Command, args []string) {
 	}
 	tags := strings.Split(args[1], ",")
 	args = args[2:]
+	if category == "" && tag == "" && filter == "" && len(args) == 0 {
+		log.Fatalf("You must provide at least a condition flag or hashFilter")
+	}
 	infoHashes, err := client.SelectTorrents(clientInstance, category, tag, filter, args...)
 	if err != nil {
 		log.Fatal(err)

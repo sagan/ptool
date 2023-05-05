@@ -194,7 +194,8 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 		}
 
 		if torrent.State == "error" && (torrent.UploadSpeed < option.SlowUploadSpeedTier ||
-			torrent.UploadSpeed < option.SlowUploadSpeedTier*2 && freespace == 0) {
+			torrent.UploadSpeed < option.SlowUploadSpeedTier*2 && freespace == 0) &&
+			len(candidateTorrents) > 0 {
 			deleteCandidateTorrents = append(deleteCandidateTorrents, candidateClientTorrentStruct{
 				InfoHash:    torrent.InfoHash,
 				Score:       DELETE_TORRENT_IMMEDIATELY_STORE,

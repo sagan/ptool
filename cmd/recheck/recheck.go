@@ -9,13 +9,13 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "recheck <client> <infoHash>...",
+	Use:   "recheck <client> [<infoHash>...]",
 	Short: "Recheck torrents of client",
 	Long: `Recheck torrents of client
 <infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
 _all, _active, _done,  _downloading, _seeding, _paused, _completed, _error
 `,
-	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
+	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	Run:  recheck,
 }
 
@@ -38,6 +38,9 @@ func recheck(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 	args = args[1:]
+	if category == "" && tag == "" && filter == "" && len(args) == 0 {
+		log.Fatalf("You must provide at least a condition flag or hashFilter")
+	}
 	infoHashes, err := client.SelectTorrents(clientInstance, category, tag, filter, args...)
 	if err != nil {
 		log.Fatal(err)

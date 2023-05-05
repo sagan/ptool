@@ -14,8 +14,8 @@ import (
 
 var command = &cobra.Command{
 	Use:   "sites",
-	Short: "Show iyuu sites list.",
-	Long:  `Show iyuu sites list.`,
+	Short: "Show iyuu sites list",
+	Long:  `Show iyuu sites list`,
 	Run:   sites,
 }
 
@@ -63,14 +63,14 @@ func sites(cmd *cobra.Command, args []string) {
 	} else {
 		fmt.Printf("<local sites supported by iyuu> (add -a flag to show all iyuu sites)\n")
 	}
-	fmt.Printf("%-10s  %20s  %7s  %20s  %40s\n", "Nickname", "SiteName", "SiteId", "LocalSite", "SiteUrl")
+	fmt.Printf("%-10s  %-13s  %-6s  %-13s  %-25s  %-25s\n", "Nickname", "SiteName", "SiteId", "LocalSite", "SiteUrl", "DlPage")
 	for _, iyuuSite := range iyuuSites {
 		if iyuu2LocalSiteMap[iyuuSite.Sid] == "" {
 			continue
 		}
 		utils.PrintStringInWidth(iyuuSite.Nickname, 10, true)
-		fmt.Printf("  %20s  %7d  %20s  %40s\n", iyuuSite.Name, iyuuSite.Sid,
-			iyuu2LocalSiteMap[iyuuSite.Sid], iyuuSite.Url)
+		fmt.Printf("  %-13s  %-6d  %-13s  %-25s  %-25s\n", iyuuSite.Name, iyuuSite.Sid,
+			iyuu2LocalSiteMap[iyuuSite.Sid], iyuuSite.Url, iyuuSite.DownloadPage)
 	}
 
 	if showAll {
@@ -79,8 +79,8 @@ func sites(cmd *cobra.Command, args []string) {
 				continue
 			}
 			utils.PrintStringInWidth(iyuuSite.Nickname, 10, true)
-			fmt.Printf("  %20s  %7d  %20s  %40s\n", iyuuSite.Name, iyuuSite.Sid,
-				"X (None)", iyuuSite.Url)
+			fmt.Printf("  %-13s  %-6d  %-13s  %-25s  %-25s\n", iyuuSite.Name, iyuuSite.Sid,
+				"X (None)", iyuuSite.Url, iyuuSite.DownloadPage)
 		}
 	}
 }

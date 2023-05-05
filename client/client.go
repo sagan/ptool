@@ -16,6 +16,7 @@ type Torrent struct {
 	InfoHash           string
 	Name               string
 	TrackerDomain      string
+	Tracker            string
 	State              string // simplified state: seeding|downloading|completed|paused|checking|<any others>...
 	LowLevelState      string // original state value returned by bt client
 	Atime              int64  // timestamp torrent added
@@ -186,7 +187,7 @@ func ParseMetaFromName(fullname string) (name string, meta map[string](int64)) {
 func TorrentStateIconText(torrent *Torrent) string {
 	switch torrent.State {
 	case "downloading":
-		process := int64(float64(torrent.SizeCompleted) / float64(torrent.Size) * 100)
+		process := int64(float64(torrent.SizeCompleted) * 100 / float64(torrent.Size))
 		return fmt.Sprint("↓", process, "%")
 	case "seeding":
 		return "↑U"
@@ -236,15 +237,37 @@ func GenerateTorrentTagFromSite(site string) string {
 	return "site:" + site
 }
 
+func PrintTorrent(torrent *Torrent) {
+	ctimeStr := "-"
+	if torrent.Ctime > 0 {
+		ctimeStr = utils.FormatTime(torrent.Ctime)
+	}
+	fmt.Printf("Torrent name: %s\n", torrent.Name)
+	fmt.Printf("InfoHash: %s\n", torrent.InfoHash)
+	fmt.Printf("Size: %s (%d)\n", utils.BytesSize(float64(torrent.Size)), torrent.Size)
+	fmt.Printf("State (LowLevelState): %s (%s)\n", torrent.State, torrent.LowLevelState)
+	fmt.Printf("Speeds: ↓S: %s/s | ↑S: %s/s\n",
+		utils.BytesSize(float64(torrent.DownloadSpeed)),
+		utils.BytesSize(float64(torrent.UploadSpeed)),
+	)
+	fmt.Printf("Category: %s\n", torrent.Category)
+	fmt.Printf("Tags: %s\n", strings.Join(torrent.Tags, ","))
+	fmt.Printf("Meta: %v\n", torrent.Meta)
+	fmt.Printf("Add time: %s\n", utils.FormatTime(torrent.Atime))
+	fmt.Printf("Completion time: %s\n", ctimeStr)
+	fmt.Printf("Tracker: %s\n", torrent.Tracker)
+	fmt.Printf("Save path: %s\n", torrent.SavePath)
+}
+
 func PrintTorrents(torrents []Torrent, filter string) {
-	fmt.Printf("%-40s  %40s  %10s  %6s  %12s  %12s  %25s\n", "Name", "InfoHash", "Size", "State", "↓S", "↑S", "Tracker")
+	fmt.Printf("%-25s  %-40s  %-7s  %-5s  %-8s  %-8s  %-20s\n", "Name", "InfoHash", "Size", "State", "↓S (/s)", "↑S (/s)", "Tracker")
 	for _, torrent := range torrents {
 		if filter != "" && !utils.ContainsI(torrent.Name, filter) && !utils.ContainsI(torrent.InfoHash, filter) {
 			continue
 		}
 		name := torrent.Name
-		utils.PrintStringInWidth(name, 40, true)
-		fmt.Printf("  %40s  %10s  %6s  %10s/s  %10s/s  %25s\n",
+		utils.PrintStringInWidth(name, 25, true)
+		fmt.Printf("  %-40s  %-7s  %-5s  %-8s  %-8s  %-20s\n",
 			torrent.InfoHash,
 			utils.BytesSize(float64(torrent.Size)),
 			TorrentStateIconText(&torrent),
@@ -273,10 +296,57 @@ func XseedCheckTorrentContents(clientTorrentContents []TorrentContentFile, torre
 	return 0
 }
 
+func QueryTorrents(clientInstance Client, category string, tag string, filter string,
+	hashOrStateFilters ...string) ([]Torrent, error) {
+	torrents, err := clientInstance.GetTorrents("", category, true)
+	if err != nil {
+		return nil, err
+	}
+	if slices.Index(hashOrStateFilters, "_all") != -1 {
+		return torrents, nil
+	}
+	torrents = utils.Filter(torrents, func(torrent Torrent) bool {
+		if tag != "" && !torrent.HasTag(tag) {
+			return false
+		}
+		if filter != "" && !utils.ContainsI(torrent.Name, filter) {
+			return false
+		}
+		return true
+	})
+	if len(hashOrStateFilters) == 0 {
+		return torrents, nil
+	}
+
+	torrents2 := []Torrent{}
+	for _, arg := range hashOrStateFilters {
+		if strings.HasPrefix(arg, "_") {
+			for _, torrent := range torrents {
+				if torrent.MatchStateFilter(arg) {
+					torrents2 = append(torrents2, torrent)
+				}
+			}
+		} else {
+			torrent, err := clientInstance.GetTorrent(arg)
+			if err == nil && torrent != nil {
+				torrents2 = append(torrents2, *torrent)
+			}
+		}
+	}
+	torrents2 = utils.UniqueSliceFn(torrents2, func(t Torrent) string {
+		return t.InfoHash
+	})
+
+	return torrents2, nil
+}
+
 // parse torrents that meet criterion. specially, return nil slice if all torrents selected
 func SelectTorrents(clientInstance Client, category string, tag string, filter string,
 	hashOrStateFilters ...string) ([]string, error) {
 	if slices.Index(hashOrStateFilters, "_all") != -1 {
+		return nil, nil
+	}
+	if category == "" && tag == "" && filter == "" && len(hashOrStateFilters) == 0 {
 		return nil, nil
 	}
 
@@ -293,6 +363,13 @@ func SelectTorrents(clientInstance Client, category string, tag string, filter s
 		}
 		return true
 	})
+
+	if len(hashOrStateFilters) == 0 {
+		infoHashes := utils.Map(torrents, func(t Torrent) string {
+			return t.InfoHash
+		})
+		return infoHashes, nil
+	}
 
 	infoHashes := []string{}
 	for _, arg := range hashOrStateFilters {

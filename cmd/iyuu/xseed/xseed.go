@@ -20,7 +20,7 @@ import (
 
 var command = &cobra.Command{
 	Use:   "xseed <client>...",
-	Short: "Cross seed.",
+	Short: "Cross seed",
 	Long:  `Cross seed. By default it will add xseed torrents from All sites unless --include-sites or --exclude-sites flag is set`,
 	Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	Run:   xseed,

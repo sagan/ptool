@@ -168,7 +168,7 @@ func (db *StatDb) ShowTrafficStats(client string) {
 	}
 
 	var siteObjs []TorrentTraffic
-	db.sqldb.Distinct("site").Order("day desc").Limit(1000).Find(&siteObjs)
+	db.sqldb.Distinct("site").Where("site != ?", "").Order("day desc").Limit(1000).Find(&siteObjs)
 	if len(siteObjs) > 3 {
 		siteObjs = siteObjs[:3]
 	}
