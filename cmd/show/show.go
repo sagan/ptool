@@ -72,7 +72,7 @@ func show(cmd *cobra.Command, args []string) {
 		// display single torrent details
 		torrent, err := clientInstance.GetTorrent(args[0])
 		if err != nil {
-			log.Fatalf("Failed to get torrent %s details: %v", err)
+			log.Fatalf("Failed to get torrent %s details: %v", args[0], err)
 		}
 		client.PrintTorrent(torrent)
 		os.Exit(0)

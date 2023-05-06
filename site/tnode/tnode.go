@@ -22,6 +22,24 @@ type Site struct {
 	SiteConfig *config.SiteConfigStruct
 	Config     *config.ConfigStruct
 	HttpClient *http.Client
+	csrfToken  string
+}
+
+func (tnsite *Site) syncCsrfToken() error {
+	if tnsite.csrfToken != "" {
+		return nil
+	}
+	doc, err := utils.GetUrlDoc(tnsite.SiteConfig.Url, tnsite.HttpClient,
+		tnsite.GetSiteConfig().Cookie, tnsite.SiteConfig.UserAgent, nil)
+	if err != nil {
+		return err
+	}
+	token := doc.Find(`meta[name="x-csrf-token"]`).AttrOr("content", "")
+	if token == "" {
+		return fmt.Errorf("no x-csrf-token meta found")
+	}
+	tnsite.csrfToken = token
+	return nil
 }
 
 func (tnsite *Site) PurgeCache() {
@@ -36,7 +54,26 @@ func (tnsite *Site) GetSiteConfig() *config.SiteConfigStruct {
 }
 
 func (tnsite *Site) GetStatus() (*site.Status, error) {
-	return nil, fmt.Errorf("not implemented yet")
+	err := tnsite.syncCsrfToken()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get csrf token")
+	}
+
+	var data = &apiMainInfoResponse{}
+	apiUrl := tnsite.SiteConfig.Url + "api/user/getMainInfo"
+	headers := map[string](string){
+		"x-csrf-token": tnsite.csrfToken,
+	}
+	err = utils.FetchJson(apiUrl, data, tnsite.HttpClient,
+		tnsite.SiteConfig.Cookie, tnsite.SiteConfig.UserAgent, headers)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get use status: %v", err)
+	}
+	return &site.Status{
+		UserName:       data.Data.Username,
+		UserDownloaded: data.Data.Download,
+		UserUploaded:   data.Data.Upload,
+	}, nil
 }
 
 func (tnsite *Site) GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (

@@ -30,8 +30,9 @@ var (
 	}
 )
 
-func FetchJson(url string, v any, client *http.Client) error {
-	res, _, err := FetchUrl(url, "", client, "")
+func FetchJson(url string, v any, client *http.Client,
+	cookie string, ua string, otherHeaders map[string](string)) error {
+	res, _, err := FetchUrl(url, client, cookie, ua, otherHeaders)
 	if err != nil {
 		return err
 	}
@@ -48,7 +49,8 @@ func FetchJson(url string, v any, client *http.Client) error {
 	return err
 }
 
-func FetchUrl(url string, cookie string, client *http.Client, ua string) (*http.Response, http.Header, error) {
+func FetchUrl(url string, client *http.Client,
+	cookie string, ua string, otherHeaders map[string](string)) (*http.Response, http.Header, error) {
 	log.Tracef("FetchUrl url=%s hasCookie=%t", url, cookie != "")
 	if client == nil {
 		client = http.DefaultClient
@@ -60,6 +62,9 @@ func FetchUrl(url string, cookie string, client *http.Client, ua string) (*http.
 	SetHttpRequestBrowserHeaders(req, ua)
 	if cookie != "" {
 		req.Header.Set("Cookie", cookie)
+	}
+	for header, value := range otherHeaders {
+		req.Header.Set(header, value)
 	}
 	if client == nil {
 		client = http.DefaultClient

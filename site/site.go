@@ -186,8 +186,8 @@ func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, config *config.Co
 
 // general download torrent func
 func DownloadTorrentByUrl(siteInstance Site, httpClient *http.Client, torrentUrl string, torrentId string) ([]byte, string, error) {
-	res, header, err := utils.FetchUrl(torrentUrl, siteInstance.GetSiteConfig().Cookie, httpClient,
-		siteInstance.GetSiteConfig().UserAgent)
+	res, header, err := utils.FetchUrl(torrentUrl, httpClient,
+		siteInstance.GetSiteConfig().Cookie, siteInstance.GetSiteConfig().UserAgent, nil)
 	if err != nil {
 		return nil, "", fmt.Errorf("can not fetch torrents from site: %v", err)
 	}

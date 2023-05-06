@@ -56,7 +56,8 @@ func (npclient *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Tor
 	}
 	searchUrl = strings.Replace(searchUrl, "%s", url.PathEscape(keyword), 1)
 
-	doc, err := utils.GetUrlDoc(searchUrl, npclient.SiteConfig.Cookie, npclient.HttpClient, npclient.SiteConfig.UserAgent)
+	doc, err := utils.GetUrlDoc(searchUrl, npclient.HttpClient,
+		npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse site page dom: %v", err)
 	}
@@ -143,7 +144,8 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 	}
 	pageStr := "page=" + fmt.Sprint(page)
 	now := utils.Now()
-	doc, error := utils.GetUrlDoc(pageUrl+queryString+pageStr, npclient.SiteConfig.Cookie, npclient.HttpClient, npclient.SiteConfig.UserAgent)
+	doc, error := utils.GetUrlDoc(pageUrl+queryString+pageStr, npclient.HttpClient,
+		npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, nil)
 	if error != nil {
 		err = fmt.Errorf("failed to fetch torrents page dom: %v", error)
 		return
@@ -166,7 +168,8 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 			page = lastPage
 			pageStr = "page=" + fmt.Sprint(page)
 			now = utils.Now()
-			doc, error = utils.GetUrlDoc(pageUrl+queryString+pageStr, npclient.SiteConfig.Cookie, npclient.HttpClient, npclient.SiteConfig.UserAgent)
+			doc, error = utils.GetUrlDoc(pageUrl+queryString+pageStr, npclient.HttpClient,
+				npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, nil)
 			if error != nil {
 				err = fmt.Errorf("failed to fetch torrents page dom: %v", error)
 				return
@@ -201,7 +204,8 @@ func (npclient *Site) sync() error {
 	if url == "" {
 		url = npclient.SiteConfig.Url + "torrents.php"
 	}
-	doc, err := utils.GetUrlDoc(url, npclient.SiteConfig.Cookie, npclient.HttpClient, npclient.SiteConfig.UserAgent)
+	doc, err := utils.GetUrlDoc(url, npclient.HttpClient,
+		npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, nil)
 	if err != nil {
 		return fmt.Errorf("failed to get site page dom: %v", err)
 	}
@@ -283,7 +287,8 @@ func (npclient *Site) syncExtra() error {
 
 	extraTorrents := make([]site.Torrent, 0)
 	for _, extraUrl := range npclient.SiteConfig.TorrentsExtraUrls {
-		doc, err := utils.GetUrlDoc(extraUrl, npclient.SiteConfig.Cookie, npclient.HttpClient, npclient.SiteConfig.UserAgent)
+		doc, err := utils.GetUrlDoc(extraUrl, npclient.HttpClient,
+			npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, nil)
 		if err != nil {
 			log.Errorf("failed to parse site page dom: %v", err)
 			continue

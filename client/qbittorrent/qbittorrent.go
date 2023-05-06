@@ -675,7 +675,7 @@ func (qbclient *Client) GetTorrentContents(infoHash string) ([]client.TorrentCon
 	}
 	apiUrl := qbclient.ClientConfig.Url + "api/v2/torrents/files?hash=" + infoHash
 	qbTorrentContents := []apiTorrentContent{}
-	err = utils.FetchJson(apiUrl, &qbTorrentContents, qbclient.HttpClient)
+	err = utils.FetchJson(apiUrl, &qbTorrentContents, qbclient.HttpClient, "", "", nil)
 	if err != nil {
 		return nil, err
 	}
