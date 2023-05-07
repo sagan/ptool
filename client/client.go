@@ -80,12 +80,14 @@ type Client interface {
 	ReannounceTorrents(infoHashes []string) error
 	AddTagsToTorrents(infoHashes []string, tags []string) error
 	RemoveTagsFromTorrents(infoHashes []string, tags []string) error
+	SetTorrentsSavePath(infoHashes []string, savePath string) error
 	PauseAllTorrents() error
 	ResumeAllTorrents() error
 	RecheckAllTorrents() error
 	ReannounceAllTorrents() error
 	AddTagsToAllTorrents(tags []string) error
 	RemoveTagsFromAllTorrents(tags []string) error
+	SetAllTorrentsSavePath(savePath string) error
 	GetTags() ([]string, error)
 	CreateTags(tags ...string) error
 	DeleteTags(tags ...string) error
@@ -257,6 +259,10 @@ func PrintTorrent(torrent *Torrent) {
 	fmt.Printf("Completion time: %s\n", ctimeStr)
 	fmt.Printf("Tracker: %s\n", torrent.Tracker)
 	fmt.Printf("Save path: %s\n", torrent.SavePath)
+	fmt.Printf("Downloaded / Uploaded: %s / %s\n",
+		utils.BytesSize(float64(torrent.Downloaded)),
+		utils.BytesSize(float64(torrent.Uploaded)),
+	)
 }
 
 func PrintTorrents(torrents []Torrent, filter string) {

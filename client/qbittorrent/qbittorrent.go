@@ -236,6 +236,25 @@ func (qbclient *Client) RemoveTagsFromTorrents(infoHashes []string, tags []strin
 	return qbclient.apiPost("api/v2/torrents/removeTags", data)
 }
 
+func (qbclient *Client) SetTorrentsSavePath(infoHashes []string, savePath string) error {
+	if len(infoHashes) == 0 {
+		return nil
+	}
+	savePath = strings.TrimSpace(savePath)
+	if savePath == "" {
+		return fmt.Errorf("savePath is empty")
+	}
+	err := qbclient.login()
+	if err != nil {
+		return fmt.Errorf("login error: %v", err)
+	}
+	data := url.Values{
+		"hashes":   {strings.Join(infoHashes, "|")},
+		"location": {savePath},
+	}
+	return qbclient.apiPost("api/v2/torrents/setLocation", data)
+}
+
 func (qbclient *Client) PauseAllTorrents() error {
 	err := qbclient.login()
 	if err != nil {
@@ -308,6 +327,22 @@ func (qbclient *Client) RemoveTagsFromAllTorrents(tags []string) error {
 		"tags":   {strings.Join(tags, ",")},
 	}
 	return qbclient.apiPost("api/v2/torrents/removeTags", data)
+}
+
+func (qbclient *Client) SetAllTorrentsSavePath(savePath string) error {
+	savePath = strings.TrimSpace(savePath)
+	if savePath == "" {
+		return fmt.Errorf("savePath is empty")
+	}
+	err := qbclient.login()
+	if err != nil {
+		return fmt.Errorf("login error: %v", err)
+	}
+	data := url.Values{
+		"hashes":   {"all"},
+		"location": {savePath},
+	}
+	return qbclient.apiPost("api/v2/torrents/setLocation", data)
 }
 
 func (qbclient *Client) GetTags() ([]string, error) {
