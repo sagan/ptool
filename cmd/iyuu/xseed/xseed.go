@@ -237,9 +237,9 @@ mainloop:
 				}
 				if clientExistingTorrent != nil {
 					log.Tracef("xseed candidate %s already existed in client", xseedTorrent.InfoHash)
-					if !dryRun && !clientExistingTorrent.HasTag("xseed") {
+					if !dryRun && !clientExistingTorrent.HasTag(config.XSEED_TAG) {
 						clientInstance.ModifyTorrent(clientExistingTorrent.InfoHash, &client.TorrentOption{
-							Tags: []string{"xseed"},
+							Tags: []string{config.XSEED_TAG},
 						}, nil)
 					}
 					continue
@@ -297,7 +297,7 @@ mainloop:
 				err = clientInstance.AddTorrent(xseedTorrentContent, &client.TorrentOption{
 					SavePath:     targetTorrent.SavePath,
 					Category:     xseedTorrentCategory,
-					Tags:         []string{"xseed", client.GenerateTorrentTagFromSite(siteInstance.GetName())},
+					Tags:         []string{config.XSEED_TAG, client.GenerateTorrentTagFromSite(siteInstance.GetName())},
 					Pause:        paused,
 					SkipChecking: !check,
 				}, nil)
