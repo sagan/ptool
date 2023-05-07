@@ -45,7 +45,7 @@ var (
 )
 
 func init() {
-	command.Flags().BoolVarP(&slowMode, "slow", "", false, "Slow mode. wait after handling each xseed torrent. For dev / test purpose.")
+	command.Flags().BoolVarP(&slowMode, "slow", "", false, "Slow mode. wait after handling each xseed torrent. For dev / test purpose")
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do NOT actually add xseed torrents to client")
 	command.Flags().BoolVarP(&paused, "paused", "p", false, "Add xseed torrents to client in paused state")
 	command.Flags().BoolVarP(&check, "check-hash", "", false, "Let client do hash checking when add xseed torrents")
@@ -57,8 +57,8 @@ func init() {
 	command.Flags().StringVarP(&tag, "tag", "t", "", "Only xseed torrents that has this tag")
 	command.Flags().StringVarP(&filter, "filter", "f", "", "Only xseed torrents which name contains this")
 	command.Flags().StringVarP(&setCategory, "set-category", "", "", "Manually set category of added xseed torrent. By Default it uses the original torrent's")
-	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "1GB", "Torrents with size smaller than (<) this value will NOT be xseeded.")
-	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "1PB", "Torrents with size larger than (>=) this value will NOT be xseeded.")
+	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "1GB", "Torrents with size smaller than (<) this value will NOT be xseeded")
+	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "1PB", "Torrents with size larger than (>=) this value will NOT be xseeded")
 	command.Flags().StringVarP(&iyuuRequestServer, "request-server", "", "auto", "Whether send request to iyuu server to update local xseed db. Possible values: auto|yes|no")
 	iyuu.Command.AddCommand(command)
 }

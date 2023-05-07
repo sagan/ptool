@@ -27,15 +27,17 @@ var command = &cobra.Command{
 var (
 	paused      = false
 	defaultSite = ""
-	setCategory = ""
+	addCategory = ""
 	addTags     = ""
+	savePath    = ""
 )
 
 func init() {
 	command.Flags().BoolVarP(&paused, "paused", "p", false, "Add torrents to client in paused state")
+	command.Flags().StringVarP(&savePath, "add-save-path", "", "", "Set save path of added torrents")
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of torrents")
-	command.Flags().StringVarP(&setCategory, "set-category", "", "", "Set category of added torrents.")
-	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Add tags to added torrent (comma-separated).")
+	command.Flags().StringVarP(&addCategory, "add-category", "", "", "Set category of added torrents")
+	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Add tags to added torrent (comma-separated)")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -48,7 +50,8 @@ func add(cmd *cobra.Command, args []string) {
 	torrentFiles := args[1:]
 	option := &client.TorrentOption{
 		Pause:    paused,
-		Category: setCategory,
+		Category: addCategory,
+		SavePath: savePath,
 	}
 	var fixedTags []string
 	if addTags != "" {

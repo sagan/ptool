@@ -35,6 +35,7 @@ var (
 	addClient                                          = ""
 	addTags                                            = ""
 	filter                                             = ""
+	savePath                                           = ""
 	minTorrentSizeStr                                  = ""
 	maxTorrentSizeStr                                  = ""
 	minSeeders                                         = int64(0)
@@ -52,7 +53,7 @@ var (
 func init() {
 	command.Flags().BoolVarP(&freeOnly, "free", "", false, "Only show FREE torrents")
 	command.Flags().BoolVarP(&allowBreak, "break", "", false, "Break (stop finding more torrents) if all torrents of current page does not meet criterion")
-	command.Flags().BoolVarP(&addAutoStart, "add-auto-start", "", false, "By default the added torrents in client will be in paused state unless this flag is set")
+	command.Flags().BoolVarP(&addAutoStart, "add-start", "", false, "By default the added torrents in client will be in paused state unless this flag is set")
 	command.Flags().BoolVarP(&includeDownloaded, "include-downloaded", "", false, "Do NOT skip torrents that has been downloaded before")
 	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "m", 100, "Number limit of torrents handled. Default = 100. <=0 means unlimited")
 	command.Flags().StringVarP(&action, "action", "", "show", "Choose action for found torrents: show (print torrent details) | printid (print torrent id to stdout or file) | download (download torrent) | add (add torrent to client)")
@@ -67,6 +68,7 @@ func init() {
 	command.Flags().StringVarP(&addClient, "add-client", "", "", "Used with '--action add'. Set the client. Required in this action")
 	command.Flags().StringVarP(&addCategory, "add-category", "", "", "Used with '--action add'. Set the category when adding torrent to client")
 	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Used with '--action add'. Set the tags when adding torrent to client (comma-separated)")
+	command.Flags().StringVarP(&savePath, "add-save-path", "", "", "Set save path of added torrents")
 	command.Flags().StringVarP(&outputFile, "output-file", "", "", "Used with '--action printid'. Set the output file. (If not set, will use stdout)")
 	command.Flags().StringVarP(&baseUrl, "base-url", "", "", "Manually set the base url of torrents list page. eg. adult.php or https://kp.m-team.cc/adult.php for M-Team site")
 	command.Flags().VarP(&sortFieldEnumFlag, "sort", "s", "Manually Set the sort field, "+common.SiteTorrentSortFieldEnumTip)
@@ -99,9 +101,11 @@ func ebookgod(cmd *cobra.Command, args []string) {
 		clientAddTorrentOption = &client.TorrentOption{
 			Category: addCategory,
 			Pause:    !addAutoStart,
+			SavePath: savePath,
+			Tags:     []string{client.GenerateTorrentTagFromSite(siteInstance.GetName())},
 		}
 		if addTags != "" {
-			clientAddTorrentOption.Tags = strings.Split(addTags, ",")
+			clientAddTorrentOption.Tags = append(clientAddTorrentOption.Tags, strings.Split(addTags, ",")...)
 		}
 	} else if action == "printid" {
 		if outputFile != "" {
@@ -210,14 +214,14 @@ mainloop:
 						if err != nil {
 							fmt.Printf("torrent %s: failed to write to %s/file %s: %v\n", torrent.Id, downloadDir, filename, err)
 						} else {
-							fmt.Printf("torrent %s: downloaded to %s/%s\n", torrent.Id, downloadDir, filename)
+							fmt.Printf("torrent %s - %s (%s): downloaded to %s/%s\n", torrent.Id, torrent.Name, utils.BytesSize(float64(torrent.Size)), downloadDir, filename)
 						}
 					} else if action == "add" {
 						err := clientInstance.AddTorrent(torrentContent, clientAddTorrentOption, nil)
 						if err != nil {
 							fmt.Printf("torrent %s (%s): failed to add to client: %v\n", torrent.Id, torrent.Name, err)
 						} else {
-							fmt.Printf("torrent %s (%s): added to client\n", torrent.Id, torrent.Name)
+							fmt.Printf("torrent %s - %s (%s): added to client\n", torrent.Id, torrent.Name, utils.BytesSize(float64(torrent.Size)))
 						}
 					}
 				}
