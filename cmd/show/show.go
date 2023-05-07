@@ -40,9 +40,9 @@ var (
 func init() {
 	command.Flags().Int64VarP(&maxTorrents, "max-results", "m", 0, "Show at most this number of torrents. Default (0) == unlimited")
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all torrents. Equavalent with pass a '_all' arg")
-	command.Flags().StringVarP(&filter, "filter", "f", "", "filter torrents by name")
-	command.Flags().StringVarP(&category, "category", "c", "", "filter torrents by category")
-	command.Flags().StringVarP(&tag, "tag", "t", "", "filter torrents by tag")
+	command.Flags().StringVarP(&filter, "filter", "f", "", "Filter torrents by name")
+	command.Flags().StringVarP(&category, "category", "c", "", "Filter torrents by category")
+	command.Flags().StringVarP(&tag, "tag", "t", "", "Filter torrents by tag")
 	command.Flags().VarP(&sortFieldEnumFlag, "sort", "s", "Manually Set the sort field, "+common.ClientTorrentSortFieldEnumTip)
 	command.Flags().VarP(&orderEnumFlag, "order", "o", "Manually Set the sort order, "+common.OrderEnumTip)
 	command.RegisterFlagCompletionFunc("sort", common.ClientTorrentSortFieldEnumCompletion)

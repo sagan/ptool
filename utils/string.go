@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jpillora/go-tld"
 	runewidth "github.com/mattn/go-runewidth"
 )
 
@@ -75,4 +76,13 @@ func AppendUrlQueryString(url string, qs string) string {
 		qs = qs[1:]
 	}
 	return url + qs
+}
+
+// return (top-level) domain of a url. eg. https://www.google.com/ => google.com
+func GetUrlDomain(url string) string {
+	u, err := tld.Parse(url)
+	if err != nil {
+		return ""
+	}
+	return u.Domain + "." + u.TLD
 }

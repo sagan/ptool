@@ -3,7 +3,6 @@ package add
 import (
 	"bytes"
 	"fmt"
-	"net/url"
 	"os"
 	"strings"
 
@@ -47,7 +46,7 @@ func add(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 
-	hostnameSiteMap := map[string](string){}
+	domainSiteMap := map[string](string){}
 	siteInstanceMap := make(map[string](site.Site))
 	errCnt := int64(0)
 	torrentIds := args[1:]
@@ -55,8 +54,9 @@ func add(cmd *cobra.Command, args []string) {
 		Pause:    paused,
 		Category: addCategory,
 	}
+	var fixedTags []string
 	if addTags != "" {
-		option.Tags = strings.Split(addTags, ",")
+		fixedTags = strings.Split(addTags, ",")
 	}
 
 	for _, torrentId := range torrentIds {
@@ -68,17 +68,16 @@ func add(cmd *cobra.Command, args []string) {
 				torrentId = torrentId[i+1:]
 			}
 		} else {
-			urlObj, err := url.Parse(torrentId)
-			if err != nil || urlObj.Hostname() == "" {
-				fmt.Printf("torrent %s: failed to parse url (err=%v)", torrentId, err)
+			domain := utils.GetUrlDomain(torrentId)
+			if domain == "" {
+				fmt.Printf("torrent %s: failed to parse domain", torrentId)
 				continue
 			}
-			hostname := urlObj.Hostname()
 			sitename := ""
 			ok := false
-			if sitename, ok = hostnameSiteMap[hostname]; !ok {
-				hostnameSiteMap[hostname] = tpl.GuessSiteByHostname(hostname, defaultSite)
-				sitename = hostnameSiteMap[hostname]
+			if sitename, ok = domainSiteMap[domain]; !ok {
+				domainSiteMap[domain] = tpl.GuessSiteByDomain(domain, defaultSite)
+				sitename = domainSiteMap[domain]
 			}
 			if sitename == "" {
 				log.Warnf("torrent %s: url does not match any site. will use provided default site", torrentId)
@@ -111,6 +110,8 @@ func add(cmd *cobra.Command, args []string) {
 			errCnt++
 			continue
 		}
+		option.Tags = []string{client.GenerateTorrentTagFromSite(siteName)}
+		option.Tags = append(option.Tags, fixedTags...)
 		err = clientInstance.AddTorrent(torrentContent, option, nil)
 		if err != nil {
 			fmt.Printf("add site %s torrent %s error: failed to add torrent to client: %v\n", siteInstance.GetName(), torrentId, err)

@@ -142,14 +142,10 @@ func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool) 
 	}
 }
 
-func GetConfigSiteNameByHostname(hostname string) string {
+func GetConfigSiteNameByDomain(domain string) string {
 	for _, siteConfig := range config.Get().Sites {
-		urlObj, err := url.Parse(siteConfig.Url)
-		if err != nil {
-			continue
-		}
-		if hostname == urlObj.Hostname() {
-			return siteConfig.GetName()
+		if config.MatchSite(domain, siteConfig) {
+			return siteConfig.Name
 		}
 	}
 	return ""

@@ -3,7 +3,6 @@ package tpl
 // 站点模板
 
 import (
-	"net/url"
 	"sort"
 
 	"github.com/sagan/ptool/config"
@@ -144,6 +143,7 @@ var (
 			Type:                       "nexusphp",
 			Url:                        "https://hdcity.city/",
 			SearchUrl:                  "https://hdcity.city/pt?iwannaseethis=%s",
+			Domains:                    []string{"leniter.org"},
 			SelectorTorrentDetailsLink: `a[href^="t-"]`,
 			SelectorTorrentTime:        `.trtop > div:nth-last-child(2)@text`,
 			SelectorTorrentSize:        `.trbo > div:nth-child(3)@text`,
@@ -225,6 +225,7 @@ var (
 			Type:        "nexusphp",
 			Aliases:     []string{"leaguehd"},
 			Url:         "https://lemonhd.org/",
+			Domains:     []string{"leaguehd.com"},
 			TorrentsUrl: "https://lemonhd.org/torrents_new.php",
 			Comment:     "柠檬",
 		},
@@ -290,6 +291,7 @@ var (
 			Type:    "nexusphp",
 			Aliases: []string{"dmhy"},
 			Url:     "https://u2.dmhy.org/",
+			Domains: []string{"dmhy.best"},
 			Comment: "U2 (动漫花园)",
 		},
 		"ubits": &config.SiteConfigStruct{
@@ -358,24 +360,12 @@ func create(name string, siteConfig *config.SiteConfigStruct, globalConfig *conf
 	return site.CreateSiteInternal(name, &sc, globalConfig)
 }
 
-func FindSiteTypesByUrl(urlStr string) []string {
-	urlObj, err := url.Parse(urlStr)
-	if err != nil {
-		return nil
-	}
-	return FindSiteTypesByHostname(urlObj.Hostname())
-}
-
-func FindSiteTypesByHostname(hostname string) []string {
-	if hostname == "" {
+func FindSiteTypesByDomain(domain string) []string {
+	if domain == "" {
 		return nil
 	}
 	for sitename, site := range SITES {
-		siteUrlObj, err := url.Parse(site.Url)
-		if err != nil {
-			continue
-		}
-		if hostname != siteUrlObj.Hostname() {
+		if !config.MatchSite(domain, site) {
 			continue
 		}
 		types := utils.CopySlice(site.Aliases)
@@ -385,20 +375,18 @@ func FindSiteTypesByHostname(hostname string) []string {
 	return nil
 }
 
-func GuessSiteByHostname(hostname string, defaultSite string) string {
+func GuessSiteByDomain(domain string, defaultSite string) string {
 	// prefer defaultSite
-	defaultSiteConfig := config.GeSiteConfig(defaultSite)
-	if defaultSiteConfig != nil && defaultSiteConfig.Url != "" {
-		urlObj, err := url.Parse(defaultSiteConfig.Url)
-		if err == nil && urlObj.Hostname() == hostname {
-			return defaultSite
-		}
+	defaultSiteConfig := config.GetSiteConfig(defaultSite)
+	if defaultSiteConfig != nil && config.MatchSite(domain, defaultSiteConfig) {
+		return defaultSiteConfig.Name
 	}
-	sitename := site.GetConfigSiteNameByHostname(hostname)
+	sitename := site.GetConfigSiteNameByDomain(domain)
 	if sitename != "" {
 		return sitename
 	}
-	siteTypes := FindSiteTypesByHostname(hostname)
+
+	siteTypes := FindSiteTypesByDomain(domain)
 	if defaultSiteConfig != nil && slices.Index(siteTypes, defaultSiteConfig.Type) != -1 {
 		return defaultSite
 	}

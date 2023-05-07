@@ -2,7 +2,6 @@ package dltorrent
 
 import (
 	"fmt"
-	"net/url"
 	"os"
 	"strings"
 
@@ -39,7 +38,7 @@ func dltorrent(cmd *cobra.Command, args []string) {
 	errCnt := int64(0)
 	torrentIds := args
 
-	hostnameSiteMap := map[string](string){}
+	domainSiteMap := map[string](string){}
 
 	for _, torrentId := range torrentIds {
 		siteName := defaultSite
@@ -50,17 +49,16 @@ func dltorrent(cmd *cobra.Command, args []string) {
 				torrentId = torrentId[i+1:]
 			}
 		} else {
-			urlObj, err := url.Parse(torrentId)
-			if err != nil || urlObj.Hostname() == "" {
-				fmt.Printf("torrent %s: failed to parse url (err=%v)", torrentId, err)
+			domain := utils.GetUrlDomain(torrentId)
+			if domain == "" {
+				fmt.Printf("torrent %s: failed to parse domain", torrentId)
 				continue
 			}
-			hostname := urlObj.Hostname()
 			sitename := ""
 			ok := false
-			if sitename, ok = hostnameSiteMap[hostname]; !ok {
-				hostnameSiteMap[hostname] = tpl.GuessSiteByHostname(hostname, defaultSite)
-				sitename = hostnameSiteMap[hostname]
+			if sitename, ok = domainSiteMap[domain]; !ok {
+				domainSiteMap[domain] = tpl.GuessSiteByDomain(domain, defaultSite)
+				sitename = domainSiteMap[domain]
 			}
 			if sitename == "" {
 				log.Warnf("torrent %s: url does not match any site. will use provided default site", torrentId)

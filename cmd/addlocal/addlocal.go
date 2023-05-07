@@ -1,15 +1,19 @@
 package add
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"strings"
 
+	goTorrentParser "github.com/j-muller/go-torrent-parser"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/site/tpl"
+	"github.com/sagan/ptool/utils"
 )
 
 var command = &cobra.Command{
@@ -22,12 +26,14 @@ var command = &cobra.Command{
 
 var (
 	paused      = false
+	defaultSite = ""
 	setCategory = ""
 	addTags     = ""
 )
 
 func init() {
 	command.Flags().BoolVarP(&paused, "paused", "p", false, "Add torrents to client in paused state")
+	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of torrents")
 	command.Flags().StringVarP(&setCategory, "set-category", "", "", "Set category of added torrents.")
 	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Add tags to added torrent (comma-separated).")
 	cmd.RootCmd.AddCommand(command)
@@ -44,8 +50,9 @@ func add(cmd *cobra.Command, args []string) {
 		Pause:    paused,
 		Category: setCategory,
 	}
+	var fixedTags []string
 	if addTags != "" {
-		option.Tags = strings.Split(addTags, ",")
+		fixedTags = strings.Split(addTags, ",")
 	}
 
 	for _, torrentFile := range torrentFiles {
@@ -55,6 +62,30 @@ func add(cmd *cobra.Command, args []string) {
 			errCnt++
 			continue
 		}
+
+		tinfo, err := goTorrentParser.Parse(bytes.NewReader(torrentContent))
+		if err != nil {
+			fmt.Printf("torrent %s: failed to parse torrent (%v)\n", torrentFile, err)
+			errCnt++
+			continue
+		}
+		sitename := ""
+		for _, tracker := range tinfo.Announce {
+			domain := utils.GetUrlDomain(tracker)
+			if domain == "" {
+				continue
+			}
+			sitename = tpl.GuessSiteByDomain(domain, defaultSite)
+			if sitename != "" {
+				break
+			}
+		}
+		option.Tags = []string{}
+		if sitename != "" {
+			option.Tags = append(option.Tags, client.GenerateTorrentTagFromSite(sitename))
+		}
+		option.Tags = append(option.Tags, fixedTags...)
+
 		err = clientInstance.AddTorrent(torrentContent, option, nil)
 		if err != nil {
 			fmt.Printf("torrent %s: failed to add to client (%v)\n", torrentFile, err)

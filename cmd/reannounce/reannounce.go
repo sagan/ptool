@@ -25,9 +25,9 @@ var (
 )
 
 func init() {
-	command.Flags().StringVarP(&filter, "filter", "f", "", "filter torrents by name")
-	command.Flags().StringVarP(&category, "category", "c", "", "filter torrents by category")
-	command.Flags().StringVarP(&tag, "tag", "t", "", "filter torrents by tag")
+	command.Flags().StringVarP(&filter, "filter", "f", "", "Filter torrents by name")
+	command.Flags().StringVarP(&category, "category", "c", "", "Filter torrents by category")
+	command.Flags().StringVarP(&tag, "tag", "t", "", "Filter torrents by tag")
 	cmd.RootCmd.AddCommand(command)
 }
 

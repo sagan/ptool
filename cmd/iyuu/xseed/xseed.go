@@ -49,7 +49,7 @@ func init() {
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do NOT actually add xseed torrents to client")
 	command.Flags().BoolVarP(&paused, "paused", "p", false, "Add xseed torrents to client in paused state")
 	command.Flags().BoolVarP(&check, "check-hash", "", false, "Let client do hash checking when add xseed torrents")
-	command.Flags().Int64VarP(&maxXseedTorrents, "max-xseed-torrents", "", 0, "Number limit of xseed torrents added. Default = unlimited")
+	command.Flags().Int64VarP(&maxXseedTorrents, "max-torrents", "m", 0, "Number limit of xseed torrents added. Default (0) == unlimited")
 	command.Flags().Int64VarP(&iyuuRequestMaxTorrents, "max-request-torrents", "", 2000, "Number limit of target torrents sent to iyuu server at once")
 	command.Flags().StringVarP(&includeSites, "include-sites", "", "", "Only add xseed torrents from these sites or groups (comma-separated)")
 	command.Flags().StringVarP(&excludeSites, "exclude-sites", "", "", "Do NOT add xseed torrents from these sites or groups (comma-separated)")
@@ -200,7 +200,7 @@ func xseed(cmd *cobra.Command, args []string) {
 	siteInstancesMap := map[string](site.Site){}
 mainloop:
 	for i, clientName := range clientNames {
-		log.Printf("Start xseeding client %d/%d: %s", i+1, len(clientName)+1, clientName)
+		log.Printf("Start xseeding client (%d/%d) %s", i+1, len(clientName), clientName)
 		clientInstance := clientInstanceMap[clientName]
 		cnt := len(clientInfoHashesMap[clientName])
 		for i, infoHash := range clientInfoHashesMap[clientName] {
@@ -213,8 +213,8 @@ mainloop:
 				continue
 			}
 			cntTargetTorrents++
-			log.Tracef("client torrent %d/%d - %s: name=%s, savePath=%s",
-				i+1, cnt+1,
+			log.Tracef("client torrent (%d/%d) %s: name=%s, savePath=%s",
+				i+1, cnt,
 				targetTorrent.InfoHash, targetTorrent.Name, targetTorrent.SavePath,
 			)
 			targetTorrentContentFiles, err := clientInstance.GetTorrentContents(infoHash)
@@ -297,7 +297,7 @@ mainloop:
 				err = clientInstance.AddTorrent(xseedTorrentContent, &client.TorrentOption{
 					SavePath:     targetTorrent.SavePath,
 					Category:     xseedTorrentCategory,
-					Tags:         []string{"xseed", "site:" + siteInstance.GetName()},
+					Tags:         []string{"xseed", client.GenerateTorrentTagFromSite(siteInstance.GetName())},
 					Pause:        paused,
 					SkipChecking: !check,
 				}, nil)
@@ -305,7 +305,7 @@ mainloop:
 				if err == nil {
 					cntSucccessXseedTorrents++
 				}
-				if cntXseedTorrents == maxXseedTorrents {
+				if maxXseedTorrents > 0 && cntXseedTorrents >= maxXseedTorrents {
 					break mainloop
 				}
 				utils.Sleep(2)

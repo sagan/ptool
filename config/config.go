@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/jpillora/go-tld"
 	toml "github.com/pelletier/go-toml/v2"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -60,6 +61,7 @@ type SiteConfigStruct struct {
 	Comment                      string   `yaml:"comment"`
 	Disabled                     bool     `yaml:"disabled"`
 	Url                          string   `yaml:"url"`
+	Domains                      []string `yaml:"domains"` // other site domains (do not include subdomain part)
 	TorrentsUrl                  string   `yaml:"torrentsUrl"`
 	SearchUrl                    string   `yaml:"searchUrl"`
 	TorrentsExtraUrls            []string `yaml:"torrentsExtraUrls"`
@@ -223,6 +225,9 @@ func Get() *ConfigStruct {
 }
 
 func GetClientConfig(name string) *ClientConfigStruct {
+	if name == "" {
+		return nil
+	}
 	for _, client := range Get().Clients {
 		if client.Name == name {
 			return client
@@ -231,7 +236,10 @@ func GetClientConfig(name string) *ClientConfigStruct {
 	return nil
 }
 
-func GeSiteConfig(name string) *SiteConfigStruct {
+func GetSiteConfig(name string) *SiteConfigStruct {
+	if name == "" {
+		return nil
+	}
 	for _, site := range Get().Sites {
 		if site.GetName() == name {
 			return site
@@ -305,4 +313,26 @@ func (siteConfig *SiteConfigStruct) ParseSiteUrl(siteUrl string, appendQueryStri
 		pageUrl = utils.AppendUrlQueryStringDelimiter(pageUrl)
 	}
 	return pageUrl
+}
+
+func MatchSite(domain string, siteConfig *SiteConfigStruct) bool {
+	if domain == "" {
+		return false
+	}
+	if siteConfig.Url != "" {
+		u, err := tld.Parse(siteConfig.Url)
+		if err != nil {
+			return false
+		}
+		siteDomain := u.Domain + "." + u.TLD
+		if domain == siteDomain {
+			return true
+		}
+	}
+	for _, siteDomain := range siteConfig.Domains {
+		if siteDomain == domain {
+			return true
+		}
+	}
+	return false
 }
