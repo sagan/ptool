@@ -10,11 +10,9 @@ import (
 	"sync"
 
 	"github.com/glebarez/sqlite"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/utils"
 )
 
@@ -48,55 +46,25 @@ type Statistics struct {
 	Uploaded   int64
 }
 type StatDb struct {
-	file  *os.File
-	mu    sync.Mutex
-	open  bool
-	sqldb *gorm.DB
-}
-
-var (
-	Db *StatDb
-)
-
-func (db *StatDb) openStatFile() {
-	if db.open {
-		return
-	}
-	db.mu.Lock()
-	defer db.mu.Unlock()
-	if db.open {
-		return
-	}
-	db.open = true
-	filepath := config.ConfigDir + "/ptool_stats.txt"
-	log.Tracef("Brush open stats file: %s", filepath)
-	f, err := os.OpenFile(filepath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
-	if err != nil {
-		log.Errorf("Brush failed to open stats file: %v", err)
-	} else {
-		db.file = f
-	}
+	statFilename string
+	file         *os.File
+	mu           sync.Mutex
+	sqldb        *gorm.DB
 }
 
 func (db *StatDb) AddTorrentStat(ts int64, event int64, torrentStat *TorrentStat) {
-	db.openStatFile()
-
-	if db.file != nil {
-		buf := bytes.NewBuffer(nil)
-		json.NewEncoder(buf).Encode(Stat{
-			Ts:    ts,
-			Event: event,
-			Data:  torrentStat,
-		})
-		db.mu.Lock()
-		db.file.Write(buf.Bytes())
-		db.mu.Unlock()
-	}
+	buf := bytes.NewBuffer(nil)
+	json.NewEncoder(buf).Encode(Stat{
+		Ts:    ts,
+		Event: event,
+		Data:  torrentStat,
+	})
+	db.mu.Lock()
+	db.file.Write(buf.Bytes())
+	db.mu.Unlock()
 }
 
 func (db *StatDb) ShowTrafficStats(client string) {
-	db.prepare()
-
 	now := utils.Now()
 	today := utils.FormatDate(now)
 	yesterday := utils.FormatDate(now - 86400)
@@ -221,29 +189,25 @@ func (db *StatDb) ShowTrafficStats(client string) {
 	}
 }
 
-func (db *StatDb) prepare() {
-	if db.sqldb != nil {
-		return
-	}
-	db.openStatFile()
-	db.mu.Lock()
-	defer db.mu.Unlock()
-	if db.sqldb != nil {
-		return
-	}
-	_db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	if err != nil {
-		log.Fatalf("error create stats sqldb: %v", err)
-	}
-	err = _db.AutoMigrate(&TorrentTraffic{})
-	if err != nil {
-		log.Fatalf("sql schema init error: %v", err)
-	}
-	db.sqldb = _db
+func NewDb(statFilename string) (*StatDb, error) {
+	db := &StatDb{}
 
-	if db.file == nil {
-		return
+	f, err := os.OpenFile(statFilename, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open stats file %s: %v", statFilename, err)
 	}
+	db.statFilename = statFilename
+	db.file = f
+
+	sqldb, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		return nil, fmt.Errorf("error create stats sqldb: %v", err)
+	}
+	err = sqldb.AutoMigrate(&TorrentTraffic{})
+	if err != nil {
+		return nil, fmt.Errorf("sql schema init error: %v", err)
+	}
+	db.sqldb = sqldb
 	db.file.Seek(0, 0)
 	fileScanner := bufio.NewScanner(db.file)
 	fileScanner.Split(bufio.ScanLines)
@@ -311,8 +275,8 @@ func (db *StatDb) prepare() {
 			nexydayTime += 86400
 		}
 	}
+	return db, nil
 }
 
 func init() {
-	Db = &StatDb{}
 }

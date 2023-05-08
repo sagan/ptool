@@ -59,6 +59,13 @@ func brush(cmd *cobra.Command, args []string) {
 	cntDeleteTorrents := int64(0)
 	doneSiteFlag := make(map[string](bool))
 	tmpdir, _ := os.MkdirTemp(os.TempDir(), "ptool")
+	var statDb *stats.StatDb
+	if config.Get().BrushEnableStats {
+		statDb, err = stats.NewDb(config.ConfigDir + "/" + config.STATS_FILENAME)
+		if err != nil {
+			log.Warnf("Failed to create stats db: %v.", err)
+		}
+	}
 
 	for i, sitename := range sitenames {
 		if doneSiteFlag[sitename] {
@@ -172,8 +179,8 @@ func brush(cmd *cobra.Command, args []string) {
 			log.Printf("Delete torrent result: error=%v", err)
 			if err == nil {
 				cntDeleteTorrents++
-				if config.Get().BrushEnableStats {
-					stats.Db.AddTorrentStat(brushOption.Now, 1, &stats.TorrentStat{
+				if statDb != nil {
+					statDb.AddTorrentStat(brushOption.Now, 1, &stats.TorrentStat{
 						Client:     clientInstance.GetName(),
 						Site:       clientTorrent.GetSiteFromTag(),
 						InfoHash:   clientTorrent.InfoHash,

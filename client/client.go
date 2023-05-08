@@ -284,18 +284,53 @@ func PrintTorrents(torrents []Torrent, filter string) {
 	}
 }
 
-// return 0 if equal; 1 if clientTorrentContents contains all files of torrentContents. -1 in other cases
+// return 0 if equal; 1 if clientTorrentContents contains all files of torrentContents.
+// return -2 if the ROOT folder(file) of two torrents are different, but all innner files are SAME.
+// return -1 if contents of two torrents are NOT same.
+// inputed slices of filenames MUST be lexicographic ordered.
 func XseedCheckTorrentContents(clientTorrentContents []TorrentContentFile, torrentContents []*goTorrentParser.File) int64 {
-	if len(clientTorrentContents) < len(torrentContents) {
+	if len(clientTorrentContents) < len(torrentContents) || len(torrentContents) == 0 {
 		return -1
 	}
 	length := len(torrentContents)
+	leftContainerFolder := ""
+	rightContainerFolder := ""
+	leftNoContainerFolder := false
+	rightNoContainerFolder := false
 	for i := 0; i < length; i++ {
-		if clientTorrentContents[i].Path != strings.Join(torrentContents[i].Path, "/") ||
-			clientTorrentContents[i].Size != torrentContents[i].Length {
+		if clientTorrentContents[i].Size != torrentContents[i].Length {
+			return -1
+		}
+		leftPathes := strings.Split(clientTorrentContents[i].Path, "/")
+		if !leftNoContainerFolder && !rightNoContainerFolder {
+			_leftContainerFolder := leftPathes[0]
+			if leftContainerFolder == "" {
+				leftContainerFolder = _leftContainerFolder
+			} else if leftContainerFolder != _leftContainerFolder {
+				leftNoContainerFolder = true
+			}
+			_rightContainerFolder := torrentContents[i].Path[0]
+			if rightContainerFolder == "" {
+				rightContainerFolder = _rightContainerFolder
+			} else if rightContainerFolder != _rightContainerFolder {
+				rightNoContainerFolder = true
+			}
+		}
+		if clientTorrentContents[i].Path != strings.Join(torrentContents[i].Path, "/") {
+			if !leftNoContainerFolder && !rightNoContainerFolder {
+				leftPath := strings.Join(leftPathes[1:], "/")
+				rightPath := strings.Join(torrentContents[i].Path[1:], "/")
+				if leftPath == rightPath {
+					continue
+				}
+			}
 			return -1
 		}
 	}
+	if !leftNoContainerFolder && !rightNoContainerFolder {
+		return -2
+	}
+	// it's somewhat broken for now
 	if length < len(clientTorrentContents) {
 		return 1
 	}

@@ -222,6 +222,9 @@ mainloop:
 				log.Tracef("Failed to get target torrent %s contents from client: %v", infoHash, err)
 				continue
 			}
+			sort.Slice(targetTorrentContentFiles, func(i, j int) bool {
+				return targetTorrentContentFiles[i].Path < targetTorrentContentFiles[j].Path
+			})
 			xseedTorrents := clientTorrentsMap[infoHash]
 			if len(xseedTorrents) == 0 {
 				log.Debugf("torrent %s skipped or has no xseed candidates", infoHash)
@@ -284,6 +287,9 @@ mainloop:
 					log.Errorf("Failed to parse xseed torrent contents: %v", err)
 					continue
 				}
+				sort.Slice(xseedTorrentInfo.Files, func(i, j int) bool {
+					return strings.Join(xseedTorrentInfo.Files[i].Path, "/") < strings.Join(xseedTorrentInfo.Files[j].Path, "/")
+				})
 				compareResult := client.XseedCheckTorrentContents(targetTorrentContentFiles, xseedTorrentInfo.Files)
 				if compareResult < 0 {
 					log.Tracef("xseed candidate is NOT identital with client torrent.")
