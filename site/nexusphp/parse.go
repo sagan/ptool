@@ -301,7 +301,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 			domCheckTextTagExisting(s, "free") {
 			downloadMultiplier = 0
 		}
-		if s.Find(`*[title^="seeding"],*[title^="leeching"],*[title^="downloading"],*[title^="uploading"]`).Length() > 0 {
+		if s.Find(`*[title^="seeding"],*[title^="leeching"],*[title^="downloading"],*[title^="uploading"],*[title^="inactivity"]`).Length() > 0 {
 			isActive = true
 		} else if option.SelectorTorrentProcessBar != "" && s.Find(option.SelectorTorrentProcessBar).Length() > 0 {
 			isActive = true
