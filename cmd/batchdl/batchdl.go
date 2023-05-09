@@ -1,6 +1,6 @@
-package ebookgod
+package batchdl
 
-// 电子书战神。批量下载最小的种子保种
+// 批量下载站点的种子
 
 import (
 	"fmt"
@@ -18,11 +18,12 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "ebookgod <site>",
-	Short: "Batch download the smallest (or by any other order) torrents from a site",
-	Long:  `Batch download the smallest (or by any other order) torrents from a site`,
-	Args:  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
-	Run:   ebookgod,
+	Use:     "batchdl <site>",
+	Aliases: []string{"ebookgod"},
+	Short:   "Batch download the smallest (or by any other order) torrents from a site",
+	Long:    `Batch download the smallest (or by any other order) torrents from a site`,
+	Args:    cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
+	Run:     batchdl,
 }
 
 var (
@@ -38,6 +39,7 @@ var (
 	savePath                                           = ""
 	minTorrentSizeStr                                  = ""
 	maxTorrentSizeStr                                  = ""
+	maxTotalSizeStr                                    = ""
 	minSeeders                                         = int64(0)
 	maxSeeders                                         = int64(0)
 	freeTimeAtLeastStr                                 = ""
@@ -55,10 +57,11 @@ func init() {
 	command.Flags().BoolVarP(&allowBreak, "break", "", false, "Break (stop finding more torrents) if all torrents of current page does not meet criterion")
 	command.Flags().BoolVarP(&addAutoStart, "add-start", "", false, "By default the added torrents in client will be in paused state unless this flag is set")
 	command.Flags().BoolVarP(&includeDownloaded, "include-downloaded", "", false, "Do NOT skip torrents that has been downloaded before")
-	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "m", 100, "Number limit of torrents handled. Default = 100. <=0 means unlimited")
+	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "m", 0, "Number limit of torrents handled. Default (0) == unlimited (Press Ctrl+C to stop at any time)")
 	command.Flags().StringVarP(&action, "action", "", "show", "Choose action for found torrents: show (print torrent details) | printid (print torrent id to stdout or file) | download (download torrent) | add (add torrent to client)")
 	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "0", "Skip torrents with size smaller than (<) this value")
-	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "100MB", "Skip torrents with size large than (>=) this value. 0 == unlimited")
+	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "0", "Skip torrents with size large than (>) this value. Default (0) == unlimited")
+	command.Flags().StringVarP(&maxTotalSizeStr, "max-total-size", "", "0", "Will at most download torrents with contents of this value. Default (or 0) == unlimited")
 	command.Flags().Int64VarP(&minSeeders, "min-seeders", "", 1, "Skip torrents with seeders less than (<) this value")
 	command.Flags().Int64VarP(&maxSeeders, "max-seeders", "", 0, "Skip torrents with seeders large than (>) this value. Default(0) = no limit")
 	command.Flags().StringVarP(&freeTimeAtLeastStr, "free-time", "", "", "Used with --free. Set the allowed minimal remaining torrent free time. eg. 12h, 1d")
@@ -78,7 +81,7 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func ebookgod(cmd *cobra.Command, args []string) {
+func batchdl(cmd *cobra.Command, args []string) {
 	siteInstance, err := site.CreateSite(args[0])
 	if err != nil {
 		log.Fatal(err)
@@ -117,6 +120,7 @@ func ebookgod(cmd *cobra.Command, args []string) {
 	}
 	minTorrentSize, _ := utils.RAMInBytes(minTorrentSizeStr)
 	maxTorrentSize, _ := utils.RAMInBytes(maxTorrentSizeStr)
+	maxTotalSize, _ := utils.RAMInBytes(maxTotalSizeStr)
 	desc := false
 	if orderEnumFlag == "desc" {
 		desc = true
@@ -132,6 +136,7 @@ func ebookgod(cmd *cobra.Command, args []string) {
 
 	cntTorrents := int64(0)
 	cntAllTorrents := int64(0)
+	totalSize := int64(0)
 
 	var torrents []site.Torrent
 	var marker = startPage
@@ -140,7 +145,7 @@ mainloop:
 	for {
 		now := utils.Now()
 		lastMarker = marker
-		log.Debugf("Get torrents with page parker '%s'", marker)
+		log.Printf("Get torrents with page parker '%s'", marker)
 		torrents, marker, err = siteInstance.GetAllTorrents(sortFieldEnumFlag.String(), desc, marker, baseUrl)
 		cntTorrentsThisPage := 0
 
@@ -158,8 +163,8 @@ mainloop:
 					continue
 				}
 			}
-			if maxTorrentSize > 0 && torrent.Size >= maxTorrentSize {
-				log.Tracef("Skip torrent %s due to size %d >= maxTorrentSize", torrent.Name, torrent.Size)
+			if maxTorrentSize > 0 && torrent.Size > maxTorrentSize {
+				log.Tracef("Skip torrent %s due to size %d > maxTorrentSize", torrent.Name, torrent.Size)
 				if sortFieldEnumFlag == "size" && !desc {
 					break mainloop
 				} else {
@@ -194,6 +199,7 @@ mainloop:
 			}
 			cntTorrents++
 			cntTorrentsThisPage++
+			totalSize += torrent.Size
 
 			if action == "show" {
 				site.PrintTorrents([]site.Torrent{torrent}, "", now, cntTorrents != 1)
@@ -230,6 +236,9 @@ mainloop:
 			if maxTorrents > 0 && cntTorrents >= maxTorrents {
 				break mainloop
 			}
+			if maxTotalSize > 0 && totalSize >= maxTotalSize {
+				break mainloop
+			}
 		}
 		if marker == "" {
 			break
@@ -238,9 +247,10 @@ mainloop:
 			if allowBreak {
 				break
 			} else {
-				log.Warning("Warning, current page has no required torrents. Press Ctrl + C to abort")
+				log.Warning("Warning, current page has no required torrents.")
 			}
 		}
+		log.Printf("Finish handling current page. Will process next page in few seconds. Press Ctrl + C to stop")
 		utils.Sleep(3)
 	}
 	fmt.Printf("\n"+`Done. Torrents / AllTorrents / LastPage: %d / %d / "%s"`+"\n", cntTorrents, cntAllTorrents, lastMarker)
