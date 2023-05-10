@@ -7,6 +7,23 @@ import (
 	"github.com/sagan/ptool/utils"
 )
 
+type apiTorrentTracker struct {
+	Url string `yaml:"url"` // Tracker url
+	// Tracker status.
+	// 0	Tracker is disabled (used for DHT, PeX, and LSD);
+	// 1	Tracker has not been contacted yet;
+	// 2	Tracker has been contacted and is working;
+	// 3	Tracker is updating;
+	// 4	Tracker has been contacted, but it is not working (or doesn't send proper replies);
+	Status         int64  `yaml:"status"`
+	Tier           int64  `yaml:"tier"`           // Tracker priority tier. Lower tier trackers are tried before higher tiers. Tier numbers are valid when >= 0, < 0 is used as placeholder when tier does not exist for special entries (such as DHT).
+	Num_peers      int64  `yaml:"num_peers"`      // Number of peers for current torrent, as reported by the tracker
+	Num_seeds      int64  `yaml:"num_seeds"`      // Number of seeds for current torrent, asreported by the tracker
+	Num_leeches    int64  `yaml:"num_leeches"`    // Number of leeches for current torrent, as reported by the tracker
+	Num_downloaded int64  `yaml:"num_downloaded"` // Number of completed downlods for current torrent, as reported by the tracker
+	Msg            string `yaml:"msg"`            // Tracker message (there is no way of knowing what this message is - it's up to tracker admins)
+}
+
 type apiTorrentContent struct {
 	Index        int64   `json:"index"`        // File index
 	Name         string  `json:"name"`         // File name (including relative path)
@@ -86,7 +103,7 @@ type apiTorrentInfo struct {
 	Category           string  `json:"category"`           //	string	Category of the torrent
 	Completed          int64   `json:"completed"`          //	integer	Amount of transfer data completed (bytes)
 	Completion_on      int64   `json:"completion_on"`      //	integer	Time (Unix Epoch) when the torrent completed
-	Content_path       string  `json:"content_path"`       //	string	Absolute path of torrent content (root path for multifile torrents absolute file path for singlefile torrents)
+	Content_path       string  `json:"content_path"`       //	string	Absolute path of torrent content (root path for multifile torrents; absolute file path for singlefile torrents)
 	Dl_limit           int64   `json:"dl_limit"`           //	integer	Torrent download speed limit (bytes/s). -1 if ulimited.
 	Dlspeed            int64   `json:"dlspeed"`            //	integer	Torrent download speed (bytes/s)
 	Downloaded         int64   `json:"downloaded"`         //	integer	Amount of data downloaded
@@ -173,6 +190,7 @@ func (qbtorrent *apiTorrentInfo) ToTorrent() *client.Torrent {
 		UploadedSpeedLimit: qbtorrent.Up_limit,
 		Category:           qbtorrent.Category,
 		SavePath:           qbtorrent.Save_path,
+		ContentPath:        qbtorrent.Content_path,
 		Tags:               strings.Split(qbtorrent.Tags, ","),
 		Seeders:            qbtorrent.Num_complete,
 		Size:               qbtorrent.Size,

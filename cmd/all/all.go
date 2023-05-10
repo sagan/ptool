@@ -12,6 +12,7 @@ import (
 	_ "github.com/sagan/ptool/cmd/delete"
 	_ "github.com/sagan/ptool/cmd/deletetags"
 	_ "github.com/sagan/ptool/cmd/dltorrent"
+	_ "github.com/sagan/ptool/cmd/edittracker"
 	_ "github.com/sagan/ptool/cmd/getcategories"
 	_ "github.com/sagan/ptool/cmd/gettags"
 	_ "github.com/sagan/ptool/cmd/iyuu/all"

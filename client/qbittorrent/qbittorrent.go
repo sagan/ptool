@@ -726,6 +726,42 @@ func (qbclient *Client) GetTorrentContents(infoHash string) ([]client.TorrentCon
 	return torrentContents, nil
 }
 
+func (qbclient *Client) GetTorrentTrackers(infoHash string) ([]client.TorrentTracker, error) {
+	err := qbclient.login()
+	if err != nil {
+		return nil, fmt.Errorf("login error: %v", err)
+	}
+	apiUrl := qbclient.ClientConfig.Url + "api/v2/torrents/trackers?hash=" + infoHash
+	qbTorrentTrackers := []apiTorrentTracker{}
+	err = utils.FetchJson(apiUrl, &qbTorrentTrackers, qbclient.HttpClient, "", "", nil)
+	if err != nil {
+		return nil, err
+	}
+	trackers := utils.Map(qbTorrentTrackers, func(qbtracker apiTorrentTracker) client.TorrentTracker {
+		status := ""
+		switch qbtracker.Status {
+		case 0:
+			status = "disabled"
+		case 1:
+			status = "notcontacted"
+		case 2:
+			status = "working"
+		case 3:
+			status = "updating"
+		case 4:
+			status = "error"
+		default:
+			status = "unknown"
+		}
+		return client.TorrentTracker{
+			Url:    qbtracker.Url,
+			Msg:    qbtracker.Msg,
+			Status: status,
+		}
+	})
+	return trackers, nil
+}
+
 func NewClient(name string, clientConfig *config.ClientConfigStruct, config *config.ConfigStruct) (client.Client, error) {
 	jar, err := cookiejar.New(nil)
 	if err != nil {

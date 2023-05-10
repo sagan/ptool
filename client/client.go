@@ -23,6 +23,7 @@ type Torrent struct {
 	Ctime              int64  // timestamp torrent completed. <=0 if not completed.
 	Category           string
 	SavePath           string
+	ContentPath        string
 	Tags               []string
 	Downloaded         int64
 	DownloadSpeed      int64
@@ -52,6 +53,12 @@ type Status struct {
 	DownloadSpeedLimit int64 // <= 0 means no limit
 	UploadSpeedLimit   int64 // <= 0 means no limit
 	NoAdd              bool  // if true, brush and other tasks will NOT add any torrents to client
+}
+
+type TorrentTracker struct {
+	Status string //working|notcontacted|error|updating|disabled|unknown
+	Url    string
+	Msg    string
 }
 
 type TorrentOption struct {
@@ -102,6 +109,7 @@ type Client interface {
 	GetClientConfig() *config.ClientConfigStruct
 	SetConfig(variable string, value string) error
 	GetConfig(variable string) (string, error)
+	GetTorrentTrackers(infoHash string) ([]TorrentTracker, error)
 }
 
 type RegInfo struct {
@@ -259,6 +267,7 @@ func PrintTorrent(torrent *Torrent) {
 	fmt.Printf("Completion time: %s\n", ctimeStr)
 	fmt.Printf("Tracker: %s\n", torrent.Tracker)
 	fmt.Printf("Save path: %s\n", torrent.SavePath)
+	fmt.Printf("Content path: %s\n", torrent.ContentPath)
 	fmt.Printf("Downloaded / Uploaded: %s / %s\n",
 		utils.BytesSize(float64(torrent.Downloaded)),
 		utils.BytesSize(float64(torrent.Uploaded)),
