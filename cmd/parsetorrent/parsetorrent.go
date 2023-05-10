@@ -31,8 +31,9 @@ func init() {
 }
 
 func parsetorrent(cmd *cobra.Command, args []string) {
-	torrentFileNames := args
+	torrentFileNames := utils.ParseFilenameArgs(args...)
 	hasError := false
+
 	for _, torrentFileName := range torrentFileNames {
 		torrentInfo, err := goTorrentParser.ParseFromFile(torrentFileName)
 		if err != nil {

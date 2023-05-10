@@ -40,7 +40,7 @@ func edittracker(cmd *cobra.Command, args []string) {
 	if category == "" && tag == "" && filter == "" && len(args) == 0 {
 		log.Fatalf("You must provide at least a condition flag or hashFilter")
 	}
-	infoHashes, err := client.SelectTorrents(clientInstance, category, tag, filter, args...)
+	_, err = client.SelectTorrents(clientInstance, category, tag, filter, args...)
 	if err != nil {
 		log.Fatal(err)
 	}

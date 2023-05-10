@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"time"
 
 	"golang.org/x/exp/constraints"
@@ -100,4 +101,67 @@ func GetNewFilename(filename string) string {
 			return filenameWithId
 		}
 	}
+}
+
+// "*.torrent" => ["a.torrent", "b.torrent"...].
+// Windows cmd / powershell 均不支持命令行 *.torrent 参数扩展。必须应用自己实现。做个简易版的
+func GetWildcardFilenames(filestr string) []string {
+	dir := filepath.Dir(filestr)
+	name := filepath.Base(filestr)
+	if name == "" {
+		return nil
+	}
+	ext := filepath.Ext(name)
+	if ext != "" {
+		name = name[:len(name)-len(ext)]
+	}
+	prefix := ""
+	suffix := ""
+	if !strings.Contains(name, "*") {
+		return nil
+	} else if name != "*" {
+		if strings.HasPrefix(name, "*") {
+			suffix = name[1:]
+		} else if strings.HasSuffix(name, "*") {
+			prefix = name[:len(name)-1]
+		} else {
+			return nil // not supported yet
+		}
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil
+	}
+	filenames := []string{}
+	for _, entry := range entries {
+		entryExt := filepath.Ext(entry.Name())
+		if entryExt != ext {
+			continue
+		}
+		if prefix != "" {
+			if strings.HasPrefix(entry.Name(), prefix) {
+				filenames = append(filenames, dir+"/"+entry.Name())
+			}
+		} else if suffix != "" {
+			if strings.HasSuffix(entry.Name(), suffix) {
+				filenames = append(filenames, dir+"/"+entry.Name())
+			}
+		} else {
+			filenames = append(filenames, dir+"/"+entry.Name())
+		}
+	}
+	return filenames
+}
+
+func ParseFilenameArgs(args ...string) []string {
+	names := []string{}
+	for _, arg := range args {
+		filenames := GetWildcardFilenames(arg)
+		if filenames == nil {
+			names = append(names, arg)
+		} else {
+			names = append(names, filenames...)
+		}
+	}
+	return names
 }

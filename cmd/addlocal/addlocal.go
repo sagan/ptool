@@ -26,6 +26,7 @@ var command = &cobra.Command{
 
 var (
 	paused      = false
+	skipCheck   = false
 	defaultSite = ""
 	addCategory = ""
 	addTags     = ""
@@ -33,6 +34,7 @@ var (
 )
 
 func init() {
+	command.Flags().BoolVarP(&skipCheck, "skip-check", "", false, "Skip hash checking when adding torrents")
 	command.Flags().BoolVarP(&paused, "paused", "p", false, "Add torrents to client in paused state")
 	command.Flags().StringVarP(&savePath, "add-save-path", "", "", "Set save path of added torrents")
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of torrents")
@@ -47,11 +49,12 @@ func add(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 	errCnt := int64(0)
-	torrentFiles := args[1:]
+	torrentFiles := utils.ParseFilenameArgs(args[1:]...)
 	option := &client.TorrentOption{
-		Pause:    paused,
-		Category: addCategory,
-		SavePath: savePath,
+		Pause:        paused,
+		Category:     addCategory,
+		SavePath:     savePath,
+		SkipChecking: skipCheck,
 	}
 	var fixedTags []string
 	if addTags != "" {

@@ -35,6 +35,7 @@ type TorrentsParserOption struct {
 	SelectorTorrentSnatched     string
 	SelectorTorrentSize         string
 	SelectorTorrentProcessBar   string
+	SelectorTorrentFree         string
 }
 
 func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
@@ -300,6 +301,11 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		} else if s.Find(`*[title="免费"],*[title="免費"],*[alt="Free"],*[alt="FREE"]`).Length() > 0 ||
 			domCheckTextTagExisting(s, "free") {
 			downloadMultiplier = 0
+		} else if option.SelectorTorrentFree != "" {
+			text := strings.ToLower(utils.DomSelectorText(s, option.SelectorTorrentFree))
+			if strings.Contains(text, "免费") || strings.Contains(text, "免費") || strings.Contains(text, "free") {
+				downloadMultiplier = 0
+			}
 		}
 		if s.Find(`*[title^="seeding"],*[title^="leeching"],*[title^="downloading"],*[title^="uploading"],*[title^="inactivity"]`).Length() > 0 {
 			isActive = true

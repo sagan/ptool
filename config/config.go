@@ -85,6 +85,7 @@ type SiteConfigStruct struct {
 	SelectorTorrentSnatched      string   `yaml:"selectorTorrentSnatched"`
 	SelectorTorrentSize          string   `yaml:"selectorTorrentSize"`
 	SelectorTorrentProcessBar    string   `yaml:"selectorTorrentProcessBar"`
+	SelectorTorrentFree          string   `yaml:"SelectorTorrentFree"`
 	SelectorUserInfo             string   `yaml:"selectorUserInfo"`
 	SelectorUserInfoUserName     string   `yaml:"selectorUserInfoUserName"`
 	SelectorUserInfoUploaded     string   `yaml:"selectorUserInfoUploaded"`
