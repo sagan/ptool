@@ -82,6 +82,12 @@ var (
 			Url:     "https://discfan.net/",
 			Comment: "蝶粉",
 		},
+		"eastgame": &config.SiteConfigStruct{
+			Type:    "nexusphp",
+			Aliases: []string{"tlfbits"},
+			Url:     "https://pt.eastgame.org/",
+			Comment: "吐鲁番",
+		},
 		"gainbound": &config.SiteConfigStruct{
 			Type:    "nexusphp",
 			Url:     "https://gainbound.net/",

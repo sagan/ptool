@@ -110,6 +110,7 @@ type Client interface {
 	SetConfig(variable string, value string) error
 	GetConfig(variable string) (string, error)
 	GetTorrentTrackers(infoHash string) ([]TorrentTracker, error)
+	EditTorrentTracker(infoHash string, oldTracker string, newTracker string) error
 }
 
 type RegInfo struct {
@@ -245,6 +246,27 @@ func (torrent *Torrent) HasTag(tag string) bool {
 
 func GenerateTorrentTagFromSite(site string) string {
 	return "site:" + site
+}
+
+func PrintTorrentTrackers(trackers []TorrentTracker) {
+	fmt.Printf("Trackers:\n")
+	fmt.Printf("%-8s  %-30s  %s\n", "Status", "Msg", "Url")
+	for _, tracker := range trackers {
+		fmt.Printf("%-8s  ", tracker.Status)
+		utils.PrintStringInWidth(tracker.Msg, 30, true)
+		fmt.Printf("  %s\n", tracker.Url)
+	}
+}
+func PrintTorrentFiles(files []TorrentContentFile) {
+	fmt.Printf("Files (%d):\n", len(files))
+	fmt.Printf("%-5s  %-10s  %-6s  %s\n", "Index", "Size", "IsDone", "Path")
+	for i, file := range files {
+		isDone := "✗"
+		if file.Complete {
+			isDone = "✓"
+		}
+		fmt.Printf("%-5d  %-10d  %-6s  %s\n", i+1, file.Size, isDone, file.Path)
+	}
 }
 
 func PrintTorrent(torrent *Torrent) {
@@ -451,5 +473,5 @@ func (torrent *Torrent) MatchStateFilter(stateFilter string) bool {
 			stateFilter = stateFilter[1:]
 		}
 	}
-	return stateFilter != torrent.State
+	return stateFilter == torrent.State
 }

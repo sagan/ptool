@@ -1,33 +1,49 @@
 package edittracker
 
 import (
+	"fmt"
+	"os"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/utils"
 )
 
 var command = &cobra.Command{
 	Use:   "edittracker <client> [<infoHash>...]",
 	Short: "Edit tracker of torrents in client",
-	Long: `Edit tracker of torrents in client
+	Long: `Edit tracker of torrents in client, replace the old tracker url with the new one
 <infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
-_all, _active, _done,  _downloading, _seeding, _paused, _completed, _error`,
+_all, _active, _done,  _downloading, _seeding, _paused, _completed, _error
+
+Example:
+ptool edittracker <client> --old-tracker "https://..." --new-tracker "https://..." _all
+`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	Run:  edittracker,
 }
 
 var (
-	category = ""
-	tag      = ""
-	filter   = ""
+	dryRun     = false
+	category   = ""
+	tag        = ""
+	filter     = ""
+	oldTracker = ""
+	newTracker = ""
 )
 
 func init() {
+	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do NOT actually modify torrent trackers")
 	command.Flags().StringVarP(&filter, "filter", "f", "", "Filter torrents by name")
 	command.Flags().StringVarP(&category, "category", "c", "", "Filter torrents by category")
 	command.Flags().StringVarP(&tag, "tag", "t", "", "Filter torrents by tag")
+	command.Flags().StringVarP(&oldTracker, "old-tracker", "", "", "Set the old tracker")
+	command.Flags().StringVarP(&newTracker, "new-tracker", "", "", "Set the new tracker")
+	command.MarkFlagRequired("old-tracker")
+	command.MarkFlagRequired("new-tracker")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -40,8 +56,35 @@ func edittracker(cmd *cobra.Command, args []string) {
 	if category == "" && tag == "" && filter == "" && len(args) == 0 {
 		log.Fatalf("You must provide at least a condition flag or hashFilter")
 	}
-	_, err = client.SelectTorrents(clientInstance, category, tag, filter, args...)
+	if !utils.IsUrl(oldTracker) || !utils.IsUrl(newTracker) {
+		log.Fatalf("Both --old-tracker and --new-tracker MUST be valid URL ( 'http(s)://...' )")
+	}
+	torrents, err := client.QueryTorrents(clientInstance, category, tag, filter, args...)
 	if err != nil {
 		log.Fatal(err)
+	}
+	if len(torrents) == 0 {
+		log.Infof("No matched torrents found")
+		os.Exit(0)
+	}
+	if !dryRun {
+		log.Warnf("Found %d torrents, will edit their trackers (%s => %s) in 3 seconds. Press Ctrl+C to stop",
+			len(torrents), oldTracker, newTracker)
+	}
+	utils.Sleep(3)
+	cntError := int64(0)
+	for _, torrent := range torrents {
+		fmt.Printf("Edit torrent %s (%s) tracker\n", torrent.InfoHash, torrent.Name)
+		if dryRun {
+			continue
+		}
+		err := clientInstance.EditTorrentTracker(torrent.InfoHash, oldTracker, newTracker)
+		if err != nil {
+			log.Errorf("Failed to edit tracker: %v\n", err)
+			cntError++
+		}
+	}
+	if cntError > 0 {
+		os.Exit(1)
 	}
 }

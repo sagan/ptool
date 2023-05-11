@@ -28,6 +28,9 @@ If no flags or args are provided, it will display current active torrents
 }
 
 var (
+	largest           bool
+	showTrackers      bool
+	showFiles         bool
 	maxTorrents                                         = int64(0)
 	filter                                              = ""
 	category                                            = ""
@@ -38,8 +41,11 @@ var (
 )
 
 func init() {
-	command.Flags().Int64VarP(&maxTorrents, "max-results", "m", 0, "Show at most this number of torrents. Default (0) == unlimited")
+	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "m", 0, "Show at most this number of torrents. Default (0) == unlimited")
+	command.Flags().BoolVarP(&largest, "largest", "l", false, "Show largest torrents first. Equavalent with '--sort size --order desc'")
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all torrents. Equavalent with pass a '_all' arg")
+	command.Flags().BoolVarP(&showTrackers, "trackers", "", false, "Show torrent trackers info")
+	command.Flags().BoolVarP(&showFiles, "files", "", false, "Show torrent content files info")
 	command.Flags().StringVarP(&filter, "filter", "f", "", "Filter torrents by name")
 	command.Flags().StringVarP(&category, "category", "c", "", "Filter torrents by category")
 	command.Flags().StringVarP(&tag, "tag", "t", "", "Filter torrents by tag")
@@ -58,6 +64,10 @@ func show(cmd *cobra.Command, args []string) {
 	args = args[1:]
 
 	desc := false
+	if largest {
+		sortFieldEnumFlag = "size"
+		desc = true
+	}
 	if orderEnumFlag == "desc" {
 		desc = true
 	}
@@ -74,7 +84,28 @@ func show(cmd *cobra.Command, args []string) {
 		if err != nil {
 			log.Fatalf("Failed to get torrent %s details: %v", args[0], err)
 		}
+		if torrent == nil {
+			log.Fatalf("torrent %s not found", args[0])
+		}
 		client.PrintTorrent(torrent)
+		if showTrackers {
+			fmt.Printf("\n")
+			trackers, err := clientInstance.GetTorrentTrackers(args[0])
+			if err != nil {
+				log.Errorf("Failed to get torrent trackers: %v", err)
+			} else {
+				client.PrintTorrentTrackers(trackers)
+			}
+		}
+		if showFiles {
+			fmt.Printf("\n")
+			files, err := clientInstance.GetTorrentContents(args[0])
+			if err != nil {
+				log.Errorf("Failed to get torrent contents: %v", err)
+			} else {
+				client.PrintTorrentFiles(files)
+			}
+		}
 		os.Exit(0)
 	} else {
 		torrents, err = client.QueryTorrents(clientInstance, category, tag, filter, args...)

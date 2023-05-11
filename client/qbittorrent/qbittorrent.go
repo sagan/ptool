@@ -762,6 +762,15 @@ func (qbclient *Client) GetTorrentTrackers(infoHash string) ([]client.TorrentTra
 	return trackers, nil
 }
 
+func (qbclient *Client) EditTorrentTracker(infoHash string, oldTracker string, newTracker string) error {
+	data := url.Values{
+		"hash":    {infoHash},
+		"origUrl": {oldTracker},
+		"newUrl":  {newTracker},
+	}
+	return qbclient.apiPost("api/v2/torrents/editTracker", data)
+}
+
 func NewClient(name string, clientConfig *config.ClientConfigStruct, config *config.ConfigStruct) (client.Client, error) {
 	jar, err := cookiejar.New(nil)
 	if err != nil {
