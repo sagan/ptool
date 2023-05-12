@@ -10,6 +10,7 @@ type = "qbittorrent"
 url = "http://localhost:8085/"
 username = "admin"
 password = "adminadmin"
+#qbittorrentNoLogin = true # 如果启用，不会发送登录请求。这将提高命令响应速度。需要在 QB Web UI设置里开启跳过验证。
 #brushMinDiskSpace = "5GB" # 刷流：保留最小空闲磁盘空间。
 #brushSlowUploadSpeedTier = "100KB" # 刷流：上传速度持续低于此值的种子将可能被删除
 #brushMaxDownloadingTorrents = 6 # 刷流：位于下载状态的种子数上限

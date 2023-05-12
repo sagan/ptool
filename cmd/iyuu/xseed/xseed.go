@@ -67,7 +67,7 @@ func init() {
 func xseed(cmd *cobra.Command, args []string) {
 	log.Tracef("iyuu token: %s", config.Get().IyuuToken)
 	if config.Get().IyuuToken == "" {
-		log.Fatalf("You must config iyuuToken in ptool.yaml to use iyuu functions")
+		log.Fatalf("You must config iyuuToken in ptool.toml to use iyuu functions")
 	}
 
 	includeSitesMode := false
@@ -213,6 +213,13 @@ mainloop:
 			if slowMode {
 				utils.Sleep(3)
 			}
+			xseedTorrents := clientTorrentsMap[infoHash]
+			if len(xseedTorrents) == 0 {
+				log.Debugf("torrent %s skipped or has no xseed candidates", infoHash)
+				continue
+			} else {
+				log.Debugf("torrent %s has %d xseed candidates", infoHash, len(xseedTorrents))
+			}
 			targetTorrent, err := clientInstance.GetTorrent(infoHash)
 			if err != nil {
 				log.Errorf("Failed to get target torrent %s info from client: %v", infoHash, err)
@@ -231,26 +238,10 @@ mainloop:
 			sort.Slice(targetTorrentContentFiles, func(i, j int) bool {
 				return targetTorrentContentFiles[i].Path < targetTorrentContentFiles[j].Path
 			})
-			xseedTorrents := clientTorrentsMap[infoHash]
-			if len(xseedTorrents) == 0 {
-				log.Debugf("torrent %s skipped or has no xseed candidates", infoHash)
-				continue
-			} else {
-				log.Debugf("torrent %s has %d xseed candidates", infoHash, len(xseedTorrents))
-			}
 			for _, xseedTorrent := range xseedTorrents {
 				clientExistingTorrent, err := clientInstance.GetTorrent(xseedTorrent.InfoHash)
 				if err != nil {
 					log.Errorf("Failed to get client existing torrent info for %s", xseedTorrent.InfoHash)
-					continue
-				}
-				if clientExistingTorrent != nil {
-					log.Tracef("xseed candidate %s already existed in client", xseedTorrent.InfoHash)
-					if !dryRun && !clientExistingTorrent.HasTag(config.XSEED_TAG) {
-						clientInstance.ModifyTorrent(clientExistingTorrent.InfoHash, &client.TorrentOption{
-							Tags: []string{config.XSEED_TAG},
-						}, nil)
-					}
 					continue
 				}
 				sitename := site2LocalMap[xseedTorrent.Sid]
@@ -258,6 +249,31 @@ mainloop:
 					log.Tracef("torrent %s xseed candidate torrent %s site sid %d not found in local",
 						infoHash, xseedTorrent.InfoHash, xseedTorrent.Sid,
 					)
+					continue
+				}
+				if clientExistingTorrent != nil {
+					log.Tracef("xseed candidate %s already existed in client", xseedTorrent.InfoHash)
+					if !dryRun {
+						tags := []string{}
+						removeTags := []string{}
+						if !clientExistingTorrent.HasTag(config.XSEED_TAG) {
+							tags = append(tags, config.XSEED_TAG)
+						}
+						siteTag := client.GenerateTorrentTagFromSite(sitename)
+						if !clientExistingTorrent.HasTag(siteTag) {
+							tags = append(tags, siteTag)
+						}
+						oldSite := clientExistingTorrent.GetSiteFromTag()
+						if oldSite != "" && oldSite != sitename {
+							removeTags = append(removeTags, client.GenerateTorrentTagFromSite(oldSite))
+						}
+						if len(tags) > 0 || len(removeTags) > 0 {
+							clientInstance.ModifyTorrent(clientExistingTorrent.InfoHash, &client.TorrentOption{
+								Tags:       []string{config.XSEED_TAG},
+								RemoveTags: removeTags,
+							}, nil)
+						}
+					}
 					continue
 				}
 				if (includeSitesMode && !includeSitesFlag[sitename]) || (!includeSitesMode && excludeSitesFlag[sitename]) {

@@ -28,6 +28,7 @@ type Client struct {
 	HttpClient   *http.Client
 	data         *apiSyncMaindata
 	Logined      bool
+	NoLogin      bool
 	datatime     int64
 }
 
@@ -71,7 +72,7 @@ func (qbclient *Client) apiRequest(apiPath string, v any) error {
 }
 
 func (qbclient *Client) login() error {
-	if qbclient.Logined {
+	if qbclient.Logined || qbclient.NoLogin {
 		return nil
 	}
 	username := qbclient.ClientConfig.Username
@@ -500,22 +501,22 @@ func (qbclient *Client) ModifyTorrent(infoHash string,
 				removeTags = append(removeTags, removeTag)
 			}
 		}
-		if len(addTags) > 0 {
-			data := url.Values{
-				"hashes": {infoHash},
-				"tags":   {strings.Join(addTags, ",")},
-			}
-			err := qbclient.apiPost("api/v2/torrents/addTags", data)
-			if err != nil {
-				return err
-			}
-		}
 		if len(removeTags) > 0 {
 			data := url.Values{
 				"hashes": {infoHash},
 				"tags":   {strings.Join(addTags, ",")},
 			}
 			err := qbclient.apiPost("api/v2/torrents/removeTags", data)
+			if err != nil {
+				return err
+			}
+		}
+		if len(addTags) > 0 {
+			data := url.Values{
+				"hashes": {infoHash},
+				"tags":   {strings.Join(addTags, ",")},
+			}
+			err := qbclient.apiPost("api/v2/torrents/addTags", data)
 			if err != nil {
 				return err
 			}
@@ -780,6 +781,7 @@ func NewClient(name string, clientConfig *config.ClientConfigStruct, config *con
 		Name:         name,
 		ClientConfig: clientConfig,
 		Config:       config,
+		NoLogin:      clientConfig.QbittorrentNoLogin,
 		HttpClient: &http.Client{
 			Jar: jar,
 		},

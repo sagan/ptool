@@ -27,7 +27,7 @@ func init() {
 func xseed(cmd *cobra.Command, args []string) {
 	log.Tracef("iyuu token: %s", config.Get().IyuuToken)
 	if config.Get().IyuuToken == "" {
-		log.Fatalf("You must config iyuuToken in ptool.yaml to use iyuu functions")
+		log.Fatalf("You must config iyuuToken in ptool.toml to use iyuu functions")
 	}
 
 	if infoHash != "" {

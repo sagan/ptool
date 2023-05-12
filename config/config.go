@@ -53,6 +53,7 @@ type ClientConfigStruct struct {
 	BrushSlowUploadSpeedTierValue     int64
 	BrushDefaultUploadSpeedLimitValue int64
 	BrushTorrentSizeLimitValue        int64
+	QbittorrentNoLogin                bool `yaml:"qbittorrentNoLogin"` // if set, will NOT send login request
 }
 
 type SiteConfigStruct struct {

@@ -45,7 +45,7 @@ func sites(cmd *cobra.Command, args []string) {
 
 	log.Tracef("iyuu token: %s", config.Get().IyuuToken)
 	if config.Get().IyuuToken == "" {
-		log.Fatalf("You must config iyuuToken in ptool.yaml to use iyuu functions")
+		log.Fatalf("You must config iyuuToken in ptool.toml to use iyuu functions")
 	}
 
 	iyuuApiSites, err := iyuu.IyuuApiSites(config.Get().IyuuToken)
