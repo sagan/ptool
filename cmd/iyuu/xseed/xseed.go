@@ -9,6 +9,7 @@ import (
 	goTorrentParser "github.com/j-muller/go-torrent-parser"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"golang.org/x/exp/slices"
 	"gorm.io/gorm/clause"
 
 	"github.com/sagan/ptool/client"
@@ -130,11 +131,16 @@ func xseed(cmd *cobra.Command, args []string) {
 		})
 		infoHashes := []string{}
 		tsize := int64(0)
+		var sameSizeTorrentContentPathes []string
 		for _, torrent := range torrents {
 			// same size torrents may be identical (manually xseeded before)
 			if torrent.Size != tsize {
+				sameSizeTorrentContentPathes = []string{torrent.ContentPath}
 				reqInfoHashes = append(reqInfoHashes, torrent.InfoHash)
 				tsize = torrent.Size
+			} else if slices.Index(sameSizeTorrentContentPathes, torrent.ContentPath) == -1 {
+				sameSizeTorrentContentPathes = append(sameSizeTorrentContentPathes, torrent.ContentPath)
+				reqInfoHashes = append(reqInfoHashes, torrent.InfoHash)
 			}
 			if category != "" {
 				if torrent.Category != category {
@@ -292,7 +298,11 @@ mainloop:
 				})
 				compareResult := client.XseedCheckTorrentContents(targetTorrentContentFiles, xseedTorrentInfo.Files)
 				if compareResult < 0 {
-					log.Tracef("xseed candidate is NOT identital with client torrent.")
+					if compareResult == -2 {
+						log.Tracef("xseed candidate is NOT identital with client torrent. (Only ROOT folders diff)")
+					} else {
+						log.Tracef("xseed candidate is NOT identital with client torrent.")
+					}
 					continue
 				}
 				cntXseedTorrents++

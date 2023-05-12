@@ -358,7 +358,7 @@ func XseedCheckTorrentContents(clientTorrentContents []TorrentContentFile, torre
 			return -1
 		}
 	}
-	if !leftNoContainerFolder && !rightNoContainerFolder {
+	if !leftNoContainerFolder && !rightNoContainerFolder && leftContainerFolder != rightContainerFolder {
 		return -2
 	}
 	// it's somewhat broken for now
