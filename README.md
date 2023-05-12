@@ -13,8 +13,8 @@
   * 未列出的大部分 np 站点应该也支持。除了个别魔改 np 很厉害的站点可能不支持。
 * 刷流功能(brush)：
   * 不依赖 RSS。直接抓取站点页面上最新的种子。
-  * 无需配置选种规则。自动跳过非免费的种子；自动筛选适合刷流的种子。
-  * 无需配置删种规则。自动删除已无刷流价值的种子；硬盘空间不足时也会自动删种。
+  * 无需配置选种规则。自动跳过非免费的和有 HR 的种子；自动筛选适合刷流的种子。
+  * 无需配置删种规则。自动删除已无刷流价值的种子；自动删除免费时间到期的种子；硬盘空间不足时也会自动删种。
 
 ## 快速开始（刷流）
 
@@ -23,7 +23,7 @@
 ```toml
 [[clients]]
 name = "local"
-type = "qbittorrent" # 客户端类型。目前只支持 qbittorrent。需要启用 Web UI。
+type = "qbittorrent" # 客户端类型。目前只支持 qbittorrent v4.1+。需要启用 Web UI。
 url = "http://localhost:8080/" # qBittorrent web UI 地址
 username = "admin" # QB Web UI 用户名
 password = "adminadmin" # QB Web UI 密码
@@ -88,8 +88,9 @@ ptool <command> args...
 * stats : 显示刷流任务流量统计。
 * search : 在某个站点搜索指定关键词的种子
 * add : 将某个站点的指定种子添加到 BT 客户端。
+* dltorrent : 下载站点的种子。
 * addlocal : 将本地的种子文件添加到 BT 客户端。
-* BT 客户端控制命令集: clientctl / show / pause / resume / delete / reannounce / recheck / getcategories / setcategory / gettags / createtags /deletetags
+* BT 客户端控制命令集: clientctl / show / pause / resume / delete / reannounce / recheck / getcategories / setcategory / gettags / createtags / deletetags / addtags / removetags / edittracker / setsavepath
 * parsetorrent : 显示种子(torrent)文件信息
 * sites : 显示本程序内置支持的所有 PT 站点列表。
 * version : 显示本程序版本信息。
@@ -205,7 +206,7 @@ ptool clientctl local global_upload_speed_limit=10M
 ptool <command> <infoHash>...
 ```
 
-参数为指定的 BT 客户端里需要操作的种子的 infoHash 列表。也可以使用以下特殊值参数操作多个种子：
+&lt;infoHash&gt;参数为指定的 BT 客户端里需要操作的种子的 infoHash 列表。也可以使用以下特殊值参数操作多个种子：
 
 * _all : 所有种子
 * _done : 所有已完成的种子（无论是否正在做种）
@@ -224,9 +225,12 @@ ptool resume local _all
 
 # 从客户端删除指定种子（默认同时删除文件）
 ptool delete local 31a615d5984cb63c6f999f72bb3961dce49c194a
+
+# 特别的，如果 show 命令只提供一个 infoHash 参数，会显示该种子的所有详细信息。
+ptool show local 31a615d5984cb63c6f999f72bb3961dce49c194a
 ```
 
-#### 管理 BT 客户端里的的种子分类 / 标签 (getcategories / setcategory / gettags / createtags /deletetags)
+#### 管理 BT 客户端里的的种子分类 / 标签 (getcategories / setcategory / gettags / createtags / deletetags / addtags / removetags / edittracker / setsavepath)
 
 ```
 # 获取所有分类
@@ -243,6 +247,18 @@ ptool createtags <client> <tags>...
 
 # 删除标签
 ptool deletetags <client> <tags>...
+
+# 为客户端里种子添加tag
+ptool addtags <client> <tags> <infoHashes>...
+
+# 为客户端里种子删除tag
+ptool removetags <client> <tags> <infoHashes>...
+
+# 修改种子的 tracker
+ptool edittracker <client> <infoHashes...> --old-tracker "https://..." --new-tracker "https://..."
+
+# 修改种子内容的保存路径
+ptool setsavepath <client> <savePath> [<infoHash>...]
 ```
 
 ### 显示 BT 客户端或 PT 站点状态 (status)
@@ -284,11 +300,23 @@ ptool add <client> <torrentIdOrUrl>...
 ```
 ptool add local mteam.488424
 ptool add local --site mteam 488424
-ptool add local --site mteam "https://kp.m-team.cc/details.php?id=488424"
-ptool add local --site mteam "https://kp.m-team.cc/download.php?id=488424"
+ptool add local "https://kp.m-team.cc/details.php?id=488424"
+ptool add local "https://kp.m-team.cc/download.php?id=488424"
 ```
 
 以上几条命令均可以将 M-Team 站点上ID为 [488424](https://kp.m-team.cc/details.php?id=488424&hit=1)  的种子添加到 "local" BT客户端。
+
+### 下载站点的种子
+
+```
+ptool dltorrent <torrentIdOrUrl>...
+```
+
+类似 add 命令，但只会将种子下载到本地。
+
+参数：
+
+* --download-dir : 下载的种子文件保存路径。默认为当前目录(CWD)。
 
 ### 添加本地种子到 BT 客户端 (addlocal)
 
@@ -309,26 +337,30 @@ ptool search <sites> <keyword>
 
 可以用 ```ptool add``` 命令将搜索结果列表中的种子添加到 BT 客户端。
 
-### 电子书战神 (ebookgod)
+### 批量下载种子 (batchdl)
 
-提供一个 ebookgod 命令用于批量下载 PT 网站里体积最小的种子做种。
+提供一个 batchdl 命令用于批量下载 PT 网站里体积最小的种子做种。（别名：ebookgod）
 
 ```
 # 默认显示 PT 站点上找到的体积最小的 100 个种子列表
-ptool ebookgod <site>
+ptool batchdl <site>
 
 # 下载找到的种子到当前目录
-ptool ebookgod <site> --action download
+ptool batchdl <site> --action download
 
 
 # 直接将种子添加到 "local" BT 客户端里
-ptool ebookgod <site> --action add --add-client local
+ptool batchdl <site> --action add --add-client local
 ```
 
 参数：
-* -m int : 最多下载多少个种子。默认 100.
+* -m int : 最多下载多少个种子。默认 0（无限制，一直运行除非手动 Ctrl + C 停止）.
+* --sort string : 站点种子排序方式：size|time|name|seeders|leechers|snatched|none (default size)
+* --order string : 排序顺序：asc|desc。默认 asc。
 * --min-torrent-size string : 种子大小的最小值限制。默认为 0。
-* --max-torrent-size string : 种子大小的最大值限制。默认为 "100MB"。
+* --max-torrent-size string : 种子大小的最大值限制。默认为 "0"（无限制）。
+* --free : 只下载免费种子。
+* --base-url : 手动指定种子列表页 URL，例如 "special.php"。
 
 ### 显示种子文件信息 (parsetorrent)
 
@@ -337,3 +369,20 @@ ptool parsetorrent file.torrent...
 ```
 
 显示本地硬盘里的种子文件的元信息。
+
+### 站点分组 (group) 功能
+
+在 ptool.toml 配置文件里可以定义站点分组，例如：
+
+```
+[[groups]]
+name = "acg"
+sites = ["u2", "kamept"]
+```
+
+定义分组后，大部分命令中 &lt;site&gt; 类型的参数可以使用分组名代替以指代多个站点，例如：
+
+```
+# 在 acg 分组的所有站点中搜索 "clannad" 关键词的种子
+ptool search acg clannad
+```
