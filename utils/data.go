@@ -64,7 +64,7 @@ func UniqueSlice[T comparable](slice []T) []T {
 	keys := make(map[T]bool)
 	list := []T{}
 	for _, entry := range slice {
-		if _, value := keys[entry]; !value {
+		if !keys[entry] {
 			keys[entry] = true
 			list = append(list, entry)
 		}

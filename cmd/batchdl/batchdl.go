@@ -53,7 +53,7 @@ var (
 )
 
 func init() {
-	command.Flags().BoolVarP(&freeOnly, "free", "", false, "Only show FREE torrents")
+	command.Flags().BoolVarP(&freeOnly, "free", "", false, "Skip none-free torrents")
 	command.Flags().BoolVarP(&allowBreak, "break", "", false, "Break (stop finding more torrents) if all torrents of current page does not meet criterion")
 	command.Flags().BoolVarP(&addAutoStart, "add-start", "", false, "By default the added torrents in client will be in paused state unless this flag is set")
 	command.Flags().BoolVarP(&includeDownloaded, "include-downloaded", "", false, "Do NOT skip torrents that has been downloaded before")
@@ -61,7 +61,7 @@ func init() {
 	command.Flags().StringVarP(&action, "action", "", "show", "Choose action for found torrents: show (print torrent details) | printid (print torrent id to stdout or file) | download (download torrent) | add (add torrent to client)")
 	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "0", "Skip torrents with size smaller than (<) this value")
 	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "0", "Skip torrents with size large than (>) this value. Default (0) == unlimited")
-	command.Flags().StringVarP(&maxTotalSizeStr, "max-total-size", "", "0", "Will at most download torrents with contents of this value. Default (or 0) == unlimited")
+	command.Flags().StringVarP(&maxTotalSizeStr, "max-total-size", "", "0", "Will at most download torrents with contents of this value. Default (0) == unlimited")
 	command.Flags().Int64VarP(&minSeeders, "min-seeders", "", 1, "Skip torrents with seeders less than (<) this value")
 	command.Flags().Int64VarP(&maxSeeders, "max-seeders", "", 0, "Skip torrents with seeders large than (>) this value. Default(0) = no limit")
 	command.Flags().StringVarP(&freeTimeAtLeastStr, "free-time", "", "", "Used with --free. Set the allowed minimal remaining torrent free time. eg. 12h, 1d")

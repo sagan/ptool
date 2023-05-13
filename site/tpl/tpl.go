@@ -84,7 +84,7 @@ var (
 		},
 		"eastgame": &config.SiteConfigStruct{
 			Type:    "nexusphp",
-			Aliases: []string{"tlfbits"},
+			Aliases: []string{"tlfbits", "tlf"},
 			Url:     "https://pt.eastgame.org/",
 			Comment: "吐鲁番",
 		},
@@ -287,6 +287,7 @@ var (
 			SelectorTorrent:           ".torrent-action-bookmark",
 			SelectorTorrentProcessBar: ".torrent-progress",
 			SelectorUserInfo:          ".m_nav",
+			SelectorTorrentFree:       ".s-tag",
 			Comment:                   "鲨鱼",
 		},
 		"soulvoice": &config.SiteConfigStruct{

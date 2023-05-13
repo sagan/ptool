@@ -148,6 +148,7 @@ func status(cmd *cobra.Command, args []string) {
 				)
 			}
 			if response.ClientTorrents != nil {
+				fmt.Printf("\n")
 				client.PrintTorrents(response.ClientTorrents, filter)
 				if i != len(responses)-1 {
 					fmt.Printf("\n")
@@ -180,6 +181,7 @@ func status(cmd *cobra.Command, args []string) {
 				)
 			}
 			if response.SiteTorrents != nil {
+				fmt.Printf("\n")
 				site.PrintTorrents(response.SiteTorrents, filter, now, false)
 				if i != len(responses)-1 {
 					fmt.Printf("\n")

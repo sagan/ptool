@@ -37,7 +37,8 @@ var (
 	includeSites           = ""
 	excludeSites           = ""
 	category               = ""
-	setCategory            = ""
+	addCategory            = ""
+	addTags                = ""
 	tag                    = ""
 	filter                 = ""
 	minTorrentSizeStr      = ""
@@ -57,9 +58,10 @@ func init() {
 	command.Flags().StringVarP(&category, "category", "c", "", "Only xseed torrents that belongs to this category")
 	command.Flags().StringVarP(&tag, "tag", "t", "", "Only xseed torrents that has this tag")
 	command.Flags().StringVarP(&filter, "filter", "f", "", "Only xseed torrents which name contains this")
-	command.Flags().StringVarP(&setCategory, "set-category", "", "", "Manually set category of added xseed torrent. By Default it uses the original torrent's")
+	command.Flags().StringVarP(&addCategory, "add-category", "", "", "Manually set category of added xseed torrent. By Default it uses the original torrent's")
+	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Set tags of added xseed torrent (comma-separated)")
 	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "1GB", "Torrents with size smaller than (<) this value will NOT be xseeded")
-	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "1PB", "Torrents with size larger than (>=) this value will NOT be xseeded")
+	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "1PB", "Torrents with size larger or equal than (>=) this value will NOT be xseeded")
 	command.Flags().StringVarP(&iyuuRequestServer, "request-server", "", "auto", "Whether send request to iyuu server to update local xseed db. Possible values: auto|yes|no")
 	iyuu.Command.AddCommand(command)
 }
@@ -94,6 +96,10 @@ func xseed(cmd *cobra.Command, args []string) {
 		log.Fatalf("Invalid --request-server flag value %s", iyuuRequestServer)
 	}
 	filter = strings.ToLower(filter)
+	var fixedTags []string
+	if addTags != "" {
+		fixedTags = strings.Split(addTags, ",")
+	}
 
 	clientNames := args
 	clientInstanceMap := map[string](client.Client){} // clientName => clientInstance
@@ -269,7 +275,7 @@ mainloop:
 						}
 						if len(tags) > 0 || len(removeTags) > 0 {
 							clientInstance.ModifyTorrent(clientExistingTorrent.InfoHash, &client.TorrentOption{
-								Tags:       []string{config.XSEED_TAG},
+								Tags:       tags,
 								RemoveTags: removeTags,
 							}, nil)
 						}
@@ -323,13 +329,15 @@ mainloop:
 				}
 				cntXseedTorrents++
 				xseedTorrentCategory := targetTorrent.Category
-				if setCategory != "" {
-					xseedTorrentCategory = setCategory
+				if addCategory != "" {
+					xseedTorrentCategory = addCategory
 				}
+				tags := []string{config.XSEED_TAG, client.GenerateTorrentTagFromSite(sitename)}
+				tags = append(tags, fixedTags...)
 				err = clientInstance.AddTorrent(xseedTorrentContent, &client.TorrentOption{
 					SavePath:     targetTorrent.SavePath,
 					Category:     xseedTorrentCategory,
-					Tags:         []string{config.XSEED_TAG, client.GenerateTorrentTagFromSite(siteInstance.GetName())},
+					Tags:         tags,
 					Pause:        paused,
 					SkipChecking: !check,
 				}, nil)

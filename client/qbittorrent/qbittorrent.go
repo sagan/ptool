@@ -116,7 +116,7 @@ func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 	// see https://stackoverflow.com/questions/21130566/how-to-set-content-type-for-a-form-filed-using-multipart-in-go
 	// torrentPartWriter, _ := mp.CreateFormField("torrents")
 	h := make(textproto.MIMEHeader)
-	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "torrents", "file.torrent"))
+	h.Set("Content-Disposition", `form-data; name="torrents"; filename="file.torrent"`)
 	h.Set("Content-Type", "application/x-bittorrent")
 	torrentPartWriter, err := mp.CreatePart(h)
 	if err != nil {
@@ -625,9 +625,7 @@ func (qbclient *Client) GetStatus() (*client.Status, error) {
 			status.FreeSpaceOnDisk = -1
 		}
 	}
-	if utils.FindInSlice(qbclient.data.Tags, func(tag string) bool {
-		return strings.ToLower(tag) == "_noadd"
-	}) != nil {
+	if slices.Index(qbclient.data.Tags, "_noadd") != -1 {
 		status.NoAdd = true
 	}
 	return &status, nil

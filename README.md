@@ -35,7 +35,7 @@ cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 
 然后在当前目录下运行 ```ptool brush local mteam``` 即可执行刷流任务。程序会从 M-Team 获取最新的种子、根据一定规则筛选出适合的种子添加到本地的 qBittorrent 客户端里，同时自动从 BT 客户端里删除（已经没有上传的）旧的刷流种子。刷流任务添加到客户端里的种子会放到 ```_brush``` 分类(Category)里。程序只会对这个分类里的种子进行管理或删除等操作。
 
-使用 cron job / 计划任务等方式定时执行上面的刷流任务命令（例如每隔 10 分钟执行一次）即可。
+使用 Linux cron job / Windows 计划任务 (taskschd.msc) 等方式定时执行上面的刷流任务命令（例如每隔 10 分钟执行一次）即可。
 
 ## 配置文件
 
@@ -45,8 +45,6 @@ cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 
 * Linux: ```~/.config/ptool/ptool.toml```
 * Windows: ```%USERPROFILE%\.config\ptool\ptool.toml```
-
-也可以通过启动程序时传入命令行参数 ```--config ptool.toml``` 手动指定使用的配置文件路径。
 
 配置文件里可以使用 ```[[clients]]``` 和 ```[[sites]]``` 区块添加任意多个 BT 客户端和站点。
 
@@ -77,10 +75,10 @@ cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 所有功能通过启动程序时传入的第一个”命令“参数区分：
 
 ```
-ptool <command> args...
+ptool <command> args... [flags]
 ```
 
-所有可用的 &lt;command&gt; 包括:
+所有可用的 ```<command>``` 包括:
 
 * brush : 自动刷流。
 * iyuu : 使用 iyuu 接口自动辅种。
@@ -97,6 +95,11 @@ ptool <command> args...
 
 运行 ```ptool``` 查看程序支持的所有命令列表；运行 ```ptool <command> -h``` 查看指定命令的参数格式和使用说明。
 
+全局参数(flags)：
+
+* --config string : 手动指定使用的 ptool.toml 配置文件路径。
+* -v, -vv, -vvv : verbose。输出更多的日志信息（v 出现的次数越多，输出的日志越详细）。
+
 ### 刷流 (brush)
 
 ```
@@ -107,10 +110,10 @@ ptool brush <client> <site>... [flags]
 
 参数
 
-* &lt;client&gt; : 配置文件里定义的 BT 客户端 name。
-* &lt;site&gt; : 配置文件里定义的 PT 站点 name。
+* ```<client>``` : 配置文件里定义的 BT 客户端 name。
+* ```<site>``` : 配置文件里定义的 PT 站点 name。
 
-可以提供多个 &lt;site&gt; 参数。程序会按随机顺序从提供的 &lt;site&gt; 列表里的各站点获取最新种子、筛选并选取一定数量的合适的种子添加到 BT 客户端。可以将同一个站点名重复出现多次以增加其权重，使刷流任务添加该站点种子的几率更大。
+可以提供多个 ```<site>``` 参数。程序会按随机顺序从提供的 ```<site>``` 列表里的各站点获取最新种子、筛选一定数量的合适的种子添加到 BT 客户端。可以将同一个站点名重复出现多次以增加其权重，使刷流任务添加该站点种子的几率更大。
 
 示例
 
@@ -136,7 +139,7 @@ ptool brush local mteam
 
 ### 自动辅种 (iyuu)
 
-iyuu 命令通过 [iyuu 接口](https://api.iyuu.cn/docs.php) 提供自动辅种(cross seed)功能。
+iyuu 命令通过 [iyuu 接口](https://api.iyuu.cn/docs.php) 提供自动辅种(cross seed)功能。本功能直接访问 iyuu 的服务器，本机上不需要安装 / 运行 iyuu 客户端。
 
 #### iyuu 配置
 
@@ -158,7 +161,11 @@ ptool iyuu bind --site zhuque --uid 123456 --passkey 0123456789abcdef
 * --uid : 对应 PT 站点的用户 uid（数字）。在 PT 网站的个人页面获取。
 * --passkey : 对应 PT 站点的用户 passkey。在 PT 网站的个人页面获取。
 
-使用 ```ptool iyuu status``` 查询当前 iyuu token 的激活和绑定状态。
+其他说明：
+
+* 使用 ```ptool iyuu sites -b``` 查看可用于绑定的 iyuu 合作站点列表。
+* 使用 ```ptool iyuu sites -a``` 查看 iyuu 支持的所有可辅种站点列表。
+* 使用 ```ptool iyuu status``` 查询当前 iyuu token 的激活和绑定状态。
 
 #### 使用 iyuu 自动辅种
 
@@ -169,6 +176,8 @@ ptool iyuu xseed <client>...
 可以提供多个 client。程序会获取这些 client 里正在做种的种子信息，通过 iyuu 接口查询可以辅种的种子并将其自动添加到对应客户端里。注意只有在本程序的 ptool.toml 配置文件里添加的站点才会被辅种。
 
 iyuu xseed 子命令支持很多可选参数。运行 ```ptool iyuu xseed -h``` 查看所有可选参数使用说明。
+
+添加的辅种种子默认跳过客户端 hash 校验并立即开始做种。本程序会对客户端里目标种子和 iyuu 接口返回的候选辅种种子的文件列表进行比较（文件路径、大小），只有完全一致才会添加辅种种子。添加的辅种种子会打上 ```_xseed``` 标签。
 
 ### BT 客户端控制命令集
 
@@ -183,7 +192,7 @@ ptool clientctl <client> [<option>[=value] ...]
 clientctl 命令可以显示或修改指定 name 的 BT 客户端的配置参数。
 
 
-支持的参数(&lt;option&gt;) 列表：
+支持的参数(```<option>```) 列表：
 
 * global_download_speed_limit : 全局下载速度上限。
 * global_upload_speed_limit : 全局上传速度上限。
@@ -206,13 +215,13 @@ ptool clientctl local global_upload_speed_limit=10M
 ptool <command> <infoHash>...
 ```
 
-&lt;infoHash&gt;参数为指定的 BT 客户端里需要操作的种子的 infoHash 列表。也可以使用以下特殊值参数操作多个种子：
+```<infoHash>``` 参数为指定的 BT 客户端里需要操作的种子的 infoHash 列表。也可以使用以下特殊值参数操作多个种子（delete 命令除外，为避免误操作只能使用 infoHash 删除种子）：
 
 * _all : 所有种子
 * _done : 所有已完成的种子（无论是否正在做种）
 * _active : 当前正在活动（上传或下载）的种子
 * _error : 状态为“出错”的种子
-* _downloading / _seeding / _paused / _complete : 状态为正在下载 / 做种 / 暂停下载 / 已完成的种子
+* _downloading / _seeding / _paused / _completed : 状态为正在下载 / 做种 / 暂停下载 / 已完成的种子
 
 示例：
 
@@ -333,16 +342,16 @@ ptool addlocal <client> <filename.torrent>...
 ptool search <sites> <keyword>
 ```
 
-&lt;sites&gt; 参数为需要所搜索的 PT 站点，可以使用 "," 分割提供多个站点。可以使用 "_all" 搜索所有已配置的 PT 站点。
+```<sites>``` 参数为需要所搜索的 PT 站点，可以使用 "," 分割提供多个站点。可以使用 "_all" 搜索所有已配置的 PT 站点。
 
 可以用 ```ptool add``` 命令将搜索结果列表中的种子添加到 BT 客户端。
 
 ### 批量下载种子 (batchdl)
 
-提供一个 batchdl 命令用于批量下载 PT 网站里体积最小的种子做种。（别名：ebookgod）
+提供一个 batchdl 命令用于批量下载 PT 网站的种子（别名：ebookgod）。默认按种子体积大小升序排序、跳过死种和已经下载过的种子。
 
 ```
-# 默认显示 PT 站点上找到的体积最小的 100 个种子列表
+# 默认显示找到的种子列表
 ptool batchdl <site>
 
 # 下载找到的种子到当前目录
@@ -353,14 +362,15 @@ ptool batchdl <site> --action download
 ptool batchdl <site> --action add --add-client local
 ```
 
-参数：
+常用参数：
+
 * -m int : 最多下载多少个种子。默认 0（无限制，一直运行除非手动 Ctrl + C 停止）.
 * --sort string : 站点种子排序方式：size|time|name|seeders|leechers|snatched|none (default size)
 * --order string : 排序顺序：asc|desc。默认 asc。
-* --min-torrent-size string : 种子大小的最小值限制。默认为 0。
+* --min-torrent-size string : 种子大小的最小值限制(eg. "100MiB", "1GB")。默认为 "0"。
 * --max-torrent-size string : 种子大小的最大值限制。默认为 "0"（无限制）。
 * --free : 只下载免费种子。
-* --base-url : 手动指定种子列表页 URL，例如 "special.php"。
+* --base-url : 手动指定种子列表页 URL，例如 "special.php"、"adult.php"。
 
 ### 显示种子文件信息 (parsetorrent)
 
@@ -380,9 +390,11 @@ name = "acg"
 sites = ["u2", "kamept"]
 ```
 
-定义分组后，大部分命令中 &lt;site&gt; 类型的参数可以使用分组名代替以指代多个站点，例如：
+定义分组后，大部分命令中 ```<site>``` 类型的参数可以使用分组名代替以指代多个站点，例如：
 
 ```
 # 在 acg 分组的所有站点中搜索 "clannad" 关键词的种子
 ptool search acg clannad
 ```
+
+预置的 ```_all``` 分组可以用来指代所有站点。
