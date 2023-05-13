@@ -166,6 +166,11 @@ var (
 			Url:     "http://hdmayi.com/",
 			Comment: "蚂蚁",
 		},
+		"hdpost": &config.SiteConfigStruct{
+			Type:    "unit3d",
+			Url:     "https://pt.hdpost.top/",
+			Comment: "普斯特",
+		},
 		"hdtime": &config.SiteConfigStruct{
 			Type:    "nexusphp",
 			Url:     "https://hdtime.org/",
@@ -214,6 +219,11 @@ var (
 			Url:     "https://www.joyhd.net/",
 			Comment: "JoyHD",
 		},
+		"jptvclub": &config.SiteConfigStruct{
+			Type:    "unit3d",
+			Url:     "https://jptv.club/",
+			Comment: "JPTV.club",
+		},
 		"kamept": &config.SiteConfigStruct{
 			Type:    "nexusphp",
 			Url:     "https://kamept.com/",
@@ -242,6 +252,12 @@ var (
 			Url:               "https://kp.m-team.cc/",
 			TorrentsExtraUrls: []string{"https://kp.m-team.cc/adult.php"},
 			Comment:           "馒头",
+		},
+		"monikadesign": &config.SiteConfigStruct{
+			Type:    "unit3d",
+			Aliases: []string{"monika"},
+			Url:     "https://monikadesign.uk/",
+			Comment: "莫妮卡",
 		},
 		"nicept": &config.SiteConfigStruct{
 			Type:      "nexusphp",
@@ -322,10 +338,12 @@ var (
 			Url:     "https://wintersakura.net/",
 			Comment: "冬樱",
 		},
-		"xinglin": &config.SiteConfigStruct{
+		"xingtan": &config.SiteConfigStruct{
 			Type:    "nexusphp",
-			Url:     "https://xinglin.one/",
-			Comment: "杏林",
+			Aliases: []string{"xinglin"},
+			Url:     "https://xingtan.one/",
+			Domains: []string{"xinglin.one"},
+			Comment: "杏坛 (原杏林)",
 		},
 		"zhuque": &config.SiteConfigStruct{
 			Type:    "tnode",

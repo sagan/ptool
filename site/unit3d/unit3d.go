@@ -1,0 +1,103 @@
+package unit3d
+
+// UNIT3D ( https://github.com/HDInnovations/UNIT3D-Community-Edition )
+// JptvClub、莫妮卡、普斯特等站使用架构
+// 种子下载链接格式：https://jptv.club/torrents/download/39683
+
+import (
+	"fmt"
+	"net/http"
+	"regexp"
+	"strings"
+	"time"
+
+	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/site"
+	"github.com/sagan/ptool/utils"
+)
+
+type Site struct {
+	Name       string
+	Location   *time.Location
+	SiteConfig *config.SiteConfigStruct
+	Config     *config.ConfigStruct
+	HttpClient *http.Client
+}
+
+func (usite *Site) PurgeCache() {
+}
+
+func (usite *Site) GetName() string {
+	return usite.Name
+}
+
+func (usite *Site) GetSiteConfig() *config.SiteConfigStruct {
+	return usite.SiteConfig
+}
+
+func (usite *Site) GetStatus() (*site.Status, error) {
+	return nil, fmt.Errorf("not implemented yet")
+}
+
+func (usite *Site) GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (
+	torrents []site.Torrent, nextPageMarker string, err error) {
+	return nil, "", fmt.Errorf("not implemented yet")
+}
+
+func (usite *Site) GetLatestTorrents(full bool) ([]site.Torrent, error) {
+	return nil, fmt.Errorf("not implemented yet")
+}
+
+func (usite *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Torrent, error) {
+	return nil, fmt.Errorf("not implemented yet")
+}
+
+func (usite *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error) {
+	if !utils.IsUrl(torrentUrl) {
+		id := strings.TrimPrefix(torrentUrl, usite.GetName()+".")
+		return usite.DownloadTorrentById(id)
+	}
+	if !strings.Contains(torrentUrl, "/torrents/download/") {
+		idRegexp := regexp.MustCompile(`torrents/(?P<id>\d+)\b`)
+		m := idRegexp.FindStringSubmatch(torrentUrl)
+		if m != nil {
+			return usite.DownloadTorrentById(m[idRegexp.SubexpIndex("id")])
+		}
+	}
+	return site.DownloadTorrentByUrl(usite, usite.HttpClient, torrentUrl, "")
+}
+
+func (usite *Site) DownloadTorrentById(id string) ([]byte, string, error) {
+
+	torrentUrl := usite.SiteConfig.Url + "torrents/download/" + id
+	return site.DownloadTorrentByUrl(usite, usite.HttpClient, torrentUrl, id)
+}
+
+func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.ConfigStruct) (site.Site, error) {
+	if siteConfig.Cookie == "" {
+		return nil, fmt.Errorf("cann't create site: no cookie provided")
+	}
+	location, err := time.LoadLocation(siteConfig.Timezone)
+	if err != nil {
+		return nil, fmt.Errorf("invalid site timezone %s: %v", siteConfig.Timezone, err)
+	}
+	httpClient, err := site.CreateSiteHttpClient(siteConfig, config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create site http client: %v", err)
+	}
+	site := &Site{
+		Name:       name,
+		Location:   location,
+		SiteConfig: siteConfig,
+		Config:     config,
+		HttpClient: httpClient,
+	}
+	return site, nil
+}
+
+func init() {
+	site.Register(&site.RegInfo{
+		Name:    "unit3d",
+		Creator: NewSite,
+	})
+}

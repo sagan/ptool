@@ -163,7 +163,6 @@ ptool iyuu bind --site zhuque --uid 123456 --passkey 0123456789abcdef
 
 其他说明：
 
-* 使用 ```ptool iyuu sites -b``` 查看可用于绑定的 iyuu 合作站点列表。
 * 使用 ```ptool iyuu sites -a``` 查看 iyuu 支持的所有可辅种站点列表。
 * 使用 ```ptool iyuu status``` 查询当前 iyuu token 的激活和绑定状态。
 
