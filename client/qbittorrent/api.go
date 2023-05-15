@@ -167,7 +167,7 @@ func (qbtorrent *apiTorrentInfo) ToTorrentState() string {
 	case "error", "missingFiles", "unknown":
 		state = "error"
 	default:
-		state = qbtorrent.State
+		state = "unknown"
 	}
 	return state
 }

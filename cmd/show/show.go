@@ -80,6 +80,9 @@ func show(cmd *cobra.Command, args []string) {
 	} else if category == "" && tag == "" && filter == "" &&
 		len(args) == 1 && !strings.HasPrefix(args[0], "_") {
 		// display single torrent details
+		if !client.IsValidInfoHash(args[0]) {
+			log.Fatalf("%s is not a valid infoHash", args[0])
+		}
 		torrent, err := clientInstance.GetTorrent(args[0])
 		if err != nil {
 			log.Fatalf("Failed to get torrent %s details: %v", args[0], err)

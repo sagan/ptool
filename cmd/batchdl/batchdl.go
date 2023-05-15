@@ -3,6 +3,7 @@ package batchdl
 // 批量下载站点的种子
 
 import (
+	"encoding/csv"
 	"fmt"
 	"os"
 	"strings"
@@ -58,7 +59,7 @@ func init() {
 	command.Flags().BoolVarP(&addAutoStart, "add-start", "", false, "By default the added torrents in client will be in paused state unless this flag is set")
 	command.Flags().BoolVarP(&includeDownloaded, "include-downloaded", "", false, "Do NOT skip torrents that has been downloaded before")
 	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "m", 0, "Number limit of torrents handled. Default (0) == unlimited (Press Ctrl+C to stop at any time)")
-	command.Flags().StringVarP(&action, "action", "", "show", "Choose action for found torrents: show (print torrent details) | printid (print torrent id to stdout or file) | download (download torrent) | add (add torrent to client)")
+	command.Flags().StringVarP(&action, "action", "", "show", "Choose action for found torrents: show (print torrent details) | export (export torrents info [csv] to stdout or file) | printid (print torrent id to stdout or file) | download (download torrent) | add (add torrent to client)")
 	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "0", "Skip torrents with size smaller than (<) this value")
 	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "0", "Skip torrents with size large than (>) this value. Default (0) == unlimited")
 	command.Flags().StringVarP(&maxTotalSizeStr, "max-total-size", "", "0", "Will at most download torrents with total contents size of this value. Default (0) == unlimited")
@@ -72,7 +73,7 @@ func init() {
 	command.Flags().StringVarP(&addCategory, "add-category", "", "", "Used with '--action add'. Set the category when adding torrent to client")
 	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Used with '--action add'. Set the tags when adding torrent to client (comma-separated)")
 	command.Flags().StringVarP(&savePath, "add-save-path", "", "", "Set save path of added torrents")
-	command.Flags().StringVarP(&outputFile, "output-file", "", "", "Used with '--action printid'. Set the output file. (If not set, will use stdout)")
+	command.Flags().StringVarP(&outputFile, "output-file", "", "", "Used with '--action export|printid'. Set the output file. (If not set, will use stdout)")
 	command.Flags().StringVarP(&baseUrl, "base-url", "", "", "Manually set the base url of torrents list page. eg. adult.php or https://kp.m-team.cc/adult.php for M-Team site")
 	command.Flags().VarP(&sortFieldEnumFlag, "sort", "s", "Manually Set the sort field, "+common.SiteTorrentSortFieldEnumTip)
 	command.Flags().VarP(&orderEnumFlag, "order", "o", "Manually Set the sort order, "+common.OrderEnumTip)
@@ -87,12 +88,13 @@ func batchdl(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 
-	if action != "show" && action != "printid" && action != "download" && action != "add" {
+	if action != "show" && action != "export" && action != "printid" && action != "download" && action != "add" {
 		log.Fatalf("Invalid action flag value: %s", action)
 	}
 	var clientInstance client.Client
 	var clientAddTorrentOption *client.TorrentOption
-	var outputFileFd *os.File
+	var outputFileFd *os.File = os.Stdout
+	var csvWriter *csv.Writer
 	if action == "add" {
 		if addClient == "" {
 			log.Fatalf("You much specify the client used to add torrents to via --add-client flag.")
@@ -110,12 +112,16 @@ func batchdl(cmd *cobra.Command, args []string) {
 		if addTags != "" {
 			clientAddTorrentOption.Tags = append(clientAddTorrentOption.Tags, strings.Split(addTags, ",")...)
 		}
-	} else if action == "printid" {
+	} else if action == "export" || action == "printid" {
 		if outputFile != "" {
 			outputFileFd, err = os.OpenFile(outputFile, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
 			if err != nil {
 				log.Fatalf("Failed to create output file %s: %v", outputFile, err)
 			}
+		}
+		if action == "export" {
+			csvWriter = csv.NewWriter(outputFileFd)
+			csvWriter.Write([]string{"name", "size", "time", "id"})
 		}
 	}
 	minTorrentSize, _ := utils.RAMInBytes(minTorrentSizeStr)
@@ -203,13 +209,10 @@ mainloop:
 
 			if action == "show" {
 				site.PrintTorrents([]site.Torrent{torrent}, "", now, cntTorrents != 1)
+			} else if action == "export" {
+				csvWriter.Write([]string{torrent.Name, fmt.Sprint(torrent.Size), fmt.Sprint(torrent.Time), torrent.Id})
 			} else if action == "printid" {
-				str := fmt.Sprintf("%s\n", torrent.Id)
-				if outputFileFd != nil {
-					outputFileFd.WriteString(str)
-				} else {
-					fmt.Printf("%s", str)
-				}
+				fmt.Fprintf(outputFileFd, "%s\n", torrent.Id)
 			} else {
 				torrentContent, filename, err := siteInstance.DownloadTorrent(torrent.Id)
 				if err != nil {
@@ -254,4 +257,7 @@ mainloop:
 		utils.Sleep(3)
 	}
 	fmt.Printf("\n"+`Done. Torrents / AllTorrents / LastPage: %d / %d / "%s"`+"\n", cntTorrents, cntAllTorrents, lastMarker)
+	if csvWriter != nil {
+		csvWriter.Flush()
+	}
 }

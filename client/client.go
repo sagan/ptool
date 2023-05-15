@@ -17,7 +17,7 @@ type Torrent struct {
 	Name               string
 	TrackerDomain      string
 	Tracker            string
-	State              string // simplified state: seeding|downloading|completed|paused|checking|<any others>...
+	State              string // simplified state: seeding|downloading|completed|paused|checking|error|unknown
 	LowLevelState      string // original state value returned by bt client
 	Atime              int64  // timestamp torrent added
 	Ctime              int64  // timestamp torrent completed. <=0 if not completed.
@@ -121,7 +121,9 @@ type RegInfo struct {
 type ClientCreator func(*RegInfo) (Client, error)
 
 var (
-	Registry []*RegInfo = make([]*RegInfo, 0)
+	STATES                   = []string{"seeding", "downloading", "completed", "paused", "checking", "error", "unknown"}
+	STATE_FILTERS            = []string{"_all", "_active", "_done"}
+	Registry      []*RegInfo = make([]*RegInfo, 0)
 )
 
 func Register(regInfo *RegInfo) {
@@ -370,6 +372,11 @@ func XseedCheckTorrentContents(clientTorrentContents []TorrentContentFile, torre
 
 func QueryTorrents(clientInstance Client, category string, tag string, filter string,
 	hashOrStateFilters ...string) ([]Torrent, error) {
+	for _, arg := range hashOrStateFilters {
+		if !IsValidInfoHashOrStateFilter(arg) {
+			return nil, fmt.Errorf("%s is not a valid infoHash or stateFilter", arg)
+		}
+	}
 	torrents, err := clientInstance.GetTorrents("", category, true)
 	if err != nil {
 		return nil, err
@@ -415,6 +422,11 @@ func QueryTorrents(clientInstance Client, category string, tag string, filter st
 // parse torrents that meet criterion. specially, return nil slice if all torrents selected
 func SelectTorrents(clientInstance Client, category string, tag string, filter string,
 	hashOrStateFilters ...string) ([]string, error) {
+	for _, arg := range hashOrStateFilters {
+		if !IsValidInfoHashOrStateFilter(arg) {
+			return nil, fmt.Errorf("%s is not a valid infoHash or stateFilter", arg)
+		}
+	}
 	if slices.Index(hashOrStateFilters, "_all") != -1 {
 		return nil, nil
 	}
@@ -474,4 +486,22 @@ func (torrent *Torrent) MatchStateFilter(stateFilter string) bool {
 		}
 	}
 	return stateFilter == torrent.State
+}
+
+var infoHashV1Regex = regexp.MustCompile(`^[0-9a-fA-F]{40}$`)
+var infoHashV2Regex = regexp.MustCompile(`^[0-9a-fA-F]{64}$`)
+
+func IsValidInfoHash(infoHash string) bool {
+	return infoHashV1Regex.MatchString(infoHash) || infoHashV2Regex.MatchString(infoHash)
+}
+
+func IsValidInfoHashOrStateFilter(stateFilter string) bool {
+	if strings.HasPrefix(stateFilter, "_") {
+		if slices.Index(STATE_FILTERS, stateFilter) != -1 {
+			return true
+		}
+		stateFilter = stateFilter[1:]
+		return slices.Index(STATES, stateFilter) != -1
+	}
+	return IsValidInfoHash(stateFilter)
 }
