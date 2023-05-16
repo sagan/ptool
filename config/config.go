@@ -70,7 +70,7 @@ type SiteConfigStruct struct {
 	Cookie                       string   `yaml:"cookie"`
 	UserAgent                    string   `yaml:"userAgent"`
 	Proxy                        string   `yaml:"proxy"`
-	TorrentUploadSpeedLimit      string   `yaml:"uploadSpeedLimit"`
+	TorrentUploadSpeedLimit      string   `yaml:"torrentUploadSpeedLimit"`
 	GlobalHnR                    bool     `yaml:"globalHnR"`
 	Timezone                     string   `yaml:"timezone"`
 	BrushAllowNoneFree           bool     `yaml:"brushAllowNoneFree"`

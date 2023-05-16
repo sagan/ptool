@@ -36,7 +36,20 @@ func (gpwsite *Site) GetSiteConfig() *config.SiteConfigStruct {
 }
 
 func (gpwsite *Site) GetStatus() (*site.Status, error) {
-	return nil, fmt.Errorf("not implemented yet")
+	doc, err := utils.GetUrlDoc(gpwsite.SiteConfig.Url+"torrents.php", gpwsite.HttpClient,
+		gpwsite.GetSiteConfig().Cookie, gpwsite.SiteConfig.UserAgent, nil)
+	if err != nil {
+		return nil, err
+	}
+	usernameEl := doc.Find(`#header-username-value`)
+	uploadedEl := doc.Find(`#header-uploaded-value`)
+	downloadedEl := doc.Find(`#header-downloaded-value`)
+
+	return &site.Status{
+		UserName:       usernameEl.AttrOr("data-value", ""),
+		UserUploaded:   utils.ParseInt(uploadedEl.AttrOr("data-value", "")),
+		UserDownloaded: utils.ParseInt(downloadedEl.AttrOr("data-value", "")),
+	}, nil
 }
 
 func (gpwsite *Site) GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (

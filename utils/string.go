@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -53,7 +54,8 @@ func PrintStringInWidth(str string, width int64, padRight bool) {
 }
 
 func SanitizeText(text string) string {
-	text = strings.ReplaceAll(text, "\u00ad", "") // &shy;  invisible Soft hyphen
+	text = strings.ReplaceAll(text, "\u00ad", "")  // &shy;  invisible Soft hyphen
+	text = strings.ReplaceAll(text, "\u00a0", " ") // non-breaking space => normal space (U+0020)
 	text = strings.TrimSpace(text)
 	return text
 }
@@ -85,4 +87,16 @@ func GetUrlDomain(url string) string {
 		return ""
 	}
 	return u.Domain + "." + u.TLD
+}
+
+var sizeStrRegex = regexp.MustCompile(`(?P<size>[0-9,]{1,}(.[0-9,]{1,})?\s*[kbgtpeKMGTPE][iI]?[bB]+)`)
+
+func ExtractSizeStr(str string) (int64, error) {
+	m := sizeStrRegex.FindStringSubmatch(str)
+	if m != nil {
+		sstr := strings.ReplaceAll(strings.TrimSpace(m[sizeStrRegex.SubexpIndex("size")]), " ", "")
+		sstr = strings.ReplaceAll(sstr, ",", "")
+		return RAMInBytes(sstr)
+	}
+	return 0, fmt.Errorf("no size str found")
 }

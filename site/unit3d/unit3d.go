@@ -24,6 +24,12 @@ type Site struct {
 	HttpClient *http.Client
 }
 
+const (
+	SELECTOR_USERNAME        = ".top-nav__username"
+	SELECTOR_USER_UPLOADED   = ".ratio-bar__uploaded"
+	SELECTOR_USER_DOWNLOADED = ".ratio-bar__downloaded"
+)
+
 func (usite *Site) PurgeCache() {
 }
 
@@ -36,7 +42,33 @@ func (usite *Site) GetSiteConfig() *config.SiteConfigStruct {
 }
 
 func (usite *Site) GetStatus() (*site.Status, error) {
-	return nil, fmt.Errorf("not implemented yet")
+	doc, err := utils.GetUrlDoc(usite.SiteConfig.Url+"torrents", usite.HttpClient,
+		usite.GetSiteConfig().Cookie, usite.SiteConfig.UserAgent, nil)
+	if err != nil {
+		return nil, err
+	}
+	userNameSelector := SELECTOR_USERNAME
+	userUploadedSelector := SELECTOR_USER_UPLOADED
+	userDownloadedSelector := SELECTOR_USER_DOWNLOADED
+	if usite.SiteConfig.SelectorUserInfoUserName != "" {
+		userNameSelector = usite.SiteConfig.SelectorUserInfoUserName
+	}
+	if usite.SiteConfig.SelectorUserInfoUploaded != "" {
+		userUploadedSelector = usite.SiteConfig.SelectorUserInfoUploaded
+	}
+	if usite.SiteConfig.SelectorUserInfoDownloaded != "" {
+		userDownloadedSelector = usite.SiteConfig.SelectorUserInfoDownloaded
+	}
+	usernameEl := doc.Find(userNameSelector)
+	uploadedEl := doc.Find(userUploadedSelector)
+	downloadedEl := doc.Find(userDownloadedSelector)
+	userUploaded, _ := utils.ExtractSizeStr(utils.DomSanitizedText(uploadedEl))
+	userDownloaded, _ := utils.ExtractSizeStr(utils.DomSanitizedText(downloadedEl))
+	return &site.Status{
+		UserName:       utils.DomSanitizedText(usernameEl),
+		UserUploaded:   userUploaded,
+		UserDownloaded: userDownloaded,
+	}, nil
 }
 
 func (usite *Site) GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (

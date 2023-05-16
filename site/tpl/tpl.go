@@ -220,9 +220,12 @@ var (
 			Comment: "JoyHD",
 		},
 		"jptvclub": &config.SiteConfigStruct{
-			Type:    "unit3d",
-			Url:     "https://jptv.club/",
-			Comment: "JPTV.club",
+			Type:                       "unit3d",
+			Aliases:                    []string{"jptv"}, // Though there's another JPTVTS, I'd prefer the club.
+			Url:                        "https://jptv.club/",
+			Comment:                    "JPTV.club",
+			SelectorUserInfoUploaded:   ".ratio-bar .badge-user:has(.fa-arrow-up)",
+			SelectorUserInfoDownloaded: ".ratio-bar .badge-user:has(.fa-arrow-down)",
 		},
 		"kamept": &config.SiteConfigStruct{
 			Type:    "nexusphp",
