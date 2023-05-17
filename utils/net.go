@@ -11,6 +11,9 @@ import (
 )
 
 var (
+	// from https://scrapfly.io/web-scraping-tools/ja3-fingerprint
+	// must generate it without the "TLS Session has been resurected" warning
+	CHROME_JA3 = "772,4865-4866-4867-49195-49199-49196-49200-52393-52392-49171-49172-156-157-47-53,65281-51-27-0-18-13-17513-11-35-43-23-16-5-45-10,29-23-24,0"
 	// 最新稳定版 Chrome (en-US) 在 Windows 11 x64 环境下访问网页的默认请求 headers
 	CHROME_HTTP_REQUEST_HEADERS = map[string](string){
 		"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -18,7 +21,7 @@ var (
 		"Accept-Language":           "en-US,en;q=0.9",
 		"Cache-Control":             "max-age=0",
 		"Connection":                "keep-alive",
-		"sec-ch-ua":                 `"Chromium";v="112", "Google Chrome";v="112", "Not:A-Brand";v="99"`,
+		"sec-ch-ua":                 `"Google Chrome";v="113", "Chromium";v="113", "Not-A.Brand";v="24"`,
 		"sec-ch-ua-mobile":          "?0",
 		"sec-ch-ua-platform":        `"Windows"`,
 		"Sec-Fetch-Dest":            "document",
@@ -26,7 +29,7 @@ var (
 		"Sec-Fetch-Site":            "none",
 		"Sec-Fetch-User":            "?1",
 		"Upgrade-Insecure-Requests": "1",
-		"User-Agent":                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36",
+		"User-Agent":                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36",
 	}
 )
 

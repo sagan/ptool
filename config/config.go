@@ -69,6 +69,7 @@ type SiteConfigStruct struct {
 	TorrentsExtraUrls            []string `yaml:"torrentsExtraUrls"`
 	Cookie                       string   `yaml:"cookie"`
 	UserAgent                    string   `yaml:"userAgent"`
+	Ja3                          string   `yaml:"ja3"`
 	Proxy                        string   `yaml:"proxy"`
 	TorrentUploadSpeedLimit      string   `yaml:"torrentUploadSpeedLimit"`
 	GlobalHnR                    bool     `yaml:"globalHnR"`
@@ -97,7 +98,8 @@ type SiteConfigStruct struct {
 type ConfigStruct struct {
 	IyuuToken        string                `yaml:"iyuuToken"`
 	SiteProxy        string                `yaml:"siteProxy"`
-	UserAgent        string                `yaml:"userAgent"`
+	SiteUserAgent    string                `yaml:"siteUserAgent"`
+	SiteJa3          string                `yaml:"siteJa3"`
 	BrushEnableStats bool                  `yaml:"brushEnableStats"`
 	Clients          []*ClientConfigStruct `yaml:"clients"`
 	Sites            []*SiteConfigStruct   `yaml:"sites"`
@@ -199,7 +201,13 @@ func Get() *ConfigStruct {
 				}
 
 				if site.UserAgent == "" {
-					site.UserAgent = configData.UserAgent
+					site.UserAgent = configData.SiteUserAgent
+				}
+				if site.Proxy == "" {
+					site.Proxy = configData.SiteProxy
+				}
+				if site.Ja3 == "" {
+					site.Ja3 = configData.SiteJa3
 				}
 
 				if site.Url != "" {

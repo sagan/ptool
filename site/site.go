@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"net/url"
 
-	cloudflarebp "github.com/DaRealFreak/cloudflare-bp-go"
 	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/ja3transport"
 	"github.com/sagan/ptool/utils"
 	"golang.org/x/exp/slices"
 )
@@ -162,21 +162,30 @@ func GetConfigSiteNameByTypes(types ...string) string {
 
 func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, config *config.ConfigStruct) (*http.Client, error) {
 	httpClient := &http.Client{}
-	transport := &http.Transport{}
-	proxy := siteConfig.Proxy
-	if proxy == "" {
-		proxy = config.SiteProxy
+	ja3 := ""
+	// ja3 = utils.CHROME_JA3 // there are still some SERIOUS problems unsolved for now.
+	if siteConfig.Ja3 != "" {
+		ja3 = siteConfig.Ja3
 	}
-	if proxy != "" {
-		proxyUrl, err := url.Parse(proxy)
+	var transport *http.Transport
+	var err error
+	if ja3 != "" && ja3 != "none" {
+		transport, err = ja3transport.NewTransport(ja3)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse siteProxy %s: %v", proxy, err)
+			return nil, fmt.Errorf("failed to create site http transport ja3: %v", err)
+		}
+		transport.ForceAttemptHTTP2 = true
+	} else {
+		transport = &http.Transport{}
+	}
+	if siteConfig.Proxy != "" && siteConfig.Proxy != "none" {
+		proxyUrl, err := url.Parse(siteConfig.Proxy)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse siteProxy %s: %v", siteConfig.Proxy, err)
 		}
 		transport.Proxy = http.ProxyURL(proxyUrl)
 	}
-	httpClient.Transport = cloudflarebp.AddCloudFlareByPass(transport, cloudflarebp.Options{
-		AddMissingHeaders: false,
-	})
+	httpClient.Transport = transport
 	return httpClient, nil
 }
 
