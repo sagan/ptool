@@ -46,7 +46,7 @@ var extMap = map[string]tls.TLSExtension{
 		},
 	},
 	"16": &tls.ALPNExtension{
-		AlpnProtocols: []string{"http2", "http/1.1"},
+		AlpnProtocols: []string{"h2", "http/1.1"},
 	},
 	"18": &tls.SCTExtension{},
 	"21": &tls.UtlsPaddingExtension{GetPaddingLen: tls.BoringPaddingStyle},

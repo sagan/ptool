@@ -770,6 +770,15 @@ func (qbclient *Client) EditTorrentTracker(infoHash string, oldTracker string, n
 	return qbclient.apiPost("api/v2/torrents/editTracker", data)
 }
 
+func (qbclient *Client) Close() {
+	if qbclient.Logined {
+		qbclient.apiPost("api/v2/auth/logout", nil)
+		qbclient.Logined = false
+	}
+	qbclient.datatime = 0
+	qbclient.data = nil
+}
+
 func NewClient(name string, clientConfig *config.ClientConfigStruct, config *config.ConfigStruct) (client.Client, error) {
 	jar, err := cookiejar.New(nil)
 	if err != nil {

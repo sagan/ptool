@@ -156,7 +156,11 @@ mainloop:
 		cntTorrentsThisPage := 0
 
 		if err != nil {
-			log.Errorf("Failed to fetch next page torrents: %v", err)
+			log.Errorf("Failed to fetch page %s torrents: %v", lastMarker, err)
+			break
+		}
+		if len(torrents) == 0 {
+			log.Warnf("No torrents found in page %s (may be an error). Abort", lastMarker)
 			break
 		}
 		cntAllTorrents += int64(len(torrents))
@@ -250,7 +254,7 @@ mainloop:
 			if allowBreak {
 				break
 			} else {
-				log.Warning("Warning, current page has no required torrents.")
+				log.Warning("Warning, current page %s has no required torrents.", lastMarker)
 			}
 		}
 		log.Printf("Finish handling current page. Will process next page in few seconds. Press Ctrl + C to stop")

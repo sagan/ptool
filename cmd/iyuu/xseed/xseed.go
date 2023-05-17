@@ -351,6 +351,7 @@ mainloop:
 				utils.Sleep(2)
 			}
 		}
+		clientInstance.Close()
 	}
 	fmt.Printf("Done xseed %d clients. Target / Xseed / SuccessXseed torrents: %d / %d / %d\n",
 		len(clientNames), cntTargetTorrents, cntXseedTorrents, cntSucccessXseedTorrents)

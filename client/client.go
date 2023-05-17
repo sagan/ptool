@@ -111,6 +111,7 @@ type Client interface {
 	GetConfig(variable string) (string, error)
 	GetTorrentTrackers(infoHash string) ([]TorrentTracker, error)
 	EditTorrentTracker(infoHash string, oldTracker string, newTracker string) error
+	Close()
 }
 
 type RegInfo struct {
