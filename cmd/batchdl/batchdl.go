@@ -6,7 +6,9 @@ import (
 	"encoding/csv"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -147,6 +149,20 @@ func batchdl(cmd *cobra.Command, args []string) {
 	var torrents []site.Torrent
 	var marker = startPage
 	var lastMarker = ""
+	doneHandle := func() {
+		fmt.Printf("\n"+`Done. Torrents / AllTorrents / LastPage: %d / %d / "%s"`+"\n", cntTorrents, cntAllTorrents, lastMarker)
+		if csvWriter != nil {
+			csvWriter.Flush()
+		}
+		os.Exit(0)
+	}
+	sigs := make(chan os.Signal, 1)
+	go func() {
+		sig := <-sigs
+		log.Debugf("Received signal %v", sig)
+		doneHandle()
+	}()
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 mainloop:
 	for {
 		now := utils.Now()
@@ -254,14 +270,12 @@ mainloop:
 			if allowBreak {
 				break
 			} else {
-				log.Warning("Warning, current page %s has no required torrents.", lastMarker)
+				log.Warnf("Warning, current page %s has no required torrents.", lastMarker)
 			}
 		}
-		log.Printf("Finish handling current page. Will process next page in few seconds. Press Ctrl + C to stop")
+		log.Warnf("Finish handling page %s. Will process next page %s in few seconds. Press Ctrl + C to stop",
+			lastMarker, marker)
 		utils.Sleep(3)
 	}
-	fmt.Printf("\n"+`Done. Torrents / AllTorrents / LastPage: %d / %d / "%s"`+"\n", cntTorrents, cntAllTorrents, lastMarker)
-	if csvWriter != nil {
-		csvWriter.Flush()
-	}
+	doneHandle()
 }

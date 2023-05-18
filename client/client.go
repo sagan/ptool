@@ -280,7 +280,7 @@ func PrintTorrent(torrent *Torrent) {
 	fmt.Printf("Torrent name: %s\n", torrent.Name)
 	fmt.Printf("InfoHash: %s\n", torrent.InfoHash)
 	fmt.Printf("Size: %s (%d)\n", utils.BytesSize(float64(torrent.Size)), torrent.Size)
-	fmt.Printf("Process: %d%%", int64(float64(torrent.SizeCompleted)*100/float64(torrent.Size)))
+	fmt.Printf("Process: %d%%\n", int64(float64(torrent.SizeCompleted)*100/float64(torrent.Size)))
 	fmt.Printf("Total Size: %s (%d)\n", utils.BytesSize(float64(torrent.SizeTotal)), torrent.SizeTotal)
 	fmt.Printf("State (LowLevelState): %s (%s)\n", torrent.State, torrent.LowLevelState)
 	fmt.Printf("Speeds: ↓S: %s/s | ↑S: %s/s\n",
