@@ -72,6 +72,11 @@ var (
 			Url:     "https://cyanbug.net/",
 			Comment: "大青虫",
 		},
+		"dajiao": &config.SiteConfigStruct{
+			Type:    "nexusphp",
+			Url:     "https://dajiao.cyou/",
+			Comment: "打胶",
+		},
 		"dhtclub": &config.SiteConfigStruct{
 			Type:    "nexusphp",
 			Url:     "https://pt.dhtclub.com/",
@@ -194,15 +199,17 @@ var (
 		},
 		"hhanclub": &config.SiteConfigStruct{
 			Type:    "nexusphp",
-			Aliases: []string{"hh"},
+			Aliases: []string{"hh", "hhan"},
 			Url:     "https://hhanclub.top/",
+			Domains: []string{"hhan.club"},
 			Comment: "憨憨",
 		},
 		"icc2022": &config.SiteConfigStruct{
-			Type:    "nexusphp",
-			Aliases: []string{"icc"},
-			Url:     "https://www.icc2022.com/",
-			Comment: "冰淇淋",
+			Type:      "nexusphp",
+			Aliases:   []string{"icc"},
+			Url:       "https://www.icc2022.com/",
+			GlobalHnR: true,
+			Comment:   "冰淇淋",
 		},
 		"ilolicon": &config.SiteConfigStruct{
 			Type:    "nexusphp",
@@ -229,6 +236,7 @@ var (
 		},
 		"kamept": &config.SiteConfigStruct{
 			Type:    "nexusphp",
+			Aliases: []string{"kame"},
 			Url:     "https://kamept.com/",
 			Comment: "KamePT",
 		},
@@ -242,7 +250,7 @@ var (
 		},
 		"lemonhd": &config.SiteConfigStruct{
 			Type:                "nexusphp",
-			Aliases:             []string{"leaguehd"},
+			Aliases:             []string{"leaguehd", "lemon"},
 			Url:                 "https://lemonhd.org/",
 			Domains:             []string{"leaguehd.com"},
 			TorrentsUrl:         "https://lemonhd.org/torrents_new.php",
@@ -251,7 +259,7 @@ var (
 		},
 		"m-team": &config.SiteConfigStruct{
 			Type:              "nexusphp",
-			Aliases:           []string{"mteam"},
+			Aliases:           []string{"mteam", "mt"},
 			Url:               "https://kp.m-team.cc/",
 			TorrentsExtraUrls: []string{"https://kp.m-team.cc/adult.php"},
 			Comment:           "馒头",

@@ -33,6 +33,7 @@ var (
 	addAutoStart                                       = false
 	includeDownloaded                                  = false
 	freeOnly                                           = false
+	nohr                                               = false
 	allowBreak                                         = false
 	maxTorrents                                        = int64(0)
 	addCategory                                        = ""
@@ -57,6 +58,7 @@ var (
 
 func init() {
 	command.Flags().BoolVarP(&freeOnly, "free", "", false, "Skip none-free torrents")
+	command.Flags().BoolVarP(&nohr, "nohr", "", false, "Skip torrents that has any type of HnR (Hit and Run) restriction")
 	command.Flags().BoolVarP(&allowBreak, "break", "", false, "Break (stop finding more torrents) if all torrents of current page does not meet criterion")
 	command.Flags().BoolVarP(&addAutoStart, "add-start", "", false, "By default the added torrents in client will be in paused state unless this flag is set")
 	command.Flags().BoolVarP(&includeDownloaded, "include-downloaded", "", false, "Do NOT skip torrents that has been downloaded before")
@@ -141,6 +143,12 @@ func batchdl(cmd *cobra.Command, args []string) {
 		}
 		freeTimeAtLeast = t
 	}
+	if nohr && siteInstance.GetSiteConfig().GlobalHnR {
+		log.Errorf("No torrents will be downloaded: site %s enforces global HnR restrictions",
+			siteInstance.GetName(),
+		)
+		os.Exit(0)
+	}
 
 	cntTorrents := int64(0)
 	cntAllTorrents := int64(0)
@@ -222,6 +230,10 @@ mainloop:
 					log.Tracef("Skip torrent %s which remaining free time is too short", torrent.Name)
 					continue
 				}
+			}
+			if nohr && torrent.HasHnR {
+				log.Tracef("Skip HR torrent %s", torrent.Name)
+				continue
 			}
 			cntTorrents++
 			cntTorrentsThisPage++

@@ -117,16 +117,13 @@ func GetWildcardFilenames(filestr string) []string {
 	}
 	prefix := ""
 	suffix := ""
-	if !strings.Contains(name, "*") {
-		return nil
-	} else if name != "*" {
-		if strings.HasPrefix(name, "*") {
-			suffix = name[1:]
-		} else if strings.HasSuffix(name, "*") {
-			prefix = name[:len(name)-1]
-		} else {
-			return nil // not supported yet
-		}
+	exact := ""
+	index := strings.Index(name, "*")
+	if index != -1 {
+		prefix = name[:index]
+		suffix = name[index+1:]
+	} else {
+		exact = name
 	}
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -134,21 +131,24 @@ func GetWildcardFilenames(filestr string) []string {
 	}
 	filenames := []string{}
 	for _, entry := range entries {
-		entryExt := filepath.Ext(entry.Name())
-		if entryExt != ext {
+		entryName := entry.Name()
+		entryExt := filepath.Ext(entryName)
+		if ext != "" {
+			if entryExt == "" || (entryExt != ext && ext != ".*") {
+				continue
+			}
+			entryName = entryName[:len(entryName)-len(entryExt)]
+		}
+		if exact != "" && entryName != exact {
 			continue
 		}
-		if prefix != "" {
-			if strings.HasPrefix(entry.Name(), prefix) {
-				filenames = append(filenames, dir+"/"+entry.Name())
-			}
-		} else if suffix != "" {
-			if strings.HasSuffix(entry.Name(), suffix) {
-				filenames = append(filenames, dir+"/"+entry.Name())
-			}
-		} else {
-			filenames = append(filenames, dir+"/"+entry.Name())
+		if prefix != "" && !strings.HasPrefix(entryName, prefix) {
+			continue
 		}
+		if suffix != "" && !strings.HasSuffix(entryName, suffix) {
+			continue
+		}
+		filenames = append(filenames, dir+"/"+entry.Name())
 	}
 	return filenames
 }

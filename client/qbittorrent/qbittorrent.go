@@ -770,6 +770,22 @@ func (qbclient *Client) EditTorrentTracker(infoHash string, oldTracker string, n
 	return qbclient.apiPost("api/v2/torrents/editTracker", data)
 }
 
+func (qbclient *Client) AddTorrentTrackers(infoHash string, trackers []string) error {
+	data := url.Values{
+		"hash": {infoHash},
+		"urls": {strings.Join(trackers, "\n")},
+	}
+	return qbclient.apiPost("api/v2/torrents/addTrackers", data)
+}
+
+func (qbclient *Client) RemoveTorrentTrackers(infoHash string, trackers []string) error {
+	data := url.Values{
+		"hash": {infoHash},
+		"urls": {strings.Join(trackers, "|")},
+	}
+	return qbclient.apiPost("api/v2/torrents/removeTrackers", data)
+}
+
 func (qbclient *Client) Close() {
 	if qbclient.Logined {
 		qbclient.apiPost("api/v2/auth/logout", nil)
