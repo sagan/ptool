@@ -36,9 +36,10 @@ var (
 			Comment: "芒果",
 		},
 		"52pt": &config.SiteConfigStruct{
-			Type:    "nexusphp",
-			Url:     "https://52pt.site/",
-			Comment: "52PT",
+			Type:      "nexusphp",
+			Url:       "https://52pt.site/",
+			GlobalHnR: true,
+			Comment:   "52PT",
 		},
 		"audiences": &config.SiteConfigStruct{
 			Type:    "nexusphp",
@@ -321,6 +322,12 @@ var (
 			Type:    "nexusphp",
 			Url:     "https://pt.soulvoice.club/",
 			Comment: "聆音",
+		},
+		"tu88": &config.SiteConfigStruct{
+			Type:      "nexusphp",
+			Url:       "http://pt.tu88.men/",
+			GlobalHnR: true,
+			Comment:   "TU88",
 		},
 		"u2": &config.SiteConfigStruct{
 			Type:    "nexusphp",
