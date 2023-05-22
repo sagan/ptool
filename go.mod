@@ -35,6 +35,9 @@ require (
 	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/gaukas/godicttls v0.0.3 // indirect
 	github.com/glebarez/go-sqlite v1.21.1 // indirect
+	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
+	github.com/hekmon/cunits/v2 v2.1.0 // indirect
+	github.com/hekmon/transmissionrpc/v2 v2.0.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect

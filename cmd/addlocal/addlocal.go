@@ -28,6 +28,7 @@ var (
 	paused      = false
 	skipCheck   = false
 	defaultSite = ""
+	rename      = ""
 	addCategory = ""
 	addTags     = ""
 	savePath    = ""
@@ -39,6 +40,7 @@ func init() {
 	command.Flags().StringVarP(&savePath, "add-save-path", "", "", "Set save path of added torrents")
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of torrents")
 	command.Flags().StringVarP(&addCategory, "add-category", "", "", "Set category of added torrents")
+	command.Flags().StringVarP(&rename, "rename", "", "", "Rename added torrent (for dev/test only)")
 	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Set tags of added torrent (comma-separated)")
 	cmd.RootCmd.AddCommand(command)
 }
@@ -55,6 +57,7 @@ func add(cmd *cobra.Command, args []string) {
 		Category:     addCategory,
 		SavePath:     savePath,
 		SkipChecking: skipCheck,
+		Name:         rename,
 	}
 	var fixedTags []string
 	if addTags != "" {

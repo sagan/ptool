@@ -791,8 +791,7 @@ func (qbclient *Client) Close() {
 		qbclient.apiPost("api/v2/auth/logout", nil)
 		qbclient.Logined = false
 	}
-	qbclient.datatime = 0
-	qbclient.data = nil
+	qbclient.PurgeCache()
 }
 
 func NewClient(name string, clientConfig *config.ClientConfigStruct, config *config.ConfigStruct) (client.Client, error) {

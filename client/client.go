@@ -221,10 +221,18 @@ func TorrentStateIconText(torrent *Torrent) string {
 func init() {
 }
 
+func (torrent *Torrent) GetCategoryFromTag() string {
+	return torrent.GetMetaFromTag("category")
+}
+
 func (torrent *Torrent) GetSiteFromTag() string {
+	return torrent.GetMetaFromTag("site")
+}
+
+func (torrent *Torrent) GetMetaFromTag(meta string) string {
 	for _, tag := range torrent.Tags {
-		if strings.HasPrefix(tag, "site:") {
-			return tag[5:]
+		if strings.HasPrefix(tag, meta+":") {
+			return tag[len(meta)+1:]
 		}
 	}
 	return ""
@@ -253,12 +261,16 @@ func GenerateTorrentTagFromSite(site string) string {
 	return "site:" + site
 }
 
+func GenerateTorrentTagFromCategory(category string) string {
+	return "category:" + category
+}
+
 func PrintTorrentTrackers(trackers []TorrentTracker) {
 	fmt.Printf("Trackers:\n")
-	fmt.Printf("%-8s  %-30s  %s\n", "Status", "Msg", "Url")
+	fmt.Printf("%-8s  %-40s  %s\n", "Status", "Msg", "Url")
 	for _, tracker := range trackers {
 		fmt.Printf("%-8s  ", tracker.Status)
-		utils.PrintStringInWidth(tracker.Msg, 30, true)
+		utils.PrintStringInWidth(tracker.Msg, 40, true)
 		fmt.Printf("  %s\n", tracker.Url)
 	}
 }
