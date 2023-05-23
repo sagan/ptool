@@ -28,10 +28,17 @@ type Client struct {
 	sessionStats *transmissionrpc.SessionStats
 	sessionArgs  *transmissionrpc.SessionArguments
 	freeSpace    int64
+	lastTorrent  *transmissionrpc.Torrent // a **really** simple cache with capacity of only one
 }
 
-// get a torrent full info from rpc. no cache. return error if torrent not found
-func (trclient *Client) getTorrent(infoHash string) (*transmissionrpc.Torrent, error) {
+// get a torrent info from rpc. return error if torrent not found
+func (trclient *Client) getTorrent(infoHash string, full bool) (*transmissionrpc.Torrent, error) {
+	if !full && trclient.torrents[infoHash] != nil {
+		return trclient.torrents[infoHash], nil
+	}
+	if trclient.lastTorrent != nil && *trclient.lastTorrent.HashString == infoHash {
+		return trclient.lastTorrent, nil
+	}
 	transmissionbt := trclient.client
 	torrents, err := transmissionbt.TorrentGetAllForHashes(context.TODO(), []string{infoHash})
 	if err != nil {
@@ -40,6 +47,7 @@ func (trclient *Client) getTorrent(infoHash string) (*transmissionrpc.Torrent, e
 	if len(torrents) == 0 {
 		return nil, fmt.Errorf("torrent not found")
 	}
+	trclient.lastTorrent = &torrents[0]
 	return &torrents[0], err
 }
 
@@ -75,11 +83,11 @@ func (trclient *Client) sync() error {
 	now := utils.Now()
 	torrents, err := transmissionbt.TorrentGet(context.TODO(), []string{
 		"addedDate", "doneDate", "downloadDir", "downloadedEver", "downloadLimit", "downloadLimited",
-		"hashString", "id", "name", "peersGettingFromUs", "peersSendingToUs", "percentDone", "rateDownload", "rateUpload",
+		"hashString", "id", "labels", "name", "peersGettingFromUs", "peersSendingToUs", "percentDone", "rateDownload", "rateUpload",
 		"sizeWhenDone", "status", "trackers", "totalSize", "uploadedEver", "uploadLimit", "uploadLimited",
 	}, nil)
 	if err != nil {
-		return nil
+		return err
 	}
 	torrentsMap := map[string](*transmissionrpc.Torrent){}
 	for _, torrent := range torrents {
@@ -210,7 +218,7 @@ func (trclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 }
 
 func (trclient *Client) ModifyTorrent(infoHash string, option *client.TorrentOption, meta map[string](int64)) error {
-	trtorrent, err := trclient.getTorrent(infoHash)
+	trtorrent, err := trclient.getTorrent(infoHash, false)
 	transmissionbt := trclient.client
 	if err != nil {
 		return err
@@ -226,7 +234,7 @@ func (trclient *Client) ModifyTorrent(infoHash string, option *client.TorrentOpt
 		if name != *trtorrent.Name {
 			err := transmissionbt.TorrentRenamePathHash(context.TODO(), infoHash, *trtorrent.Name, name)
 			if err != nil {
-				return nil
+				return err
 			}
 		}
 	}
@@ -235,13 +243,25 @@ func (trclient *Client) ModifyTorrent(infoHash string, option *client.TorrentOpt
 		IDs: []int64{*trtorrent.ID},
 	}
 
-	// labels := []string{}
-	// if option.Category != "" {
-	// 	categoryTag := client.GenerateTorrentTagFromCategory(option.Category)
-	// }
-	// for _, label := range trtorrent.Labels {
-
-	// }
+	if option.Category != "" || len(option.Tags) > 0 || len(option.RemoveTags) > 0 {
+		labels := []string{}
+		if option.Category != "" && torrent.Category != option.Category {
+			categoryTag := client.GenerateTorrentTagFromCategory(option.Category)
+			labels = append(labels, categoryTag)
+		} else if torrent.Category != "" {
+			categoryTag := client.GenerateTorrentTagFromCategory(torrent.Category)
+			labels = append(labels, categoryTag)
+		}
+		labels = append(labels, option.Tags...)
+		if len(labels) > 0 || len(option.RemoveTags) > 0 {
+			for _, tag := range torrent.Tags {
+				if slices.Index(option.RemoveTags, tag) == -1 {
+					labels = append(labels, tag)
+				}
+			}
+			payload.Labels = labels
+		}
+	}
 
 	if option.DownloadSpeedLimit != 0 && option.DownloadSpeedLimit != torrent.DownloadSpeedLimit {
 		downloadLimited := true
@@ -273,14 +293,19 @@ func (trclient *Client) ModifyTorrent(infoHash string, option *client.TorrentOpt
 		payload.UploadLimited = &uploadLimited
 		payload.UploadLimit = &uploadLimit
 	}
-	trclient.client.TorrentSet(context.TODO(), payload)
+
+	if option.SavePath != "" {
+		payload.Location = &option.SavePath
+	}
+
+	transmissionbt.TorrentSet(context.TODO(), payload)
 
 	if option.Pause {
-		trclient.PauseTorrents([]string{infoHash})
+		err = trclient.PauseTorrents([]string{infoHash})
 	} else if option.Resume {
-		trclient.ResumeTorrents([]string{infoHash})
+		err = trclient.ResumeTorrents([]string{infoHash})
 	}
-	return nil
+	return err
 }
 
 // suboptimal due to limit of transmissionrpc library
@@ -313,30 +338,10 @@ func (trclient *Client) ReannounceTorrents(infoHashes []string) error {
 }
 
 func (trclient *Client) AddTagsToTorrents(infoHashes []string, tags []string) error {
-	if err := trclient.sync(); err != nil {
-		return err
-	}
-	transmissionbt := trclient.client
 	for _, infoHash := range infoHashes {
-		if trclient.torrents[infoHash] == nil {
-			continue
-		}
-		torrent := trclient.torrents[infoHash]
-		labels := utils.CopySlice(torrent.Labels)
-		modify := false
-		for _, tag := range tags {
-			if slices.Index(labels, tag) == -1 {
-				labels = append(labels, tag)
-				modify = true
-			}
-		}
-		if !modify {
-			continue
-		}
-		err := transmissionbt.TorrentSet(context.TODO(), transmissionrpc.TorrentSetPayload{
-			IDs:    []int64{*torrent.ID},
-			Labels: labels,
-		})
+		err := trclient.ModifyTorrent(infoHash, &client.TorrentOption{
+			Tags: tags,
+		}, nil)
 		if err != nil {
 			return err
 		}
@@ -345,28 +350,10 @@ func (trclient *Client) AddTagsToTorrents(infoHashes []string, tags []string) er
 }
 
 func (trclient *Client) RemoveTagsFromTorrents(infoHashes []string, tags []string) error {
-	if err := trclient.sync(); err != nil {
-		return err
-	}
-	transmissionbt := trclient.client
 	for _, infoHash := range infoHashes {
-		if trclient.torrents[infoHash] == nil {
-			continue
-		}
-		torrent := trclient.torrents[infoHash]
-		labels := []string{}
-		for _, label := range torrent.Labels {
-			if slices.Index(tags, label) == -1 {
-				labels = append(labels, label)
-			}
-		}
-		if len(labels) == len(torrent.Labels) {
-			continue
-		}
-		err := transmissionbt.TorrentSet(context.TODO(), transmissionrpc.TorrentSetPayload{
-			IDs:    []int64{*torrent.ID},
-			Labels: labels,
-		})
+		err := trclient.ModifyTorrent(infoHash, &client.TorrentOption{
+			RemoveTags: tags,
+		}, nil)
 		if err != nil {
 			return err
 		}
@@ -402,19 +389,41 @@ func (trclient *Client) ReannounceAllTorrents() error {
 }
 
 func (trclient *Client) AddTagsToAllTorrents(tags []string) error {
+	if err := trclient.sync(); err != nil {
+		return err
+	}
 	return trclient.AddTagsToTorrents(trclient.getAllInfoHashes(), tags)
 }
 
 func (trclient *Client) RemoveTagsFromAllTorrents(tags []string) error {
+	if err := trclient.sync(); err != nil {
+		return err
+	}
 	return trclient.RemoveTagsFromTorrents(trclient.getAllInfoHashes(), tags)
 }
 
 func (trclient *Client) SetAllTorrentsSavePath(savePath string) error {
+	if err := trclient.sync(); err != nil {
+		return err
+	}
 	return trclient.SetTorrentsSavePath(trclient.getAllInfoHashes(), savePath)
 }
 
 func (trclient *Client) GetTags() ([]string, error) {
-	return nil, fmt.Errorf("unsupported")
+	if err := trclient.sync(); err != nil {
+		return nil, err
+	}
+	tags := []string{}
+	tagsFlag := map[string](bool){}
+	for _, trtorrent := range trclient.torrents {
+		for _, label := range trtorrent.Labels {
+			if label != "" && !tagsFlag[label] && !client.IsCategoryTag(label) {
+				tags = append(tags, label)
+				tagsFlag[label] = true
+			}
+		}
+	}
+	return tags, nil
 }
 
 func (trclient *Client) CreateTags(tags ...string) error {
@@ -422,19 +431,45 @@ func (trclient *Client) CreateTags(tags ...string) error {
 }
 
 func (trclient *Client) DeleteTags(tags ...string) error {
-	return fmt.Errorf("unsupported")
+	return trclient.RemoveTagsFromAllTorrents(tags)
 }
 
 func (trclient *Client) GetCategories() ([]string, error) {
-	return nil, fmt.Errorf("unsupported")
+	if err := trclient.sync(); err != nil {
+		return nil, err
+	}
+	cats := []string{}
+	catsFlag := map[string](bool){}
+	for _, trtorrent := range trclient.torrents {
+		torrent := tr2Torrent(trtorrent)
+		cat := torrent.GetCategoryFromTag()
+		if cat != "" && !catsFlag[cat] {
+			cats = append(cats, cat)
+			catsFlag[cat] = true
+		}
+	}
+	return cats, nil
 }
 
 func (trclient *Client) SetTorrentsCatetory(infoHashes []string, category string) error {
-	return fmt.Errorf("unsupported")
+	for _, infoHash := range infoHashes {
+		trclient.ModifyTorrent(infoHash, &client.TorrentOption{
+			Category: category,
+		}, nil)
+	}
+	return nil
 }
 
 func (trclient *Client) SetAllTorrentsCatetory(category string) error {
-	return fmt.Errorf("unsupported")
+	if err := trclient.sync(); err != nil {
+		return err
+	}
+	for infoHash := range trclient.torrents {
+		trclient.ModifyTorrent(infoHash, &client.TorrentOption{
+			Category: category,
+		}, nil)
+	}
+	return nil
 }
 
 func (trclient *Client) TorrentRootPathExists(rootFolder string) bool {
@@ -453,7 +488,7 @@ func (trclient *Client) TorrentRootPathExists(rootFolder string) bool {
 }
 
 func (trclient *Client) GetTorrentContents(infoHash string) ([]client.TorrentContentFile, error) {
-	torrent, err := trclient.getTorrent(infoHash)
+	torrent, err := trclient.getTorrent(infoHash, true)
 	if err != nil {
 		return nil, err
 	}
@@ -474,6 +509,7 @@ func (trclient *Client) PurgeCache() {
 	trclient.sessionArgs = nil
 	trclient.sessionStats = nil
 	trclient.torrents = nil
+	trclient.lastTorrent = nil
 }
 
 func (trclient *Client) GetStatus() (*client.Status, error) {
@@ -567,7 +603,7 @@ func (trclient *Client) GetConfig(variable string) (string, error) {
 	}
 }
 func (trclient *Client) GetTorrentTrackers(infoHash string) ([]client.TorrentTracker, error) {
-	torrent, err := trclient.getTorrent(infoHash)
+	torrent, err := trclient.getTorrent(infoHash, true)
 	if err != nil {
 		return nil, err
 	}
@@ -593,54 +629,65 @@ func (trclient *Client) GetTorrentTrackers(infoHash string) ([]client.TorrentTra
 }
 
 func (trclient *Client) EditTorrentTracker(infoHash string, oldTracker string, newTracker string) error {
-	torrent, err := trclient.getTorrent(infoHash)
+	trtorrent, err := trclient.getTorrent(infoHash, false)
 	if err != nil {
 		return err
 	}
 	oldTrackerId := ""
-	for _, tracker := range torrent.Trackers {
+	for _, tracker := range trtorrent.Trackers {
 		if tracker.Announce == oldTracker {
 			oldTrackerId = fmt.Sprint(tracker.ID)
 			break
 		}
 	}
 	if oldTrackerId == "" {
-		return fmt.Errorf("torrent %s old tracker %s not exists", *torrent.HashString, oldTracker)
+		return fmt.Errorf("torrent %s old tracker %s not exists", *trtorrent.HashString, oldTracker)
 	}
-	trclient.client.TorrentSet(context.TODO(), transmissionrpc.TorrentSetPayload{
-		IDs:            []int64{*torrent.ID},
+	// this is broken for now as transmission RPC expects trackerReplace to be
+	// a mixed types array of ids (integer) and urls(string)
+	// it's a problem of transmissionrpc library
+	return trclient.client.TorrentSet(context.TODO(), transmissionrpc.TorrentSetPayload{
+		IDs:            []int64{*trtorrent.ID},
 		TrackerReplace: []string{oldTrackerId, newTracker},
 	})
-	return nil
 }
 
 func (trclient *Client) AddTorrentTrackers(infoHash string, trackers []string) error {
-	torrent, err := trclient.getTorrent(infoHash)
+	trtorrent, err := trclient.getTorrent(infoHash, false)
 	if err != nil {
 		return err
 	}
-	trclient.client.TorrentSet(context.TODO(), transmissionrpc.TorrentSetPayload{
-		IDs:        []int64{*torrent.ID},
-		TrackerAdd: trackers,
+	trackers = utils.Filter(trackers, func(tracker string) bool {
+		return slices.IndexFunc(trtorrent.Trackers, func(trtracker *transmissionrpc.Tracker) bool {
+			return trtracker.Announce == tracker
+		}) == -1
 	})
+	if len(trackers) > 0 {
+		return trclient.client.TorrentSet(context.TODO(), transmissionrpc.TorrentSetPayload{
+			IDs:        []int64{*trtorrent.ID},
+			TrackerAdd: trackers,
+		})
+	}
 	return nil
 }
 
 func (trclient *Client) RemoveTorrentTrackers(infoHash string, trackers []string) error {
-	torrent, err := trclient.getTorrent(infoHash)
+	trtorrent, err := trclient.getTorrent(infoHash, false)
 	if err != nil {
 		return err
 	}
 	trackerIds := []int64{}
-	for _, tracker := range torrent.Trackers {
+	for _, tracker := range trtorrent.Trackers {
 		if slices.Index(trackers, tracker.Announce) != -1 {
 			trackerIds = append(trackerIds, tracker.ID)
 		}
 	}
-	trclient.client.TorrentSet(context.TODO(), transmissionrpc.TorrentSetPayload{
-		IDs:           []int64{*torrent.ID},
-		TrackerRemove: trackerIds,
-	})
+	if len(trackerIds) > 0 {
+		return trclient.client.TorrentSet(context.TODO(), transmissionrpc.TorrentSetPayload{
+			IDs:           []int64{*trtorrent.ID},
+			TrackerRemove: trackerIds,
+		})
+	}
 	return nil
 }
 
@@ -764,6 +811,7 @@ func tr2Torrent(trtorrent *transmissionrpc.Torrent) *client.Torrent {
 	}
 	torrent.Name, torrent.Meta = client.ParseMetaFromName(torrent.Name)
 	torrent.Category = torrent.GetCategoryFromTag()
+	torrent.Tags = utils.FilterNot(torrent.Tags, client.IsCategoryTag)
 	return torrent
 }
 

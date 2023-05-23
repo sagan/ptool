@@ -48,6 +48,9 @@ func brush(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if clientInstance.GetClientConfig().Type == "transmission" {
+		log.Warnf("Warning: brush function of transmission client has NOT been tested")
+	}
 	sitenames := config.ParseGroupAndOtherNamesWithoutDeduplicate(args[1:]...)
 
 	if !ordered {

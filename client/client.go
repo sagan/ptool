@@ -265,6 +265,14 @@ func GenerateTorrentTagFromCategory(category string) string {
 	return "category:" + category
 }
 
+func IsCategoryTag(tag string) bool {
+	return strings.HasPrefix(tag, "category:")
+}
+
+func IsSiteTag(tag string) bool {
+	return strings.HasPrefix(tag, "site:")
+}
+
 func PrintTorrentTrackers(trackers []TorrentTracker) {
 	fmt.Printf("Trackers:\n")
 	fmt.Printf("%-8s  %-40s  %s\n", "Status", "Msg", "Url")

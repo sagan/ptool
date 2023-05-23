@@ -28,6 +28,15 @@ func Filter[T any](ss []T, test func(T) bool) (ret []T) {
 	return
 }
 
+func FilterNot[T any](ss []T, test func(T) bool) (ret []T) {
+	for _, s := range ss {
+		if !test(s) {
+			ret = append(ret, s)
+		}
+	}
+	return
+}
+
 func FindInSlice[T any](slice []T, checker func(T) bool) *T {
 	index := slices.IndexFunc(slice, checker)
 	if index == -1 {
