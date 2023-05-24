@@ -2,11 +2,12 @@ module github.com/sagan/ptool
 
 go 1.20
 
-replace github.com/hekmon/transmissionrpc/v2 =>  ./transmissionrpc
+replace github.com/hekmon/transmissionrpc/v2 => ./transmissionrpc
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/glebarez/sqlite v1.8.0
+	github.com/hekmon/transmissionrpc/v2 v2.0.1
 	github.com/j-muller/go-torrent-parser v0.0.0-20211014072822-db02b4099054
 	github.com/jpillora/go-tld v1.2.1
 	github.com/mattn/go-runewidth v0.0.14
@@ -39,7 +40,6 @@ require (
 	github.com/glebarez/go-sqlite v1.21.1 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hekmon/cunits/v2 v2.1.0 // indirect
-	github.com/hekmon/transmissionrpc/v2 v2.0.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
