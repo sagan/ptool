@@ -615,13 +615,17 @@ func (qbclient *Client) GetStatus() (*client.Status, error) {
 	// qb 的 Web API 有 bug，有时 FreeSpaceOnDisk 返回 0，但实际硬盘剩余空间充足，原因尚不明确。目前在 Windows QB 4.5.2 上发现此现象。
 	if status.FreeSpaceOnDisk == 0 {
 		hasDownloadingTorrent := false
+		hasErrorTorrent := false
 		for _, qbtorrent := range qbclient.data.Torrents {
-			if qbtorrent.State == "downloading" && qbtorrent.Dlspeed > 0 {
+			if qbtorrent.State == "downloading" {
 				hasDownloadingTorrent = true
 				break
 			}
+			if qbtorrent.State == "error" && qbtorrent.Completed < qbtorrent.Size {
+				hasErrorTorrent = true
+			}
 		}
-		if hasDownloadingTorrent {
+		if hasDownloadingTorrent || !hasErrorTorrent {
 			status.FreeSpaceOnDisk = -1
 		}
 	}

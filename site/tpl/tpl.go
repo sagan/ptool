@@ -408,7 +408,8 @@ func FindSiteTypesByDomain(domain string) []string {
 	if domain == "" {
 		return nil
 	}
-	for sitename, site := range SITES {
+	for _, sitename := range SITENAMES {
+		site := SITES[sitename]
 		if !config.MatchSite(domain, site) {
 			continue
 		}
