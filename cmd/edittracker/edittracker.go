@@ -27,16 +27,18 @@ ptool edittracker <client> --old-tracker "https://..." --new-tracker "https://..
 }
 
 var (
-	dryRun     = false
-	category   = ""
-	tag        = ""
-	filter     = ""
-	oldTracker = ""
-	newTracker = ""
+	dryRun      = false
+	replaceHost = false
+	category    = ""
+	tag         = ""
+	filter      = ""
+	oldTracker  = ""
+	newTracker  = ""
 )
 
 func init() {
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do NOT actually modify torrent trackers")
+	command.Flags().BoolVarP(&replaceHost, "replace-host", "", false, "Replace host mode. If set, --old-tracker and --new-tracker should be the old / new tracker host (hostname[:port])")
 	command.Flags().StringVarP(&filter, "filter", "f", "", "Filter torrents by name")
 	command.Flags().StringVarP(&category, "category", "c", "", "Filter torrents by category")
 	command.Flags().StringVarP(&tag, "tag", "t", "", "Filter torrents by tag")
@@ -56,7 +58,7 @@ func edittracker(cmd *cobra.Command, args []string) {
 	if category == "" && tag == "" && filter == "" && len(args) == 0 {
 		log.Fatalf("You must provide at least a condition flag or hashFilter")
 	}
-	if !utils.IsUrl(oldTracker) || !utils.IsUrl(newTracker) {
+	if !replaceHost && (!utils.IsUrl(oldTracker) || !utils.IsUrl(newTracker)) {
 		log.Fatalf("Both --old-tracker and --new-tracker MUST be valid URL ( 'http(s)://...' )")
 	}
 	torrents, err := client.QueryTorrents(clientInstance, category, tag, filter, args...)
@@ -78,7 +80,7 @@ func edittracker(cmd *cobra.Command, args []string) {
 		if dryRun {
 			continue
 		}
-		err := clientInstance.EditTorrentTracker(torrent.InfoHash, oldTracker, newTracker)
+		err := clientInstance.EditTorrentTracker(torrent.InfoHash, oldTracker, newTracker, replaceHost)
 		if err != nil {
 			log.Errorf("Failed to edit tracker: %v\n", err)
 			cntError++

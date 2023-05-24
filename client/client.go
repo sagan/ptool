@@ -110,7 +110,7 @@ type Client interface {
 	SetConfig(variable string, value string) error
 	GetConfig(variable string) (string, error)
 	GetTorrentTrackers(infoHash string) ([]TorrentTracker, error)
-	EditTorrentTracker(infoHash string, oldTracker string, newTracker string) error
+	EditTorrentTracker(infoHash string, oldTracker string, newTracker string, replaceHost bool) error
 	AddTorrentTrackers(infoHash string, trackers []string) error
 	RemoveTorrentTrackers(infoHash string, trackers []string) error
 	Close()

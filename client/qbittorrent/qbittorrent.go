@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
 
 	"github.com/sagan/ptool/client"
@@ -765,7 +766,41 @@ func (qbclient *Client) GetTorrentTrackers(infoHash string) ([]client.TorrentTra
 	return trackers, nil
 }
 
-func (qbclient *Client) EditTorrentTracker(infoHash string, oldTracker string, newTracker string) error {
+func (qbclient *Client) EditTorrentTracker(infoHash string, oldTracker string, newTracker string, replaceHost bool) error {
+	if replaceHost {
+		torrents, err := qbclient.GetTorrents("", "", true)
+		if err != nil {
+			return err
+		}
+		for _, torrent := range torrents {
+			trackers, err := qbclient.GetTorrentTrackers(torrent.InfoHash)
+			if err != nil {
+				log.Errorf("Failed to get torrent %s trackers: %v", torrent.InfoHash, err)
+				continue
+			}
+			oldTrackerUrl := ""
+			newTrackerUrl := ""
+			for _, tracker := range trackers {
+				oldTrackerUrlObj, err := url.Parse(tracker.Url)
+				if err != nil {
+					continue
+				}
+				if oldTrackerUrlObj.Host == oldTracker {
+					oldTrackerUrl = tracker.Url
+					oldTrackerUrlObj.Host = newTracker
+					newTrackerUrl = oldTrackerUrlObj.String()
+					break
+				}
+			}
+			if oldTrackerUrl != "" && newTrackerUrl != "" {
+				err := qbclient.EditTorrentTracker(torrent.InfoHash, oldTrackerUrl, newTrackerUrl, false)
+				if err != nil {
+					log.Errorf("failed to replace torrent %s tracker domain: %v", torrent.InfoHash, err)
+				}
+			}
+		}
+		return nil
+	}
 	data := url.Values{
 		"hash":    {infoHash},
 		"origUrl": {oldTracker},

@@ -90,8 +90,8 @@ func (trclient *Client) sync() error {
 		return err
 	}
 	torrentsMap := map[string](*transmissionrpc.Torrent){}
-	for _, torrent := range torrents {
-		torrentsMap[*torrent.HashString] = &torrent
+	for i := range torrents {
+		torrentsMap[*torrents[i].HashString] = &torrents[i]
 	}
 	trclient.datatime = now
 	trclient.torrents = torrentsMap
@@ -628,14 +628,26 @@ func (trclient *Client) GetTorrentTrackers(infoHash string) ([]client.TorrentTra
 	return trackers, nil
 }
 
-func (trclient *Client) EditTorrentTracker(infoHash string, oldTracker string, newTracker string) error {
+func (trclient *Client) EditTorrentTracker(infoHash string, oldTracker string, newTracker string, replaceHost bool) error {
 	trtorrent, err := trclient.getTorrent(infoHash, false)
 	if err != nil {
 		return err
 	}
 	oldTrackerId := int64(-1)
+	newTrackerUrl := newTracker
 	for _, tracker := range trtorrent.Trackers {
-		if tracker.Announce == oldTracker {
+		if replaceHost {
+			oldTrackerUrlObj, err := url.Parse(tracker.Announce)
+			if err != nil {
+				continue
+			}
+			if oldTrackerUrlObj.Host == oldTracker {
+				oldTrackerId = tracker.ID
+				oldTrackerUrlObj.Host = newTracker
+				newTrackerUrl = oldTrackerUrlObj.String()
+				break
+			}
+		} else if tracker.Announce == oldTracker {
 			oldTrackerId = tracker.ID
 			break
 		}
@@ -648,7 +660,7 @@ func (trclient *Client) EditTorrentTracker(infoHash string, oldTracker string, n
 	// it's a problem of transmissionrpc library
 	return trclient.client.TorrentSet(context.TODO(), transmissionrpc.TorrentSetPayload{
 		IDs:            []int64{*trtorrent.ID},
-		TrackerReplace: []any{oldTrackerId, newTracker},
+		TrackerReplace: []any{oldTrackerId, newTrackerUrl},
 	})
 }
 
