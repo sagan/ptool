@@ -633,14 +633,14 @@ func (trclient *Client) EditTorrentTracker(infoHash string, oldTracker string, n
 	if err != nil {
 		return err
 	}
-	oldTrackerId := ""
+	oldTrackerId := int64(-1)
 	for _, tracker := range trtorrent.Trackers {
 		if tracker.Announce == oldTracker {
-			oldTrackerId = fmt.Sprint(tracker.ID)
+			oldTrackerId = tracker.ID
 			break
 		}
 	}
-	if oldTrackerId == "" {
+	if oldTrackerId == -1 {
 		return fmt.Errorf("torrent %s old tracker %s not exists", *trtorrent.HashString, oldTracker)
 	}
 	// this is broken for now as transmission RPC expects trackerReplace to be
@@ -648,7 +648,7 @@ func (trclient *Client) EditTorrentTracker(infoHash string, oldTracker string, n
 	// it's a problem of transmissionrpc library
 	return trclient.client.TorrentSet(context.TODO(), transmissionrpc.TorrentSetPayload{
 		IDs:            []int64{*trtorrent.ID},
-		TrackerReplace: []string{oldTrackerId, newTracker},
+		TrackerReplace: []any{oldTrackerId, newTracker},
 	})
 }
 
