@@ -2,6 +2,8 @@ module github.com/sagan/ptool
 
 go 1.20
 
+replace github.com/hekmon/transmissionrpc/v2 =>  ./transmissionrpc
+
 require (
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/glebarez/sqlite v1.8.0
