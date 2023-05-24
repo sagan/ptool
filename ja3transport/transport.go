@@ -46,7 +46,7 @@ var extMap = map[string]tls.TLSExtension{
 		},
 	},
 	"16": &tls.ALPNExtension{
-		AlpnProtocols: []string{"h2", "http/1.1"},
+		AlpnProtocols: []string{"http/1.1"},
 	},
 	"18": &tls.SCTExtension{},
 	"21": &tls.UtlsPaddingExtension{GetPaddingLen: tls.BoringPaddingStyle},
@@ -102,6 +102,7 @@ func NewTransportWithConfig(ja3 string, config *tls.Config) (*http.Transport, er
 		config.ServerName = strings.Split(addr, ":")[0]
 
 		uTLSConn := tls.UClient(dialConn, config, tls.HelloCustom)
+
 		if err := uTLSConn.ApplyPreset(spec); err != nil {
 			return nil, err
 		}
