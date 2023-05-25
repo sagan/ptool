@@ -768,38 +768,38 @@ func (qbclient *Client) GetTorrentTrackers(infoHash string) ([]client.TorrentTra
 
 func (qbclient *Client) EditTorrentTracker(infoHash string, oldTracker string, newTracker string, replaceHost bool) error {
 	if replaceHost {
-		torrents, err := qbclient.GetTorrents("", "", true)
+		torrent, err := qbclient.GetTorrent(infoHash)
 		if err != nil {
 			return err
 		}
-		for _, torrent := range torrents {
-			trackers, err := qbclient.GetTorrentTrackers(torrent.InfoHash)
+		if torrent == nil {
+			return fmt.Errorf("torrent %s not found", infoHash)
+		}
+		trackers, err := qbclient.GetTorrentTrackers(torrent.InfoHash)
+		if err != nil {
+			return fmt.Errorf("failed to get torrent %s trackers: %v", torrent.InfoHash, err)
+		}
+		oldTrackerUrl := ""
+		newTrackerUrl := ""
+		for _, tracker := range trackers {
+			oldTrackerUrlObj, err := url.Parse(tracker.Url)
 			if err != nil {
-				log.Errorf("Failed to get torrent %s trackers: %v", torrent.InfoHash, err)
 				continue
 			}
-			oldTrackerUrl := ""
-			newTrackerUrl := ""
-			for _, tracker := range trackers {
-				oldTrackerUrlObj, err := url.Parse(tracker.Url)
-				if err != nil {
-					continue
-				}
-				if oldTrackerUrlObj.Host == oldTracker {
-					oldTrackerUrl = tracker.Url
-					oldTrackerUrlObj.Host = newTracker
-					newTrackerUrl = oldTrackerUrlObj.String()
-					break
-				}
-			}
-			if oldTrackerUrl != "" && newTrackerUrl != "" {
-				err := qbclient.EditTorrentTracker(torrent.InfoHash, oldTrackerUrl, newTrackerUrl, false)
-				if err != nil {
-					log.Errorf("failed to replace torrent %s tracker domain: %v", torrent.InfoHash, err)
-				}
+			if oldTrackerUrlObj.Host == oldTracker {
+				oldTrackerUrl = tracker.Url
+				oldTrackerUrlObj.Host = newTracker
+				newTrackerUrl = oldTrackerUrlObj.String()
+				break
 			}
 		}
-		return nil
+		if oldTrackerUrl != "" && newTrackerUrl != "" {
+			err := qbclient.EditTorrentTracker(torrent.InfoHash, oldTrackerUrl, newTrackerUrl, false)
+			if err != nil {
+				log.Errorf("failed to replace torrent %s tracker domain: %v", torrent.InfoHash, err)
+			}
+		}
+		return fmt.Errorf("torrent %s old tracker does NOT exist", torrent.InfoHash)
 	}
 	data := url.Values{
 		"hash":    {infoHash},

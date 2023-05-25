@@ -653,7 +653,7 @@ func (trclient *Client) EditTorrentTracker(infoHash string, oldTracker string, n
 		}
 	}
 	if oldTrackerId == -1 {
-		return fmt.Errorf("torrent %s old tracker %s not exists", *trtorrent.HashString, oldTracker)
+		return fmt.Errorf("torrent %s old tracker %s does not exists", *trtorrent.HashString, oldTracker)
 	}
 	// this is broken for now as transmission RPC expects trackerReplace to be
 	// a mixed types array of ids (integer) and urls(string)
