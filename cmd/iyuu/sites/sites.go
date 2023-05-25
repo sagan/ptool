@@ -22,10 +22,12 @@ var command = &cobra.Command{
 var (
 	showBindable = false
 	showAll      = false
+	filter       = ""
 )
 
 func init() {
 	command.Flags().BoolVarP(&showBindable, "bindable", "b", false, "Show bindable sites")
+	command.Flags().StringVarP(&filter, "filter", "f", "", "Filter sites. Only show sites which name / url / comment contain this string")
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all iyuu sites (instead of only owned sites)")
 	iyuu.Command.AddCommand(command)
 }
@@ -38,6 +40,9 @@ func sites(cmd *cobra.Command, args []string) {
 		}
 		fmt.Printf("%-20s  %7s  %20s\n", "SiteName", "SiteId", "BindParams")
 		for _, site := range bindableSites {
+			if filter != "" && (!utils.ContainsI(site.Site, filter) && fmt.Sprint(site.Id) != filter) {
+				continue
+			}
 			fmt.Printf("%-20s  %7d  %20s\n", site.Site, site.Id, site.Bind_check)
 		}
 		os.Exit(0)
@@ -68,6 +73,9 @@ func sites(cmd *cobra.Command, args []string) {
 		if iyuu2LocalSiteMap[iyuuSite.Sid] == "" {
 			continue
 		}
+		if filter != "" && !matchFilter(&iyuuSite, filter) {
+			continue
+		}
 		utils.PrintStringInWidth(iyuuSite.Nickname, 10, true)
 		fmt.Printf("  %-15s  %-6d  %-13s  %-30s  %-25s\n", iyuuSite.Name, iyuuSite.Sid,
 			iyuu2LocalSiteMap[iyuuSite.Sid], iyuuSite.Url, iyuuSite.DownloadPage)
@@ -78,9 +86,19 @@ func sites(cmd *cobra.Command, args []string) {
 			if iyuu2LocalSiteMap[iyuuSite.Sid] != "" {
 				continue
 			}
+			if filter != "" && !matchFilter(&iyuuSite, filter) {
+				continue
+			}
 			utils.PrintStringInWidth(iyuuSite.Nickname, 10, true)
 			fmt.Printf("  %-15s  %-6d  %-13s  %-30s  %-25s\n", iyuuSite.Name, iyuuSite.Sid,
 				"X (None)", iyuuSite.Url, iyuuSite.DownloadPage)
 		}
 	}
+}
+
+func matchFilter(iyuuSite *iyuu.Site, filter string) bool {
+	return utils.ContainsI(iyuuSite.Name, filter) ||
+		utils.ContainsI(iyuuSite.Nickname, filter) ||
+		utils.ContainsI(iyuuSite.Url, filter) ||
+		fmt.Sprint(iyuuSite.Sid) == filter
 }

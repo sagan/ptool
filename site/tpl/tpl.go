@@ -318,6 +318,12 @@ var (
 			SelectorTorrentFree:       ".s-tag",
 			Comment:                   "鲨鱼",
 		},
+		"skyeysnow": &config.SiteConfigStruct{
+			Type:    "discuz",
+			Url:     "https://skyeysnow.com/",
+			Domains: []string{"skyey.win", "skyey2.com"},
+			Comment: "天雪",
+		},
 		"soulvoice": &config.SiteConfigStruct{
 			Type:    "nexusphp",
 			Url:     "https://pt.soulvoice.club/",
