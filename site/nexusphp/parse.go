@@ -15,9 +15,10 @@ import (
 )
 
 const (
-	SELECTOR_TORRENT       = `a[href^="download.php?"],a[href^="download?"]`
-	SELECTOR_DOWNLOAD_LINK = `a[href^="download.php?"],a[href^="download?"]`
-	SELECTOR_DETAILS_LINK  = `a[href^="details.php?"],a[href^="details_"]`
+	SELECTOR_TORRENT               = `a[href^="download.php?"],a[href^="download?"]`
+	SELECTOR_DOWNLOAD_LINK         = `a[href^="download.php?"],a[href^="download?"]`
+	SELECTOR_DETAILS_LINK          = `a[href^="details.php?"],a[href^="details_"]`
+	SELECTOR_TORRENTS_LIST_DEFAULT = `table.torrents > tbody`
 )
 
 type TorrentsParserOption struct {
@@ -97,13 +98,21 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 			containerEl = nodeSelectionMap[containerElNode]
 		}
 	} else if torrentEls.Length() == 1 { // only one torrent found (eg. search result page)
-		parent := torrentEls.Parent()
-		for parent.Length() > 0 && parent.Children().Length() > 1 {
-			parent = parent.Parent()
-		}
-		if parent.Length() > 0 && parent.Children().Length() == 1 {
-			containerEl = parent
-			containerElNode = parent.Get(0)
+		containerEl = doc.Find(SELECTOR_TORRENTS_LIST_DEFAULT)
+		if containerEl.Length() > 0 {
+			containerElNode = containerEl.Get(0)
+		} else {
+			parent := torrentEls.Parent()
+			for parent.Length() > 0 {
+				if parent.Children().Length() == 1 {
+					break
+				}
+				parent = parent.Parent()
+			}
+			if parent.Length() > 0 && parent.Children().Length() == 1 {
+				containerEl = parent
+				containerElNode = parent.Get(0)
+			}
 		}
 	}
 	if containerElNode == nil {
