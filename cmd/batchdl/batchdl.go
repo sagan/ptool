@@ -59,7 +59,7 @@ var (
 )
 
 func init() {
-	command.Flags().BoolVarP(&paused, "paused", "p", false, "Add torrents to client in paused state")
+	command.Flags().BoolVarP(&paused, "add-paused", "", false, "Add torrents to client in paused state")
 	command.Flags().BoolVarP(&freeOnly, "free", "", false, "Skip none-free torrents")
 	command.Flags().BoolVarP(&addRespectNoadd, "add-respect-noadd", "", false, "Used with '--action add'. Check and respect _noadd flag in clients.")
 	command.Flags().BoolVarP(&nohr, "nohr", "", false, "Skip torrents that has any type of HnR (Hit and Run) restriction")
@@ -71,20 +71,20 @@ func init() {
 	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "0", "Skip torrents with size large than (>) this value. Default (0) == unlimited")
 	command.Flags().StringVarP(&maxTotalSizeStr, "max-total-size", "", "0", "Will at most download torrents with total contents size of this value. Default (0) == unlimited")
 	command.Flags().Int64VarP(&minSeeders, "min-seeders", "", 1, "Skip torrents with seeders less than (<) this value")
-	command.Flags().Int64VarP(&maxSeeders, "max-seeders", "", 0, "Skip torrents with seeders large than (>) this value. Default(0) = no limit")
+	command.Flags().Int64VarP(&maxSeeders, "max-seeders", "", 0, "Skip torrents with seeders large than (>) this value. Default (0) == no limit")
 	command.Flags().StringVarP(&freeTimeAtLeastStr, "free-time", "", "", "Used with --free. Set the allowed minimal remaining torrent free time. eg. 12h, 1d")
 	command.Flags().StringVarP(&filter, "filter", "f", "", "If set, skip torrents which name does NOT contains this string")
 	command.Flags().StringVarP(&startPage, "start-page", "", "", "Start fetching torrents from here (should be the returned LastPage value last time you run this command)")
-	command.Flags().StringVarP(&downloadDir, "download-dir", "", ".", "Used with '--action download'. Set the local dir of downloaded torrents. Default = current dir")
+	command.Flags().StringVarP(&downloadDir, "download-dir", "", ".", "Used with '--action download'. Set the local dir of downloaded torrents. Default == current dir")
 	command.Flags().StringVarP(&addClient, "add-client", "", "", "Used with '--action add'. Set the client. Required in this action")
 	command.Flags().StringVarP(&addCategory, "add-category", "", "", "Used with '--action add'. Set the category when adding torrent to client")
-	command.Flags().StringVarP(&addReserveSpaceStr, "add-reserve-disk-space", "", "", "Used with '--action add'. Reserve client free disk space of at least this value. Will stop adding torrents if it would make client into state of insufficient space. eg. 10GiB")
+	command.Flags().StringVarP(&addReserveSpaceStr, "add-reserve-disk-space", "", "0", "Used with '--action add'. Reserve client free disk space of at least this value. Will stop adding torrents if it would make client into state of insufficient space. eg. 10GiB. Default (0) == no limit")
 	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Used with '--action add'. Set the tags when adding torrent to client (comma-separated)")
 	command.Flags().StringVarP(&savePath, "add-save-path", "", "", "Set contents save path of added torrents")
 	command.Flags().StringVarP(&exportFile, "export-file", "", "", "Used with '--action export|printid'. Set the output file. (If not set, will use stdout)")
 	command.Flags().StringVarP(&baseUrl, "base-url", "", "", "Manually set the base url of torrents list page. eg. adult.php or https://kp.m-team.cc/adult.php for M-Team site")
-	command.Flags().VarP(&sortFieldEnumFlag, "sort", "s", "Manually Set the sort field, "+common.SiteTorrentSortFieldEnumTip)
-	command.Flags().VarP(&orderEnumFlag, "order", "o", "Manually Set the sort order, "+common.OrderEnumTip)
+	command.Flags().VarP(&sortFieldEnumFlag, "sort", "s", "Manually set the sort field, "+common.SiteTorrentSortFieldEnumTip)
+	command.Flags().VarP(&orderEnumFlag, "order", "o", "Manually set the sort order, "+common.OrderEnumTip)
 	command.RegisterFlagCompletionFunc("sort", common.SiteTorrentSortFieldEnumCompletion)
 	command.RegisterFlagCompletionFunc("order", common.OrderEnumCompletion)
 	cmd.RootCmd.AddCommand(command)
@@ -124,6 +124,7 @@ func batchdl(cmd *cobra.Command, args []string) {
 	}
 	var clientInstance client.Client
 	var clientAddTorrentOption *client.TorrentOption
+	var clientAddFixedTags []string
 	var outputFileFd *os.File = os.Stdout
 	var csvWriter *csv.Writer
 	if action == "add" {
@@ -160,10 +161,10 @@ func batchdl(cmd *cobra.Command, args []string) {
 			Category: addCategory,
 			Pause:    paused,
 			SavePath: savePath,
-			Tags:     []string{client.GenerateTorrentTagFromSite(siteInstance.GetName())},
 		}
+		clientAddFixedTags = []string{client.GenerateTorrentTagFromSite(siteInstance.GetName())}
 		if addTags != "" {
-			clientAddTorrentOption.Tags = append(clientAddTorrentOption.Tags, strings.Split(addTags, ",")...)
+			clientAddFixedTags = append(clientAddFixedTags, strings.Split(addTags, ",")...)
 		}
 	} else if action == "export" || action == "printid" {
 		if exportFile != "" {
@@ -295,6 +296,12 @@ mainloop:
 							fmt.Printf("torrent %s - %s (%s): downloaded to %s/%s\n", torrent.Id, torrent.Name, utils.BytesSize(float64(torrent.Size)), downloadDir, filename)
 						}
 					} else if action == "add" {
+						tags := []string{}
+						tags = append(tags, clientAddFixedTags...)
+						if torrent.HasHnR {
+							tags = append(tags, "_hr")
+						}
+						clientAddTorrentOption.Tags = tags
 						err := clientInstance.AddTorrent(torrentContent, clientAddTorrentOption, nil)
 						if err != nil {
 							fmt.Printf("torrent %s (%s): failed to add to client: %v\n", torrent.Id, torrent.Name, err)

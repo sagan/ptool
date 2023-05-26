@@ -7,7 +7,8 @@
 * 使用 Go 开发的纯 CLI 程序。单文件可执行程序，没有外部依赖。支持 Windows / Linux、x64 / arm64 等多种环境、架构。
 * 无状态(stateless)：程序自身不保存任何状态、不在后台持续运行。“刷流”等任务需要使用 cron job 等方式定时运行本程序。
 * 使用简单。只需5分钟时间，配置 BT 客户端地址、PT 网站地址和 cookie 即可开始全自动刷流。
-* 目前支持的 BT 客户端： qBittorrent 4.1+。
+* 目前支持的 BT 客户端： qBittorrent v4.1+ / Transmission (<= v3.0)。
+  * 推荐使用 qBittorrent。Transmission 客户端未充分测试。
 * 目前支持的 PT 站点：绝大部分使用 nexusphp 的网站。
   * 测试过支持的站点：M-Team(馒头)、柠檬、U2、冬樱、红叶、聆音、铂金家、若干不可说的站点。
   * 未列出的大部分 np 站点应该也支持。除了个别魔改 np 很厉害的站点可能不支持。
@@ -88,7 +89,7 @@ ptool <command> args... [flags]
 * add : 将某个站点的指定种子添加到 BT 客户端。
 * dltorrent : 下载站点的种子。
 * addlocal : 将本地的种子文件添加到 BT 客户端。
-* BT 客户端控制命令集: clientctl / show / pause / resume / delete / reannounce / recheck / getcategories / setcategory / gettags / createtags / deletetags / addtags / removetags / edittracker / setsavepath
+* BT 客户端控制命令集: clientctl / show / pause / resume / delete / reannounce / recheck / getcategories / setcategory / gettags / createtags / deletetags / addtags / removetags / edittracker / addtrackers / removetrackers / setsavepath
 * parsetorrent : 显示种子(torrent)文件信息
 * sites : 显示本程序内置支持的所有 PT 站点列表。
 * version : 显示本程序版本信息。
@@ -238,7 +239,7 @@ ptool delete local 31a615d5984cb63c6f999f72bb3961dce49c194a
 ptool show local 31a615d5984cb63c6f999f72bb3961dce49c194a
 ```
 
-#### 管理 BT 客户端里的的种子分类 / 标签 (getcategories / setcategory / gettags / createtags / deletetags / addtags / removetags / edittracker / setsavepath)
+#### 管理 BT 客户端里的的种子分类 / 标签 / Trackers 等(getcategories / setcategory / gettags / createtags / deletetags / addtags / removetags / edittracker / addtrackers / removetrackers / setsavepath)
 
 ```
 # 获取所有分类
@@ -262,8 +263,17 @@ ptool addtags <client> <tags> <infoHashes>...
 # 为客户端里种子删除tag
 ptool removetags <client> <tags> <infoHashes>...
 
-# 修改种子的 tracker
-ptool edittracker <client> <infoHashes...> --old-tracker "https://..." --new-tracker "https://..."
+# 修改种子的 tracker。只有 old tracker 存在的种子会被修改
+ptool edittracker <client> _all --old-tracker "https://..." --new-tracker "https://..."
+
+# 只替换种子 tracker 的 host (域名)部分。
+ptool edittracker <client> _all --old-tracker old-tracker.com --new-tracker new-tracker.com --replace-host
+
+# 为种子增加 tracker
+ptool addtrackers <client> <infoHashes...> --tracker "https://..."
+
+# 删除种子的 tracker
+ptool removetrackers <client> <infoHashes...> --tracker "https://..."
 
 # 修改种子内容的保存路径
 ptool setsavepath <client> <savePath> [<infoHash>...]
@@ -366,10 +376,10 @@ ptool batchdl <site> --action add --add-client local
 * -m int : 最多下载多少个种子。默认 0（无限制，一直运行除非手动 Ctrl + C 停止）.
 * --sort string : 站点种子排序方式：size|time|name|seeders|leechers|snatched|none (default size)
 * --order string : 排序顺序：asc|desc。默认 asc。
-* --min-torrent-size string : 种子大小的最小值限制(eg. "100MiB", "1GB")。默认为 "0"。
+* --min-torrent-size string : 种子大小的最小值限制(eg. "100MiB", "1GiB")。默认为 "0"。
 * --max-torrent-size string : 种子大小的最大值限制。默认为 "0"（无限制）。
 * --free : 只下载免费种子。
-* --base-url : 手动指定种子列表页 URL，例如 "special.php"、"adult.php"。
+* --base-url : 手动指定种子列表页 URL，例如："special.php"、"adult.php"、"torrents.php?cat=100"。
 
 ### 显示种子文件信息 (parsetorrent)
 

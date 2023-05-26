@@ -3,6 +3,8 @@ iyuuToken = "" # iyuu token。用于自动辅种功能
 #siteUserAgent = "" #  所有站点默认使用的 ua。默认使用 Chrome ua。
 #brushEnableStats = false # 启用刷流统计功能
 
+
+# 完整支持 qBittorrent  v4.1+ (推荐使用 qb v4.4+)
 [[clients]]
 name = "local"
 type = "qbittorrent"
@@ -17,6 +19,17 @@ password = "adminadmin"
 #brushMinRatio = 0.2 # 刷流：最小上传/下载量比例
 #brushDefaultUploadSpeedLimit = "10MB" # 刷流：默认最大上传速度限制(/s)
 #brushTorrentSizeLimit = "1PB" #刷流：种子大小限制。大小超过此值的种子不会被选择。
+
+
+# 对 Transmission 客户端支持不完整且尚未充分测试。不建议用于刷流。
+# 支持 Transmission 2.80 ~ 3.00 (Transmission v4 还有问题)
+[[clients]]
+name = "tr"
+type = "transmission"
+url = "http://localhost:9091/"
+username = "admin"
+password = "123456"
+
 
 [[sites]]
 type = "mteam"

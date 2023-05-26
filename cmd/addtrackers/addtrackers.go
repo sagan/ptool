@@ -20,7 +20,7 @@ var command = &cobra.Command{
 _all, _active, _done,  _downloading, _seeding, _paused, _completed, _error
 
 Example:
-ptool addtrackers <client> --tracker "https://..."
+ptool addtrackers <client> <infoHashes...> --tracker "https://..."
 --tracker flag can be used many times.
 `,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),

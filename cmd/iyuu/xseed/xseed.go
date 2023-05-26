@@ -60,8 +60,8 @@ func init() {
 	command.Flags().StringVarP(&filter, "filter", "f", "", "Only xseed torrents which name contains this")
 	command.Flags().StringVarP(&addCategory, "add-category", "", "", "Manually set category of added xseed torrent. By Default it uses the original torrent's")
 	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Set tags of added xseed torrent (comma-separated)")
-	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "1GB", "Torrents with size smaller than (<) this value will NOT be xseeded")
-	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "1PB", "Torrents with size larger or equal than (>=) this value will NOT be xseeded")
+	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "1GiB", "Torrents with size smaller than (<) this value will NOT be xseeded")
+	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "1PiB", "Torrents with size larger or equal than (>=) this value will NOT be xseeded")
 	command.Flags().StringVarP(&iyuuRequestServer, "request-server", "", "auto", "Whether send request to iyuu server to update local xseed db. Possible values: auto|yes|no")
 	iyuu.Command.AddCommand(command)
 }
