@@ -315,6 +315,7 @@ func PrintTorrent(torrent *Torrent) {
 	fmt.Printf("Add time: %s\n", utils.FormatTime(torrent.Atime))
 	fmt.Printf("Completion time: %s\n", ctimeStr)
 	fmt.Printf("Tracker: %s\n", torrent.Tracker)
+	fmt.Printf("Seeders / Peers: %d / %d\n", torrent.Seeders, torrent.Leechers)
 	fmt.Printf("Save path: %s\n", torrent.SavePath)
 	fmt.Printf("Content path: %s\n", torrent.ContentPath)
 	fmt.Printf("Downloaded / Uploaded: %s / %s\n",
@@ -324,19 +325,21 @@ func PrintTorrent(torrent *Torrent) {
 }
 
 func PrintTorrents(torrents []Torrent, filter string) {
-	fmt.Printf("%-25s  %-40s  %-7s  %-5s  %-8s  %-8s  %-20s\n", "Name", "InfoHash", "Size", "State", "↓S (/s)", "↑S (/s)", "Tracker")
+	fmt.Printf("%-25s  %-40s  %-7s  %-5s  %-8s  %-8s  %-5s  %-5s  %-20s\n", "Name", "InfoHash", "Size", "State", "↓S (/s)", "↑S (/s)", "Seeds", "Peers", "Tracker")
 	for _, torrent := range torrents {
 		if filter != "" && !utils.ContainsI(torrent.Name, filter) && !utils.ContainsI(torrent.InfoHash, filter) {
 			continue
 		}
 		name := torrent.Name
 		utils.PrintStringInWidth(name, 25, true)
-		fmt.Printf("  %-40s  %-7s  %-5s  %-8s  %-8s  %-20s\n",
+		fmt.Printf("  %-40s  %-7s  %-5s  %-8s  %-8s  %-5d  %-5d  %-20s\n",
 			torrent.InfoHash,
 			utils.BytesSize(float64(torrent.Size)),
 			TorrentStateIconText(&torrent),
 			utils.BytesSize(float64(torrent.DownloadSpeed)),
 			utils.BytesSize(float64(torrent.UploadSpeed)),
+			torrent.Seeders,
+			torrent.Leechers,
 			torrent.TrackerDomain,
 		)
 	}

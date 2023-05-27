@@ -71,7 +71,7 @@ func init() {
 	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "0", "Skip torrents with size large than (>) this value. Default (0) == unlimited")
 	command.Flags().StringVarP(&maxTotalSizeStr, "max-total-size", "", "0", "Will at most download torrents with total contents size of this value. Default (0) == unlimited")
 	command.Flags().Int64VarP(&minSeeders, "min-seeders", "", 1, "Skip torrents with seeders less than (<) this value")
-	command.Flags().Int64VarP(&maxSeeders, "max-seeders", "", 0, "Skip torrents with seeders large than (>) this value. Default (0) == no limit")
+	command.Flags().Int64VarP(&maxSeeders, "max-seeders", "", -1, "Skip torrents with seeders large than (>) this value. Default (-1) == no limit")
 	command.Flags().StringVarP(&freeTimeAtLeastStr, "free-time", "", "", "Used with --free. Set the allowed minimal remaining torrent free time. eg. 12h, 1d")
 	command.Flags().StringVarP(&filter, "filter", "f", "", "If set, skip torrents which name does NOT contains this string")
 	command.Flags().StringVarP(&startPage, "start-page", "", "", "Start fetching torrents from here (should be the returned LastPage value last time you run this command)")
@@ -183,12 +183,14 @@ func batchdl(cmd *cobra.Command, args []string) {
 	cntTorrents := int64(0)
 	cntAllTorrents := int64(0)
 	totalSize := int64(0)
+	totalAllSize := int64(0)
 
 	var torrents []site.Torrent
 	var marker = startPage
 	var lastMarker = ""
 	doneHandle := func() {
-		fmt.Printf("\n"+`Done. Torrents / AllTorrents / LastPage: %d / %d / "%s"`+"\n", cntTorrents, cntAllTorrents, lastMarker)
+		fmt.Printf("\n"+`Done. Torrents(Size/Cnt) | AllTorrents(Size/Cnt) | LastPage: %s/%d | %s/%d | "%s"`+"\n",
+			utils.BytesSize(float64(totalSize)), cntTorrents, utils.BytesSize(float64(totalAllSize)), cntAllTorrents, lastMarker)
 		if csvWriter != nil {
 			csvWriter.Flush()
 		}
@@ -219,6 +221,7 @@ mainloop:
 		}
 		cntAllTorrents += int64(len(torrents))
 		for _, torrent := range torrents {
+			totalAllSize += torrent.Size
 			if torrent.Size < minTorrentSize {
 				log.Tracef("Skip torrent %s due to size %d < minTorrentSize", torrent.Name, torrent.Size)
 				if sortFieldEnumFlag == "size" && desc {
@@ -239,13 +242,21 @@ mainloop:
 				log.Tracef("Skip active torrent %s", torrent.Name)
 				continue
 			}
-			if torrent.Seeders < minSeeders {
+			if minSeeders >= 0 && torrent.Seeders < minSeeders {
 				log.Tracef("Skip torrent %s due to too few seeders", torrent.Name)
-				continue
+				if sortFieldEnumFlag == "seeders" && desc {
+					break mainloop
+				} else {
+					continue
+				}
 			}
-			if maxSeeders > 0 && torrent.Seeders > maxSeeders {
+			if maxSeeders >= 0 && torrent.Seeders > maxSeeders {
 				log.Tracef("Skip torrent %s due to too more seeders", torrent.Name)
-				continue
+				if sortFieldEnumFlag == "seeders" && !desc {
+					break mainloop
+				} else {
+					continue
+				}
 			}
 			if filter != "" && !utils.ContainsI(torrent.Name, filter) {
 				log.Tracef("Skip torrent %s due to filter %s does NOT match", torrent.Name, filter)
@@ -306,7 +317,7 @@ mainloop:
 						if err != nil {
 							fmt.Printf("torrent %s (%s): failed to add to client: %v\n", torrent.Id, torrent.Name, err)
 						} else {
-							fmt.Printf("torrent %s - %s (%s): added to client\n", torrent.Id, torrent.Name, utils.BytesSize(float64(torrent.Size)))
+							fmt.Printf("torrent %s - %s (%s) (seeders=%d, time=%s): added to client\n", torrent.Id, torrent.Name, utils.BytesSize(float64(torrent.Size)), torrent.Seeders, utils.FormatDuration(now-torrent.Time))
 						}
 					}
 				}
@@ -329,8 +340,8 @@ mainloop:
 				log.Warnf("Warning, current page %s has no required torrents.", lastMarker)
 			}
 		}
-		log.Warnf("Finish handling page %s. Will process next page %s in few seconds. Press Ctrl + C to stop",
-			lastMarker, marker)
+		log.Warnf("Finish handling page %s. Torrents(Size/Cnt) | AllTorrents(Size/Cnt) till now: %s/%d | %s/%d. Will process next page %s in few seconds. Press Ctrl + C to stop",
+			lastMarker, utils.BytesSize(float64(totalSize)), cntTorrents, utils.BytesSize(float64(totalAllSize)), cntAllTorrents, marker)
 		utils.Sleep(3)
 	}
 	doneHandle()
