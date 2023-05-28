@@ -78,7 +78,7 @@ func (npclient *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error)
 		id := strings.TrimPrefix(torrentUrl, npclient.GetName()+".")
 		return npclient.DownloadTorrentById(id)
 	}
-	if !strings.Contains(torrentUrl, "/download.php") {
+	if !strings.Contains(torrentUrl, "/download") {
 		idRegexp := regexp.MustCompile(`[?&]id=(?P<id>\d+)`)
 		m := idRegexp.FindStringSubmatch(torrentUrl)
 		if m != nil {

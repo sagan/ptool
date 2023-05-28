@@ -276,7 +276,7 @@ mainloop:
 				log.Tracef("Skip HR torrent %s", torrent.Name)
 				continue
 			}
-			if maxTorrentSize > 0 && totalSize+torrent.Size > maxTorrentSize {
+			if maxTotalSize > 0 && totalSize+torrent.Size > maxTotalSize {
 				log.Tracef("Skip torrent %s which would break max total size limit", torrent.Name)
 				if sortFieldEnumFlag == "size" && !desc {
 					break mainloop
@@ -295,7 +295,14 @@ mainloop:
 			} else if action == "printid" {
 				fmt.Fprintf(outputFileFd, "%s\n", torrent.Id)
 			} else {
-				torrentContent, filename, err := siteInstance.DownloadTorrent(torrent.Id)
+				var torrentContent []byte
+				var filename string
+				var err error
+				if torrent.DownloadUrl != "" {
+					torrentContent, filename, err = siteInstance.DownloadTorrent(torrent.DownloadUrl)
+				} else {
+					torrentContent, filename, err = siteInstance.DownloadTorrent(torrent.Id)
+				}
 				if err != nil {
 					fmt.Printf("torrent %s (%s): failed to download: %v\n", torrent.Id, torrent.Name, err)
 				} else {
