@@ -30,6 +30,15 @@ type Site struct {
 	torrentsParserOption *TorrentsParserOption
 }
 
+var sortFields = map[string](string){
+	"name":     "1",
+	"time":     "4",
+	"size":     "5",
+	"seeders":  "7",
+	"leechers": "8",
+	"snatched": "6",
+}
+
 func (npclient *Site) PurgeCache() {
 	npclient.datatime = 0
 }
@@ -113,14 +122,6 @@ func (npclient *Site) GetLatestTorrents(full bool) ([]site.Torrent, error) {
 }
 
 func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (torrents []site.Torrent, nextPageMarker string, err error) {
-	sortFields := map[string](string){
-		"name":     "1",
-		"time":     "4",
-		"size":     "5",
-		"seeders":  "7",
-		"leechers": "8",
-		"snatched": "6",
-	}
 	if sort != "" && sort != "none" && sortFields[sort] == "" {
 		err = fmt.Errorf("unsupported sort field: %s", sort)
 		return

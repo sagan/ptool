@@ -126,6 +126,14 @@ var (
 			SelectorTorrentTime:        `.time_col span:last-child`,
 			Comment:                    "海胆",
 		},
+		"hares": &config.SiteConfigStruct{
+			Type:                       "nexusphp",
+			Aliases:                    []string{"haresclub"},
+			Url:                        "https://club.hares.top/",
+			SelectorUserInfoUploaded:   `li:has(i[title="上传量"])`,
+			SelectorUserInfoDownloaded: `li:has(i[title="下载量"])`,
+			Comment:                    "白兔俱乐部 (Hares Club)",
+		},
 		"hdarea": &config.SiteConfigStruct{
 			Type:    "nexusphp",
 			Url:     "https://www.hdarea.co/",
@@ -276,6 +284,11 @@ var (
 			Url:       "https://www.nicept.net/",
 			GlobalHnR: true,
 			Comment:   "老师",
+		},
+		"okpt": &config.SiteConfigStruct{
+			Type:    "nexusphp",
+			Url:     "https://www.okpt.net/",
+			Comment: "OKPT",
 		},
 		"oshen": &config.SiteConfigStruct{
 			Type:    "nexusphp",

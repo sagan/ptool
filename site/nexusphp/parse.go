@@ -161,6 +161,9 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 			headerEl.AttrOr("class", ""),
 		)
 	}
+	for headerEl != nil && headerEl.Children().Length() == 1 {
+		headerEl = headerEl.Children()
+	}
 	if headerEl != nil {
 		headerEl.Children().Each(func(i int, s *goquery.Selection) {
 			text := utils.DomSanitizedText(s)
@@ -193,10 +196,13 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 					fieldColumIndex[field] = i
 					break
 				}
+				if sortFields[field] != "" && s.Find(`a[href*="?sort=`+sortFields[field]+`&"],a[href*="&sort=`+sortFields[field]+`&"]`).Length() == 1 {
+					fieldColumIndex[field] = i
+					break
+				}
 			}
 		})
 	}
-
 	var torrentBlocks *goquery.Selection
 	if option.selectorTorrentBlock != "" {
 		torrentBlocks = containerEl.Find(option.selectorTorrentBlock)
