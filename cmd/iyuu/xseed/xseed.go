@@ -112,7 +112,7 @@ func xseed(cmd *cobra.Command, args []string) {
 	cntSucccessXseedTorrents := int64(0)
 
 	for _, clientName := range clientNames {
-		clientInstance, err := client.CreateClient(args[0])
+		clientInstance, err := client.CreateClient(clientName)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -122,6 +122,8 @@ func xseed(cmd *cobra.Command, args []string) {
 		if err != nil {
 			log.Errorf("client %s failed to get torrents: %v", clientName, err)
 			continue
+		} else {
+			log.Tracef("client %s has %d torrents", clientName, len(torrents))
 		}
 		torrents = utils.Filter(torrents, func(torrent client.Torrent) bool {
 			return torrent.IsFull() && torrent.Category != config.XSEED_TAG && !torrent.HasTag(config.XSEED_TAG)
