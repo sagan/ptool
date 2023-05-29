@@ -173,6 +173,8 @@ var (
 			SelectorUserInfoUserName:   `#bottomnav a[href="userdetails"] strong`,
 			SelectorUserInfoUploaded:   `#bottomnav a[href="userdetails"] i[title="上传量："]@after`,
 			SelectorUserInfoDownloaded: `#bottomnav a[href="userdetails"] i[title="下载量："]@after`,
+			UseCuhash:                  true,
+			TorrentUrlIdRegexp:         `\bt-(?P<id>\d+)\b`,
 			Comment:                    "城市",
 		},
 		"hdmayi": &config.SiteConfigStruct{

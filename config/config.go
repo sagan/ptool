@@ -92,6 +92,8 @@ type SiteConfigStruct struct {
 	SelectorUserInfoUserName     string   `yaml:"selectorUserInfoUserName"`
 	SelectorUserInfoUploaded     string   `yaml:"selectorUserInfoUploaded"`
 	SelectorUserInfoDownloaded   string   `yaml:"selectorUserInfoDownloaded"`
+	UseCuhash                    bool     `yaml:"useCuhash"` // hdcity 使用机制。种子下载地址里必须有cuhash参数。
+	TorrentUrlIdRegexp           string   `yaml:"torrentUrlIdRegexp"`
 	TorrentUploadSpeedLimitValue int64
 }
 

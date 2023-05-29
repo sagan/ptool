@@ -27,6 +27,8 @@ type Site struct {
 	extraTorrents        []site.Torrent
 	datatime             int64
 	datetimeExtra        int64
+	cuhash               string
+	idRegexp             *regexp.Regexp
 	torrentsParserOption *TorrentsParserOption
 }
 
@@ -41,6 +43,10 @@ var sortFields = map[string](string){
 
 func (npclient *Site) PurgeCache() {
 	npclient.datatime = 0
+	npclient.latestTorrents = nil
+	npclient.extraTorrents = nil
+	npclient.siteStatus = nil
+	npclient.cuhash = ""
 }
 
 func (npclient *Site) GetName() string {
@@ -79,10 +85,9 @@ func (npclient *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error)
 		return npclient.DownloadTorrentById(id)
 	}
 	if !strings.Contains(torrentUrl, "/download") {
-		idRegexp := regexp.MustCompile(`[?&]id=(?P<id>\d+)`)
-		m := idRegexp.FindStringSubmatch(torrentUrl)
+		m := npclient.idRegexp.FindStringSubmatch(torrentUrl)
 		if m != nil {
-			return npclient.DownloadTorrentById(m[idRegexp.SubexpIndex("id")])
+			return npclient.DownloadTorrentById(m[npclient.idRegexp.SubexpIndex("id")])
 		}
 	}
 	// skip NP download notice. see https://github.com/xiaomlove/nexusphp/blob/php8/public/download.php
@@ -92,6 +97,17 @@ func (npclient *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error)
 
 func (npclient *Site) DownloadTorrentById(id string) ([]byte, string, error) {
 	torrentUrl := npclient.SiteConfig.Url + "download.php?https=1&letdown=1&id=" + id
+	if npclient.SiteConfig.UseCuhash {
+		if npclient.cuhash == "" {
+			// update cuhash by side effect of sync (fetching latest torrents)
+			npclient.sync()
+		}
+		if npclient.cuhash != "" {
+			torrentUrl = utils.AppendUrlQueryString(torrentUrl, "cuhash="+npclient.cuhash)
+		} else {
+			log.Warnf("Failed to get site cuhash. torrent download may fail")
+		}
+	}
 	return site.DownloadTorrentByUrl(npclient, npclient.HttpClient, torrentUrl, id)
 }
 
@@ -194,7 +210,17 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 }
 
 func (npclient *Site) parseTorrentsFromDoc(doc *goquery.Document, datatime int64) ([]site.Torrent, error) {
-	return parseTorrents(doc, npclient.torrentsParserOption, datatime, npclient.GetName())
+	torrents, err := parseTorrents(doc, npclient.torrentsParserOption, datatime, npclient.GetName())
+	if npclient.SiteConfig.UseCuhash && npclient.cuhash == "" &&
+		len(torrents) > 0 && torrents[0].DownloadUrl != "" {
+		urlObj, err := url.Parse(torrents[0].DownloadUrl)
+		if err == nil {
+			cuhash := urlObj.Query().Get("cuhash")
+			log.Debugf("Update site %s cuhash=%s", npclient.Name, cuhash)
+			npclient.cuhash = cuhash
+		}
+	}
+	return torrents, err
 }
 
 func (npclient *Site) sync() error {
@@ -341,6 +367,11 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 			SelectorTorrentProcessBar:   siteConfig.SelectorTorrentProcessBar,
 			SelectorTorrentFree:         siteConfig.SelectorTorrentFree,
 		},
+	}
+	if siteConfig.TorrentUrlIdRegexp != "" {
+		site.idRegexp = regexp.MustCompile(siteConfig.TorrentUrlIdRegexp)
+	} else {
+		site.idRegexp = regexp.MustCompile(`\bid=(?P<id>\d+)\b`)
 	}
 	return site, nil
 }
