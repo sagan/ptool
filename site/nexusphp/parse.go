@@ -75,7 +75,9 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 	torrentEls := doc.Find(option.selectorTorrent)
 	if option.selectorTorrentsList != "" {
 		containerEl = doc.Find(option.selectorTorrentsList)
-		containerElNode = containerEl.Get(0)
+		if containerEl.Length() > 0 {
+			containerElNode = containerEl.Get(0)
+		}
 	} else if torrentEls.Length() > 1 {
 		commonParentsCnt := map[*html.Node](int64){}
 		nodeSelectionMap := map[*html.Node](*goquery.Selection){}
