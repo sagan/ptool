@@ -42,7 +42,7 @@ var (
 
 func init() {
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do NOT actually modify torrent trackers")
-	command.Flags().BoolVarP(&replaceHost, "replace-host", "", false, "Replace host mode. If set, --old-tracker and --new-tracker should be the old / new tracker host (hostname[:port]) instead of full url")
+	command.Flags().BoolVarP(&replaceHost, "replace-host", "", false, "Replace host mode. If set, --old-tracker should be the old host (hostname[:port]) instead of full url, the --new-tracker can either be a host or full url")
 	command.Flags().StringVarP(&filter, "filter", "f", "", "Filter torrents by name")
 	command.Flags().StringVarP(&category, "category", "c", "", "Filter torrents by category")
 	command.Flags().StringVarP(&tag, "tag", "t", "", "Filter torrents by tag")
@@ -74,7 +74,7 @@ func edittracker(cmd *cobra.Command, args []string) {
 		os.Exit(0)
 	}
 	if !dryRun {
-		log.Warnf("Found %d torrents, will edit their trackers (%s => %s, replaceHost=%t) in 3 seconds. Press Ctrl+C to stop",
+		log.Warnf("Found %d torrents, will edit their trackers (%s => %s, replaceHost=%t) in few seconds. Press Ctrl+C to stop",
 			len(torrents), oldTracker, newTracker, replaceHost)
 	}
 	utils.Sleep(3)

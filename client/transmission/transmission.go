@@ -634,7 +634,9 @@ func (trclient *Client) EditTorrentTracker(infoHash string, oldTracker string, n
 		return err
 	}
 	oldTrackerId := int64(-1)
+	oldTrackerUrl := ""
 	newTrackerUrl := newTracker
+	directNewUrlMode := utils.IsUrl(newTracker)
 	for _, tracker := range trtorrent.Trackers {
 		if replaceHost {
 			oldTrackerUrlObj, err := url.Parse(tracker.Announce)
@@ -643,6 +645,11 @@ func (trclient *Client) EditTorrentTracker(infoHash string, oldTracker string, n
 			}
 			if oldTrackerUrlObj.Host == oldTracker {
 				oldTrackerId = tracker.ID
+				oldTrackerUrl = tracker.Announce
+				if directNewUrlMode {
+					newTrackerUrl = newTracker
+					break
+				}
 				oldTrackerUrlObj.Host = newTracker
 				newTrackerUrl = oldTrackerUrlObj.String()
 				break
@@ -653,7 +660,10 @@ func (trclient *Client) EditTorrentTracker(infoHash string, oldTracker string, n
 		}
 	}
 	if oldTrackerId == -1 {
-		return fmt.Errorf("torrent %s old tracker %s does not exists", *trtorrent.HashString, oldTracker)
+		return fmt.Errorf("torrent %s old tracker %s does NOT exist", *trtorrent.HashString, oldTracker)
+	}
+	if oldTrackerUrl == newTrackerUrl {
+		return nil
 	}
 	// this is broken for now as transmission RPC expects trackerReplace to be
 	// a mixed types array of ids (integer) and urls(string)

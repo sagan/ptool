@@ -266,8 +266,11 @@ ptool removetags <client> <tags> <infoHashes>...
 # 修改种子的 tracker。只有 old tracker 存在的种子会被修改
 ptool edittracker <client> _all --old-tracker "https://..." --new-tracker "https://..."
 
-# 只替换种子 tracker 的 host (域名)部分。
+# 只替换种子 tracker 的 host (域名)部分
 ptool edittracker <client> _all --old-tracker old-tracker.com --new-tracker new-tracker.com --replace-host
+
+# 将所有 host 相匹配的旧 Tracker 替换为提高的新的 Tracker 地址
+ptool edittracker <client> _all --old-tracker tracker.hdtime.org --new-tracker "https://tracker.hdtime.org/announce.php?passkey=123456" --replace-host
 
 # 为种子增加 tracker
 ptool addtrackers <client> <infoHashes...> --tracker "https://..."

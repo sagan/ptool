@@ -781,6 +781,7 @@ func (qbclient *Client) EditTorrentTracker(infoHash string, oldTracker string, n
 		}
 		oldTrackerUrl := ""
 		newTrackerUrl := ""
+		directNewUrlMode := utils.IsUrl(newTracker)
 		for _, tracker := range trackers {
 			oldTrackerUrlObj, err := url.Parse(tracker.Url)
 			if err != nil {
@@ -788,16 +789,26 @@ func (qbclient *Client) EditTorrentTracker(infoHash string, oldTracker string, n
 			}
 			if oldTrackerUrlObj.Host == oldTracker {
 				oldTrackerUrl = tracker.Url
+				if directNewUrlMode {
+					newTrackerUrl = newTracker
+					break
+				}
 				oldTrackerUrlObj.Host = newTracker
 				newTrackerUrl = oldTrackerUrlObj.String()
 				break
 			}
 		}
 		if oldTrackerUrl != "" && newTrackerUrl != "" {
+			if oldTrackerUrl == newTrackerUrl {
+				return nil
+			}
 			err := qbclient.EditTorrentTracker(torrent.InfoHash, oldTrackerUrl, newTrackerUrl, false)
 			if err != nil {
-				log.Errorf("failed to replace torrent %s tracker domain: %v", torrent.InfoHash, err)
+				log.Errorf("Failed to replace torrent %s tracker domain: %v", torrent.InfoHash, err)
+			} else {
+				log.Debugf("Replaced torrent %s tracker %s => %s", torrent.InfoHash, oldTrackerUrl, newTrackerUrl)
 			}
+			return err
 		}
 		return fmt.Errorf("torrent %s old tracker does NOT exist", torrent.InfoHash)
 	}
