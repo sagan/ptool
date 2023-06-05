@@ -1,6 +1,7 @@
 iyuuToken = "" # iyuu token。用于自动辅种功能
-#siteProxy = "http://127.0.0.1:1080" # 使用代理访问 PT 站点。（不适用于访问 BT 客户端）
-#siteUserAgent = "" #  所有站点默认使用的 ua。默认使用 Chrome ua。
+# 注释掉的配置项值为默认值。
+#siteProxy = "" # 使用代理访问 PT 站点。（不适用于访问 BT 客户端）。格式为 "http://127.0.0.1:1080"
+#siteUserAgent = "" #  所有站点默认使用的 ua。默认使用最新稳定版 Chrome on Windows x64 en-US 的 ua。
 #brushEnableStats = false # 启用刷流统计功能
 
 
@@ -11,14 +12,14 @@ type = "qbittorrent"
 url = "http://localhost:8085/"
 username = "admin"
 password = "adminadmin"
-#qbittorrentNoLogin = true # 如果启用，不会发送登录请求。这将提高命令响应速度。需要在 QB Web UI设置里开启跳过验证。
-#brushMinDiskSpace = "5GB" # 刷流：保留最小空闲磁盘空间。
-#brushSlowUploadSpeedTier = "100KB" # 刷流：上传速度持续低于此值的种子将可能被删除
+#qbittorrentNoLogin = false # 如果启用，不会发送登录请求。这将提高命令响应速度。需要在 QB Web UI 设置里开启跳过验证。
+#brushMinDiskSpace = "5GiB" # 刷流：保留最小剩余磁盘空间。
+#brushSlowUploadSpeedTier = "100KiB" # 刷流：上传速度(/s)持续低于此值的种子将可能被删除
 #brushMaxDownloadingTorrents = 6 # 刷流：位于下载状态的种子数上限
-#brushMaxTorrents = 50 # 刷流：种子数（所有状态）上限
-#brushMinRatio = 0.2 # 刷流：最小上传/下载量比例
-#brushDefaultUploadSpeedLimit = "10MB" # 刷流：默认最大上传速度限制(/s)
-#brushTorrentSizeLimit = "1PB" #刷流：种子大小限制。大小超过此值的种子不会被选择。
+#brushMaxTorrents = 500 # 刷流：种子数（所有状态）上限
+#brushMinRatio = 0.2 # 刷流：最小 ratio (上传量/下载量)比例。ratio 持续低于此值的种子将可能被删除
+#brushDefaultUploadSpeedLimit = "10MiB" # 刷流：默认最大上传速度限制(/s)
+#brushTorrentSizeLimit = "1PiB" #刷流：种子大小限制。大小超过此值的种子不会被选择。
 
 
 # 对 Transmission 客户端支持不完整且尚未充分测试。不建议用于刷流。
@@ -34,8 +35,10 @@ password = "123456"
 [[sites]]
 type = "mteam"
 cookie = "cookie_here"
-#proxy = "http://127.0.0.1:1080" # 访问该站点使用的代理。优先级高于全局的 siteProxy 配置。
+#proxy = "" # 访问该站点使用的代理。优先级高于全局的 siteProxy 配置。格式为 "http://127.0.0.1:1080"
 #userAgent = "" # 部分站点 cookie 绑定 ua。优先级高于全局的 siteUserAgent 配置。
-#torrentUploadSpeedLimit = "10MiB" # 站点单个种子上传速度限制。默认 10MiB/s
-#brushUrl = "https://kp.m-team.cc/adult.php" # 单独设置刷流种子列表页 url。如不指定，np 使用 torrents.php
+#torrentUploadSpeedLimit = "10MiB" # 站点单个种子上传速度限制(/s)。
+#brushUrl = "" # 手动设置刷流种子列表页 url。如不指定，np 使用 torrents.php
+#brushAllowNoneFree = false # 是否允许使用非免费种子刷流。
+#brushAllowZeroSeeders = false # 是否允许刷流任务添加当前0做种的种子到客户端
 #timezone = "Asia/Shanghai" # 网站页面显示时间的时区

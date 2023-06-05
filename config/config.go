@@ -57,44 +57,46 @@ type ClientConfigStruct struct {
 }
 
 type SiteConfigStruct struct {
-	Type                         string   `yaml:"type"`
-	Name                         string   `yaml:"name"`
-	Aliases                      []string // for internal use only
-	Comment                      string   `yaml:"comment"`
-	Disabled                     bool     `yaml:"disabled"`
-	Url                          string   `yaml:"url"`
-	Domains                      []string `yaml:"domains"` // other site domains (do not include subdomain part)
-	TorrentsUrl                  string   `yaml:"torrentsUrl"`
-	SearchUrl                    string   `yaml:"searchUrl"`
-	TorrentsExtraUrls            []string `yaml:"torrentsExtraUrls"`
-	Cookie                       string   `yaml:"cookie"`
-	UserAgent                    string   `yaml:"userAgent"`
-	Ja3                          string   `yaml:"ja3"`
-	Proxy                        string   `yaml:"proxy"`
-	TorrentUploadSpeedLimit      string   `yaml:"torrentUploadSpeedLimit"`
-	GlobalHnR                    bool     `yaml:"globalHnR"`
-	Timezone                     string   `yaml:"timezone"`
-	BrushAllowNoneFree           bool     `yaml:"brushAllowNoneFree"`
-	SelectorTorrentsListHeader   string   `yaml:"selectorTorrentsListHeader"`
-	SelectorTorrentsList         string   `yaml:"selectorTorrentsList"`
-	SelectorTorrentBlock         string   `yaml:"selectorTorrentBlock"` // dom block of a torrent in list
-	SelectorTorrent              string   `yaml:"selectorTorrent"`
-	SelectorTorrentDownloadLink  string   `yaml:"selectorTorrentDownloadLink"`
-	SelectorTorrentDetailsLink   string   `yaml:"selectorTorrentDetailsLink"`
-	SelectorTorrentTime          string   `yaml:"selectorTorrentTime"`
-	SelectorTorrentSeeders       string   `yaml:"selectorTorrentSeeders"`
-	SelectorTorrentLeechers      string   `yaml:"selectorTorrentLeechers"`
-	SelectorTorrentSnatched      string   `yaml:"selectorTorrentSnatched"`
-	SelectorTorrentSize          string   `yaml:"selectorTorrentSize"`
-	SelectorTorrentProcessBar    string   `yaml:"selectorTorrentProcessBar"`
-	SelectorTorrentFree          string   `yaml:"SelectorTorrentFree"`
-	SelectorUserInfo             string   `yaml:"selectorUserInfo"`
-	SelectorUserInfoUserName     string   `yaml:"selectorUserInfoUserName"`
-	SelectorUserInfoUploaded     string   `yaml:"selectorUserInfoUploaded"`
-	SelectorUserInfoDownloaded   string   `yaml:"selectorUserInfoDownloaded"`
-	UseCuhash                    bool     `yaml:"useCuhash"` // hdcity 使用机制。种子下载地址里必须有cuhash参数。
-	TorrentUrlIdRegexp           string   `yaml:"torrentUrlIdRegexp"`
-	TorrentUploadSpeedLimitValue int64
+	Type                           string   `yaml:"type"`
+	Name                           string   `yaml:"name"`
+	Aliases                        []string // for internal use only
+	Comment                        string   `yaml:"comment"`
+	Disabled                       bool     `yaml:"disabled"`
+	Url                            string   `yaml:"url"`
+	Domains                        []string `yaml:"domains"` // other site domains (do not include subdomain part)
+	TorrentsUrl                    string   `yaml:"torrentsUrl"`
+	SearchUrl                      string   `yaml:"searchUrl"`
+	TorrentsExtraUrls              []string `yaml:"torrentsExtraUrls"`
+	Cookie                         string   `yaml:"cookie"`
+	UserAgent                      string   `yaml:"userAgent"`
+	Ja3                            string   `yaml:"ja3"`
+	Proxy                          string   `yaml:"proxy"`
+	TorrentUploadSpeedLimit        string   `yaml:"torrentUploadSpeedLimit"`
+	GlobalHnR                      bool     `yaml:"globalHnR"`
+	Timezone                       string   `yaml:"timezone"`
+	BrushAllowNoneFree             bool     `yaml:"brushAllowNoneFree"`
+	BrushAllowZeroSeeders          bool     `yaml:"brushAllowZeroSeeders"`
+	SelectorTorrentsListHeader     string   `yaml:"selectorTorrentsListHeader"`
+	SelectorTorrentsList           string   `yaml:"selectorTorrentsList"`
+	SelectorTorrentBlock           string   `yaml:"selectorTorrentBlock"` // dom block of a torrent in list
+	SelectorTorrent                string   `yaml:"selectorTorrent"`
+	SelectorTorrentDownloadLink    string   `yaml:"selectorTorrentDownloadLink"`
+	SelectorTorrentDetailsLink     string   `yaml:"selectorTorrentDetailsLink"`
+	SelectorTorrentTime            string   `yaml:"selectorTorrentTime"`
+	SelectorTorrentSeeders         string   `yaml:"selectorTorrentSeeders"`
+	SelectorTorrentLeechers        string   `yaml:"selectorTorrentLeechers"`
+	SelectorTorrentSnatched        string   `yaml:"selectorTorrentSnatched"`
+	SelectorTorrentSize            string   `yaml:"selectorTorrentSize"`
+	SelectorTorrentProcessBar      string   `yaml:"selectorTorrentProcessBar"`
+	SelectorTorrentFree            string   `yaml:"SelectorTorrentFree"`
+	SelectorTorrentDiscountEndTime string   `yaml:"selectorTorrentDiscountEndTime"`
+	SelectorUserInfo               string   `yaml:"selectorUserInfo"`
+	SelectorUserInfoUserName       string   `yaml:"selectorUserInfoUserName"`
+	SelectorUserInfoUploaded       string   `yaml:"selectorUserInfoUploaded"`
+	SelectorUserInfoDownloaded     string   `yaml:"selectorUserInfoDownloaded"`
+	UseCuhash                      bool     `yaml:"useCuhash"` // hdcity 使用机制。种子下载地址里必须有cuhash参数。
+	TorrentUrlIdRegexp             string   `yaml:"torrentUrlIdRegexp"`
+	TorrentUploadSpeedLimitValue   int64
 }
 
 type ConfigStruct struct {

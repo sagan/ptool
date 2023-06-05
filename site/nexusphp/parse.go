@@ -22,21 +22,22 @@ const (
 )
 
 type TorrentsParserOption struct {
-	location                    *time.Location
-	siteurl                     string
-	selectorTorrentsListHeader  string
-	selectorTorrentsList        string
-	selectorTorrentBlock        string
-	selectorTorrent             string
-	selectorTorrentDownloadLink string
-	selectorTorrentDetailsLink  string
-	selectorTorrentTime         string
-	SelectorTorrentSeeders      string
-	SelectorTorrentLeechers     string
-	SelectorTorrentSnatched     string
-	SelectorTorrentSize         string
-	SelectorTorrentProcessBar   string
-	SelectorTorrentFree         string
+	location                       *time.Location
+	siteurl                        string
+	selectorTorrentsListHeader     string
+	selectorTorrentsList           string
+	selectorTorrentBlock           string
+	selectorTorrent                string
+	selectorTorrentDownloadLink    string
+	selectorTorrentDetailsLink     string
+	selectorTorrentTime            string
+	SelectorTorrentSeeders         string
+	SelectorTorrentLeechers        string
+	SelectorTorrentSnatched        string
+	SelectorTorrentSize            string
+	SelectorTorrentProcessBar      string
+	SelectorTorrentFree            string
+	SelectorTorrentDiscountEndTime string
 }
 
 func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
@@ -329,13 +330,17 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		} else if option.SelectorTorrentProcessBar != "" && s.Find(option.SelectorTorrentProcessBar).Length() > 0 {
 			isActive = true
 		}
-		re := regexp.MustCompile(`(?i)(?P<free>(^|\s)(免费|免費|FREE)\s*)?(剩余|剩餘|限时|限時)(时间|時間)?\s*(?P<time>[YMDHMSymdhms年月周天小时時分种鐘秒\d]+)`)
-		m := re.FindStringSubmatch(utils.DomRemovedSpecialCharsText(s))
-		if m != nil {
-			if m[re.SubexpIndex("free")] != "" {
-				downloadMultiplier = 0
+		if option.SelectorTorrentDiscountEndTime != "" {
+			discountEndTime, _ = utils.ParseFutureTime(utils.DomRemovedSpecialCharsText(s.Find(option.SelectorTorrentDiscountEndTime)))
+		} else {
+			re := regexp.MustCompile(`(?i)(?P<free>(^|\s)(免费|免費|FREE)\s*)?(剩余|剩餘|限时|限時)(时间|時間)?\s*(?P<time>[YMDHMSymdhms年月周天小时時分种鐘秒\d]+)`)
+			m := re.FindStringSubmatch(utils.DomRemovedSpecialCharsText(s))
+			if m != nil {
+				if m[re.SubexpIndex("free")] != "" {
+					downloadMultiplier = 0
+				}
+				discountEndTime, _ = utils.ParseFutureTime(m[re.SubexpIndex("time")])
 			}
-			discountEndTime, _ = utils.ParseFutureTime(m[re.SubexpIndex("time")])
 		}
 		if discountEndTime <= 0 && globalDiscountEndTime > 0 {
 			discountEndTime = globalDiscountEndTime

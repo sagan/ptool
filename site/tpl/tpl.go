@@ -318,11 +318,13 @@ var (
 			Comment: "铂金家",
 		},
 		"pttime": &config.SiteConfigStruct{
-			Type:              "nexusphp",
-			Aliases:           []string{"ptt"},
-			Url:               "https://www.pttime.org/",
-			TorrentsExtraUrls: []string{"https://www.pttime.org/adults.php"},
-			Comment:           "PTT",
+			Type:                           "nexusphp",
+			Aliases:                        []string{"ptt"},
+			Url:                            "https://www.pttime.org/",
+			TorrentsExtraUrls:              []string{"https://www.pttime.org/adults.php"},
+			SelectorTorrentFree:            `.free`,
+			SelectorTorrentDiscountEndTime: `.free + span`,
+			Comment:                        "PTT",
 		},
 		"sharkpt": &config.SiteConfigStruct{
 			Type:                      "nexusphp",

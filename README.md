@@ -42,10 +42,12 @@ cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 
 程序支持使用 toml 或 yaml 格式的配置文件（```ptool.toml``` 或 ```ptool.yaml```），推荐使用前者。
 
-配置文件可以直接放到程序启动时的当前目录(cwd)下，也可以选择放到当前操作系统用户主目录下的 ".config/ptool/" 路径下（推荐）：
+将 ptool.toml 配置文件放到当前操作系统用户主目录下的 ".config/ptool/" 路径下（推荐）:
 
 * Linux: ```~/.config/ptool/ptool.toml```
 * Windows: ```%USERPROFILE%\.config\ptool\ptool.toml```
+
+如果临时测试，也可以将 ptool.toml 配置文件直接放到程序启动时的当前目录(cwd)下。
 
 配置文件里可以使用 ```[[clients]]``` 和 ```[[sites]]``` 区块添加任意多个 BT 客户端和站点。
 
@@ -57,15 +59,15 @@ cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 type = "mteam"
 cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 
-# 方式 2：使用通用的 nexusphp 类型，需要手动指定站点名称(name)、站点 url 和其他参数。
+# 方式 2：使用通用的 nexusphp 等站点架构类型，需要手动指定站点名称(name)、站点 url 和其他参数。
 [[sites]]
 name = "mteam"
-type = "nexusphp" # 站点类型。目前只支持 nexusphp
+type = "nexusphp" # 通用站点架构类型。可选值: nexusphp|gazellepw|unit3d|tnode|discuz
 url = "https://kp.m-team.cc/" # 站点首页 URL
 cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 ```
 
-推荐使用“方式 1”。程序内置了对大部分国内 NexusPHP PT 站点的支持。站点 ID 通常为 PT 网站域名的主体部分（不含次级域名和 TLD 部分），例如 BTSCHOOL ( https://pt.btschool.club/ )的站点 ID 是 btschool。部分 PT 网站也可以使用别名(alias)配置，例如 M-TEAM ( https://kp.m-team.cc/ )在本程序配置文件里的 type 设为 "m-team" 或 "mteam" 均可。运行 ```ptool sites``` 查看所有本程序内置支持的 PT 站点列表。本程序没有内置支持的 PT 站点必须通过“方式 2”配置。 （注：部分非 NP 架构站点本程序目前只支持自动辅种、查看站点状态，暂不支持刷流、搜索站点种子等功能）
+推荐使用“方式 1”。程序内置了对大部分国内 NexusPHP PT 站点的支持。站点 type 通常为 PT 网站域名的主体部分（不含次级域名和 TLD 部分），例如 BTSCHOOL ( https://pt.btschool.club/ )的站点 type 是 btschool。部分 PT 网站也可以使用别名(alias)配置，例如 M-TEAM ( https://kp.m-team.cc/ )在本程序配置文件里的 type 设为 "m-team" 或 "mteam" 均可。运行 ```ptool sites``` 查看所有本程序内置支持的 PT 站点列表。本程序没有内置支持的 PT 站点必须通过“方式 2”配置。 （注：部分非 NP 架构站点本程序目前只支持自动辅种、查看站点状态，暂不支持刷流、搜索站点种子等功能）
 
 参考程序代码根目录下的 ```ptool.example.toml``` 和 ```ptool.example.yaml``` 示例配置文件了解所有可用的配置项。
 
@@ -114,7 +116,7 @@ ptool brush <client> <site>... [flags]
 * ```<client>``` : 配置文件里定义的 BT 客户端 name。
 * ```<site>``` : 配置文件里定义的 PT 站点 name。
 
-可以提供多个 ```<site>``` 参数。程序会按随机顺序从提供的 ```<site>``` 列表里的各站点获取最新种子、筛选一定数量的合适的种子添加到 BT 客户端。可以将同一个站点名重复出现多次以增加其权重，使刷流任务添加该站点种子的几率更大。
+可以提供多个 ```<site>``` 参数。程序会按随机顺序从提供的 ```<site>``` 列表里的各站点获取最新种子、筛选一定数量的合适的种子添加到 BT 客户端。可以将同一个站点名重复出现多次以增加其权重，使刷流任务添加该站点种子的几率更大。如果提供的所有站点里都没有找到合适的刷流种子，程序也不会添加种子到客户端。
 
 示例
 
@@ -306,7 +308,7 @@ ptool status <clientOrSite>...
 ptool stats [client...]
 ```
 
-显示 BT 客户端的刷流任务流量统计信息（下载流量、上传流量总和）。本功能默认不启用，如需启用，在 ptool.toml 配置文件的最上方里增加一行：```brushEnableStats: true``` 配置项。启用刷流统计后，刷流任务会使用 ptool.toml 配置文件相同目录下的 "ptool_stats.txt" 文件存储所需保存的信息。
+显示 BT 客户端的刷流任务流量统计信息（下载流量、上传流量总和）。本功能默认不启用，如需启用，在 ptool.toml 配置文件的最上方里增加一行：```brushEnableStats = true``` 配置项。启用刷流统计后，刷流任务会使用 ptool.toml 配置文件相同目录下的 "ptool_stats.txt" 文件存储所需保存的信息。
 
 只有刷流任务添加和管理的 BT 客户端的种子（即 ```_brush``` 分类的种子）的流量信息会被记录和统计。目前设计只有在刷流任务从 BT 客户端删除某个种子时才会记录和统计该种子产生的流量信息。
 

@@ -114,6 +114,7 @@ func brush(cmd *cobra.Command, args []string) {
 		}
 		brushOption := &BrushOptionStruct{
 			AllowNoneFree:           siteInstance.GetSiteConfig().BrushAllowNoneFree,
+			AllowZeroSeeders:        siteInstance.GetSiteConfig().BrushAllowZeroSeeders,
 			MinDiskSpace:            clientInstance.GetClientConfig().BrushMinDiskSpaceValue,
 			SlowUploadSpeedTier:     clientInstance.GetClientConfig().BrushSlowUploadSpeedTierValue,
 			TorrentUploadSpeedLimit: siteInstance.GetSiteConfig().TorrentUploadSpeedLimitValue,
