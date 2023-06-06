@@ -292,6 +292,12 @@ var (
 			Url:     "https://www.okpt.net/",
 			Comment: "OKPT",
 		},
+		"oldtoons": &config.SiteConfigStruct{
+			Type:    "nexusphp",
+			Aliases: []string{"oldtoonsworld"},
+			Url:     "https://oldtoons.world/",
+			Comment: "Old Toons World",
+		},
 		"oshen": &config.SiteConfigStruct{
 			Type:    "nexusphp",
 			Url:     "https://www.oshen.win/",
