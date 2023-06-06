@@ -258,7 +258,7 @@ func (npclient *Site) sync() error {
 	if npclient.SiteConfig.SelectorUserInfoUploaded != "" {
 		sstr = utils.DomSelectorText(html, npclient.SiteConfig.SelectorUserInfoUploaded)
 	} else {
-		re := regexp.MustCompile(`(?i)(上傳量|上傳|上传量|上传|Uploaded)[：:\s]+(?P<s>[.\s0-9KMGTEPBkmgtepib]+)`)
+		re := regexp.MustCompile(`(?i)(上傳量|上傳|上传量|上传|Uploaded|Up)[：:\s]+(?P<s>[.\s0-9KMGTEPBkmgtepib]+)`)
 		m := re.FindStringSubmatch(infoTxt)
 		if m != nil {
 			sstr = strings.ReplaceAll(strings.TrimSpace(m[re.SubexpIndex("s")]), " ", "")
@@ -273,7 +273,7 @@ func (npclient *Site) sync() error {
 	if npclient.SiteConfig.SelectorUserInfoDownloaded != "" {
 		sstr = utils.DomSelectorText(html, npclient.SiteConfig.SelectorUserInfoDownloaded)
 	} else {
-		re := regexp.MustCompile(`(?i)(下載量|下載|下载量|下载|Downloaded)[：:\s]+(?P<s>[.\s0-9KMGTEPBkmgtepib]+)`)
+		re := regexp.MustCompile(`(?i)(下載量|下載|下载量|下载|Downloaded|Down)[：:\s]+(?P<s>[.\s0-9KMGTEPBkmgtepib]+)`)
 		m := re.FindStringSubmatch(infoTxt)
 		if m != nil {
 			sstr = strings.ReplaceAll(strings.TrimSpace(m[re.SubexpIndex("s")]), " ", "")

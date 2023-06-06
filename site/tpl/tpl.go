@@ -83,6 +83,11 @@ var (
 			Url:     "https://pt.dhtclub.com/",
 			Comment: "DHTCLUB PT",
 		},
+		"dicmusic": &config.SiteConfigStruct{
+			Type:    "gazelle",
+			Url:     "https://dicmusic.club/",
+			Comment: "海豚",
+		},
 		"discfan": &config.SiteConfigStruct{
 			Type:    "nexusphp",
 			Url:     "https://discfan.net/",
@@ -236,6 +241,14 @@ var (
 			Type:    "nexusphp",
 			Url:     "https://www.joyhd.net/",
 			Comment: "JoyHD",
+		},
+		"jpopsuki": &config.SiteConfigStruct{
+			Type:                       "gazelle",
+			Url:                        "https://jpopsuki.eu/",
+			SelectorUserInfoUserName:   `#userinfo_username a.username`,
+			SelectorUserInfoUploaded:   `#userinfo_stats li:nth-child(1)`,
+			SelectorUserInfoDownloaded: `#userinfo_stats li:nth-child(2)`,
+			Comment:                    "JPopsuki",
 		},
 		"jptvclub": &config.SiteConfigStruct{
 			Type:                       "unit3d",
