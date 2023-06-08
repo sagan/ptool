@@ -12,6 +12,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"golang.org/x/exp/slices"
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
@@ -31,6 +32,7 @@ var command = &cobra.Command{
 
 var (
 	paused                                             = false
+	dense                                              = false
 	addRespectNoadd                                    = false
 	includeDownloaded                                  = false
 	freeOnly                                           = false
@@ -44,6 +46,7 @@ var (
 	addReserveSpaceStr                                 = ""
 	addTags                                            = ""
 	filter                                             = ""
+	excludes                                           = ""
 	savePath                                           = ""
 	minTorrentSizeStr                                  = ""
 	maxTorrentSizeStr                                  = ""
@@ -60,6 +63,7 @@ var (
 
 func init() {
 	command.Flags().BoolVarP(&paused, "add-paused", "", false, "Add torrents to client in paused state")
+	command.Flags().BoolVarP(&dense, "dense", "", false, "dense mode: show full torrent title & subtitle")
 	command.Flags().BoolVarP(&freeOnly, "free", "", false, "Skip none-free torrents")
 	command.Flags().BoolVarP(&addRespectNoadd, "add-respect-noadd", "", false, "Used with '--action add'. Check and respect _noadd flag in clients.")
 	command.Flags().BoolVarP(&nohr, "nohr", "", false, "Skip torrents that has any type of HnR (Hit and Run) restriction")
@@ -74,6 +78,7 @@ func init() {
 	command.Flags().Int64VarP(&maxSeeders, "max-seeders", "", -1, "Skip torrents with seeders large than (>) this value. Default (-1) == no limit")
 	command.Flags().StringVarP(&freeTimeAtLeastStr, "free-time", "", "", "Used with --free. Set the allowed minimal remaining torrent free time. eg. 12h, 1d")
 	command.Flags().StringVarP(&filter, "filter", "f", "", "If set, skip torrents which name does NOT contains this string")
+	command.Flags().StringVarP(&excludes, "excludes", "", "", "A comma-separated string list that torrent which name contains any one in the list will be skipped")
 	command.Flags().StringVarP(&startPage, "start-page", "", "", "Start fetching torrents from here (should be the returned LastPage value last time you run this command)")
 	command.Flags().StringVarP(&downloadDir, "download-dir", "", ".", "Used with '--action download'. Set the local dir of downloaded torrents. Default == current dir")
 	command.Flags().StringVarP(&addClient, "add-client", "", "", "Used with '--action add'. Set the client. Required in this action")
@@ -98,6 +103,10 @@ func batchdl(cmd *cobra.Command, args []string) {
 
 	if action != "show" && action != "export" && action != "printid" && action != "download" && action != "add" {
 		log.Fatalf("Invalid action flag value: %s", action)
+	}
+	excludesList := []string{}
+	if excludes != "" {
+		excludesList = strings.Split(excludes, ",")
 	}
 	minTorrentSize, _ := utils.RAMInBytes(minTorrentSizeStr)
 	maxTorrentSize, _ := utils.RAMInBytes(maxTorrentSizeStr)
@@ -258,8 +267,14 @@ mainloop:
 					continue
 				}
 			}
-			if filter != "" && !utils.ContainsI(torrent.Name, filter) {
+			if filter != "" && !torrent.MatchFilter(filter) {
 				log.Tracef("Skip torrent %s due to filter %s does NOT match", torrent.Name, filter)
+				continue
+			}
+			if index := slices.IndexFunc(excludesList, func(excludeStr string) bool {
+				return torrent.MatchFilter(excludeStr)
+			}); index != -1 {
+				log.Tracef("Skip torrent %s due to exclude string %s matchs", torrent.Name, excludesList[index])
 				continue
 			}
 			if freeOnly {
@@ -289,7 +304,7 @@ mainloop:
 			totalSize += torrent.Size
 
 			if action == "show" {
-				site.PrintTorrents([]site.Torrent{torrent}, "", now, cntTorrents != 1)
+				site.PrintTorrents([]site.Torrent{torrent}, "", now, cntTorrents != 1, dense)
 			} else if action == "export" {
 				csvWriter.Write([]string{torrent.Name, fmt.Sprint(torrent.Size), fmt.Sprint(torrent.Time), torrent.Id})
 			} else if action == "printid" {

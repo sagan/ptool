@@ -9,6 +9,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/html"
+	"golang.org/x/net/html/atom"
 
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/utils"
@@ -217,6 +218,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 			return
 		}
 		name := ""
+		description := ""
 		id := ""
 		downloadUrl := ""
 		size := int64(0)
@@ -265,6 +267,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		// lemonhd: href="details_movie.php?id=12345"
 		titleEl := s.Find(option.selectorTorrentDetailsLink)
 		if titleEl.Length() > 0 {
+			titleEl = titleEl.First()
 			name = titleEl.Text()
 			// CloudFlare email obfuscation sometimes confuses with 0day torrent names such as "***-DIY@Audies"
 			name = strings.ReplaceAll(name, "[email protected]", "")
@@ -272,6 +275,28 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 			if m != nil {
 				id = m[idRegexp.SubexpIndex("id")]
 			}
+			// try to find np torrent subtitle that is after title and <br />
+			foundBr := false
+			foundSelf := false
+			titleNode := titleEl.Get(0)
+			titleEl.Parent().Contents().Each(func(i int, s *goquery.Selection) {
+				if s.Get(0) == titleNode {
+					foundSelf = true
+				} else if foundSelf {
+					if s.Get(0).DataAtom == atom.Br {
+						foundBr = true
+					} else if foundBr {
+						text := utils.DomSanitizedText(s)
+						if description != "" && text != "" {
+							description += " "
+						}
+						description += text
+					}
+				}
+			})
+			// can NOT use the below way because Next() ignores text Nodes
+			// for next := titleEl.Next(); next.Length() > 0; next = next.Next() {
+			// }
 		}
 		downloadEl := s.Find(option.selectorTorrentDownloadLink)
 		if downloadEl.Length() > 0 {
@@ -351,6 +376,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 			}
 			torrents = append(torrents, site.Torrent{
 				Name:               name,
+				Description:        description,
 				Id:                 id,
 				Size:               size,
 				DownloadUrl:        downloadUrl,

@@ -15,6 +15,7 @@ import (
 
 type Torrent struct {
 	Name               string
+	Description        string
 	Id                 string // optional torrent id in the site
 	InfoHash           string
 	DownloadUrl        string
@@ -66,6 +67,13 @@ var (
 	registryMap = make(map[string](*RegInfo))
 )
 
+func (torrent *Torrent) MatchFilter(filter string) bool {
+	if filter == "" || utils.ContainsI(torrent.Name, filter) || utils.ContainsI(torrent.Description, filter) {
+		return true
+	}
+	return false
+}
+
 func Register(regInfo *RegInfo) {
 	registryMap[regInfo.Name] = regInfo
 	for _, alias := range regInfo.Aliases {
@@ -100,12 +108,12 @@ func CreateSite(name string) (Site, error) {
 	return nil, fmt.Errorf("site %s not found", name)
 }
 
-func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool) {
+func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool, dense bool) {
 	if !noHeader {
 		fmt.Printf("%-40s  %10s  %-13s  %-19s  %4s  %4s  %4s  %20s  %2s\n", "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "P")
 	}
 	for _, torrent := range torrents {
-		if filter != "" && !utils.ContainsI(torrent.Name, filter) {
+		if filter != "" && !torrent.MatchFilter(filter) {
 			continue
 		}
 		freeStr := ""
@@ -127,6 +135,9 @@ func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool) 
 		process := "-"
 		if torrent.IsActive {
 			process = "0%"
+		}
+		if dense {
+			fmt.Printf("// %s  %s\n", torrent.Name, torrent.Description)
 		}
 		utils.PrintStringInWidth(name, 40, true)
 		fmt.Printf("  %10s  %-13s  %-19s  %4s  %4s  %4s  %20s  %2s\n",

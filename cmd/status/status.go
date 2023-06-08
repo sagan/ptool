@@ -19,6 +19,7 @@ import (
 var (
 	filter         = ""
 	category       = ""
+	dense          = false
 	showTorrents   = false
 	showFull       = false
 	showAll        = false
@@ -39,6 +40,7 @@ clientOrSiteOrGroup: name of a client, site, group, or "_all" which means all si
 func init() {
 	command.Flags().StringVarP(&filter, "filter", "", "", "filter client torrents by name")
 	command.Flags().StringVarP(&category, "category", "", "", "filter client torrents by category")
+	command.Flags().BoolVarP(&dense, "dense", "", false, "dense mode: show full torrent title & subtitle")
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "show all clients / sites.")
 	command.Flags().BoolVarP(&showAllClients, "clients", "c", false, "show all clients.")
 	command.Flags().BoolVarP(&showAllSites, "sites", "s", false, "show all sites.")
@@ -182,7 +184,7 @@ func status(cmd *cobra.Command, args []string) {
 			}
 			if response.SiteTorrents != nil {
 				fmt.Printf("\n")
-				site.PrintTorrents(response.SiteTorrents, filter, now, false)
+				site.PrintTorrents(response.SiteTorrents, filter, now, false, dense)
 				if i != len(responses)-1 {
 					fmt.Printf("\n")
 				}

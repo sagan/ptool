@@ -31,6 +31,7 @@ siteOrGroups: A comma-separated name list of sites or groups. Can use "_all" to 
 }
 
 var (
+	dense             = false
 	largestFlag       = false
 	maxResults        = int64(0)
 	perSiteMaxREsults = int64(0)
@@ -38,6 +39,7 @@ var (
 )
 
 func init() {
+	command.Flags().BoolVarP(&dense, "dense", "", false, "dense mode: show full torrent title & subtitle")
 	command.Flags().BoolVarP(&largestFlag, "largest", "l", false, "Sort search result by torrent size in desc order")
 	command.Flags().Int64VarP(&maxResults, "max-results", "m", 100, "Number limit of search result of all sites combined. 0 == unlimited")
 	command.Flags().Int64VarP(&perSiteMaxREsults, "per-site-max-results", "p", 0, "Number limit of search result of any single site. Default (0) == unlimited")
@@ -116,5 +118,5 @@ func search(cmd *cobra.Command, args []string) {
 	}
 	fmt.Printf("\n")
 
-	site.PrintTorrents(torrents, "", now, false)
+	site.PrintTorrents(torrents, "", now, false, dense)
 }
