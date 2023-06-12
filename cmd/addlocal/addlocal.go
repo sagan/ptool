@@ -27,6 +27,7 @@ var command = &cobra.Command{
 var (
 	paused      = false
 	skipCheck   = false
+	renameAdded = false
 	defaultSite = ""
 	rename      = ""
 	addCategory = ""
@@ -36,6 +37,7 @@ var (
 
 func init() {
 	command.Flags().BoolVarP(&skipCheck, "skip-check", "", false, "Skip hash checking when adding torrents")
+	command.Flags().BoolVarP(&renameAdded, "rename-added", "", false, "Rename successfully added torrent to .added extension")
 	command.Flags().BoolVarP(&paused, "paused", "p", false, "Add torrents to client in paused state")
 	command.Flags().StringVarP(&savePath, "add-save-path", "", "", "Set save path of added torrents")
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of torrents")
@@ -65,6 +67,9 @@ func add(cmd *cobra.Command, args []string) {
 	}
 
 	for _, torrentFile := range torrentFiles {
+		if strings.HasSuffix(torrentFile, ".added") {
+			continue
+		}
 		torrentContent, err := os.ReadFile(torrentFile)
 		if err != nil {
 			fmt.Printf("torrent %s: failed to read file (%v)\n", torrentFile, err)
@@ -100,6 +105,12 @@ func add(cmd *cobra.Command, args []string) {
 			fmt.Printf("torrent %s: failed to add to client (%v)\n", torrentFile, err)
 			errCnt++
 			continue
+		}
+		if renameAdded {
+			err := os.Rename(torrentFile, torrentFile+".added")
+			if err != nil {
+				log.Debugf("Failed to rename successfully added torrent %s to .added extension: %v", torrentFile, err)
+			}
 		}
 		fmt.Printf("torrent %s: added to client\n", torrentFile)
 	}
