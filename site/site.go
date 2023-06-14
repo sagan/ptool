@@ -30,6 +30,8 @@ type Torrent struct {
 	Snatched           int64
 	HasHnR             bool // true if has any type of HR
 	IsActive           bool // true if torrent is as already downloading / seeding
+	Paid               bool // "付费"种子: (第一次)下载或汇报种子时扣除魔力/积分
+	Bought             bool // 适用于付费种子：已购买
 }
 
 type Status struct {
@@ -119,6 +121,9 @@ func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool, 
 		freeStr := ""
 		if torrent.HasHnR {
 			freeStr += "!"
+		}
+		if torrent.Paid {
+			freeStr += "$"
 		}
 		if torrent.DownloadMultiplier == 0 {
 			freeStr += "✓"

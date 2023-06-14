@@ -311,7 +311,6 @@ func (npclient *Site) syncExtra() error {
 	if npclient.datetimeExtra > 0 {
 		return nil
 	}
-
 	extraTorrents := make([]site.Torrent, 0)
 	for _, extraUrl := range npclient.SiteConfig.TorrentsExtraUrls {
 		doc, err := utils.GetUrlDoc(extraUrl, npclient.HttpClient,
@@ -366,6 +365,7 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 			SelectorTorrentSize:            siteConfig.SelectorTorrentSize,
 			SelectorTorrentProcessBar:      siteConfig.SelectorTorrentProcessBar,
 			SelectorTorrentFree:            siteConfig.SelectorTorrentFree,
+			SelectorTorrentPaid:            siteConfig.SelectorTorrentPaid,
 			SelectorTorrentDiscountEndTime: siteConfig.SelectorTorrentDiscountEndTime,
 		},
 	}

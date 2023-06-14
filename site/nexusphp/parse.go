@@ -38,6 +38,7 @@ type TorrentsParserOption struct {
 	SelectorTorrentSize            string
 	SelectorTorrentProcessBar      string
 	SelectorTorrentFree            string
+	SelectorTorrentPaid            string
 	SelectorTorrentDiscountEndTime string
 }
 
@@ -139,7 +140,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		"seeders":  -1,
 		"leechers": -1,
 		"snatched": -1,
-		"title":    -1,
+		"name":     -1,
 		"process":  -1,
 	}
 	var headerEl *goquery.Selection
@@ -174,8 +175,8 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 			if text == "進度" || text == "进度" {
 				fieldColumIndex["process"] = i
 				return
-			} else if text == "標題" || text == "标题" {
-				fieldColumIndex["title"] = i
+			} else if text == "標題" || text == "标题" || text == "Name" {
+				fieldColumIndex["name"] = i
 				return
 			} else if text == "大小" {
 				fieldColumIndex["size"] = i
@@ -231,9 +232,11 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		uploadMultiplier := 1.0
 		discountEndTime := int64(-1)
 		isActive := false
+		paid := false
 		processValueRegexp := regexp.MustCompile(`\d+(\.\d+)?%`)
 		idRegexp := regexp.MustCompile(`[?&]id=(?P<id>\d+)`)
 		text := utils.DomSanitizedText(s)
+		var titleEl *goquery.Selection
 
 		s.Children().Each(func(i int, s *goquery.Selection) {
 			for field, index := range fieldColumIndex {
@@ -247,9 +250,6 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 					}
 					continue
 				}
-				if field == "title" {
-					continue
-				}
 				switch field {
 				case "size":
 					size, _ = utils.RAMInBytes(text)
@@ -261,14 +261,38 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 					snatched = utils.ParseInt(text)
 				case "time":
 					time = utils.DomTime(s, option.location)
+				case "name":
+					titleEl = s.Find(option.selectorTorrentDetailsLink)
 				}
 			}
 		})
-		// lemonhd: href="details_movie.php?id=12345"
-		titleEl := s.Find(option.selectorTorrentDetailsLink)
-		if titleEl.Length() > 0 {
+		if titleEl == nil {
+			titleEl = s.Find(option.selectorTorrentDetailsLink)
+		}
+		// 尽量不使用 a img 这种题图类型的标题元素(eg. M-Team)
+		titleTextEl := titleEl.FilterFunction(func(i int, s *goquery.Selection) bool {
+			parentNode := s.Parent().Get(0)
+			if parentNode.DataAtom == atom.Img || parentNode.DataAtom == atom.Image {
+				return false
+			}
+			if s.Children().Length() == 1 {
+				childNode := s.Children().Get(0)
+				if childNode.DataAtom == atom.Img || childNode.DataAtom == atom.Image {
+					return false
+				}
+			}
+			return true
+		})
+		if titleTextEl.Length() > 0 {
+			titleEl = titleTextEl.First()
+		} else {
 			titleEl = titleEl.First()
+		}
+		if titleEl.Length() > 0 {
 			name = titleEl.Text()
+			if name == "" {
+				name = titleEl.AttrOr("title", "")
+			}
 			// CloudFlare email obfuscation sometimes confuses with 0day torrent names such as "***-DIY@Audies"
 			name = strings.ReplaceAll(name, "[email protected]", "")
 			m := idRegexp.FindStringSubmatch(titleEl.AttrOr("href", ""))
@@ -350,6 +374,9 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 				downloadMultiplier = 0
 			}
 		}
+		if option.SelectorTorrentPaid != "" && s.Find(option.SelectorTorrentPaid).Length() > 0 {
+			paid = true
+		}
 		if s.Find(`*[title^="seeding"],*[title^="leeching"],*[title^="downloading"],*[title^="uploading"],*[title^="inactivity"]`).Length() > 0 {
 			isActive = true
 		} else if option.SelectorTorrentProcessBar != "" && s.Find(option.SelectorTorrentProcessBar).Length() > 0 {
@@ -389,6 +416,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 				UploadMultiplier:   uploadMultiplier,
 				DiscountEndTime:    discountEndTime,
 				IsActive:           isActive,
+				Paid:               paid,
 			})
 		}
 	})

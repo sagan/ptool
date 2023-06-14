@@ -75,6 +75,7 @@ type SiteConfigStruct struct {
 	GlobalHnR                      bool     `yaml:"globalHnR"`
 	Timezone                       string   `yaml:"timezone"`
 	BrushAllowNoneFree             bool     `yaml:"brushAllowNoneFree"`
+	BrushAllowPaid                 bool     `yaml:"brushAllowPaid"`
 	BrushAllowZeroSeeders          bool     `yaml:"brushAllowZeroSeeders"`
 	SelectorTorrentsListHeader     string   `yaml:"selectorTorrentsListHeader"`
 	SelectorTorrentsList           string   `yaml:"selectorTorrentsList"`
@@ -89,6 +90,7 @@ type SiteConfigStruct struct {
 	SelectorTorrentSize            string   `yaml:"selectorTorrentSize"`
 	SelectorTorrentProcessBar      string   `yaml:"selectorTorrentProcessBar"`
 	SelectorTorrentFree            string   `yaml:"SelectorTorrentFree"`
+	SelectorTorrentPaid            string   `yaml:"selectorTorrentPaid"`
 	SelectorTorrentDiscountEndTime string   `yaml:"selectorTorrentDiscountEndTime"`
 	SelectorUserInfo               string   `yaml:"selectorUserInfo"`
 	SelectorUserInfoUserName       string   `yaml:"selectorUserInfoUserName"`
