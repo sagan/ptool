@@ -36,6 +36,7 @@ var (
 	addRespectNoadd                                    = false
 	includeDownloaded                                  = false
 	freeOnly                                           = false
+	noPaid                                             = false
 	nohr                                               = false
 	allowBreak                                         = false
 	maxTorrents                                        = int64(0)
@@ -65,6 +66,7 @@ func init() {
 	command.Flags().BoolVarP(&paused, "add-paused", "", false, "Add torrents to client in paused state")
 	command.Flags().BoolVarP(&dense, "dense", "", false, "dense mode: show full torrent title & subtitle")
 	command.Flags().BoolVarP(&freeOnly, "free", "", false, "Skip none-free torrents")
+	command.Flags().BoolVarP(&noPaid, "no-paid", "", false, "Skip paid (use bonus points) torrents")
 	command.Flags().BoolVarP(&addRespectNoadd, "add-respect-noadd", "", false, "Used with '--action add'. Check and respect _noadd flag in clients.")
 	command.Flags().BoolVarP(&nohr, "nohr", "", false, "Skip torrents that has any type of HnR (Hit and Run) restriction")
 	command.Flags().BoolVarP(&allowBreak, "break", "", false, "Break (stop finding more torrents) if all torrents of current page does not meet criterion")
@@ -289,6 +291,10 @@ mainloop:
 			}
 			if nohr && torrent.HasHnR {
 				log.Tracef("Skip HR torrent %s", torrent.Name)
+				continue
+			}
+			if noPaid && torrent.Paid && !torrent.Bought {
+				log.Tracef("Skip paid torrent %s", torrent.Name)
 				continue
 			}
 			if maxTotalSize > 0 && totalSize+torrent.Size > maxTotalSize {
