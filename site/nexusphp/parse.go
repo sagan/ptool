@@ -397,8 +397,8 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		if discountEndTime <= 0 && globalDiscountEndTime > 0 {
 			discountEndTime = globalDiscountEndTime
 		}
-		if name != "" && downloadUrl != "" {
-			if siteName != "" {
+		if name != "" && (downloadUrl != "" || id != "") {
+			if id != "" && siteName != "" {
 				id = siteName + "." + id
 			}
 			torrents = append(torrents, site.Torrent{

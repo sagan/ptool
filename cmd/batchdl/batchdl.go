@@ -47,6 +47,7 @@ var (
 	addReserveSpaceStr                                 = ""
 	addTags                                            = ""
 	filter                                             = ""
+	includes                                           = ""
 	excludes                                           = ""
 	savePath                                           = ""
 	minTorrentSizeStr                                  = ""
@@ -68,7 +69,7 @@ func init() {
 	command.Flags().BoolVarP(&freeOnly, "free", "", false, "Skip none-free torrents")
 	command.Flags().BoolVarP(&noPaid, "no-paid", "", false, "Skip paid (use bonus points) torrents")
 	command.Flags().BoolVarP(&addRespectNoadd, "add-respect-noadd", "", false, "Used with '--action add'. Check and respect _noadd flag in clients.")
-	command.Flags().BoolVarP(&nohr, "nohr", "", false, "Skip torrents that has any type of HnR (Hit and Run) restriction")
+	command.Flags().BoolVarP(&nohr, "no-hr", "", false, "Skip torrents that has any type of HnR (Hit and Run) restriction")
 	command.Flags().BoolVarP(&allowBreak, "break", "", false, "Break (stop finding more torrents) if all torrents of current page does not meet criterion")
 	command.Flags().BoolVarP(&includeDownloaded, "include-downloaded", "", false, "Do NOT skip torrents that has been downloaded before")
 	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "m", 0, "Number limit of torrents handled. Default (0) == unlimited (Press Ctrl+C to stop at any time)")
@@ -80,6 +81,7 @@ func init() {
 	command.Flags().Int64VarP(&maxSeeders, "max-seeders", "", -1, "Skip torrents with seeders large than (>) this value. Default (-1) == no limit")
 	command.Flags().StringVarP(&freeTimeAtLeastStr, "free-time", "", "", "Used with --free. Set the allowed minimal remaining torrent free time. eg. 12h, 1d")
 	command.Flags().StringVarP(&filter, "filter", "f", "", "If set, skip torrents which name does NOT contains this string")
+	command.Flags().StringVarP(&includes, "includes", "", "", "A comma-separated string list. If set, ONLY torrent which name contains any one in the list will be downloaded")
 	command.Flags().StringVarP(&excludes, "excludes", "", "", "A comma-separated string list that torrent which name contains any one in the list will be skipped")
 	command.Flags().StringVarP(&startPage, "start-page", "", "", "Start fetching torrents from here (should be the returned LastPage value last time you run this command)")
 	command.Flags().StringVarP(&downloadDir, "download-dir", "", ".", "Used with '--action download'. Set the local dir of downloaded torrents. Default == current dir")
@@ -106,7 +108,11 @@ func batchdl(cmd *cobra.Command, args []string) {
 	if action != "show" && action != "export" && action != "printid" && action != "download" && action != "add" {
 		log.Fatalf("Invalid action flag value: %s", action)
 	}
-	excludesList := []string{}
+	var includesList []string
+	var excludesList []string
+	if includes != "" {
+		includesList = strings.Split(includes, ",")
+	}
 	if excludes != "" {
 		excludesList = strings.Split(excludes, ",")
 	}
@@ -277,6 +283,12 @@ mainloop:
 				return torrent.MatchFilter(excludeStr)
 			}); index != -1 {
 				log.Tracef("Skip torrent %s due to exclude string %s matchs", torrent.Name, excludesList[index])
+				continue
+			}
+			if len(includesList) > 0 && slices.IndexFunc(includesList, func(includeStr string) bool {
+				return torrent.MatchFilter(includeStr)
+			}) == -1 {
+				log.Tracef("Skip torrent %s due to includes does NOT match", torrent.Name)
 				continue
 			}
 			if freeOnly {
