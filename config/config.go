@@ -26,7 +26,8 @@ const (
 	DEFAULT_CLIENT_BRUSH_MAX_TORRENTS               = int64(9999)
 	DEFAULT_CLIENT_BRUSH_MIN_RATION                 = float64(0.2)
 	DEFAULT_CLIENT_BRUSH_DEFAULT_UPLOAD_SPEED_LIMIT = int64(10 * 1024 * 1024)
-	DEFAULT_CLIENT_BRUSH_TORRENT_SIZE_LIMIT         = int64(1024 * 1024 * 1024 * 1024 * 1024) // 1PB, that's say, unlimited
+	DEFAULT_CLIENT_BRUSH_TORRENT_MIN_SIZE_LIMIT     = int64(0)
+	DEFAULT_CLIENT_BRUSH_TORRENT_MAX_SIZE_LIMIT     = int64(1024 * 1024 * 1024 * 1024 * 1024) // 1PB, that's say, unlimited
 	DEFAULT_SITE_TORRENT_UPLOAD_SPEED_LIMIT         = int64(10 * 1024 * 1024)
 )
 
@@ -48,11 +49,13 @@ type ClientConfigStruct struct {
 	BrushMaxTorrents                  int64   `yaml:"brushMaxTorrents"`
 	BrushMinRatio                     float64 `yaml:"brushMinRatio"`
 	BrushDefaultUploadSpeedLimit      string  `yaml:"brushDefaultUploadSpeedLimit"`
-	BrushTorrentSizeLimit             string  `yaml:"brushTorrentSizeLimit"`
+	BrushTorrentMinSizeLimit          string  `yaml:"brushTorrentMinSizeLimit"`
+	BrushTorrentMaxSizeLimit          string  `yaml:"brushTorrentMaxSizeLimit"`
 	BrushMinDiskSpaceValue            int64
 	BrushSlowUploadSpeedTierValue     int64
 	BrushDefaultUploadSpeedLimitValue int64
-	BrushTorrentSizeLimitValue        int64
+	BrushTorrentMinSizeLimitValue     int64
+	BrushTorrentMaxSizeLimitValue     int64
 	QbittorrentNoLogin                bool `yaml:"qbittorrentNoLogin"` // if set, will NOT send login request
 }
 
@@ -165,11 +168,17 @@ func Get() *ConfigStruct {
 				}
 				client.BrushDefaultUploadSpeedLimitValue = v
 
-				v, err = utils.RAMInBytes(client.BrushTorrentSizeLimit)
+				v, err = utils.RAMInBytes(client.BrushTorrentMinSizeLimit)
 				if err != nil || v <= 0 {
-					v = DEFAULT_CLIENT_BRUSH_TORRENT_SIZE_LIMIT
+					v = DEFAULT_CLIENT_BRUSH_TORRENT_MIN_SIZE_LIMIT
 				}
-				client.BrushTorrentSizeLimitValue = v
+				client.BrushTorrentMinSizeLimitValue = v
+
+				v, err = utils.RAMInBytes(client.BrushTorrentMaxSizeLimit)
+				if err != nil || v <= 0 {
+					v = DEFAULT_CLIENT_BRUSH_TORRENT_MAX_SIZE_LIMIT
+				}
+				client.BrushTorrentMaxSizeLimitValue = v
 
 				if client.Url != "" {
 					urlObj, err := url.Parse(client.Url)

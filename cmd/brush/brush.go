@@ -123,7 +123,8 @@ func brush(cmd *cobra.Command, args []string) {
 			MaxTorrents:             clientInstance.GetClientConfig().BrushMaxTorrents,
 			MinRatio:                clientInstance.GetClientConfig().BrushMinRatio,
 			DefaultUploadSpeedLimit: clientInstance.GetClientConfig().BrushDefaultUploadSpeedLimitValue,
-			TorrentSizeLimit:        clientInstance.GetClientConfig().BrushTorrentSizeLimitValue,
+			TorrentMinSizeLimit:     clientInstance.GetClientConfig().BrushTorrentMinSizeLimitValue,
+			TorrentMaxSizeLimit:     clientInstance.GetClientConfig().BrushTorrentMaxSizeLimitValue,
 			Now:                     utils.Now(),
 		}
 		log.Printf(

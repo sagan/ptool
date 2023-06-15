@@ -37,7 +37,8 @@ type BrushOptionStruct struct {
 	MaxTorrents             int64
 	MinRatio                float64
 	DefaultUploadSpeedLimit int64
-	TorrentSizeLimit        int64
+	TorrentMinSizeLimit     int64
+	TorrentMaxSizeLimit     int64
 	Now                     int64
 }
 
@@ -484,7 +485,8 @@ func rateSiteTorrent(siteTorrent *site.Torrent, brushOption *BrushOptionStruct) 
 		siteTorrent.HasHnR ||
 		(!brushOption.AllowNoneFree && siteTorrent.DownloadMultiplier != 0) ||
 		(!brushOption.AllowPaid && siteTorrent.Paid && !siteTorrent.Bought) ||
-		siteTorrent.Size > brushOption.TorrentSizeLimit ||
+		siteTorrent.Size < brushOption.TorrentMinSizeLimit ||
+		siteTorrent.Size > brushOption.TorrentMaxSizeLimit ||
 		(siteTorrent.DiscountEndTime > 0 && siteTorrent.DiscountEndTime-brushOption.Now < 3600) ||
 		(!brushOption.AllowZeroSeeders && siteTorrent.Seeders == 0) ||
 		siteTorrent.Leechers <= siteTorrent.Seeders {

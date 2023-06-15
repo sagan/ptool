@@ -19,7 +19,8 @@ password = "adminadmin"
 #brushMaxTorrents = 500 # 刷流：种子数（所有状态）上限
 #brushMinRatio = 0.2 # 刷流：最小 ratio (上传量/下载量)比例。ratio 持续低于此值的种子将可能被删除
 #brushDefaultUploadSpeedLimit = "10MiB" # 刷流：默认最大上传速度限制(/s)
-#brushTorrentSizeLimit = "1PiB" #刷流：种子大小限制。大小超过此值的种子不会被选择
+#brushTorrentMinSizeLimit = "0" # 刷流：种子最小体积限制。体积小于此值的种子不会被选择
+#brushTorrentMaxSizeLimit = "1PiB" # 刷流：种子最大体积限制。体积大于此值的种子不会被选择
 
 
 # 对 Transmission 客户端支持不完整且尚未充分测试。不建议用于刷流。
