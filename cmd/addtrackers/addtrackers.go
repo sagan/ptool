@@ -15,7 +15,7 @@ import (
 var command = &cobra.Command{
 	Use:   "addtrackers <client> [<infoHash>...]",
 	Short: "Add new trackers to torrents of client",
-	Long: `Add new trackers to torrents of client,
+	Long: `Add new trackers to torrents of client
 <infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
 _all, _active, _done,  _downloading, _seeding, _paused, _completed, _error
 

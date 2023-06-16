@@ -101,7 +101,13 @@ func (tnsite *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error) {
 			return tnsite.DownloadTorrentById(m[idRegexp.SubexpIndex("id")])
 		}
 	}
-	return site.DownloadTorrentByUrl(tnsite, tnsite.HttpClient, torrentUrl, "")
+	id := ""
+	idRegexp := regexp.MustCompile(`/download/(?P<id>\d+)\b`)
+	m := idRegexp.FindStringSubmatch(torrentUrl)
+	if m != nil {
+		id = m[idRegexp.SubexpIndex("id")]
+	}
+	return site.DownloadTorrentByUrl(tnsite, tnsite.HttpClient, torrentUrl, id)
 }
 
 func (tnsite *Site) DownloadTorrentById(id string) ([]byte, string, error) {

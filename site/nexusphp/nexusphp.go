@@ -90,9 +90,14 @@ func (npclient *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error)
 			return npclient.DownloadTorrentById(m[npclient.idRegexp.SubexpIndex("id")])
 		}
 	}
+	urlObj, err := url.Parse(torrentUrl)
+	id := ""
+	if err == nil {
+		id = urlObj.Query().Get("id")
+	}
 	// skip NP download notice. see https://github.com/xiaomlove/nexusphp/blob/php8/public/download.php
 	torrentUrl = utils.AppendUrlQueryString(torrentUrl, "letdown=1")
-	return site.DownloadTorrentByUrl(npclient, npclient.HttpClient, torrentUrl, "")
+	return site.DownloadTorrentByUrl(npclient, npclient.HttpClient, torrentUrl, id)
 }
 
 func (npclient *Site) DownloadTorrentById(id string) ([]byte, string, error) {

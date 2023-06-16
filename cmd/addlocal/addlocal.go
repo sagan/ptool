@@ -19,15 +19,18 @@ import (
 var command = &cobra.Command{
 	Use:   "addlocal <client> <filename.torrent>...",
 	Short: "Add local torrents to client",
-	Long:  `Add local torrents to client.`,
-	Args:  cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
-	Run:   add,
+	Long: `Add local torrents to client
+It's possible to use "*" wildcard in filename to match multiple torrents. eg. "*.torrent"
+`,
+	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
+	Run:  add,
 }
 
 var (
 	paused      = false
 	skipCheck   = false
 	renameAdded = false
+	deleteAdded = false
 	defaultSite = ""
 	rename      = ""
 	addCategory = ""
@@ -37,7 +40,8 @@ var (
 
 func init() {
 	command.Flags().BoolVarP(&skipCheck, "skip-check", "", false, "Skip hash checking when adding torrents")
-	command.Flags().BoolVarP(&renameAdded, "rename-added", "", false, "Rename successfully added torrent to .added extension")
+	command.Flags().BoolVarP(&renameAdded, "rename-added", "", false, "Rename successfully added torrents to .added extension")
+	command.Flags().BoolVarP(&deleteAdded, "delete-added", "", false, "Delete successfully added torrents")
 	command.Flags().BoolVarP(&paused, "paused", "p", false, "Add torrents to client in paused state")
 	command.Flags().StringVarP(&savePath, "add-save-path", "", "", "Set save path of added torrents")
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of torrents")
@@ -64,6 +68,9 @@ func add(cmd *cobra.Command, args []string) {
 	var fixedTags []string
 	if addTags != "" {
 		fixedTags = strings.Split(addTags, ",")
+	}
+	if renameAdded && deleteAdded {
+		log.Fatalf("--rename-added and --delete-added flags are NOT compatible")
 	}
 
 	for _, torrentFile := range torrentFiles {
@@ -110,6 +117,11 @@ func add(cmd *cobra.Command, args []string) {
 			err := os.Rename(torrentFile, torrentFile+".added")
 			if err != nil {
 				log.Debugf("Failed to rename successfully added torrent %s to .added extension: %v", torrentFile, err)
+			}
+		} else if deleteAdded {
+			err := os.Remove(torrentFile)
+			if err != nil {
+				log.Debugf("Failed to delete successfully added torrent %s: %v", torrentFile, err)
 			}
 		}
 		fmt.Printf("torrent %s: added to client\n", torrentFile)

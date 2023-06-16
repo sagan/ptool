@@ -8,6 +8,7 @@ package gazelle
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -89,7 +90,12 @@ func (gzsite *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error) {
 		id := strings.TrimPrefix(torrentUrl, gzsite.GetName()+".")
 		return gzsite.DownloadTorrentById(id)
 	}
-	return site.DownloadTorrentByUrl(gzsite, gzsite.HttpClient, torrentUrl, "")
+	urlObj, err := url.Parse(torrentUrl)
+	id := ""
+	if err == nil {
+		id = urlObj.Query().Get("id")
+	}
+	return site.DownloadTorrentByUrl(gzsite, gzsite.HttpClient, torrentUrl, id)
 }
 
 func (gzsite *Site) DownloadTorrentById(id string) ([]byte, string, error) {

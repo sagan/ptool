@@ -18,17 +18,18 @@ import (
 )
 
 type Client struct {
-	Name         string
-	ClientConfig *config.ClientConfigStruct
-	Config       *config.ConfigStruct
-	client       *transmissionrpc.Client
-	datatime     int64
-	datatimeMeta int64
-	torrents     map[string](*transmissionrpc.Torrent)
-	sessionStats *transmissionrpc.SessionStats
-	sessionArgs  *transmissionrpc.SessionArguments
-	freeSpace    int64
-	lastTorrent  *transmissionrpc.Torrent // a **really** simple cache with capacity of only one
+	Name           string
+	ClientConfig   *config.ClientConfigStruct
+	Config         *config.ConfigStruct
+	client         *transmissionrpc.Client
+	datatime       int64
+	datatimeMeta   int64
+	torrents       map[string](*transmissionrpc.Torrent)
+	sessionStats   *transmissionrpc.SessionStats
+	sessionArgs    *transmissionrpc.SessionArguments
+	freeSpace      int64
+	unfinishedSize int64
+	lastTorrent    *transmissionrpc.Torrent // a **really** simple cache with capacity of only one
 }
 
 // get a torrent info from rpc. return error if torrent not found
@@ -90,11 +91,14 @@ func (trclient *Client) sync() error {
 		return err
 	}
 	torrentsMap := map[string](*transmissionrpc.Torrent){}
+	unfinishedSize := int64(0)
 	for i := range torrents {
 		torrentsMap[*torrents[i].HashString] = &torrents[i]
+		unfinishedSize += int64(float64(*torrents[i].SizeWhenDone) * (1 - *torrents[i].PercentDone))
 	}
 	trclient.datatime = now
 	trclient.torrents = torrentsMap
+	trclient.unfinishedSize = unfinishedSize
 	return nil
 }
 
@@ -506,6 +510,7 @@ func (trclient *Client) GetTorrentContents(infoHash string) ([]client.TorrentCon
 func (trclient *Client) PurgeCache() {
 	trclient.datatime = 0
 	trclient.datatimeMeta = 0
+	trclient.unfinishedSize = 0
 	trclient.sessionArgs = nil
 	trclient.sessionStats = nil
 	trclient.torrents = nil
@@ -530,6 +535,7 @@ func (trclient *Client) GetStatus() (*client.Status, error) {
 		DownloadSpeedLimit: downloadSpeedLimit,
 		UploadSpeedLimit:   uploadSpeedLimit,
 		FreeSpaceOnDisk:    trclient.freeSpace,
+		UnfinishedSize:     trclient.unfinishedSize,
 	}, nil
 }
 

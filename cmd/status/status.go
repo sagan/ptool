@@ -127,21 +127,24 @@ func status(cmd *cobra.Command, args []string) {
 				hasError = true
 			}
 			if response.ClientStatus != nil {
-				fmt.Printf("%-6s  %-13s  %-35s  %-35s  %-25s",
+				fmt.Printf("%-6s  %-13s  %-25s  %-25s  %-25s",
 					"Client",
 					response.Name,
 					fmt.Sprintf("↑Spd/Lmt: %s / %s/s", utils.BytesSize(float64(response.ClientStatus.UploadSpeed)),
 						utils.BytesSize(float64(response.ClientStatus.UploadSpeedLimit))),
 					fmt.Sprintf("↓Spd/Lmt: %s / %s/s", utils.BytesSize(float64(response.ClientStatus.DownloadSpeed)),
 						utils.BytesSize(float64(response.ClientStatus.DownloadSpeedLimit))),
-					fmt.Sprintf("FreeSpace: %s", utils.BytesSize(float64(response.ClientStatus.FreeSpaceOnDisk))),
+					fmt.Sprintf("FreeSpace: %s; Unfinished: %s",
+						utils.BytesSize(float64(response.ClientStatus.FreeSpaceOnDisk)),
+						utils.BytesSize(float64(response.ClientStatus.UnfinishedSize)),
+					),
 				)
 				if len(response.ClientTorrents) > 0 {
 					fmt.Printf("  Torrents: %d", len(response.ClientTorrents))
 				}
 				fmt.Printf("\n")
 			} else {
-				fmt.Printf("%-6s  %-13s  %-35s  %-35s  %-25s\n",
+				fmt.Printf("%-6s  %-13s  %-25s  %-25s  %-25s\n",
 					"Client",
 					response.Name,
 					"-",
@@ -162,7 +165,7 @@ func status(cmd *cobra.Command, args []string) {
 				hasError = true
 			}
 			if response.SiteStatus != nil {
-				fmt.Printf("%-6s  %-13s  %-35s  %-35s  %-25s",
+				fmt.Printf("%-6s  %-13s  %-25s  %-25s  %-25s",
 					"Site",
 					response.Name,
 					fmt.Sprintf("↑: %s", utils.BytesSize(float64(response.SiteStatus.UserUploaded))),
@@ -174,7 +177,7 @@ func status(cmd *cobra.Command, args []string) {
 				}
 				fmt.Printf("\n")
 			} else {
-				fmt.Printf("%-6s  %-13s  %-35s  %-35s  %-25s\n",
+				fmt.Printf("%-6s  %-13s  %-25s  %-25s  %-25s\n",
 					"Site",
 					response.Name,
 					"-",

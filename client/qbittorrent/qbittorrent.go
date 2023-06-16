@@ -23,14 +23,15 @@ import (
 )
 
 type Client struct {
-	Name         string
-	ClientConfig *config.ClientConfigStruct
-	Config       *config.ConfigStruct
-	HttpClient   *http.Client
-	data         *apiSyncMaindata
-	Logined      bool
-	NoLogin      bool
-	datatime     int64
+	Name           string
+	ClientConfig   *config.ClientConfigStruct
+	Config         *config.ConfigStruct
+	HttpClient     *http.Client
+	data           *apiSyncMaindata
+	Logined        bool
+	NoLogin        bool
+	datatime       int64
+	unfinishedSize int64
 }
 
 func (qbclient *Client) apiPost(apiUrl string, data url.Values) error {
@@ -561,6 +562,7 @@ func (qbclient *Client) ModifyTorrent(infoHash string,
 
 func (qbclient *Client) PurgeCache() {
 	qbclient.data = nil
+	qbclient.unfinishedSize = 0
 	qbclient.datatime = 0
 }
 
@@ -578,10 +580,13 @@ func (qbclient *Client) sync() error {
 	}
 	qbclient.datatime = utils.Now()
 	// make hash available in torrent itself as well as map key
+	unfinishedSize := int64(0)
 	for hash, torrent := range qbclient.data.Torrents {
 		torrent.Hash = hash
 		qbclient.data.Torrents[hash] = torrent
+		unfinishedSize += torrent.Size - torrent.Completed
 	}
+	qbclient.unfinishedSize = unfinishedSize
 	return nil
 }
 
@@ -612,6 +617,7 @@ func (qbclient *Client) GetStatus() (*client.Status, error) {
 	status.DownloadSpeedLimit = qbclient.data.Server_state.Dl_rate_limit
 	status.UploadSpeedLimit = qbclient.data.Server_state.Up_rate_limit
 	status.FreeSpaceOnDisk = qbclient.data.Server_state.Free_space_on_disk
+	status.UnfinishedSize = qbclient.unfinishedSize
 	// @workaround
 	// qb 的 Web API 有 bug，有时 FreeSpaceOnDisk 返回 0，但实际硬盘剩余空间充足，原因尚不明确。目前在 Windows QB 4.5.2 上发现此现象。
 	if status.FreeSpaceOnDisk == 0 {
@@ -741,6 +747,10 @@ func (qbclient *Client) GetTorrentTrackers(infoHash string) ([]client.TorrentTra
 	if err != nil {
 		return nil, err
 	}
+	qbTorrentTrackers = utils.Filter(qbTorrentTrackers, func(tracker apiTorrentTracker) bool {
+		// exclude qb  "** [DHT] **", "** [PeX] **", "** [LSD] **" trackers
+		return !strings.HasPrefix(tracker.Url, "**")
+	})
 	trackers := utils.Map(qbTorrentTrackers, func(qbtracker apiTorrentTracker) client.TorrentTracker {
 		status := ""
 		switch qbtracker.Status {

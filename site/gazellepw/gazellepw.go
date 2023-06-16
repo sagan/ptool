@@ -8,6 +8,7 @@ package gazellepw
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -70,7 +71,12 @@ func (gpwsite *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error) 
 		id := strings.TrimPrefix(torrentUrl, gpwsite.GetName()+".")
 		return gpwsite.DownloadTorrentById(id)
 	}
-	return site.DownloadTorrentByUrl(gpwsite, gpwsite.HttpClient, torrentUrl, "")
+	urlObj, err := url.Parse(torrentUrl)
+	id := ""
+	if err == nil {
+		id = urlObj.Query().Get("id")
+	}
+	return site.DownloadTorrentByUrl(gpwsite, gpwsite.HttpClient, torrentUrl, id)
 }
 
 func (gpwsite *Site) DownloadTorrentById(id string) ([]byte, string, error) {

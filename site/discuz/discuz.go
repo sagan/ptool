@@ -9,6 +9,7 @@ package discuz
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -88,7 +89,12 @@ func (dzsite *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error) {
 		}
 		return dzsite.DownloadTorrentById(m[idRegexp.SubexpIndex("id")])
 	}
-	return site.DownloadTorrentByUrl(dzsite, dzsite.HttpClient, torrentUrl, "")
+	urlObj, err := url.Parse(torrentUrl)
+	id := ""
+	if err == nil {
+		id = urlObj.Query().Get("id")
+	}
+	return site.DownloadTorrentByUrl(dzsite, dzsite.HttpClient, torrentUrl, id)
 }
 
 func (dzsite *Site) DownloadTorrentById(id string) ([]byte, string, error) {
