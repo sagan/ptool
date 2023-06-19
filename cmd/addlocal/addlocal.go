@@ -52,12 +52,17 @@ func init() {
 }
 
 func add(cmd *cobra.Command, args []string) {
-	clientInstance, err := client.CreateClient(args[0])
+	clientName := args[0]
+	args = args[1:]
+	if renameAdded && deleteAdded {
+		log.Fatalf("--rename-added and --delete-added flags are NOT compatible")
+	}
+	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
 		log.Fatal(err)
 	}
 	errCnt := int64(0)
-	torrentFiles := utils.ParseFilenameArgs(args[1:]...)
+	torrentFiles := utils.ParseFilenameArgs(args...)
 	option := &client.TorrentOption{
 		Pause:        paused,
 		Category:     addCategory,
@@ -69,24 +74,22 @@ func add(cmd *cobra.Command, args []string) {
 	if addTags != "" {
 		fixedTags = strings.Split(addTags, ",")
 	}
-	if renameAdded && deleteAdded {
-		log.Fatalf("--rename-added and --delete-added flags are NOT compatible")
-	}
 
-	for _, torrentFile := range torrentFiles {
+	cntAll := len(torrentFiles)
+	for i, torrentFile := range torrentFiles {
 		if strings.HasSuffix(torrentFile, ".added") {
+			log.Tracef("!torrent (%d/%d) %s: skipped", i+1, cntAll, torrentFile)
 			continue
 		}
 		torrentContent, err := os.ReadFile(torrentFile)
 		if err != nil {
-			fmt.Printf("torrent %s: failed to read file (%v)\n", torrentFile, err)
+			fmt.Printf("✕torrent (%d/%d) %s: failed to read file (%v)\n", i+1, cntAll, torrentFile, err)
 			errCnt++
 			continue
 		}
-
 		tinfo, err := goTorrentParser.Parse(bytes.NewReader(torrentContent))
 		if err != nil {
-			fmt.Printf("torrent %s: failed to parse torrent (%v)\n", torrentFile, err)
+			fmt.Printf("✕torrent (%d/%d) %s: failed to parse torrent (%v)\n", i+1, cntAll, torrentFile, err)
 			errCnt++
 			continue
 		}
@@ -106,10 +109,9 @@ func add(cmd *cobra.Command, args []string) {
 			option.Tags = append(option.Tags, client.GenerateTorrentTagFromSite(sitename))
 		}
 		option.Tags = append(option.Tags, fixedTags...)
-
 		err = clientInstance.AddTorrent(torrentContent, option, nil)
 		if err != nil {
-			fmt.Printf("torrent %s: failed to add to client (%v)\n", torrentFile, err)
+			fmt.Printf("✕torrent (%d/%d) %s: failed to add to client (%v)\n", i+1, cntAll, torrentFile, err)
 			errCnt++
 			continue
 		}
@@ -124,8 +126,9 @@ func add(cmd *cobra.Command, args []string) {
 				log.Debugf("Failed to delete successfully added torrent %s: %v", torrentFile, err)
 			}
 		}
-		fmt.Printf("torrent %s: added to client\n", torrentFile)
+		fmt.Printf("✓torrent (%d/%d) %s: added to client\n", i+1, cntAll, torrentFile)
 	}
+	clientInstance.Close()
 	if errCnt > 0 {
 		os.Exit(1)
 	}

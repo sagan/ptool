@@ -45,15 +45,15 @@ func init() {
 }
 
 func add(cmd *cobra.Command, args []string) {
-	clientInstance, err := client.CreateClient(args[0])
+	clientName := args[0]
+	torrentIds := args[1:]
+	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	domainSiteMap := map[string](string){}
-	siteInstanceMap := make(map[string](site.Site))
+	siteInstanceMap := map[string](site.Site){}
 	errCnt := int64(0)
-	torrentIds := args[1:]
 	option := &client.TorrentOption{
 		Pause:        paused,
 		Category:     addCategory,
@@ -126,6 +126,7 @@ func add(cmd *cobra.Command, args []string) {
 		}
 		fmt.Printf("add site %s torrent %s success. infoHash=%s\n", siteInstance.GetName(), torrentId, tinfo.InfoHash)
 	}
+	clientInstance.Close()
 	if errCnt > 0 {
 		os.Exit(1)
 	}

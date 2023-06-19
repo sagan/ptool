@@ -35,13 +35,13 @@ func xseedcheck(cmd *cobra.Command, args []string) {
 	clientName := args[0]
 	infoHash := args[1]
 	torrentFileName := args[2]
-
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}
 	torrentInfo, err := goTorrentParser.ParseFromFile(torrentFileName)
 	if err != nil {
+		clientInstance.Close()
 		log.Fatalf("Failed to parse %s: %v", torrentFileName, err)
 	}
 	if torrentInfo.InfoHash == infoHash {
@@ -57,6 +57,7 @@ func xseedcheck(cmd *cobra.Command, args []string) {
 	})
 	clientTorrentContents, err := clientInstance.GetTorrentContents(infoHash)
 	if err != nil {
+		clientInstance.Close()
 		log.Fatalf("Failed to get client torrent contents info: %v", err)
 	}
 	sort.Slice(clientTorrentContents, func(i, j int) bool {
@@ -88,7 +89,6 @@ func xseedcheck(cmd *cobra.Command, args []string) {
 			clientName,
 		)
 	}
-
 	if showFull {
 		fmt.Printf("\n")
 		fmt.Printf("Client: %s torrent\n", infoHash)
@@ -102,4 +102,5 @@ func xseedcheck(cmd *cobra.Command, args []string) {
 			fmt.Printf("%-15d %s\n", tfile.Length, strings.Join(tfile.Path, "/"))
 		}
 	}
+	clientInstance.Close()
 }

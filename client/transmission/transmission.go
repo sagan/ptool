@@ -142,7 +142,7 @@ func (trclient *Client) GetTorrents(stateFilter string, category string, showAll
 	if err := trclient.sync(); err != nil {
 		return nil, err
 	}
-	torrents := make([]client.Torrent, 0)
+	torrents := []client.Torrent{}
 	for _, trtorrent := range trclient.torrents {
 		torrent := tr2Torrent(trtorrent)
 		if category != "" && category != torrent.Category {
@@ -176,7 +176,7 @@ func (trclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 		return err
 	}
 
-	name := client.GenerateNameWithMeta(option.Name, meta)
+	name := option.Name
 	if name != "" {
 		// it's not robust, and will actually rename the root file / folder name on disk
 		err := transmissionbt.TorrentRenamePathHash(context.TODO(), *torrent.HashString, *torrent.Name, name)
@@ -187,6 +187,9 @@ func (trclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 	if option.Category != "" {
 		// use label to simulate category
 		labels = append(labels, client.GenerateTorrentTagFromCategory(option.Category))
+	}
+	for name, value := range meta {
+		labels = append(labels, client.GenerateTorrentTagFromMetadata(name, value))
 	}
 	uploadLimit := int64(0)
 	downloadLimit := int64(0)
@@ -222,24 +225,17 @@ func (trclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 }
 
 func (trclient *Client) ModifyTorrent(infoHash string, option *client.TorrentOption, meta map[string](int64)) error {
-	trtorrent, err := trclient.getTorrent(infoHash, false)
 	transmissionbt := trclient.client
+	trtorrent, err := trclient.getTorrent(infoHash, false)
 	if err != nil {
 		return err
 	}
 	torrent := tr2Torrent(trtorrent)
 
-	if option.Name != "" || len(meta) > 0 {
-		name := option.Name
-		if name == "" {
-			name = torrent.Name
-		}
-		name = client.GenerateNameWithMeta(name, meta)
-		if name != *trtorrent.Name {
-			err := transmissionbt.TorrentRenamePathHash(context.TODO(), infoHash, *trtorrent.Name, name)
-			if err != nil {
-				return err
-			}
+	if option.Name != "" && option.Name != torrent.Name {
+		err := transmissionbt.TorrentRenamePathHash(context.TODO(), infoHash, *trtorrent.Name, option.Name)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -247,7 +243,8 @@ func (trclient *Client) ModifyTorrent(infoHash string, option *client.TorrentOpt
 		IDs: []int64{*trtorrent.ID},
 	}
 
-	if option.Category != "" || len(option.Tags) > 0 || len(option.RemoveTags) > 0 {
+	if option.Category != "" || len(option.Tags) > 0 || len(option.RemoveTags) > 0 ||
+		len(meta) > 0 || len(torrent.Meta) > 0 {
 		labels := []string{}
 		if option.Category != "" && torrent.Category != option.Category {
 			categoryTag := client.GenerateTorrentTagFromCategory(option.Category)
@@ -257,6 +254,15 @@ func (trclient *Client) ModifyTorrent(infoHash string, option *client.TorrentOpt
 			labels = append(labels, categoryTag)
 		}
 		labels = append(labels, option.Tags...)
+		if len(meta) > 0 {
+			for name, value := range meta {
+				labels = append(labels, client.GenerateTorrentTagFromMetadata(name, value))
+			}
+		} else if len(torrent.Meta) > 0 {
+			for name, value := range torrent.Meta {
+				labels = append(labels, client.GenerateTorrentTagFromMetadata(name, value))
+			}
+		}
 		if len(labels) > 0 || len(option.RemoveTags) > 0 {
 			for _, tag := range torrent.Tags {
 				if slices.Index(option.RemoveTags, tag) == -1 {
@@ -421,7 +427,7 @@ func (trclient *Client) GetTags() ([]string, error) {
 	tagsFlag := map[string](bool){}
 	for _, trtorrent := range trclient.torrents {
 		for _, label := range trtorrent.Labels {
-			if label != "" && !tagsFlag[label] && !client.IsCategoryTag(label) {
+			if label != "" && !tagsFlag[label] && !client.IsSubstituteTag(label) {
 				tags = append(tags, label)
 				tagsFlag[label] = true
 			}
@@ -835,11 +841,11 @@ func tr2Torrent(trtorrent *transmissionrpc.Torrent) *client.Torrent {
 		SizeCompleted:      int64(float64(*trtorrent.SizeWhenDone) * *trtorrent.PercentDone),
 		SizeTotal:          int64(*trtorrent.TotalSize),
 		Leechers:           *trtorrent.PeersGettingFromUs, // it's meaning is inconsistent with qb for now
-		Meta:               make(map[string]int64),
+		Meta:               nil,
 	}
-	torrent.Name, torrent.Meta = client.ParseMetaFromName(torrent.Name)
+	torrent.Meta = torrent.GetMetadataFromTags()
 	torrent.Category = torrent.GetCategoryFromTag()
-	torrent.Tags = utils.FilterNot(torrent.Tags, client.IsCategoryTag)
+	torrent.RemoveSubstituteTags()
 	return torrent
 }
 

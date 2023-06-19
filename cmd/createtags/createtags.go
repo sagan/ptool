@@ -21,14 +21,15 @@ func init() {
 }
 
 func createtags(cmd *cobra.Command, args []string) {
-	clientInstance, err := client.CreateClient(args[0])
+	clientName := args[0]
+	tags := args[1:]
+	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tags := args[1:]
-
 	err = clientInstance.CreateTags(tags...)
+	clientInstance.Close()
 	if err != nil {
 		log.Fatalf("Failed to create tags: %v", err)
 	}

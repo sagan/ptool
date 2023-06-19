@@ -73,7 +73,7 @@ func status(cmd *cobra.Command, args []string) {
 	}
 	now := utils.Now()
 	hasError := false
-	doneFlag := make(map[string](bool))
+	doneFlag := map[string](bool){}
 	cnt := int64(0)
 	ch := make(chan *StatusResponse, len(names))
 	for _, name := range names {
@@ -105,9 +105,9 @@ func status(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	responses := make([]*StatusResponse, cnt)
+	responses := []*StatusResponse{}
 	for i := int64(0); i < cnt; i++ {
-		responses[i] = <-ch
+		responses = append(responses, <-ch)
 	}
 	sort.SliceStable(responses, func(i, j int) bool {
 		indexA := slices.IndexFunc(names, func(name string) bool {

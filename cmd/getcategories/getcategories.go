@@ -30,6 +30,7 @@ func getcategories(cmd *cobra.Command, args []string) {
 	}
 
 	cats, err := clientInstance.GetCategories()
+	clientInstance.Close()
 	if err != nil {
 		log.Fatalf("Failed to get categories: %v", err)
 	}

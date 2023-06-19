@@ -46,10 +46,7 @@ func init() {
 }
 
 func removetrackers(cmd *cobra.Command, args []string) {
-	clientInstance, err := client.CreateClient(args[0])
-	if err != nil {
-		log.Fatal(err)
-	}
+	clientName := args[0]
 	args = args[1:]
 	if category == "" && tag == "" && filter == "" && len(args) == 0 {
 		log.Fatalf("You must provide at least a condition flag or hashFilter")
@@ -62,6 +59,11 @@ func removetrackers(cmd *cobra.Command, args []string) {
 			log.Fatalf("The provided tracker %s is not a valid URL", tracker)
 		}
 	}
+	clientInstance, err := client.CreateClient(clientName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	torrents, err := client.QueryTorrents(clientInstance, category, tag, filter, args...)
 	if err != nil {
 		log.Fatal(err)
@@ -87,6 +89,7 @@ func removetrackers(cmd *cobra.Command, args []string) {
 			cntError++
 		}
 	}
+	clientInstance.Close()
 	if cntError > 0 {
 		os.Exit(1)
 	}

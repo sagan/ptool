@@ -197,7 +197,7 @@ func (qbtorrent *apiTorrentInfo) ToTorrent() *client.Torrent {
 		SizeCompleted:      qbtorrent.Completed,
 		SizeTotal:          qbtorrent.Total_size,
 		Leechers:           qbtorrent.Num_incomplete,
-		Meta:               make(map[string]int64),
+		Meta:               map[string]int64{},
 	}
 	torrent.Name, torrent.Meta = client.ParseMetaFromName(torrent.Name)
 	return torrent

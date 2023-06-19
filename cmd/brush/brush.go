@@ -60,7 +60,7 @@ func brush(cmd *cobra.Command, args []string) {
 	cntSkipSite := int64(0)
 	cntAddTorrents := int64(0)
 	cntDeleteTorrents := int64(0)
-	doneSiteFlag := make(map[string](bool))
+	doneSiteFlag := map[string](bool){}
 	tmpdir, _ := os.MkdirTemp(os.TempDir(), "ptool")
 	var statDb *stats.StatDb
 	if config.Get().BrushEnableStats {
@@ -320,6 +320,7 @@ func brush(cmd *cobra.Command, args []string) {
 	fmt.Printf("Finish brushing %d sites: successSites=%d, skipSites=%d; Added / Deleted torrents: %d / %d to client %s\n",
 		len(sitenames), cntSuccessSite, cntSkipSite, cntAddTorrents, cntDeleteTorrents, clientInstance.GetName())
 	os.RemoveAll(tmpdir)
+	clientInstance.Close()
 	if cntSuccessSite == 0 {
 		os.Exit(1)
 	}

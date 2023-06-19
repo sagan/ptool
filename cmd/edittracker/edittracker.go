@@ -54,22 +54,26 @@ func init() {
 }
 
 func edittracker(cmd *cobra.Command, args []string) {
-	clientInstance, err := client.CreateClient(args[0])
-	if err != nil {
-		log.Fatal(err)
-	}
+	clientName := args[0]
 	args = args[1:]
-	if category == "" && tag == "" && filter == "" && len(args) == 0 {
-		log.Fatalf("You must provide at least a condition flag or hashFilter")
-	}
 	if !replaceHost && (!utils.IsUrl(oldTracker) || !utils.IsUrl(newTracker)) {
 		log.Fatalf("Both --old-tracker and --new-tracker MUST be valid URL ( 'http(s)://...' )")
 	}
-	torrents, err := client.QueryTorrents(clientInstance, category, tag, filter, args...)
+	if category == "" && tag == "" && filter == "" && len(args) == 0 {
+		log.Fatalf("You must provide at least a condition flag or hashFilter")
+	}
+	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	torrents, err := client.QueryTorrents(clientInstance, category, tag, filter, args...)
+	if err != nil {
+		clientInstance.Close()
+		log.Fatal(err)
+	}
 	if len(torrents) == 0 {
+		clientInstance.Close()
 		log.Infof("No matched torrents found")
 		os.Exit(0)
 	}
@@ -90,6 +94,7 @@ func edittracker(cmd *cobra.Command, args []string) {
 			cntError++
 		}
 	}
+	clientInstance.Close()
 	if cntError > 0 {
 		os.Exit(1)
 	}

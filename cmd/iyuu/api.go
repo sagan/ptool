@@ -106,7 +106,7 @@ func IyuuApiHash(token string, infoHashes []string) (map[string]([]IyuuTorrentIn
 		return nil, fmt.Errorf("iyuu api error: ret=%d, msg=%s", resData.Ret, resData.Msg)
 	}
 
-	result := make(map[string]([]IyuuTorrentInfoHash))
+	result := map[string]([]IyuuTorrentInfoHash){}
 	for _, data := range resData.Data {
 		result[data.Hash] = data.Torrent
 	}

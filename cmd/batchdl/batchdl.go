@@ -211,6 +211,7 @@ func batchdl(cmd *cobra.Command, args []string) {
 		if csvWriter != nil {
 			csvWriter.Flush()
 		}
+		clientInstance.Close()
 		os.Exit(0)
 	}
 	sigs := make(chan os.Signal, 1)

@@ -34,7 +34,7 @@ func init() {
 }
 
 func clientctl(cmd *cobra.Command, args []string) {
-	client, err := client.CreateClient(args[0])
+	clientInstance, err := client.CreateClient(args[0])
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -54,27 +54,28 @@ func clientctl(cmd *cobra.Command, args []string) {
 			log.Fatal("Unrecognized option " + name)
 		}
 		if len(s) == 1 {
-			value, err = client.GetConfig(name)
+			value, err = clientInstance.GetConfig(name)
 			if err != nil {
-				log.Printf("Error get client %s config %s: %v", client.GetName(), name, err)
+				log.Printf("Error get client %s config %s: %v", clientInstance.GetName(), name, err)
 				exit = 1
 			}
 		} else {
 			value = s[1]
 			if slices.Contains(sizeOptions, name) {
 				v, _ := utils.RAMInBytes(value)
-				err = client.SetConfig(name, fmt.Sprint(v))
+				err = clientInstance.SetConfig(name, fmt.Sprint(v))
 			} else {
-				err = client.SetConfig(name, value)
+				err = clientInstance.SetConfig(name, value)
 			}
 			if err != nil {
-				log.Printf("Error set client %s config %s=%s: %v", client.GetName(), name, value, err)
+				log.Printf("Error set client %s config %s=%s: %v", clientInstance.GetName(), name, value, err)
 				value = ""
 				exit = 1
 			}
 		}
 		printOption(name, value)
 	}
+	clientInstance.Close()
 	os.Exit(exit)
 }
 

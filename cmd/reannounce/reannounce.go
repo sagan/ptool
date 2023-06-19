@@ -32,27 +32,33 @@ func init() {
 }
 
 func reannounce(cmd *cobra.Command, args []string) {
-	clientInstance, err := client.CreateClient(args[0])
-	if err != nil {
-		log.Fatal(err)
-	}
+	clientName := args[0]
 	args = args[1:]
 	if category == "" && tag == "" && filter == "" && len(args) == 0 {
 		log.Fatalf("You must provide at least a condition flag or hashFilter")
 	}
+	clientInstance, err := client.CreateClient(clientName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	infoHashes, err := client.SelectTorrents(clientInstance, category, tag, filter, args...)
 	if err != nil {
+		clientInstance.Close()
 		log.Fatal(err)
 	}
 	if infoHashes == nil {
 		err = clientInstance.ReannounceAllTorrents()
 		if err != nil {
+			clientInstance.Close()
 			log.Fatal(err)
 		}
 	} else if len(infoHashes) > 0 {
 		err = clientInstance.ReannounceTorrents(infoHashes)
 		if err != nil {
+			clientInstance.Close()
 			log.Fatal(err)
 		}
 	}
+	clientInstance.Close()
 }

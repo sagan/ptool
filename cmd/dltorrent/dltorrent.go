@@ -34,10 +34,9 @@ func init() {
 }
 
 func dltorrent(cmd *cobra.Command, args []string) {
-	siteInstanceMap := make(map[string](site.Site))
 	errCnt := int64(0)
 	torrentIds := args
-
+	siteInstanceMap := map[string](site.Site){}
 	domainSiteMap := map[string](string){}
 
 	for _, torrentId := range torrentIds {

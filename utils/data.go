@@ -6,7 +6,7 @@ import (
 )
 
 func CopyMap[T1 comparable, T2 any](m map[T1](T2)) map[T1](T2) {
-	cp := make(map[T1](T2))
+	cp := map[T1](T2){}
 	for k, v := range m {
 		cp[k] = v
 	}
@@ -70,7 +70,7 @@ func MapMaxElementKey[TK comparable, TV constraints.Ordered](m map[TK](TV)) TK {
 }
 
 func UniqueSlice[T comparable](slice []T) []T {
-	keys := make(map[T]bool)
+	keys := map[T]bool{}
 	list := []T{}
 	for _, entry := range slice {
 		if !keys[entry] {
@@ -83,7 +83,7 @@ func UniqueSlice[T comparable](slice []T) []T {
 
 // return de-duplicated slice that every member has unique key
 func UniqueSliceFn[TS any, TK comparable](slice []TS, keyFunc func(TS) TK) []TS {
-	keys := make(map[TK]bool)
+	keys := map[TK]bool{}
 	list := []TS{}
 	for _, entry := range slice {
 		key := keyFunc(entry)

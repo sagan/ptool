@@ -34,6 +34,7 @@ func init() {
 }
 
 func statscmd(cmd *cobra.Command, args []string) {
+	clientnames := args
 	if !config.Get().BrushEnableStats {
 		fmt.Printf(`Statistics feature is NOT enabled currently. To enable it, add the "brushEnableStats = true" line to the top of ptool.toml config file.
 It will use the "ptool_stats.txt" (in the same dir of ptool.toml file) as the statistics data file.
@@ -47,7 +48,6 @@ It will use the "ptool_stats.txt" (in the same dir of ptool.toml file) as the st
 	if err != nil {
 		log.Fatalf("Failed to create stats db: %v", err)
 	}
-	clientnames := args
 	if len(clientnames) == 0 {
 		statDb.ShowTrafficStats("")
 		return

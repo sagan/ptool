@@ -49,7 +49,7 @@ func init() {
 
 func search(cmd *cobra.Command, args []string) {
 	sitenames := config.ParseGroupAndOtherNames(strings.Split(args[0], ",")...)
-
+	keyword := strings.Join(args[1:], " ")
 	siteInstancesMap := map[string](site.Site){}
 	for _, sitename := range sitenames {
 		siteInstance, err := site.CreateSite(sitename)
@@ -58,9 +58,7 @@ func search(cmd *cobra.Command, args []string) {
 		}
 		siteInstancesMap[sitename] = siteInstance
 	}
-	keyword := strings.Join(args[1:], " ")
 	now := utils.Now()
-
 	ch := make(chan SearchResult, len(sitenames))
 	for _, sitename := range sitenames {
 		go func(sitename string) {
@@ -98,7 +96,6 @@ func search(cmd *cobra.Command, args []string) {
 			torrents = append(torrents, siteTorrents...)
 		}
 	}
-
 	if largestFlag {
 		sort.Slice(torrents, func(i, j int) bool {
 			if torrents[i].Size != torrents[j].Size {
@@ -110,13 +107,11 @@ func search(cmd *cobra.Command, args []string) {
 	if maxResults > 0 && len(torrents) > int(maxResults) {
 		torrents = torrents[:maxResults]
 	}
-
 	fmt.Printf("Done searching %d sites. Success / NoResult / Error sites: %d / %d / %d. Showing %d result\n", cntSuccessSites+cntErrorSites+cntNoResultSites,
 		cntSuccessSites, cntNoResultSites, cntErrorSites, len(torrents))
 	if errorStr != "" {
 		log.Warnf("Errors encountered: %s", errorStr)
 	}
 	fmt.Printf("\n")
-
 	site.PrintTorrents(torrents, "", now, false, dense)
 }

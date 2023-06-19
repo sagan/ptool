@@ -1,9 +1,9 @@
 package version
 
 var (
-	VersionSuffix = "" // eg. DEV
-	VersionTag    = "v0.1.4"
-	Version       string
+	VersionSuffix = "DEV" // eg. DEV
+	VersionTag    = "v0.1.5"
+	Version       = ""
 )
 
 func init() {

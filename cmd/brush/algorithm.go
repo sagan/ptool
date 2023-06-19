@@ -132,8 +132,8 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	var stallTorrents []AlgorithmModifyTorrent
 	var resumeTorrents []AlgorithmOperationTorrent
 	var deleteCandidateTorrents []candidateClientTorrentStruct
-	clientTorrentsMap := make(map[string](*clientTorrentInfoStruct))
-	siteTorrentsMap := make(map[string](*site.Torrent))
+	clientTorrentsMap := map[string](*clientTorrentInfoStruct){}
+	siteTorrentsMap := map[string](*site.Torrent){}
 
 	targetUploadSpeed := clientStatus.UploadSpeedLimit
 	if targetUploadSpeed <= 0 {
@@ -158,7 +158,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 				DownloadUrl:           siteTorrent.DownloadUrl,
 				PredictionUploadSpeed: predictionUploadSpeed,
 				Score:                 score,
-				Meta:                  make(map[string]int64),
+				Meta:                  map[string]int64{},
 			}
 			if siteTorrent.DiscountEndTime > 0 {
 				candidateTorrent.Meta["dcet"] = siteTorrent.DiscountEndTime

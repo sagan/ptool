@@ -116,8 +116,8 @@ func (db *StatDb) ShowTrafficStats(client string) {
 			tx.Find(&records)
 			allDownloaded := int64(0)
 			allUploaded := int64(0)
-			clientsDownloaded := make(map[string](int64))
-			clientsUploaded := make(map[string](int64))
+			clientsDownloaded := map[string](int64){}
+			clientsUploaded := map[string](int64){}
 			for _, record := range records {
 				if record.Client != "" {
 					clientsDownloaded[record.Client] = record.Downloaded
@@ -171,8 +171,8 @@ func (db *StatDb) ShowTrafficStats(client string) {
 
 		allDownloaded := int64(0)
 		allUploaded := int64(0)
-		sitesDownloaded := make(map[string](int64))
-		siteUploaded := make(map[string](int64))
+		sitesDownloaded := map[string](int64){}
+		siteUploaded := map[string](int64){}
 		for _, record := range records {
 			if record.Site != "" {
 				sitesDownloaded[record.Site] = record.Downloaded
@@ -212,7 +212,7 @@ func NewDb(statFilename string) (*StatDb, error) {
 	fileScanner := bufio.NewScanner(db.file)
 	fileScanner.Split(bufio.ScanLines)
 
-	flagMap := make(map[string](bool))
+	flagMap := map[string](bool){}
 	for fileScanner.Scan() {
 		statRecord := Stat{}
 		err := json.Unmarshal([]byte(fileScanner.Text()), &statRecord)

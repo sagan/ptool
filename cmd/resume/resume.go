@@ -9,8 +9,9 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "resume <client> [<infoHash>...]",
-	Short: "Resume torrents of client",
+	Use:     "resume <client> [<infoHash>...]",
+	Aliases: []string{"start"},
+	Short:   "Resume torrents of client",
 	Long: `Resume torrents of client
 <infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
 _all, _active, _done,  _downloading, _seeding, _paused, _completed, _error
@@ -33,27 +34,33 @@ func init() {
 }
 
 func resume(cmd *cobra.Command, args []string) {
-	clientInstance, err := client.CreateClient(args[0])
-	if err != nil {
-		log.Fatal(err)
-	}
+	clientName := args[0]
 	args = args[1:]
 	if category == "" && tag == "" && filter == "" && len(args) == 0 {
 		log.Fatalf("You must provide at least a condition flag or hashFilter")
 	}
+	clientInstance, err := client.CreateClient(clientName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	infoHashes, err := client.SelectTorrents(clientInstance, category, tag, filter, args...)
 	if err != nil {
+		clientInstance.Close()
 		log.Fatal(err)
 	}
 	if infoHashes == nil {
 		err = clientInstance.ResumeAllTorrents()
 		if err != nil {
+			clientInstance.Close()
 			log.Fatal(err)
 		}
 	} else if len(infoHashes) > 0 {
 		err = clientInstance.ResumeTorrents(infoHashes)
 		if err != nil {
+			clientInstance.Close()
 			log.Fatal(err)
 		}
 	}
+	clientInstance.Close()
 }

@@ -691,7 +691,7 @@ func (qbclient *Client) GetTorrent(infoHash string) (*client.Torrent, error) {
 }
 
 func (qbclient *Client) GetTorrents(stateFilter string, category string, showAll bool) ([]client.Torrent, error) {
-	torrents := make([]client.Torrent, 0)
+	torrents := []client.Torrent{}
 	err := qbclient.sync()
 	if err != nil {
 		return nil, err

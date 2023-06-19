@@ -27,13 +27,16 @@ func init() {
 }
 
 func delete(cmd *cobra.Command, args []string) {
-	clientInstance, err := client.CreateClient(args[0])
+	clientName := args[0]
+	infoHashes := args[1:]
+	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
 		log.Fatal(err)
 	}
-	infoHashes := args[1:]
+
 	err = clientInstance.DeleteTorrents(infoHashes, !preserve)
+	clientInstance.Close()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to delete torrent: %v", err)
 	}
 }

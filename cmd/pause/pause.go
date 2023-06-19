@@ -9,8 +9,9 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "pause <client> [<infoHash>...]",
-	Short: "Pause torrents of client",
+	Use:     "pause <client> [<infoHash>...]",
+	Aliases: []string{"stop"},
+	Short:   "Pause torrents of client",
 	Long: `Pause torrents of client
 <infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
 _all, _active, _done,  _downloading, _seeding, _paused, _completed, _error`,
@@ -32,27 +33,33 @@ func init() {
 }
 
 func pause(cmd *cobra.Command, args []string) {
-	clientInstance, err := client.CreateClient(args[0])
-	if err != nil {
-		log.Fatal(err)
-	}
+	clientName := args[0]
 	args = args[1:]
 	if category == "" && tag == "" && filter == "" && len(args) == 0 {
 		log.Fatalf("You must provide at least a condition flag or hashFilter")
 	}
+	clientInstance, err := client.CreateClient(clientName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	infoHashes, err := client.SelectTorrents(clientInstance, category, tag, filter, args...)
 	if err != nil {
+		clientInstance.Close()
 		log.Fatal(err)
 	}
 	if infoHashes == nil {
 		err = clientInstance.PauseAllTorrents()
 		if err != nil {
+			clientInstance.Close()
 			log.Fatal(err)
 		}
 	} else if len(infoHashes) > 0 {
 		err = clientInstance.PauseTorrents(infoHashes)
 		if err != nil {
+			clientInstance.Close()
 			log.Fatal(err)
 		}
 	}
+	clientInstance.Close()
 }

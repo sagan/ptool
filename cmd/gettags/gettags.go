@@ -30,6 +30,7 @@ func gettags(cmd *cobra.Command, args []string) {
 	}
 
 	tags, err := clientInstance.GetTags()
+	clientInstance.Close()
 	if err != nil {
 		log.Fatalf("Failed to get tags: %v", err)
 	}

@@ -40,16 +40,16 @@ func init() {
 }
 
 func tidyup(cmd *cobra.Command, args []string) {
-	clientInstance, err := client.CreateClient(args[0])
+	clientName := args[0]
+	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	torrents, err := client.QueryTorrents(clientInstance, category, tag, filter)
 	if err != nil {
+		clientInstance.Close()
 		log.Fatalf("Failed to get torrents: %v", err)
 	}
-
 	domainSiteMap := map[string](string){}
 	cntTorrents := int64(0)
 	cntSuccessTorrents := int64(0)
@@ -104,5 +104,6 @@ func tidyup(cmd *cobra.Command, args []string) {
 			}
 		}
 	}
+	clientInstance.Close()
 	fmt.Printf("Done tidying up %d torrents. Modify / success torrents = %d / %d\n", len(torrents), cntTorrents, cntSuccessTorrents)
 }

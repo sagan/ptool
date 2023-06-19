@@ -125,7 +125,7 @@ func (npclient *Site) GetStatus() (*site.Status, error) {
 }
 
 func (npclient *Site) GetLatestTorrents(full bool) ([]site.Torrent, error) {
-	latestTorrents := make([]site.Torrent, 0)
+	latestTorrents := []site.Torrent{}
 	err := npclient.sync()
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch site data: %v", err)
@@ -316,7 +316,7 @@ func (npclient *Site) syncExtra() error {
 	if npclient.datetimeExtra > 0 {
 		return nil
 	}
-	extraTorrents := make([]site.Torrent, 0)
+	extraTorrents := []site.Torrent{}
 	for _, extraUrl := range npclient.SiteConfig.TorrentsExtraUrls {
 		doc, err := utils.GetUrlDoc(extraUrl, npclient.HttpClient,
 			npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, nil)

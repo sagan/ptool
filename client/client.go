@@ -125,9 +125,10 @@ type RegInfo struct {
 type ClientCreator func(*RegInfo) (Client, error)
 
 var (
-	STATES                   = []string{"seeding", "downloading", "completed", "paused", "checking", "error", "unknown"}
-	STATE_FILTERS            = []string{"_all", "_active", "_done"}
-	Registry      []*RegInfo = make([]*RegInfo, 0)
+	STATES             = []string{"seeding", "downloading", "completed", "paused", "checking", "error", "unknown"}
+	STATE_FILTERS      = []string{"_all", "_active", "_done"}
+	Registry           = []*RegInfo{}
+	substituteTagRegex = regexp.MustCompile(`^(category|meta\..+):.+$`)
 )
 
 func Register(regInfo *RegInfo) {
@@ -183,7 +184,7 @@ func ParseMetaFromName(fullname string) (name string, meta map[string](int64)) {
 	metaStrMatch := metaStrReg.FindStringSubmatch(fullname)
 	if metaStrMatch != nil {
 		name = metaStrMatch[metaStrReg.SubexpIndex("name")]
-		meta = make(map[string]int64)
+		meta = map[string]int64{}
 		ms := metaStrMatch[metaStrReg.SubexpIndex("meta")]
 		metas := strings.Split(ms, ".")
 		for _, s := range metas {
@@ -239,6 +240,26 @@ func (torrent *Torrent) GetMetaFromTag(meta string) string {
 	return ""
 }
 
+func (torrent *Torrent) GetMetadataFromTags() map[string](int64) {
+	metas := map[string](int64){}
+	metaTagRegex := regexp.MustCompile(`^meta\.(?P<name>.+):(?P<value>.+)$`)
+	for _, tag := range torrent.Tags {
+		metaStrMatch := metaTagRegex.FindStringSubmatch(tag)
+		if metaStrMatch != nil {
+			name := metaStrMatch[metaTagRegex.SubexpIndex("name")]
+			value := utils.ParseInt(metaStrMatch[metaTagRegex.SubexpIndex("value")])
+			metas[name] = value
+		}
+	}
+	return metas
+}
+
+func (torrent *Torrent) RemoveSubstituteTags() {
+	torrent.Tags = utils.Filter(torrent.Tags, func(tag string) bool {
+		return !substituteTagRegex.MatchString(tag)
+	})
+}
+
 func (torrent *Torrent) IsComplete() bool {
 	return torrent.SizeCompleted == torrent.Size
 }
@@ -266,12 +287,12 @@ func GenerateTorrentTagFromCategory(category string) string {
 	return "category:" + category
 }
 
-func IsCategoryTag(tag string) bool {
-	return strings.HasPrefix(tag, "category:")
+func GenerateTorrentTagFromMetadata(name string, value int64) string {
+	return "meta." + name + ":" + fmt.Sprint(value)
 }
 
-func IsSiteTag(tag string) bool {
-	return strings.HasPrefix(tag, "site:")
+func IsSubstituteTag(tag string) bool {
+	return substituteTagRegex.MatchString(tag)
 }
 
 func PrintTorrentTrackers(trackers []TorrentTracker) {

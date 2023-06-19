@@ -57,12 +57,12 @@ func init() {
 }
 
 func show(cmd *cobra.Command, args []string) {
-	clientInstance, err := client.CreateClient(args[0])
+	clientName := args[0]
+	args = args[1:]
+	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
 		log.Fatal(err)
 	}
-	args = args[1:]
-
 	desc := false
 	if largest {
 		sortFieldEnumFlag = "size"
@@ -166,6 +166,6 @@ func show(cmd *cobra.Command, args []string) {
 			len(torrents),
 		)
 	}
-
+	clientInstance.Close()
 	client.PrintTorrents(torrents, "")
 }

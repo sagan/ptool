@@ -32,27 +32,32 @@ func init() {
 }
 
 func createtags(cmd *cobra.Command, args []string) {
-	clientInstance, err := client.CreateClient(args[0])
-	if err != nil {
-		log.Fatal(err)
-	}
+	clientName := args[0]
 	cat := args[1]
 	args = args[2:]
 	if category == "" && tag == "" && filter == "" && len(args) == 0 {
 		log.Fatalf("You must provide at least a condition flag or hashFilter")
 	}
+	clientInstance, err := client.CreateClient(clientName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	infoHashes, err := client.SelectTorrents(clientInstance, category, tag, filter, args...)
 	if err != nil {
+		clientInstance.Close()
 		log.Fatal(err)
 	}
 	if infoHashes == nil {
 		err = clientInstance.SetAllTorrentsCatetory(cat)
 		if err != nil {
+			clientInstance.Close()
 			log.Fatal(err)
 		}
 	} else if len(infoHashes) > 0 {
 		err = clientInstance.SetTorrentsCatetory(infoHashes, cat)
 		if err != nil {
+			clientInstance.Close()
 			log.Fatal(err)
 		}
 	}

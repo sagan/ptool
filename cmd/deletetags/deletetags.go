@@ -29,6 +29,7 @@ func deletetags(cmd *cobra.Command, args []string) {
 	tags := args[1:]
 
 	err = clientInstance.DeleteTags(tags...)
+	clientInstance.Close()
 	if err != nil {
 		log.Fatalf("Failed to delete tags: %v", err)
 	}
