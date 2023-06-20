@@ -130,7 +130,7 @@ func xseed(cmd *cobra.Command, args []string) {
 		})
 		sort.Slice(torrents, func(i, j int) bool {
 			if torrents[i].Size != torrents[j].Size {
-				return torrents[i].Size < torrents[j].Size
+				return torrents[i].Size > torrents[j].Size
 			}
 			if torrents[i].Atime != torrents[j].Atime {
 				return torrents[i].Atime < torrents[j].Atime

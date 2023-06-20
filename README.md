@@ -15,7 +15,7 @@
 * 刷流功能(brush)：
   * 不依赖 RSS。直接抓取站点页面上最新的种子。
   * 无需配置选种规则。自动跳过非免费的和有 HR 的种子；自动筛选适合刷流的种子。
-  * 无需配置删种规则。自动删除已无刷流价值的种子；自动删除免费时间到期的种子；硬盘空间不足时也会自动删种。
+  * 无需配置删种规则。自动删除已无刷流价值的种子；自动删除免费时间到期并且尚未下载完成的种子；硬盘空间不足时也会自动删种。
 
 ## 快速开始（刷流）
 
@@ -24,7 +24,7 @@
 ```toml
 [[clients]]
 name = "local"
-type = "qbittorrent" # 客户端类型。目前只支持 qbittorrent v4.1+。需要启用 Web UI。
+type = "qbittorrent" # 客户端类型。目前主要支持 qBittorrent v4.1+。需要启用 Web UI
 url = "http://localhost:8080/" # qBittorrent web UI 地址
 username = "admin" # QB Web UI 用户名
 password = "adminadmin" # QB Web UI 密码
@@ -54,8 +54,9 @@ cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 ```[[site]]``` 区块有两种配置方式：
 
 ```toml
-# 方式 1（推荐）：直接使用站点 ID 或 alias 作为类型(type)。无需手动输入站点 url。站点名称(name)默认使用 type。
+# 方式 1（推荐）：直接使用站点 ID 或 alias 作为类型(type)。无需手动输入站点 url。
 [[sites]]
+#name = "mteam" # (可选)手动指定站点名称。如果不指定，默认使用其 type 作为 name
 type = "mteam"
 cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 
@@ -71,7 +72,7 @@ cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 
 参考程序代码根目录下的 ```ptool.example.toml``` 和 ```ptool.example.yaml``` 示例配置文件了解所有可用的配置项。
 
-配置好站点后，使用 ```ptool status <site> -t``` 测试。如果配置正确且 Cookie 有效，会显示站点当前登录用户的状态信息和网站最新种子列表。
+配置好站点后，使用 ```ptool status <site> -t``` 测试（```<site>```参数为站点的 name）。如果配置正确且 Cookie 有效，会显示站点当前登录用户的状态信息和网站最新种子列表。
 
 ## 程序功能
 
@@ -85,14 +86,15 @@ ptool <command> args... [flags]
 
 * brush : 自动刷流。
 * iyuu : 使用 iyuu 接口自动辅种。
+* batchdl : 批量下载站点的种子。
 * status : 显示 BT 客户端或 PT 站点当前状态信息。
 * stats : 显示刷流任务流量统计。
-* search : 在某个站点搜索指定关键词的种子
+* search : 在某个站点搜索指定关键词的种子。
 * add : 将某个站点的指定种子添加到 BT 客户端。
 * dltorrent : 下载站点的种子。
 * addlocal : 将本地的种子文件添加到 BT 客户端。
-* BT 客户端控制命令集: clientctl / show / pause / resume / delete / reannounce / recheck / getcategories / setcategory / gettags / createtags / deletetags / addtags / removetags / edittracker / addtrackers / removetrackers / setsavepath
-* parsetorrent : 显示种子(torrent)文件信息
+* BT 客户端控制命令集: clientctl / show / pause / resume / delete / reannounce / recheck / getcategories / setcategory / gettags / createtags / deletetags / addtags / removetags / edittracker / addtrackers / removetrackers / setsavepath。
+* parsetorrent : 显示种子(torrent)文件信息。
 * sites : 显示本程序内置支持的所有 PT 站点列表。
 * version : 显示本程序版本信息。
 
@@ -109,7 +111,7 @@ ptool <command> args... [flags]
 ptool brush <client> <site>... [flags]
 ```
 
-刷流任务从指定的站点获取最新种子，选择适当的种子加入 BT 客户端；并自动从客户端中删除旧的（已没有上传速度的）刷流任务种子及其文件。刷流任务的目标是使 BT 客户端的上传速度达到软件中设置的上传速度上限（如果客户端里没有设置上传速度上限，本程序默认使用 10MB/s 这个值），如果当前 BT 客户端的上传速度已经达到或接近了上限（不管上传是否来源于刷流任务添加的种子），程序不会添加任何新种子。
+刷流任务从指定的站点获取最新种子，选择适当的种子加入 BT 客户端；并自动从客户端中删除旧的（已没有上传速度的）刷流任务种子及其文件。刷流任务的目标是使 BT 客户端的上传速度达到软件中设置的上传速度上限（如果客户端里没有设置上传速度上限，本程序默认使用 10MiB/s 这个值），如果当前 BT 客户端的上传速度已经达到或接近了上限（不管上传是否来源于刷流任务添加的种子），程序不会添加任何新种子。
 
 参数
 
@@ -128,17 +130,21 @@ ptool brush local mteam
 选种（选择新种子添加到 BT 客户端）规则：
 
 * 不会选择有以下任意特征的种子：不免费、存在 HnR 考查、免费时间临近截止。
+* 部分站点存在“付费”种子（下载或汇报时会扣除积分），这类种子也不会被选择。
 * 发布时间过久的种子也不会被选择。
 * 种子的当前做种、下载人数，种子大小等因素也都会考虑。
 
 删种（删除 BT 客户端里旧的刷流种子）规则：
 
 * 未下载完成的种子免费时间临近截止时，删除种子或停止下载（只上传模式）。
-* 硬盘剩余可用空间不足（默认保留 5GB）时，开始删除没有上传速度的种子。
+* 硬盘剩余可用空间不足（默认保留 5GiB）时，开始删除没有上传速度的种子。
 * 未下载完成的种子，如果长时间没有上传速度或上传/下载速度比例过低，也可能被删除。
 
+刷流任务添加到客户端里的种子会放到 ```_brush``` 分类(category)里。程序只会对这个分类里的种子进行管理或删除等操作。不会干扰 BT 客户端里其它正常的下载任务。如果需要永久保留某个刷流任务添加的种子（防止其被自动删除），在 BT 客户端里更改其分类即可。
 
-刷流任务添加到客户端里的种子会放到 ```_brush``` 分类里。程序只会对这个分类里的种子进行管理或删除等操作。不会干扰 BT 客户端里其它正常的下载任务。如果需要永久保留某个刷流任务添加的种子（防止其被自动删除），在 BT 客户端里更改其分类即可。
+其它说明：
+
+* No-Add 模式：如果 BT 客户端里当前存在 "_noadd" 这个标签(tag)，刷流任务不会添加任何新种子到客户端。
 
 ### 自动辅种 (iyuu)
 
@@ -205,7 +211,7 @@ clientctl 命令可以显示或修改指定 name 的 BT 客户端的配置参数
 # 获取 local 客户端所有参数当前值
 ptool clientctl local
 
-# 设置 local 客户端的全局上传速度限制为 10MB/s
+# 设置 local 客户端的全局上传速度限制为 10MiB/s
 ptool clientctl local global_upload_speed_limit=10M
 ```
 
@@ -220,10 +226,10 @@ ptool <command> <infoHash>...
 ```<infoHash>``` 参数为指定的 BT 客户端里需要操作的种子的 infoHash 列表。也可以使用以下特殊值参数操作多个种子（delete 命令除外，为避免误操作只能使用 infoHash 删除种子）：
 
 * _all : 所有种子
-* _done : 所有已完成的种子（无论是否正在做种）
+* _done : 所有已下载完成的种子（无论是否正在做种）
 * _active : 当前正在活动（上传或下载）的种子
 * _error : 状态为“出错”的种子
-* _downloading / _seeding / _paused / _completed : 状态为正在下载 / 做种 / 暂停下载 / 已完成的种子
+* _downloading / _seeding / _paused / _completed : 状态为正在下载 / 做种 / 暂停下载 / 下载完成(但未做种)的种子
 
 示例：
 
@@ -347,7 +353,7 @@ ptool dltorrent <torrentIdOrUrl>...
 ptool addlocal <client> <filename.torrent>...
 ```
 
-将本地硬盘里的种子文件添加的 BT 客户端。
+将本地硬盘里的种子文件添加到 BT 客户端。
 
 
 ### 搜索 PT 站点种子 (search)
@@ -384,6 +390,8 @@ ptool batchdl <site> --action add --add-client local
 * --min-torrent-size string : 种子大小的最小值限制(eg. "100MiB", "1GiB")。默认为 "0"。
 * --max-torrent-size string : 种子大小的最大值限制。默认为 "0"（无限制）。
 * --free : 只下载免费种子。
+* --no-hr : 跳过存在 HR 的种子。
+* --no-paid : 跳过"付费"的种子。（部分站点存在"付费"种子，第一次下载或汇报时扣除积分）
 * --base-url : 手动指定种子列表页 URL，例如："special.php"、"adult.php"、"torrents.php?cat=100"。
 
 ### 显示种子文件信息 (parsetorrent)

@@ -29,7 +29,6 @@ type Client struct {
 	HttpClient     *http.Client
 	data           *apiSyncMaindata
 	Logined        bool
-	NoLogin        bool
 	datatime       int64
 	unfinishedSize int64
 }
@@ -74,7 +73,7 @@ func (qbclient *Client) apiRequest(apiPath string, v any) error {
 }
 
 func (qbclient *Client) login() error {
-	if qbclient.Logined || qbclient.NoLogin {
+	if qbclient.Logined || qbclient.ClientConfig.QbittorrentNoLogin {
 		return nil
 	}
 	username := qbclient.ClientConfig.Username
@@ -847,11 +846,11 @@ func (qbclient *Client) RemoveTorrentTrackers(infoHash string, trackers []string
 }
 
 func (qbclient *Client) Close() {
-	if qbclient.Logined {
-		qbclient.apiPost("api/v2/auth/logout", nil)
-		qbclient.Logined = false
-	}
 	qbclient.PurgeCache()
+	if qbclient.Logined && !qbclient.ClientConfig.QbittorrentNoLogOut {
+		qbclient.Logined = false
+		qbclient.apiPost("api/v2/auth/logout", nil)
+	}
 }
 
 func NewClient(name string, clientConfig *config.ClientConfigStruct, config *config.ConfigStruct) (client.Client, error) {
@@ -863,7 +862,6 @@ func NewClient(name string, clientConfig *config.ClientConfigStruct, config *con
 		Name:         name,
 		ClientConfig: clientConfig,
 		Config:       config,
-		NoLogin:      clientConfig.QbittorrentNoLogin,
 		HttpClient: &http.Client{
 			Jar: jar,
 		},

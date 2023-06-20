@@ -13,17 +13,16 @@ url = "http://localhost:8085/"
 username = "admin"
 password = "adminadmin"
 #qbittorrentNoLogin = false # 如果启用，不会发送登录请求。这将提高命令响应速度。需要在 QB Web UI 设置里开启跳过验证
+#qbittorrentNoLogOut = false # 如果启用，不会发送退出登录请求。这将提高命令响应速度，但会导致 QB web session 占用的内存不能及时释放
 #brushMinDiskSpace = "5GiB" # 刷流：保留最小剩余磁盘空间
 #brushSlowUploadSpeedTier = "100KiB" # 刷流：上传速度(/s)持续低于此值的种子将可能被删除
 #brushMaxDownloadingTorrents = 6 # 刷流：位于下载状态的种子数上限
 #brushMaxTorrents = 500 # 刷流：种子数（所有状态）上限
 #brushMinRatio = 0.2 # 刷流：最小 ratio (上传量/下载量)比例。ratio 持续低于此值的种子将可能被删除
 #brushDefaultUploadSpeedLimit = "10MiB" # 刷流：默认最大上传速度限制(/s)
-#brushTorrentMinSizeLimit = "0" # 刷流：种子最小体积限制。体积小于此值的种子不会被选择
-#brushTorrentMaxSizeLimit = "1PiB" # 刷流：种子最大体积限制。体积大于此值的种子不会被选择
 
 
-# 对 Transmission 客户端支持不完整且尚未充分测试。不建议用于刷流。
+# 对 Transmission 客户端支持不完整且尚未充分测试。不建议用于刷流
 # 支持 Transmission 2.80 ~ 3.00 (Transmission v4 还有问题)
 [[clients]]
 name = "tr"
@@ -37,8 +36,10 @@ password = "123456"
 type = "mteam"
 cookie = "cookie_here"
 #proxy = "" # 访问该站点使用的代理。优先级高于全局的 siteProxy 配置。格式为 "http://127.0.0.1:1080"
-#userAgent = "" # 部分站点 cookie 绑定 ua。优先级高于全局的 siteUserAgent 配置。
+#userAgent = "" # 部分站点 cookie 绑定 ua。优先级高于全局的 siteUserAgent 配置
 #torrentUploadSpeedLimit = "10MiB" # 站点单个种子上传速度限制(/s)
+#brushTorrentMinSizeLimit = "0" # 刷流：种子最小体积限制。体积小于此值的种子不会被选择
+#brushTorrentMaxSizeLimit = "1PiB" # 刷流：种子最大体积限制。体积大于此值的种子不会被选择
 #brushAllowNoneFree = false # 是否允许使用非免费种子刷流
 #brushAllowPaid = false # 是否允许使用"付费"种子刷流（付费种子：第一次下载或汇报时需要扣除积分）
 #brushAllowZeroSeeders = false # 是否允许刷流任务添加当前0做种的种子到客户端

@@ -38,8 +38,8 @@ func init() {
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do not actually controlling client")
 	command.Flags().BoolVarP(&paused, "paused", "p", false, "Add torrents to client in paused state")
 	command.Flags().BoolVarP(&ordered, "ordered", "o", false, "Brush sites provided in order")
-	command.Flags().BoolVarP(&force, "force", "f", false, "Force mode. Ignore _noadd flag in clients.")
-	command.Flags().Int64VarP(&maxSites, "max-sites", "", 0, "Allowed max succcess sites number, 0 == unlimited")
+	command.Flags().BoolVarP(&force, "force", "f", false, "Force mode. Ignore _noadd flag in client")
+	command.Flags().Int64VarP(&maxSites, "max-sites", "", 0, "Allowed max succcess sites number, Default (0) == unlimited")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -113,18 +113,18 @@ func brush(cmd *cobra.Command, args []string) {
 			continue
 		}
 		brushOption := &BrushOptionStruct{
+			TorrentMinSizeLimit:     siteInstance.GetSiteConfig().BrushTorrentMinSizeLimitValue,
+			TorrentMaxSizeLimit:     siteInstance.GetSiteConfig().BrushTorrentMaxSizeLimitValue,
+			TorrentUploadSpeedLimit: siteInstance.GetSiteConfig().TorrentUploadSpeedLimitValue,
 			AllowNoneFree:           siteInstance.GetSiteConfig().BrushAllowNoneFree,
 			AllowPaid:               siteInstance.GetSiteConfig().BrushAllowPaid,
 			AllowZeroSeeders:        siteInstance.GetSiteConfig().BrushAllowZeroSeeders,
 			MinDiskSpace:            clientInstance.GetClientConfig().BrushMinDiskSpaceValue,
 			SlowUploadSpeedTier:     clientInstance.GetClientConfig().BrushSlowUploadSpeedTierValue,
-			TorrentUploadSpeedLimit: siteInstance.GetSiteConfig().TorrentUploadSpeedLimitValue,
 			MaxDownloadingTorrents:  clientInstance.GetClientConfig().BrushMaxDownloadingTorrents,
 			MaxTorrents:             clientInstance.GetClientConfig().BrushMaxTorrents,
 			MinRatio:                clientInstance.GetClientConfig().BrushMinRatio,
 			DefaultUploadSpeedLimit: clientInstance.GetClientConfig().BrushDefaultUploadSpeedLimitValue,
-			TorrentMinSizeLimit:     clientInstance.GetClientConfig().BrushTorrentMinSizeLimitValue,
-			TorrentMaxSizeLimit:     clientInstance.GetClientConfig().BrushTorrentMaxSizeLimitValue,
 			Now:                     utils.Now(),
 		}
 		log.Printf(
