@@ -78,6 +78,7 @@ type SiteConfigStruct struct {
 	BrushTorrentMaxSizeLimit       string   `yaml:"brushTorrentMaxSizeLimit"`
 	BrushAllowNoneFree             bool     `yaml:"brushAllowNoneFree"`
 	BrushAllowPaid                 bool     `yaml:"brushAllowPaid"`
+	BrushAllowHr                   bool     `yaml:"brushAllowHr"`
 	BrushAllowZeroSeeders          bool     `yaml:"brushAllowZeroSeeders"`
 	SelectorTorrentsListHeader     string   `yaml:"selectorTorrentsListHeader"`
 	SelectorTorrentsList           string   `yaml:"selectorTorrentsList"`

@@ -96,7 +96,7 @@ func brush(cmd *cobra.Command, args []string) {
 				utils.BytesSize(float64(status.UploadSpeed)),
 				utils.BytesSize(float64(status.UploadSpeedLimit)),
 			)
-		} else if siteInstance.GetSiteConfig().GlobalHnR {
+		} else if !siteInstance.GetSiteConfig().BrushAllowHr && siteInstance.GetSiteConfig().GlobalHnR {
 			log.Printf("Site %s enforces global HnR. Do not fetch site new torrents", sitename)
 		} else if noadd {
 			log.Printf("Client %s in NoAdd status. Do not fetch site new torrents", clientInstance.GetName())
@@ -118,6 +118,7 @@ func brush(cmd *cobra.Command, args []string) {
 			TorrentUploadSpeedLimit: siteInstance.GetSiteConfig().TorrentUploadSpeedLimitValue,
 			AllowNoneFree:           siteInstance.GetSiteConfig().BrushAllowNoneFree,
 			AllowPaid:               siteInstance.GetSiteConfig().BrushAllowPaid,
+			AllowHr:                 siteInstance.GetSiteConfig().BrushAllowHr,
 			AllowZeroSeeders:        siteInstance.GetSiteConfig().BrushAllowZeroSeeders,
 			MinDiskSpace:            clientInstance.GetClientConfig().BrushMinDiskSpaceValue,
 			SlowUploadSpeedTier:     clientInstance.GetClientConfig().BrushSlowUploadSpeedTierValue,

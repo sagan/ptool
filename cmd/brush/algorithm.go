@@ -29,6 +29,7 @@ const (
 type BrushOptionStruct struct {
 	AllowNoneFree           bool
 	AllowPaid               bool
+	AllowHr                 bool
 	AllowZeroSeeders        bool
 	MinDiskSpace            int64
 	SlowUploadSpeedTier     int64
@@ -482,7 +483,7 @@ func rateSiteTorrent(siteTorrent *site.Torrent, brushOption *BrushOptionStruct) 
 		}()
 	}
 	if siteTorrent.IsActive ||
-		siteTorrent.HasHnR ||
+		(!brushOption.AllowHr && siteTorrent.HasHnR) ||
 		(!brushOption.AllowNoneFree && siteTorrent.DownloadMultiplier != 0) ||
 		(!brushOption.AllowPaid && siteTorrent.Paid && !siteTorrent.Bought) ||
 		siteTorrent.Size < brushOption.TorrentMinSizeLimit ||
