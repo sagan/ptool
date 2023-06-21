@@ -12,11 +12,11 @@ import (
 
 var command = &cobra.Command{
 	Use:   "addtags <client> <tags> [<infoHash>...]",
-	Short: "Add tags to torrents in client",
-	Long: `Add tags to torrents in client
-<tags> : comma-seperated tags list
+	Short: "Add tags to torrents in client.",
+	Long: `Add tags to torrents in client.
+<tags> : comma-seperated tags list.
 <infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
-_all, _active, _done,  _downloading, _seeding, _paused, _completed, _error`,
+_all, _active, _done,  _downloading, _seeding, _paused, _completed, _error.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	Run:  addtags,
 }

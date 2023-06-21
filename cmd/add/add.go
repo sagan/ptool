@@ -19,7 +19,7 @@ import (
 
 var command = &cobra.Command{
 	Use:   "add <client> <torrentIdOrUrl>...",
-	Short: "Add site torrents to client",
+	Short: "Add site torrents to client.",
 	Long:  `Add site torrents to client.`,
 	Args:  cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	Run:   add,
@@ -35,8 +35,8 @@ var (
 )
 
 func init() {
-	command.Flags().BoolVarP(&skipCheck, "skip-check", "", false, "Skip hash checking when adding torrents")
-	command.Flags().BoolVarP(&paused, "paused", "p", false, "Add torrents to client in paused state")
+	command.Flags().BoolVarP(&skipCheck, "no-hash", "", false, "Skip hash checking when adding torrents")
+	command.Flags().BoolVarP(&paused, "add-paused", "", false, "Add torrents to client in paused state")
 	command.Flags().StringVarP(&addCategory, "add-category", "", "", "Set category of added torrents")
 	command.Flags().StringVarP(&savePath, "add-save-path", "", "", "Set save path of added torrents")
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of torrents")

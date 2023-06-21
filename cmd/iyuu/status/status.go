@@ -12,8 +12,8 @@ import (
 
 var command = &cobra.Command{
 	Use:   "status",
-	Short: "Show iyuu user status",
-	Long:  `Show iyuu user status`,
+	Short: "Show iyuu user status.",
+	Long:  `Show iyuu user status.`,
 	Run:   status,
 }
 

@@ -14,8 +14,8 @@ import (
 
 var command = &cobra.Command{
 	Use:   "sites",
-	Short: "Show iyuu sites list",
-	Long:  `Show iyuu sites list`,
+	Short: "Show iyuu sites list.",
+	Long:  `Show iyuu sites list.`,
 	Run:   sites,
 }
 
@@ -73,7 +73,7 @@ func sites(cmd *cobra.Command, args []string) {
 		if iyuu2LocalSiteMap[iyuuSite.Sid] == "" {
 			continue
 		}
-		if filter != "" && !matchFilter(&iyuuSite, filter) {
+		if filter != "" && !iyuuSite.MatchFilter(filter) {
 			continue
 		}
 		utils.PrintStringInWidth(iyuuSite.Nickname, 10, true)
@@ -86,7 +86,7 @@ func sites(cmd *cobra.Command, args []string) {
 			if iyuu2LocalSiteMap[iyuuSite.Sid] != "" {
 				continue
 			}
-			if filter != "" && !matchFilter(&iyuuSite, filter) {
+			if filter != "" && !iyuuSite.MatchFilter(filter) {
 				continue
 			}
 			utils.PrintStringInWidth(iyuuSite.Nickname, 10, true)
@@ -94,11 +94,4 @@ func sites(cmd *cobra.Command, args []string) {
 				"X (None)", iyuuSite.Url, iyuuSite.DownloadPage)
 		}
 	}
-}
-
-func matchFilter(iyuuSite *iyuu.Site, filter string) bool {
-	return utils.ContainsI(iyuuSite.Name, filter) ||
-		utils.ContainsI(iyuuSite.Nickname, filter) ||
-		utils.ContainsI(iyuuSite.Url, filter) ||
-		fmt.Sprint(iyuuSite.Sid) == filter
 }

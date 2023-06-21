@@ -210,6 +210,7 @@ var (
 		},
 		"hdzone": &config.SiteConfigStruct{
 			Type:    "nexusphp",
+			Domains: []string{"hdfun.me"},
 			Url:     "https://hdzone.me/",
 			Comment: "高清地带",
 		},

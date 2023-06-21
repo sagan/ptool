@@ -847,7 +847,7 @@ func (qbclient *Client) RemoveTorrentTrackers(infoHash string, trackers []string
 
 func (qbclient *Client) Close() {
 	qbclient.PurgeCache()
-	if qbclient.Logined && !qbclient.ClientConfig.QbittorrentNoLogOut {
+	if qbclient.Logined && !qbclient.ClientConfig.QbittorrentNoLogout {
 		qbclient.Logined = false
 		qbclient.apiPost("api/v2/auth/logout", nil)
 	}

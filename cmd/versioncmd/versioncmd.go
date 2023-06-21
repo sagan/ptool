@@ -12,8 +12,8 @@ import (
 
 var command = &cobra.Command{
 	Use:   "version",
-	Short: "Display ptool version",
-	Long:  `Display ptool version`,
+	Short: "Display ptool version.",
+	Long:  `Display ptool version.`,
 	Args:  cobra.MatchAll(cobra.ExactArgs(0), cobra.OnlyValidArgs),
 	Run:   versioncmd,
 }

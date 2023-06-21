@@ -22,8 +22,8 @@ type SearchResult struct {
 
 var command = &cobra.Command{
 	Use:   "search <siteOrGroups> <keyword>",
-	Short: "Search torrents by keyword in a site",
-	Long: `Search torrents by keyword in a site
+	Short: "Search torrents by keyword in a site.",
+	Long: `Search torrents by keyword in a site.
 siteOrGroups: A comma-separated name list of sites or groups. Can use "_all" to search all sites.
 `,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),

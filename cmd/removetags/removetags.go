@@ -12,11 +12,11 @@ import (
 
 var command = &cobra.Command{
 	Use:   "removetags <client> <tags> [<infoHash>...]",
-	Short: "Remove tags from torrents in client",
-	Long: `Remove tags from torrents in client
-<tags> : comma-seperated tags list
+	Short: "Remove tags from torrents in client.",
+	Long: `Remove tags from torrents in client.
+<tags> : comma-seperated tags list.
 <infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
-_all, _active, _done,  _downloading, _seeding, _paused, _completed, _error`,
+_all, _active, _done,  _downloading, _seeding, _paused, _completed, _error.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	Run:  removetags,
 }

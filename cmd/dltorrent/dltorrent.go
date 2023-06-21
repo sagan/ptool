@@ -16,8 +16,8 @@ import (
 
 var command = &cobra.Command{
 	Use:   "dltorrent <torrentIdOrUrl>...",
-	Short: "Download site torrents to local",
-	Long:  `Download site torrents to local`,
+	Short: "Download site torrents to local.",
+	Long:  `Download site torrents to local.`,
 	Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	Run:   dltorrent,
 }
@@ -29,7 +29,7 @@ var (
 
 func init() {
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of torrents")
-	command.Flags().StringVarP(&downloadDir, "download-dir", "", ".", "Set the local dir of downloaded torrents. Default = current dir")
+	command.Flags().StringVarP(&downloadDir, "download-dir", "", ".", "Set the local dir of downloaded torrents. Default == current dir")
 	cmd.RootCmd.AddCommand(command)
 }
 

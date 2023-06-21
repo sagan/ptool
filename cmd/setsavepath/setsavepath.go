@@ -10,10 +10,10 @@ import (
 
 var command = &cobra.Command{
 	Use:   "setsavepath <client> <savePath> [<infoHash>...]",
-	Short: "Set the save path of torrents in client",
-	Long: `Set the save path of torrents in client
+	Short: "Set the save path of torrents in client.",
+	Long: `Set the save path of torrents in client.
 <infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
-_all, _active, _done,  _downloading, _seeding, _paused, _completed, _error`,
+_all, _active, _done,  _downloading, _seeding, _paused, _completed, _error.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	Run:  setsavepath,
 }

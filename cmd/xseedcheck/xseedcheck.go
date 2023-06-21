@@ -15,8 +15,8 @@ import (
 
 var command = &cobra.Command{
 	Use:   "xseedcheck <client> <infoHash> file.torrent",
-	Short: "Check whether a torrent in client is identical with a torrent file",
-	Long: `Check whether a torrent in client is identical with a torrent file
+	Short: "Check whether a torrent in client is identical with a torrent file.",
+	Long: `Check whether a torrent in client is identical with a torrent file.
 Only filename and size will be comared. Not the file contents themselves.`,
 	Args: cobra.MatchAll(cobra.ExactArgs(3), cobra.OnlyValidArgs),
 	Run:  xseedcheck,

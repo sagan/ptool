@@ -14,10 +14,10 @@ import (
 
 var command = &cobra.Command{
 	Use:   "removetrackers <client> [<infoHash>...]",
-	Short: "Remove trackers from torrents of client",
-	Long: `Remove trackers from torrents of client,
+	Short: "Remove trackers from torrents of client.",
+	Long: `Remove trackers from torrents of client.
 <infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
-_all, _active, _done,  _downloading, _seeding, _paused, _completed, _error
+_all, _active, _done,  _downloading, _seeding, _paused, _completed, _error.
 
 Example:
 ptool removetrackers <client> <infoHashes...> --tracker "https://..."

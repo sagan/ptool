@@ -10,10 +10,10 @@ import (
 
 var command = &cobra.Command{
 	Use:   "recheck <client> [<infoHash>...]",
-	Short: "Recheck torrents of client",
-	Long: `Recheck torrents of client
+	Short: "Recheck torrents of client.",
+	Long: `Recheck torrents of client.
 <infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
-_all, _active, _done,  _downloading, _seeding, _paused, _completed, _error
+_all, _active, _done,  _downloading, _seeding, _paused, _completed, _error.
 `,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	Run:  recheck,

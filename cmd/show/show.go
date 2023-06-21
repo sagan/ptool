@@ -17,11 +17,11 @@ import (
 
 var command = &cobra.Command{
 	Use:   "show <client> [<infoHash>...]",
-	Short: "Show torrents of client",
-	Long: `Show torrents of client
+	Short: "Show torrents of client.",
+	Long: `Show torrents of client.
 <infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
-_all, _active, _done,  _downloading, _seeding, _paused, _completed, _error
-If no flags or args are provided, it will display current active torrents
+_all, _active, _done,  _downloading, _seeding, _paused, _completed, _error.
+If no flags or args are provided, it will display current active torrents.
 `,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	Run:  show,

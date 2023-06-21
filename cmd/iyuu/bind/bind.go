@@ -12,8 +12,8 @@ import (
 
 var command = &cobra.Command{
 	Use:   "bind",
-	Short: "Bind (authenticate) iyuu service using PT site passkey",
-	Long:  `Bind (authenticate) iyuu service using PT site passkey`,
+	Short: "Bind (authenticate) iyuu service using PT site passkey.",
+	Long:  `Bind (authenticate) iyuu service using PT site passkey.`,
 	Run:   bind,
 }
 

@@ -13,8 +13,8 @@ import (
 // Root represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "ptool",
-	Short: "ptool is a command-line program which facilitate the use of private tracker sites",
-	Long:  `ptool is a command-line program which facilitate the use of private tracker sites`,
+	Short: "ptool is a command-line program which facilitate the use of private tracker sites.",
+	Long:  `ptool is a command-line program which facilitate the use of private tracker sites.`,
 	// Run: func(cmd *cobra.Command, args []string) { },
 }
 

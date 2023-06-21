@@ -21,10 +21,11 @@ import (
 
 var command = &cobra.Command{
 	Use:   "xseed <client>...",
-	Short: "Cross seed",
-	Long:  `Cross seed. By default it will add xseed torrents from All sites unless --include-sites or --exclude-sites flag is set`,
-	Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
-	Run:   xseed,
+	Short: "Cross seed using iyuu API.",
+	Long: `Cross seed using iyuu API.
+By default it will add xseed torrents from All sites unless --include-sites or --exclude-sites flag is set.`,
+	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
+	Run:  xseed,
 }
 
 var (
@@ -49,8 +50,8 @@ var (
 func init() {
 	command.Flags().BoolVarP(&slowMode, "slow", "", false, "Slow mode. wait after handling each xseed torrent. For dev / test purpose")
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do NOT actually add xseed torrents to client")
-	command.Flags().BoolVarP(&paused, "paused", "p", false, "Add xseed torrents to client in paused state")
-	command.Flags().BoolVarP(&check, "check-hash", "", false, "Let client do hash checking when add xseed torrents")
+	command.Flags().BoolVarP(&paused, "add-paused", "", false, "Add xseed torrents to client in paused state")
+	command.Flags().BoolVarP(&check, "hash", "", false, "Let client do hash checking when add xseed torrents")
 	command.Flags().Int64VarP(&maxXseedTorrents, "max-torrents", "m", 0, "Number limit of xseed torrents added. Default (0) == unlimited")
 	command.Flags().Int64VarP(&iyuuRequestMaxTorrents, "max-request-torrents", "", 2000, "Number limit of target torrents sent to iyuu server at once")
 	command.Flags().StringVarP(&includeSites, "include-sites", "", "", "Only add xseed torrents from these sites or groups (comma-separated)")

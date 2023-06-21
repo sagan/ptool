@@ -30,9 +30,9 @@ var (
 var command = &cobra.Command{
 	Use: "status <clientOrSiteOrGroup>...",
 	// Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
-	Short: "Show clients or sites status",
-	Long: `Show clients or sites status
-clientOrSiteOrGroup: name of a client, site, group, or "_all" which means all sites
+	Short: "Show clients or sites status.",
+	Long: `Show clients or sites status.
+clientOrSiteOrGroup: name of a client, site, group, or "_all" which means all sites.
 `,
 	Run: status,
 }
@@ -57,11 +57,17 @@ func status(cmd *cobra.Command, args []string) {
 		}
 		if showAll || showAllClients {
 			for _, client := range config.Get().Clients {
+				if client.Disabled {
+					continue
+				}
 				names = append(names, client.Name)
 			}
 		}
 		if showAll || showAllSites {
 			for _, site := range config.Get().Sites {
+				if site.Disabled {
+					continue
+				}
 				names = append(names, site.Name)
 			}
 		}

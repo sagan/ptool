@@ -18,34 +18,36 @@ import (
 
 var command = &cobra.Command{
 	Use:   "addlocal <client> <filename.torrent>...",
-	Short: "Add local torrents to client",
-	Long: `Add local torrents to client
-It's possible to use "*" wildcard in filename to match multiple torrents. eg. "*.torrent"
+	Short: "Add local torrents to client.",
+	Long: `Add local torrents to client.
+It's possible to use "*" wildcard in filename to match multiple torrents. eg. "*.torrent".
 `,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	Run:  add,
 }
 
 var (
-	paused      = false
-	skipCheck   = false
-	renameAdded = false
-	deleteAdded = false
-	defaultSite = ""
-	rename      = ""
-	addCategory = ""
-	addTags     = ""
-	savePath    = ""
+	paused          = false
+	skipCheck       = false
+	renameAdded     = false
+	deleteAdded     = false
+	addCategoryAuto = false
+	defaultSite     = ""
+	rename          = ""
+	addCategory     = ""
+	addTags         = ""
+	savePath        = ""
 )
 
 func init() {
-	command.Flags().BoolVarP(&skipCheck, "skip-check", "", false, "Skip hash checking when adding torrents")
+	command.Flags().BoolVarP(&skipCheck, "no-hash", "", false, "Skip hash checking when adding torrents")
 	command.Flags().BoolVarP(&renameAdded, "rename-added", "", false, "Rename successfully added torrents to .added extension")
 	command.Flags().BoolVarP(&deleteAdded, "delete-added", "", false, "Delete successfully added torrents")
-	command.Flags().BoolVarP(&paused, "paused", "p", false, "Add torrents to client in paused state")
+	command.Flags().BoolVarP(&paused, "add-paused", "", false, "Add torrents to client in paused state")
+	command.Flags().BoolVarP(&addCategoryAuto, "add-category-auto", "", false, "Automatically set category of added torrent to corresponding sitename")
 	command.Flags().StringVarP(&savePath, "add-save-path", "", "", "Set save path of added torrents")
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of torrents")
-	command.Flags().StringVarP(&addCategory, "add-category", "", "", "Set category of added torrents")
+	command.Flags().StringVarP(&addCategory, "add-category", "", "", "Manually set category of added torrents")
 	command.Flags().StringVarP(&rename, "rename", "", "", "Rename added torrent (for dev/test only)")
 	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Set tags of added torrent (comma-separated)")
 	cmd.RootCmd.AddCommand(command)
@@ -65,7 +67,6 @@ func add(cmd *cobra.Command, args []string) {
 	torrentFiles := utils.ParseFilenameArgs(args...)
 	option := &client.TorrentOption{
 		Pause:        paused,
-		Category:     addCategory,
 		SavePath:     savePath,
 		SkipChecking: skipCheck,
 		Name:         rename,
@@ -103,6 +104,11 @@ func add(cmd *cobra.Command, args []string) {
 			if sitename != "" {
 				break
 			}
+		}
+		if sitename != "" && addCategoryAuto {
+			option.Category = sitename
+		} else {
+			option.Category = addCategory
 		}
 		option.Tags = []string{}
 		if sitename != "" {

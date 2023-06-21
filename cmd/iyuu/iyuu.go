@@ -1,6 +1,7 @@
 package iyuu
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/glebarez/sqlite"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/utils"
 )
 
 // gorm "torrents" table
@@ -42,8 +44,8 @@ var (
 )
 var Command = &cobra.Command{
 	Use:   "iyuu",
-	Short: "Cross seed automation tool using iyuu API",
-	Long:  `Cross seed automation tool using iyuu API`,
+	Short: "Cross seed automation tool using iyuu API.",
+	Long:  `Cross seed automation tool using iyuu API.`,
 }
 
 func init() {
@@ -72,4 +74,12 @@ func Db() *gorm.DB {
 
 	db = _db
 	return db
+}
+
+func (iyuuSite *Site) MatchFilter(filter string) bool {
+	return filter == "" ||
+		utils.ContainsI(iyuuSite.Name, filter) ||
+		utils.ContainsI(iyuuSite.Nickname, filter) ||
+		utils.ContainsI(iyuuSite.Url, filter) ||
+		fmt.Sprint(iyuuSite.Sid) == filter
 }
