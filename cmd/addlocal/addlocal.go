@@ -105,8 +105,14 @@ func add(cmd *cobra.Command, args []string) {
 				break
 			}
 		}
-		if sitename != "" && addCategoryAuto {
-			option.Category = sitename
+		if addCategoryAuto {
+			if sitename != "" {
+				option.Category = sitename
+			} else if addCategory != "" {
+				option.Category = addCategory
+			} else {
+				option.Category = "Others"
+			}
 		} else {
 			option.Category = addCategory
 		}
