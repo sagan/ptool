@@ -346,13 +346,19 @@ func PrintTorrent(torrent *Torrent) {
 	)
 }
 
-func PrintTorrents(torrents []Torrent, filter string) {
+func PrintTorrents(torrents []Torrent, filter string, showSum bool) {
+	cnt := int64(0)
+	size := int64(0)
+	sizeUnfinished := int64(0)
 	fmt.Printf("%-25s  %-40s  %-7s  %-5s  %-8s  %-8s  %-5s  %-5s  %-20s\n", "Name", "InfoHash", "Size", "State", "↓S (/s)", "↑S (/s)", "Seeds", "Peers", "Tracker")
 	for _, torrent := range torrents {
 		if filter != "" && !utils.ContainsI(torrent.Name, filter) && !utils.ContainsI(torrent.InfoHash, filter) {
 			continue
 		}
+		cnt++
+		size += torrent.Size
 		name := torrent.Name
+		sizeUnfinished += torrent.Size - torrent.SizeCompleted
 		utils.PrintStringInWidth(name, 25, true)
 		fmt.Printf("  %-40s  %-7s  %-5s  %-8s  %-8s  %-5d  %-5d  %-20s\n",
 			torrent.InfoHash,
@@ -364,6 +370,9 @@ func PrintTorrents(torrents []Torrent, filter string) {
 			torrent.Leechers,
 			torrent.TrackerDomain,
 		)
+	}
+	if showSum {
+		fmt.Printf("// Summary - Cnt / Size / SizeUnfinished: %d / %s / %s", cnt, utils.BytesSize(float64(size)), utils.BytesSize(float64(sizeUnfinished)))
 	}
 }
 

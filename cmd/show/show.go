@@ -167,5 +167,5 @@ func show(cmd *cobra.Command, args []string) {
 		)
 	}
 	clientInstance.Close()
-	client.PrintTorrents(torrents, "")
+	client.PrintTorrents(torrents, "", true)
 }

@@ -75,8 +75,10 @@ func add(cmd *cobra.Command, args []string) {
 	if addTags != "" {
 		fixedTags = strings.Split(addTags, ",")
 	}
-
 	cntAll := len(torrentFiles)
+	cntAdded := int64(0)
+	sizeAdded := int64(0)
+
 	for i, torrentFile := range torrentFiles {
 		if strings.HasSuffix(torrentFile, ".added") {
 			log.Tracef("!torrent (%d/%d) %s: skipped", i+1, cntAll, torrentFile)
@@ -138,8 +140,15 @@ func add(cmd *cobra.Command, args []string) {
 				log.Debugf("Failed to delete successfully added torrent %s: %v", torrentFile, err)
 			}
 		}
+		cntAdded++
+		tsize := int64(0)
+		for _, f := range tinfo.Files {
+			tsize += f.Length
+		}
+		sizeAdded += tsize
 		fmt.Printf("✓torrent (%d/%d) %s: added to client\n", i+1, cntAll, torrentFile)
 	}
+	fmt.Printf("\nDone. Added torrent (Size/Cnt): %s / %d; ErrorCnt: %d\n", utils.BytesSize(float64(sizeAdded)), cntAdded, errCnt)
 	clientInstance.Close()
 	if errCnt > 0 {
 		os.Exit(1)
