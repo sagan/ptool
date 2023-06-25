@@ -17,7 +17,7 @@ var command = &cobra.Command{
 	Short: "Add new trackers to torrents of client.",
 	Long: `Add new trackers to torrents of client.
 <infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
-_all, _active, _done,  _downloading, _seeding, _paused, _completed, _error.
+_all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.
 
 Example:
 ptool addtrackers <client> <infoHashes...> --tracker "https://..."

@@ -14,7 +14,7 @@ var command = &cobra.Command{
 	Short:   "Pause torrents of client.",
 	Long: `Pause torrents of client.
 <infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
-_all, _active, _done,  _downloading, _seeding, _paused, _completed, _error.`,
+_all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	Run:  pause,
 }

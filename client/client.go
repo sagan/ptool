@@ -77,7 +77,7 @@ type TorrentOption struct {
 
 type Client interface {
 	GetTorrent(infoHash string) (*Torrent, error)
-	// stateFilter: _all|_active|_done, or any state value (possibly with a _ prefix)
+	// stateFilter: _all|_active|_done|_undone, or any state value (possibly with a _ prefix)
 	GetTorrents(stateFilter string, category string, showAll bool) ([]Torrent, error)
 	AddTorrent(torrentContent []byte, option *TorrentOption, meta map[string](int64)) error
 	ModifyTorrent(infoHash string, option *TorrentOption, meta map[string](int64)) error
@@ -126,7 +126,7 @@ type ClientCreator func(*RegInfo) (Client, error)
 
 var (
 	STATES             = []string{"seeding", "downloading", "completed", "paused", "checking", "error", "unknown"}
-	STATE_FILTERS      = []string{"_all", "_active", "_done"}
+	STATE_FILTERS      = []string{"_all", "_active", "_done", "_undone"}
 	Registry           = []*RegInfo{}
 	substituteTagRegex = regexp.MustCompile(`^(category|meta\..+):.+$`)
 )
@@ -540,6 +540,8 @@ func (torrent *Torrent) MatchStateFilter(stateFilter string) bool {
 			return torrent.DownloadSpeed >= 1024 || torrent.UploadSpeed >= 1024
 		case "_done":
 			return torrent.State == "completed" || torrent.State == "seeding"
+		case "_undone":
+			return torrent.State == "paused" || torrent.State == "downloading"
 		default:
 			stateFilter = stateFilter[1:]
 		}

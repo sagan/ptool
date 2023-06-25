@@ -17,7 +17,7 @@ var command = &cobra.Command{
 	Short: "Edit tracker of torrents in client.",
 	Long: `Edit tracker of torrents in client, replace the old tracker url with the new one.
 <infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
-_all, _active, _done,  _downloading, _seeding, _paused, _completed, _error.
+_all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.
 
 A torrent will not be updated if old tracker does NOT exist in it's trackers list.
 It may return an error in such case or not, depending on specific client implementation.
