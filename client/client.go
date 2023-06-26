@@ -202,25 +202,34 @@ func ParseMetaFromName(fullname string) (name string, meta map[string](int64)) {
 	return
 }
 
-func TorrentStateIconText(torrent *Torrent) string {
+func (torrent *Torrent) StateIconText() string {
+	s := ""
+	showProcess := false
 	switch torrent.State {
 	case "downloading":
-		process := int64(float64(torrent.SizeCompleted) * 100 / float64(torrent.Size))
-		return fmt.Sprint("↓", process, "%")
+		s = "↓"
+		showProcess = true
 	case "seeding":
-		return "↑U"
+		s = "↑U"
 	case "paused":
-		return "-P" // may be unicode symbol ⏸
+		s = "-P" // may be unicode symbol ⏸
+		showProcess = true
 	case "completed":
-		return "✓C"
+		s = "✓C"
 	case "checking":
-		return "→c"
+		s = "→c"
 	case "error":
-		return "!e"
+		s = "!e"
+		showProcess = true
+	default:
+		s = "?"
+		showProcess = true
 	}
-	return "-"
-}
-func init() {
+	if showProcess {
+		process := int64(float64(torrent.SizeCompleted) * 100 / float64(torrent.Size))
+		s += fmt.Sprint(process, "%")
+	}
+	return s
 }
 
 func (torrent *Torrent) GetCategoryFromTag() string {
@@ -350,7 +359,7 @@ func PrintTorrents(torrents []Torrent, filter string, showSum bool) {
 	cnt := int64(0)
 	size := int64(0)
 	sizeUnfinished := int64(0)
-	fmt.Printf("%-25s  %-40s  %-7s  %-5s  %-8s  %-8s  %-5s  %-5s  %-20s\n", "Name", "InfoHash", "Size", "State", "↓S (/s)", "↑S (/s)", "Seeds", "Peers", "Tracker")
+	fmt.Printf("%-25s  %-40s  %-7s  %-5s  %-8s  %-8s  %-5s  %-5s  %-20s\n", "Name", "InfoHash", "Size", "State", "↓S(/s)", "↑S(/s)", "Seeds", "Peers", "Tracker")
 	for _, torrent := range torrents {
 		if filter != "" && !utils.ContainsI(torrent.Name, filter) && !utils.ContainsI(torrent.InfoHash, filter) {
 			continue
@@ -363,7 +372,7 @@ func PrintTorrents(torrents []Torrent, filter string, showSum bool) {
 		fmt.Printf("  %-40s  %-7s  %-5s  %-8s  %-8s  %-5d  %-5d  %-20s\n",
 			torrent.InfoHash,
 			utils.BytesSize(float64(torrent.Size)),
-			TorrentStateIconText(&torrent),
+			torrent.StateIconText(),
 			utils.BytesSize(float64(torrent.DownloadSpeed)),
 			utils.BytesSize(float64(torrent.UploadSpeed)),
 			torrent.Seeders,
@@ -565,4 +574,7 @@ func IsValidInfoHashOrStateFilter(stateFilter string) bool {
 		return slices.Index(STATES, stateFilter) != -1
 	}
 	return IsValidInfoHash(stateFilter)
+}
+
+func init() {
 }

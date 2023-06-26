@@ -9,8 +9,9 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "delete <client> <infoHash>...",
-	Short: "Delete torrents from client.",
+	Use:     "delete <client> <infoHash>...",
+	Aliases: []string{"rm"},
+	Short:   "Delete torrents from client.",
 	Long: `Delete torrents from client.
 <infoHash>...: infoHash list of torrents.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
@@ -22,7 +23,7 @@ var (
 )
 
 func init() {
-	command.Flags().BoolVarP(&preserve, "preserve", "p", false, "Preserve (don't delete) torrent files on the hard disk.")
+	command.Flags().BoolVarP(&preserve, "preserve", "p", false, "Preserve (don't delete) torrent content files on the disk")
 	cmd.RootCmd.AddCommand(command)
 }
 

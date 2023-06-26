@@ -65,6 +65,9 @@ func add(cmd *cobra.Command, args []string) {
 	}
 	errCnt := int64(0)
 	torrentFiles := utils.ParseFilenameArgs(args...)
+	if rename != "" && len(torrentFiles) > 1 {
+		log.Fatalf("--rename flag can only be used with exact one torrent file arg")
+	}
 	option := &client.TorrentOption{
 		Pause:        paused,
 		SavePath:     savePath,
