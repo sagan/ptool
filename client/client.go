@@ -47,13 +47,14 @@ type TorrentContentFile struct {
 }
 
 type Status struct {
-	FreeSpaceOnDisk    int64 // -1 means unknown
-	UnfinishedSize     int64
-	DownloadSpeed      int64
-	UploadSpeed        int64
-	DownloadSpeedLimit int64 // <= 0 means no limit
-	UploadSpeedLimit   int64 // <= 0 means no limit
-	NoAdd              bool  // if true, brush and other tasks will NOT add any torrents to client
+	FreeSpaceOnDisk           int64 // -1 means unknown
+	UnfinishedSize            int64
+	UnfinishedDownloadingSize int64
+	DownloadSpeed             int64
+	UploadSpeed               int64
+	DownloadSpeedLimit        int64 // <= 0 means no limit
+	UploadSpeedLimit          int64 // <= 0 means no limit
+	NoAdd                     bool  // if true, brush and other tasks will NOT add any torrents to client
 }
 
 type TorrentTracker struct {

@@ -23,14 +23,15 @@ import (
 )
 
 type Client struct {
-	Name           string
-	ClientConfig   *config.ClientConfigStruct
-	Config         *config.ConfigStruct
-	HttpClient     *http.Client
-	data           *apiSyncMaindata
-	Logined        bool
-	datatime       int64
-	unfinishedSize int64
+	Name                      string
+	ClientConfig              *config.ClientConfigStruct
+	Config                    *config.ConfigStruct
+	HttpClient                *http.Client
+	data                      *apiSyncMaindata
+	Logined                   bool
+	datatime                  int64
+	unfinishedSize            int64
+	unfinishedDownloadingSize int64
 }
 
 func (qbclient *Client) apiPost(apiUrl string, data url.Values) error {
@@ -562,6 +563,7 @@ func (qbclient *Client) ModifyTorrent(infoHash string,
 func (qbclient *Client) PurgeCache() {
 	qbclient.data = nil
 	qbclient.unfinishedSize = 0
+	qbclient.unfinishedDownloadingSize = 0
 	qbclient.datatime = 0
 }
 
@@ -580,12 +582,18 @@ func (qbclient *Client) sync() error {
 	qbclient.datatime = utils.Now()
 	// make hash available in torrent itself as well as map key
 	unfinishedSize := int64(0)
+	unfinishedDownloadingSize := int64(0)
 	for hash, torrent := range qbclient.data.Torrents {
 		torrent.Hash = hash
 		qbclient.data.Torrents[hash] = torrent
-		unfinishedSize += torrent.Size - torrent.Completed
+		usize := torrent.Size - torrent.Completed
+		unfinishedSize += usize
+		if torrent.State != "pausedDL" {
+			unfinishedDownloadingSize += usize
+		}
 	}
 	qbclient.unfinishedSize = unfinishedSize
+	qbclient.unfinishedDownloadingSize = unfinishedDownloadingSize
 	return nil
 }
 
@@ -617,6 +625,7 @@ func (qbclient *Client) GetStatus() (*client.Status, error) {
 	status.UploadSpeedLimit = qbclient.data.Server_state.Up_rate_limit
 	status.FreeSpaceOnDisk = qbclient.data.Server_state.Free_space_on_disk
 	status.UnfinishedSize = qbclient.unfinishedSize
+	status.UnfinishedDownloadingSize = qbclient.unfinishedDownloadingSize
 	// @workaround
 	// qb 的 Web API 有 bug，有时 FreeSpaceOnDisk 返回 0，但实际硬盘剩余空间充足，原因尚不明确。目前在 Windows QB 4.5.2 上发现此现象。
 	if status.FreeSpaceOnDisk == 0 {
@@ -661,6 +670,18 @@ func (qbclient *Client) GetConfig(variable string) (string, error) {
 			return "", err
 		}
 		return fmt.Sprint(status.FreeSpaceOnDisk), nil
+	case "global_download_speed":
+		status, err := qbclient.GetStatus()
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprint(status.DownloadSpeed), nil
+	case "global_upload_speed":
+		status, err := qbclient.GetStatus()
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprint(status.UploadSpeed), nil
 	default:
 		return "", nil
 	}
@@ -678,7 +699,7 @@ func (qbclient *Client) SetConfig(variable string, value string) error {
 	case "global_upload_speed_limit":
 		err = qbclient.apiRequest("api/v2/transfer/setUploadLimit?limit="+value, nil)
 		return err
-	case "free_disk_space":
+	case "free_disk_space", "global_download_speed", "global_upload_speed":
 		return fmt.Errorf("%s is read-only", variable)
 	default:
 		return nil

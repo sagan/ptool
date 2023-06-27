@@ -16,7 +16,8 @@ import (
 
 type Option struct {
 	Name string
-	Type int // 0 - normal; 1 - Speed; 2 - Size
+	Type int64 // 0 - normal; 1 - Speed; 2 - Size
+	Auto bool
 }
 
 var command = &cobra.Command{
@@ -29,9 +30,11 @@ var command = &cobra.Command{
 
 var (
 	allOptions = []Option{
-		{"global_download_speed_limit", 1},
-		{"global_upload_speed_limit", 1},
-		{"free_disk_space", 2},
+		{"global_download_speed_limit", 1, true},
+		{"global_upload_speed_limit", 1, true},
+		{"global_download_speed", 1, false},
+		{"global_upload_speed", 1, false},
+		{"free_disk_space", 2, false},
 	}
 	showRaw       = false
 	showValueOnly = false
@@ -53,9 +56,13 @@ func clientctl(cmd *cobra.Command, args []string) {
 	}
 	args = args[1:]
 	cntError := int64(0)
-
 	if len(args) == 0 {
-		args = utils.Map(allOptions, func(o Option) string { return o.Name })
+		args = []string{}
+		for _, option := range allOptions {
+			if option.Auto {
+				args = append(args, option.Name)
+			}
+		}
 	}
 
 	for _, variable := range args {

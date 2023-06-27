@@ -140,9 +140,10 @@ func status(cmd *cobra.Command, args []string) {
 						utils.BytesSize(float64(response.ClientStatus.UploadSpeedLimit))),
 					fmt.Sprintf("↓Spd/Lmt: %s / %s/s", utils.BytesSize(float64(response.ClientStatus.DownloadSpeed)),
 						utils.BytesSize(float64(response.ClientStatus.DownloadSpeedLimit))),
-					fmt.Sprintf("FreeSpace: %s; Unfinished: %s",
+					fmt.Sprintf("FreeSpace: %s; Unfinished(All/DL): %s/%s",
 						utils.BytesSize(float64(response.ClientStatus.FreeSpaceOnDisk)),
 						utils.BytesSize(float64(response.ClientStatus.UnfinishedSize)),
+						utils.BytesSize(float64(response.ClientStatus.UnfinishedDownloadingSize)),
 					),
 				)
 				if len(response.ClientTorrents) > 0 {

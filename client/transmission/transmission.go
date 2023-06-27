@@ -18,18 +18,19 @@ import (
 )
 
 type Client struct {
-	Name           string
-	ClientConfig   *config.ClientConfigStruct
-	Config         *config.ConfigStruct
-	client         *transmissionrpc.Client
-	datatime       int64
-	datatimeMeta   int64
-	torrents       map[string](*transmissionrpc.Torrent)
-	sessionStats   *transmissionrpc.SessionStats
-	sessionArgs    *transmissionrpc.SessionArguments
-	freeSpace      int64
-	unfinishedSize int64
-	lastTorrent    *transmissionrpc.Torrent // a **really** simple cache with capacity of only one
+	Name                      string
+	ClientConfig              *config.ClientConfigStruct
+	Config                    *config.ConfigStruct
+	client                    *transmissionrpc.Client
+	datatime                  int64
+	datatimeMeta              int64
+	torrents                  map[string](*transmissionrpc.Torrent)
+	sessionStats              *transmissionrpc.SessionStats
+	sessionArgs               *transmissionrpc.SessionArguments
+	freeSpace                 int64
+	unfinishedSize            int64
+	unfinishedDownloadingSize int64
+	lastTorrent               *transmissionrpc.Torrent // a **really** simple cache with capacity of only one
 }
 
 // get a torrent info from rpc. return error if torrent not found
@@ -92,13 +93,19 @@ func (trclient *Client) sync() error {
 	}
 	torrentsMap := map[string](*transmissionrpc.Torrent){}
 	unfinishedSize := int64(0)
+	unfinishedDownloadingSize := int64(0)
 	for i := range torrents {
 		torrentsMap[*torrents[i].HashString] = &torrents[i]
-		unfinishedSize += int64(float64(*torrents[i].SizeWhenDone) * (1 - *torrents[i].PercentDone))
+		usize := int64(float64(*torrents[i].SizeWhenDone) * (1 - *torrents[i].PercentDone))
+		unfinishedSize += usize
+		if *torrents[i].Status != 0 {
+			unfinishedDownloadingSize += usize
+		}
 	}
 	trclient.datatime = now
 	trclient.torrents = torrentsMap
 	trclient.unfinishedSize = unfinishedSize
+	trclient.unfinishedDownloadingSize = unfinishedDownloadingSize
 	return nil
 }
 
@@ -517,6 +524,7 @@ func (trclient *Client) PurgeCache() {
 	trclient.datatime = 0
 	trclient.datatimeMeta = 0
 	trclient.unfinishedSize = 0
+	trclient.unfinishedDownloadingSize = 0
 	trclient.sessionArgs = nil
 	trclient.sessionStats = nil
 	trclient.torrents = nil
@@ -536,12 +544,13 @@ func (trclient *Client) GetStatus() (*client.Status, error) {
 		downloadSpeedLimit = *trclient.sessionArgs.SpeedLimitDown * 1024
 	}
 	return &client.Status{
-		DownloadSpeed:      trclient.sessionStats.DownloadSpeed,
-		UploadSpeed:        trclient.sessionStats.UploadSpeed,
-		DownloadSpeedLimit: downloadSpeedLimit,
-		UploadSpeedLimit:   uploadSpeedLimit,
-		FreeSpaceOnDisk:    trclient.freeSpace,
-		UnfinishedSize:     trclient.unfinishedSize,
+		DownloadSpeed:             trclient.sessionStats.DownloadSpeed,
+		UploadSpeed:               trclient.sessionStats.UploadSpeed,
+		DownloadSpeedLimit:        downloadSpeedLimit,
+		UploadSpeedLimit:          uploadSpeedLimit,
+		FreeSpaceOnDisk:           trclient.freeSpace,
+		UnfinishedSize:            trclient.unfinishedSize,
+		UnfinishedDownloadingSize: trclient.unfinishedDownloadingSize,
 	}, nil
 }
 
@@ -584,7 +593,7 @@ func (trclient *Client) SetConfig(variable string, value string) error {
 			SpeedLimitUpEnabled: &limited,
 			SpeedLimitUp:        &limit,
 		})
-	case "free_disk_space":
+	case "free_disk_space", "global_download_speed", "global_upload_speed":
 		return fmt.Errorf("%s is read-only", variable)
 	default:
 		return nil
@@ -618,6 +627,18 @@ func (trclient *Client) GetConfig(variable string) (string, error) {
 			return "", err
 		}
 		return fmt.Sprint(status.FreeSpaceOnDisk), nil
+	case "global_download_speed":
+		status, err := trclient.GetStatus()
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprint(status.DownloadSpeed), nil
+	case "global_upload_speed":
+		status, err := trclient.GetStatus()
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprint(status.UploadSpeed), nil
 	default:
 		return "", nil
 	}
