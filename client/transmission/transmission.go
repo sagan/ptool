@@ -584,6 +584,8 @@ func (trclient *Client) SetConfig(variable string, value string) error {
 			SpeedLimitUpEnabled: &limited,
 			SpeedLimitUp:        &limit,
 		})
+	case "free_disk_space":
+		return fmt.Errorf("%s is read-only", variable)
 	default:
 		return nil
 	}
@@ -610,6 +612,12 @@ func (trclient *Client) GetConfig(variable string) (string, error) {
 			return fmt.Sprint(*sessionStats.SpeedLimitUp * 1024), nil
 		}
 		return "0", nil
+	case "free_disk_space":
+		status, err := trclient.GetStatus()
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprint(status.FreeSpaceOnDisk), nil
 	default:
 		return "", nil
 	}

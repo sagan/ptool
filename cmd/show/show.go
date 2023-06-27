@@ -31,6 +31,7 @@ var (
 	largest           bool
 	showTrackers      bool
 	showFiles         bool
+	showInfoHashOnly  bool
 	maxTorrents                                         = int64(0)
 	filter                                              = ""
 	category                                            = ""
@@ -44,8 +45,9 @@ func init() {
 	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "m", 0, "Show at most this number of torrents. Default (0) == unlimited")
 	command.Flags().BoolVarP(&largest, "largest", "l", false, "Show largest torrents first. Equavalent with '--sort size --order desc'")
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all torrents. Equavalent with pass a '_all' arg")
-	command.Flags().BoolVarP(&showTrackers, "trackers", "", false, "Show torrent trackers info")
-	command.Flags().BoolVarP(&showFiles, "files", "", false, "Show torrent content files info")
+	command.Flags().BoolVarP(&showTrackers, "show-trackers", "", false, "Show torrent trackers info")
+	command.Flags().BoolVarP(&showInfoHashOnly, "show-info-hash-only", "", false, "Output torrents info hash only")
+	command.Flags().BoolVarP(&showFiles, "show-files", "", false, "Show torrent content files info")
 	command.Flags().StringVarP(&filter, "filter", "f", "", "Filter torrents by name")
 	command.Flags().StringVarP(&category, "category", "c", "", "Filter torrents by category")
 	command.Flags().StringVarP(&tag, "tag", "t", "", "Filter torrents by tag")
@@ -59,6 +61,9 @@ func init() {
 func show(cmd *cobra.Command, args []string) {
 	clientName := args[0]
 	args = args[1:]
+	if showInfoHashOnly && (showFiles || showTrackers) {
+		log.Fatalf("--show-files or --show-trackers is NOT compatible with --show-info-hash-only flag")
+	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
 		log.Fatal(err)
@@ -151,21 +156,30 @@ func show(cmd *cobra.Command, args []string) {
 		torrents = torrents[:maxTorrents]
 	}
 
-	clientStatus, err := clientInstance.GetStatus()
-	if err != nil {
-		log.Errorf("Failed to get client status: %v", err)
-		fmt.Printf("Client %s | Showing %d torrents\n\n", clientInstance.GetName(), len(torrents))
+	if !showInfoHashOnly {
+		clientStatus, err := clientInstance.GetStatus()
+		if err != nil {
+			log.Errorf("Failed to get client status: %v", err)
+			fmt.Printf("Client %s | Showing %d torrents\n\n", clientInstance.GetName(), len(torrents))
+		} else {
+			fmt.Printf("Client %s | %s | %s | %s | Showing %d torrents\n\n",
+				clientInstance.GetName(),
+				fmt.Sprintf("↑Spd/Lmt: %s / %s/s", utils.BytesSize(float64(clientStatus.UploadSpeed)),
+					utils.BytesSize(float64(clientStatus.UploadSpeedLimit))),
+				fmt.Sprintf("↓Spd/Lmt: %s / %s/s", utils.BytesSize(float64(clientStatus.DownloadSpeed)),
+					utils.BytesSize(float64(clientStatus.DownloadSpeedLimit))),
+				fmt.Sprintf("FreeSpace: %s", utils.BytesSize(float64(clientStatus.FreeSpaceOnDisk))),
+				len(torrents),
+			)
+		}
+		clientInstance.Close()
+		client.PrintTorrents(torrents, "", true)
 	} else {
-		fmt.Printf("Client %s | %s | %s | %s | Showing %d torrents\n\n",
-			clientInstance.GetName(),
-			fmt.Sprintf("↑Spd/Lmt: %s / %s/s", utils.BytesSize(float64(clientStatus.UploadSpeed)),
-				utils.BytesSize(float64(clientStatus.UploadSpeedLimit))),
-			fmt.Sprintf("↓Spd/Lmt: %s / %s/s", utils.BytesSize(float64(clientStatus.DownloadSpeed)),
-				utils.BytesSize(float64(clientStatus.DownloadSpeedLimit))),
-			fmt.Sprintf("FreeSpace: %s", utils.BytesSize(float64(clientStatus.FreeSpaceOnDisk))),
-			len(torrents),
-		)
+		for i, torrent := range torrents {
+			if i > 0 {
+				fmt.Printf(" ")
+			}
+			fmt.Printf(torrent.InfoHash)
+		}
 	}
-	clientInstance.Close()
-	client.PrintTorrents(torrents, "", true)
 }

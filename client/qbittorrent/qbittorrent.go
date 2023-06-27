@@ -655,6 +655,12 @@ func (qbclient *Client) GetConfig(variable string) (string, error) {
 		v := 0
 		err = qbclient.apiRequest("api/v2/transfer/uploadLimit", &v)
 		return fmt.Sprint(v), err
+	case "free_disk_space":
+		status, err := qbclient.GetStatus()
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprint(status.FreeSpaceOnDisk), nil
 	default:
 		return "", nil
 	}
@@ -672,6 +678,8 @@ func (qbclient *Client) SetConfig(variable string, value string) error {
 	case "global_upload_speed_limit":
 		err = qbclient.apiRequest("api/v2/transfer/setUploadLimit?limit="+value, nil)
 		return err
+	case "free_disk_space":
+		return fmt.Errorf("%s is read-only", variable)
 	default:
 		return nil
 	}

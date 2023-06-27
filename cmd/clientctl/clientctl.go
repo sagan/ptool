@@ -14,35 +14,48 @@ import (
 	"github.com/sagan/ptool/utils"
 )
 
+type Option struct {
+	Name string
+	Type int // 0 - normal; 1 - Speed; 2 - Size
+}
+
 var command = &cobra.Command{
-	Use: "clientctl [<variable>[=value] ...]",
-	// Args:  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
+	Use:   "clientctl <client> [<variable>[=value] ...]",
+	Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	Short: "Get or set client config.",
 	Long:  `Get or set client config.`,
 	Run:   clientctl,
 }
 
 var (
-	allOptions  = []string{"global_download_speed_limit", "global_upload_speed_limit"}
-	sizeOptions = []string{"global_download_speed_limit", "global_upload_speed_limit"}
-	showRaw     = false
+	allOptions = []Option{
+		{"global_download_speed_limit", 1},
+		{"global_upload_speed_limit", 1},
+		{"free_disk_space", 2},
+	}
+	showRaw       = false
+	showValueOnly = false
 )
 
 func init() {
-	command.Flags().BoolVarP(&showRaw, "raw", "", false, "show raw config data")
+	command.Flags().BoolVarP(&showRaw, "raw", "", false, "Display config value data in raw format")
+	command.Flags().BoolVarP(&showValueOnly, "show-value-only", "", false, "show config value data only")
 	cmd.RootCmd.AddCommand(command)
 }
 
 func clientctl(cmd *cobra.Command, args []string) {
+	if showRaw && showValueOnly {
+		log.Fatalf("--raw and --show-value-only flags are NOT compatible")
+	}
 	clientInstance, err := client.CreateClient(args[0])
 	if err != nil {
 		log.Fatal(err)
 	}
 	args = args[1:]
-	exit := 0
+	cntError := int64(0)
 
 	if len(args) == 0 {
-		args = allOptions
+		args = utils.Map(allOptions, func(o Option) string { return o.Name })
 	}
 
 	for _, variable := range args {
@@ -50,40 +63,52 @@ func clientctl(cmd *cobra.Command, args []string) {
 		name := s[0]
 		value := ""
 		var err error
-		if !slices.Contains(allOptions, name) {
+		index := slices.IndexFunc(allOptions, func(o Option) bool { return o.Name == name })
+		if index == -1 {
 			log.Fatal("Unrecognized option " + name)
 		}
+		option := allOptions[index]
 		if len(s) == 1 {
 			value, err = clientInstance.GetConfig(name)
 			if err != nil {
-				log.Printf("Error get client %s config %s: %v", clientInstance.GetName(), name, err)
-				exit = 1
+				log.Errorf("Error get client %s config %s: %v", clientInstance.GetName(), name, err)
+				cntError++
 			}
 		} else {
 			value = s[1]
-			if slices.Contains(sizeOptions, name) {
+			if option.Type > 0 {
 				v, _ := utils.RAMInBytes(value)
 				err = clientInstance.SetConfig(name, fmt.Sprint(v))
 			} else {
 				err = clientInstance.SetConfig(name, value)
 			}
 			if err != nil {
-				log.Printf("Error set client %s config %s=%s: %v", clientInstance.GetName(), name, value, err)
+				log.Errorf("Error set client %s config %s=%s: %v", clientInstance.GetName(), name, value, err)
 				value = ""
-				exit = 1
+				cntError++
 			}
 		}
-		printOption(name, value)
+		if showValueOnly {
+			fmt.Printf("%v\n", value)
+		} else {
+			printOption(name, value, option, showRaw)
+		}
 	}
 	clientInstance.Close()
-	os.Exit(exit)
+	if cntError > 0 {
+		os.Exit(1)
+	}
 }
 
-func printOption(name string, value string) {
-	if value != "" && slices.Contains(sizeOptions, name) {
+func printOption(name string, value string, option Option, showRaw bool) {
+	if value != "" && option.Type > 0 {
 		ff, _ := utils.RAMInBytes(value)
 		if !showRaw {
-			fmt.Printf("%s=%s/s\n", name, utils.BytesSize(float64(ff)))
+			if option.Type == 1 {
+				fmt.Printf("%s=%s/s\n", name, utils.BytesSize(float64(ff)))
+			} else {
+				fmt.Printf("%s=%s\n", name, utils.BytesSize(float64(ff)))
+			}
 		} else {
 			fmt.Printf("%s=%d\n", name, ff)
 		}

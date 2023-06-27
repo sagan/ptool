@@ -204,6 +204,7 @@ clientctl 命令可以显示或修改指定 name 的 BT 客户端的配置参数
 
 * global_download_speed_limit : 全局下载速度上限。
 * global_upload_speed_limit : 全局上传速度上限。
+* free_disk_space : (只读)默认下载目录的剩余磁盘空间(-1: Unknown)。
 
 示例：
 
