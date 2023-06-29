@@ -71,10 +71,13 @@ func (npclient *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Tor
 	}
 	searchUrl = strings.Replace(searchUrl, "%s", url.PathEscape(keyword), 1)
 
-	doc, err := utils.GetUrlDoc(searchUrl, npclient.HttpClient,
+	doc, res, err := utils.GetUrlDoc(searchUrl, npclient.HttpClient,
 		npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse site page dom: %v", err)
+	}
+	if res.Request.URL.Path == "/login.php" {
+		return nil, fmt.Errorf("not logined (cookie may has expired)")
 	}
 	return npclient.parseTorrentsFromDoc(doc, utils.Now())
 }
@@ -166,11 +169,14 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 	}
 	pageStr := "page=" + fmt.Sprint(page)
 	now := utils.Now()
-	doc, error := utils.GetUrlDoc(pageUrl+queryString+pageStr, npclient.HttpClient,
+	doc, res, error := utils.GetUrlDoc(pageUrl+queryString+pageStr, npclient.HttpClient,
 		npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, nil)
 	if error != nil {
 		err = fmt.Errorf("failed to fetch torrents page dom: %v", error)
 		return
+	}
+	if res.Request.URL.Path == "/login.php" {
+		return nil, "", fmt.Errorf("not logined (cookie may has expired)")
 	}
 
 	if pageMarker == "" {
@@ -190,10 +196,14 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 			page = lastPage
 			pageStr = "page=" + fmt.Sprint(page)
 			now = utils.Now()
-			doc, error = utils.GetUrlDoc(pageUrl+queryString+pageStr, npclient.HttpClient,
+			doc, res, error = utils.GetUrlDoc(pageUrl+queryString+pageStr, npclient.HttpClient,
 				npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, nil)
 			if error != nil {
 				err = fmt.Errorf("failed to fetch torrents page dom: %v", error)
+				return
+			}
+			if res.Request.URL.Path == "/login.php" {
+				err = fmt.Errorf("not logined (cookie may has expired)")
 				return
 			}
 		}
@@ -236,10 +246,13 @@ func (npclient *Site) sync() error {
 	if url == "" {
 		url = npclient.SiteConfig.Url + "torrents.php"
 	}
-	doc, err := utils.GetUrlDoc(url, npclient.HttpClient,
+	doc, res, err := utils.GetUrlDoc(url, npclient.HttpClient,
 		npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, nil)
 	if err != nil {
 		return fmt.Errorf("failed to get site page dom: %v", err)
+	}
+	if res.Request.URL.Path == "/login.php" {
+		return fmt.Errorf("not logined (cookie may has expired)")
 	}
 	html := doc.Find("html")
 	npclient.datatime = utils.Now()
@@ -318,11 +331,14 @@ func (npclient *Site) syncExtra() error {
 	}
 	extraTorrents := []site.Torrent{}
 	for _, extraUrl := range npclient.SiteConfig.TorrentsExtraUrls {
-		doc, err := utils.GetUrlDoc(extraUrl, npclient.HttpClient,
+		doc, res, err := utils.GetUrlDoc(extraUrl, npclient.HttpClient,
 			npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, nil)
 		if err != nil {
 			log.Errorf("failed to parse site page dom: %v", err)
 			continue
+		}
+		if res.Request.URL.Path == "/login.php" {
+			return fmt.Errorf("not logined (cookie may has expired)")
 		}
 		torrents, err := npclient.parseTorrentsFromDoc(doc, utils.Now())
 		if err != nil {

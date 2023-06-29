@@ -37,7 +37,7 @@ func (gpwsite *Site) GetSiteConfig() *config.SiteConfigStruct {
 }
 
 func (gpwsite *Site) GetStatus() (*site.Status, error) {
-	doc, err := utils.GetUrlDoc(gpwsite.SiteConfig.Url+"torrents.php", gpwsite.HttpClient,
+	doc, _, err := utils.GetUrlDoc(gpwsite.SiteConfig.Url+"torrents.php", gpwsite.HttpClient,
 		gpwsite.GetSiteConfig().Cookie, gpwsite.SiteConfig.UserAgent, nil)
 	if err != nil {
 		return nil, err

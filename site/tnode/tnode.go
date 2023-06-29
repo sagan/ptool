@@ -29,7 +29,7 @@ func (tnsite *Site) syncCsrfToken() error {
 	if tnsite.csrfToken != "" {
 		return nil
 	}
-	doc, err := utils.GetUrlDoc(tnsite.SiteConfig.Url, tnsite.HttpClient,
+	doc, _, err := utils.GetUrlDoc(tnsite.SiteConfig.Url, tnsite.HttpClient,
 		tnsite.GetSiteConfig().Cookie, tnsite.SiteConfig.UserAgent, nil)
 	if err != nil {
 		return err

@@ -42,7 +42,7 @@ func (usite *Site) GetSiteConfig() *config.SiteConfigStruct {
 }
 
 func (usite *Site) GetStatus() (*site.Status, error) {
-	doc, err := utils.GetUrlDoc(usite.SiteConfig.Url+"torrents", usite.HttpClient,
+	doc, _, err := utils.GetUrlDoc(usite.SiteConfig.Url+"torrents", usite.HttpClient,
 		usite.GetSiteConfig().Cookie, usite.SiteConfig.UserAgent, nil)
 	if err != nil {
 		return nil, err

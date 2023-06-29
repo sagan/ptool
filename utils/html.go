@@ -84,15 +84,15 @@ func DomTime(s *goquery.Selection, location *time.Location) int64 {
 }
 
 func GetUrlDoc(url string, client *http.Client,
-	cookie string, ua string, otherHeaders map[string](string)) (*goquery.Document, error) {
+	cookie string, ua string, otherHeaders map[string](string)) (*goquery.Document, *http.Response, error) {
 	res, _, err := FetchUrl(url, client, cookie, ua, otherHeaders)
 	if err != nil {
-		return nil, fmt.Errorf("can not fetch site data %v", err)
+		return nil, nil, fmt.Errorf("can not fetch site data %v", err)
 	}
 	defer res.Body.Close()
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse site page DOM, error: %v", err)
+		return nil, nil, fmt.Errorf("failed to parse site page DOM, error: %v", err)
 	}
-	return doc, nil
+	return doc, res, nil
 }
