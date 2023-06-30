@@ -203,20 +203,30 @@ func batchdl(cmd *cobra.Command, args []string) {
 	cntAllTorrents := int64(0)
 	totalSize := int64(0)
 	totalAllSize := int64(0)
-
+	errorCnt := int64(0)
 	var torrents []site.Torrent
 	var marker = startPage
 	var lastMarker = ""
 	doneHandle := func() {
-		fmt.Printf("\n"+`Done. Torrents(Size/Cnt) | AllTorrents(Size/Cnt) | LastPage: %s/%d | %s/%d | "%s"`+"\n",
-			utils.BytesSize(float64(totalSize)), cntTorrents, utils.BytesSize(float64(totalAllSize)), cntAllTorrents, lastMarker)
+		fmt.Printf("\nDone. Torrents(Size/Cnt) | AllTorrents(Size/Cnt) | LastPage: %s/%d | %s/%d | \"%s\"; ErrorCnt: %d\n",
+			utils.BytesSize(float64(totalSize)),
+			cntTorrents,
+			utils.BytesSize(float64(totalAllSize)),
+			cntAllTorrents,
+			lastMarker,
+			errorCnt,
+		)
 		if csvWriter != nil {
 			csvWriter.Flush()
 		}
 		if clientInstance != nil {
 			clientInstance.Close()
 		}
-		os.Exit(0)
+		if errorCnt > 0 {
+			os.Exit(1)
+		} else {
+			os.Exit(0)
+		}
 	}
 	sigs := make(chan os.Signal, 1)
 	go func() {
@@ -334,7 +344,7 @@ mainloop:
 			cntTorrents++
 			cntTorrentsThisPage++
 			totalSize += torrent.Size
-
+			var err error
 			if action == "show" {
 				site.PrintTorrents([]site.Torrent{torrent}, "", now, cntTorrents != 1, dense)
 			} else if action == "export" {
@@ -344,7 +354,6 @@ mainloop:
 			} else {
 				var torrentContent []byte
 				var filename string
-				var err error
 				if torrent.DownloadUrl != "" {
 					torrentContent, filename, err = siteInstance.DownloadTorrent(torrent.DownloadUrl)
 				} else {
@@ -354,7 +363,7 @@ mainloop:
 					fmt.Printf("torrent %s (%s): failed to download: %v\n", torrent.Id, torrent.Name, err)
 				} else {
 					if action == "download" {
-						err := os.WriteFile(downloadDir+"/"+filename, torrentContent, 0777)
+						err = os.WriteFile(downloadDir+"/"+filename, torrentContent, 0777)
 						if err != nil {
 							fmt.Printf("torrent %s: failed to write to %s/file %s: %v\n", torrent.Id, downloadDir, filename, err)
 						} else {
@@ -372,7 +381,7 @@ mainloop:
 						} else {
 							clientAddTorrentOption.Category = addCategory
 						}
-						err := clientInstance.AddTorrent(torrentContent, clientAddTorrentOption, nil)
+						err = clientInstance.AddTorrent(torrentContent, clientAddTorrentOption, nil)
 						if err != nil {
 							fmt.Printf("torrent %s (%s): failed to add to client: %v\n", torrent.Id, torrent.Name, err)
 						} else {
@@ -381,7 +390,9 @@ mainloop:
 					}
 				}
 			}
-
+			if err != nil {
+				errorCnt++
+			}
 			if maxTorrents > 0 && cntTorrents >= maxTorrents {
 				break mainloop
 			}

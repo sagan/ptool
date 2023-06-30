@@ -643,7 +643,7 @@ func (trclient *Client) GetConfig(variable string) (string, error) {
 		return "", nil
 	}
 }
-func (trclient *Client) GetTorrentTrackers(infoHash string) ([]client.TorrentTracker, error) {
+func (trclient *Client) GetTorrentTrackers(infoHash string) (client.TorrentTrackers, error) {
 	torrent, err := trclient.getTorrent(infoHash, true)
 	if err != nil {
 		return nil, err
@@ -715,10 +715,18 @@ func (trclient *Client) EditTorrentTracker(infoHash string, oldTracker string, n
 	})
 }
 
-func (trclient *Client) AddTorrentTrackers(infoHash string, trackers []string) error {
+func (trclient *Client) AddTorrentTrackers(infoHash string, trackers []string, oldTracker string) error {
 	trtorrent, err := trclient.getTorrent(infoHash, false)
 	if err != nil {
 		return err
+	}
+	if oldTracker != "" {
+		index := slices.IndexFunc(trtorrent.Trackers, func(trtracker *transmissionrpc.Tracker) bool {
+			return utils.MatchUrlWithHostOrUrl(trtracker.Announce, oldTracker)
+		})
+		if index == -1 {
+			return nil
+		}
 	}
 	trackers = utils.Filter(trackers, func(tracker string) bool {
 		return slices.IndexFunc(trtorrent.Trackers, func(trtracker *transmissionrpc.Tracker) bool {

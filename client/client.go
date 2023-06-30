@@ -63,6 +63,8 @@ type TorrentTracker struct {
 	Msg    string
 }
 
+type TorrentTrackers []TorrentTracker
+
 type TorrentOption struct {
 	Name               string
 	Category           string
@@ -111,9 +113,9 @@ type Client interface {
 	GetClientConfig() *config.ClientConfigStruct
 	SetConfig(variable string, value string) error
 	GetConfig(variable string) (string, error)
-	GetTorrentTrackers(infoHash string) ([]TorrentTracker, error)
+	GetTorrentTrackers(infoHash string) (TorrentTrackers, error)
 	EditTorrentTracker(infoHash string, oldTracker string, newTracker string, replaceHost bool) error
-	AddTorrentTrackers(infoHash string, trackers []string) error
+	AddTorrentTrackers(infoHash string, trackers []string, oldTracker string) error
 	RemoveTorrentTrackers(infoHash string, trackers []string) error
 	Close()
 }
@@ -289,6 +291,16 @@ func (torrent *Torrent) HasTag(tag string) bool {
 	}) != -1
 }
 
+// return index or -1
+func (trackers TorrentTrackers) FindIndex(hostOrUrl string) int {
+	for i, tracker := range trackers {
+		if utils.MatchUrlWithHostOrUrl(tracker.Url, hostOrUrl) {
+			return i
+		}
+	}
+	return -1
+}
+
 func GenerateTorrentTagFromSite(site string) string {
 	return "site:" + site
 }
@@ -305,7 +317,7 @@ func IsSubstituteTag(tag string) bool {
 	return substituteTagRegex.MatchString(tag)
 }
 
-func PrintTorrentTrackers(trackers []TorrentTracker) {
+func PrintTorrentTrackers(trackers TorrentTrackers) {
 	fmt.Printf("Trackers:\n")
 	fmt.Printf("%-8s  %-40s  %s\n", "Status", "Msg", "Url")
 	for _, tracker := range trackers {

@@ -764,7 +764,7 @@ func (qbclient *Client) GetTorrentContents(infoHash string) ([]client.TorrentCon
 	return torrentContents, nil
 }
 
-func (qbclient *Client) GetTorrentTrackers(infoHash string) ([]client.TorrentTracker, error) {
+func (qbclient *Client) GetTorrentTrackers(infoHash string) (client.TorrentTrackers, error) {
 	err := qbclient.login()
 	if err != nil {
 		return nil, fmt.Errorf("login error: %v", err)
@@ -820,20 +820,17 @@ func (qbclient *Client) EditTorrentTracker(infoHash string, oldTracker string, n
 		oldTrackerUrl := ""
 		newTrackerUrl := ""
 		directNewUrlMode := utils.IsUrl(newTracker)
-		for _, tracker := range trackers {
-			oldTrackerUrlObj, err := url.Parse(tracker.Url)
-			if err != nil {
-				continue
-			}
-			if oldTrackerUrlObj.Host == oldTracker {
-				oldTrackerUrl = tracker.Url
-				if directNewUrlMode {
-					newTrackerUrl = newTracker
-					break
+		index := trackers.FindIndex(oldTracker)
+		if index != -1 {
+			oldTrackerUrl = trackers[index].Url
+			if directNewUrlMode {
+				newTrackerUrl = newTracker
+			} else {
+				oldTrackerUrlObj, err := url.Parse(oldTrackerUrl)
+				if err == nil {
+					oldTrackerUrlObj.Host = newTracker
+					newTrackerUrl = oldTrackerUrlObj.String()
 				}
-				oldTrackerUrlObj.Host = newTracker
-				newTrackerUrl = oldTrackerUrlObj.String()
-				break
 			}
 		}
 		if oldTrackerUrl != "" && newTrackerUrl != "" {
@@ -858,7 +855,24 @@ func (qbclient *Client) EditTorrentTracker(infoHash string, oldTracker string, n
 	return qbclient.apiPost("api/v2/torrents/editTracker", data)
 }
 
-func (qbclient *Client) AddTorrentTrackers(infoHash string, trackers []string) error {
+// trackers - new trackers full URLs; oldTracker - existing tracker host or URL
+func (qbclient *Client) AddTorrentTrackers(infoHash string, trackers []string, oldTracker string) error {
+	if oldTracker != "" {
+		torrentTrackers, err := qbclient.GetTorrentTrackers(infoHash)
+		if err != nil {
+			return err
+		}
+		index := torrentTrackers.FindIndex(oldTracker)
+		if index == -1 {
+			return nil
+		}
+		trackers = utils.Filter(trackers, func(tracker string) bool {
+			return torrentTrackers.FindIndex(tracker) == -1
+		})
+	}
+	if len(trackers) == 0 {
+		return nil
+	}
 	data := url.Values{
 		"hash": {infoHash},
 		"urls": {strings.Join(trackers, "\n")},

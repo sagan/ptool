@@ -126,3 +126,12 @@ func SetHttpRequestBrowserHeaders(req *http.Request, ua string) {
 		req.Header.Set("User-Agent", ua)
 	}
 }
+
+func MatchUrlWithHostOrUrl(urlStr string, hostOrUrl string) bool {
+	if IsUrl(hostOrUrl) {
+		return urlStr == hostOrUrl
+	} else {
+		urlObj, err := url.Parse(urlStr)
+		return err == nil && urlObj.Host == hostOrUrl
+	}
+}

@@ -28,11 +28,12 @@ ptool addtrackers <client> <infoHashes...> --tracker "https://..."
 }
 
 var (
-	dryRun   = false
-	category = ""
-	tag      = ""
-	filter   = ""
-	trackers = []string{}
+	dryRun     = false
+	category   = ""
+	tag        = ""
+	filter     = ""
+	oldTracker = ""
+	trackers   = []string{}
 )
 
 func init() {
@@ -40,6 +41,7 @@ func init() {
 	command.Flags().StringVarP(&filter, "filter", "f", "", "Filter torrents by name")
 	command.Flags().StringVarP(&category, "category", "c", "", "Filter torrents by category")
 	command.Flags().StringVarP(&tag, "tag", "t", "", "Filter torrents by tag")
+	command.Flags().StringVarP(&oldTracker, "old-tracker", "", "", "The existing tracker host or full url. If set, only torrents that already have this tracker will get new tracker")
 	command.Flags().StringArrayVarP(&trackers, "tracker", "", nil, "Set the tracker to add. Can be used multiple times")
 	command.MarkFlagRequired("tracker")
 	cmd.RootCmd.AddCommand(command)
@@ -85,7 +87,7 @@ func addtrackers(cmd *cobra.Command, args []string) {
 		if dryRun {
 			continue
 		}
-		err := clientInstance.AddTorrentTrackers(torrent.InfoHash, trackers)
+		err := clientInstance.AddTorrentTrackers(torrent.InfoHash, trackers, oldTracker)
 		if err != nil {
 			log.Errorf("Failed to add trackers: %v\n", err)
 			cntError++

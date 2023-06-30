@@ -318,6 +318,12 @@ var (
 			Url:     "https://www.oshen.win/",
 			Comment: "奥申，欧神",
 		},
+		"pandapt": &config.SiteConfigStruct{
+			Type:    "nexusphp",
+			Aliases: []string{"panda"},
+			Url:     "https://pandapt.net/",
+			Comment: "熊猫高清",
+		},
 		"piggo": &config.SiteConfigStruct{
 			Type:    "nexusphp",
 			Url:     "https://piggo.me/",
