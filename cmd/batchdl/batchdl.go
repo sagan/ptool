@@ -31,7 +31,7 @@ var command = &cobra.Command{
 }
 
 var (
-	paused                                             = false
+	addPaused                                          = false
 	dense                                              = false
 	addRespectNoadd                                    = false
 	includeDownloaded                                  = false
@@ -65,7 +65,7 @@ var (
 )
 
 func init() {
-	command.Flags().BoolVarP(&paused, "add-paused", "", false, "Add torrents to client in paused state")
+	command.Flags().BoolVarP(&addPaused, "add-paused", "", false, "Add torrents to client in paused state")
 	command.Flags().BoolVarP(&dense, "dense", "", false, "dense mode: show full torrent title & subtitle")
 	command.Flags().BoolVarP(&freeOnly, "free", "", false, "Skip none-free torrents")
 	command.Flags().BoolVarP(&noPaid, "no-paid", "", false, "Skip paid (use bonus points) torrents")
@@ -89,7 +89,7 @@ func init() {
 	command.Flags().StringVarP(&downloadDir, "download-dir", "", ".", "Used with '--action download'. Set the local dir of downloaded torrents. Default == current dir")
 	command.Flags().StringVarP(&addClient, "add-client", "", "", "Used with '--action add'. Set the client. Required in this action")
 	command.Flags().StringVarP(&addCategory, "add-category", "", "", "Used with '--action add'. Set the category when adding torrent to client")
-	command.Flags().StringVarP(&addReserveSpaceStr, "add-reserve-disk-space", "", "0", "Used with '--action add'. Reserve client free disk space of at least this value. Will stop adding torrents if it would make client into state of insufficient space. eg. 10GiB. Default (0) == no limit")
+	command.Flags().StringVarP(&addReserveSpaceStr, "add-reserve-space", "", "0", "Used with '--action add'. Reserve client free disk space of at least this value. Will stop adding torrents if it would make client into state of insufficient space. eg. 10GiB. Default (0) == no limit")
 	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Used with '--action add'. Set the tags when adding torrent to client (comma-separated)")
 	command.Flags().StringVarP(&savePath, "add-save-path", "", "", "Set contents save path of added torrents")
 	command.Flags().StringVarP(&exportFile, "export-file", "", "", "Used with '--action export|printid'. Set the output file. (If not set, will use stdout)")
@@ -167,7 +167,13 @@ func batchdl(cmd *cobra.Command, args []string) {
 			if status.FreeSpaceOnDisk < 0 {
 				log.Warnf("Warning: client free space unknown")
 			} else {
-				addRemainSpace := status.FreeSpaceOnDisk - addReserveSpace
+				freeSpace := int64(0)
+				if addPaused {
+					freeSpace = status.FreeSpaceOnDisk - status.UnfinishedSize
+				} else {
+					freeSpace = status.FreeSpaceOnDisk - status.UnfinishedDownloadingSize
+				}
+				addRemainSpace := freeSpace - addReserveSpace
 				if addRemainSpace < addReserveSpaceGap {
 					log.Warnf("Client free space insufficient. Abort task")
 					os.Exit(0)
@@ -178,7 +184,7 @@ func batchdl(cmd *cobra.Command, args []string) {
 			}
 		}
 		clientAddTorrentOption = &client.TorrentOption{
-			Pause:    paused,
+			Pause:    addPaused,
 			SavePath: savePath,
 		}
 		clientAddFixedTags = []string{client.GenerateTorrentTagFromSite(siteInstance.GetName())}

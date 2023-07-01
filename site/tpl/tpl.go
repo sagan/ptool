@@ -5,10 +5,11 @@ package tpl
 import (
 	"sort"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/utils"
-	"golang.org/x/exp/slices"
 )
 
 var (
@@ -221,6 +222,12 @@ var (
 			Domains: []string{"hhan.club"},
 			Comment: "憨憨",
 		},
+		"htpt": &config.SiteConfigStruct{
+			Type:              "nexusphp",
+			Url:               "https://www.htpt.cc/",
+			TorrentsExtraUrls: []string{"live.php"},
+			Comment:           "海棠",
+		},
 		"icc2022": &config.SiteConfigStruct{
 			Type:      "nexusphp",
 			Aliases:   []string{"icc"},
@@ -260,16 +267,17 @@ var (
 			SelectorUserInfoDownloaded: ".ratio-bar .badge-user:has(.fa-arrow-down)",
 		},
 		"kamept": &config.SiteConfigStruct{
-			Type:    "nexusphp",
-			Aliases: []string{"kame"},
-			Url:     "https://kamept.com/",
-			Comment: "KamePT",
+			Type:              "nexusphp",
+			Aliases:           []string{"kame"},
+			Url:               "https://kamept.com/",
+			TorrentsExtraUrls: []string{"special.php"}, // 龟龟的后花园
+			Comment:           "KamePT",
 		},
 		"leaves": &config.SiteConfigStruct{
 			Type:                "nexusphp",
 			Aliases:             []string{"redleaves"},
 			Url:                 "https://leaves.red/",
-			TorrentsExtraUrls:   []string{"https://leaves.red/special.php"},
+			TorrentsExtraUrls:   []string{"special.php"},
 			SearchUrl:           `https://leaves.red/search.php?search=%s&search_area=0`,
 			SelectorTorrentPaid: `span[title="收费种子"]`,
 			Comment:             "红叶",
@@ -287,7 +295,7 @@ var (
 			Type:              "nexusphp",
 			Aliases:           []string{"mteam", "mt"},
 			Url:               "https://kp.m-team.cc/",
-			TorrentsExtraUrls: []string{"https://kp.m-team.cc/adult.php"},
+			TorrentsExtraUrls: []string{"adult.php"},
 			Comment:           "馒头",
 		},
 		"monikadesign": &config.SiteConfigStruct{
@@ -303,9 +311,10 @@ var (
 			Comment:   "老师",
 		},
 		"okpt": &config.SiteConfigStruct{
-			Type:    "nexusphp",
-			Url:     "https://www.okpt.net/",
-			Comment: "OKPT",
+			Type:              "nexusphp",
+			Url:               "https://www.okpt.net/",
+			TorrentsExtraUrls: []string{"special.php"},
+			Comment:           "OKPT",
 		},
 		"oldtoons": &config.SiteConfigStruct{
 			Type:    "nexusphp",
@@ -325,9 +334,10 @@ var (
 			Comment: "熊猫高清",
 		},
 		"piggo": &config.SiteConfigStruct{
-			Type:    "nexusphp",
-			Url:     "https://piggo.me/",
-			Comment: "猪猪",
+			Type:              "nexusphp",
+			Url:               "https://piggo.me/",
+			TorrentsExtraUrls: []string{"special.php"},
+			Comment:           "猪猪",
 		},
 		"ptchina": &config.SiteConfigStruct{
 			Type:    "nexusphp",
@@ -348,10 +358,16 @@ var (
 			Type:                           "nexusphp",
 			Aliases:                        []string{"ptt"},
 			Url:                            "https://www.pttime.org/",
-			TorrentsExtraUrls:              []string{"https://www.pttime.org/adults.php"},
+			TorrentsExtraUrls:              []string{"adults.php"},
 			SelectorTorrentFree:            `.free`,
 			SelectorTorrentDiscountEndTime: `.free + span`,
 			Comment:                        "PTT",
+		},
+		"rousi": &config.SiteConfigStruct{
+			Type:              "nexusphp",
+			Url:               "https://rousi.zip/",
+			TorrentsExtraUrls: []string{"special.php"},
+			Comment:           "Rousi",
 		},
 		"sharkpt": &config.SiteConfigStruct{
 			Type:                      "nexusphp",
@@ -374,10 +390,11 @@ var (
 			Comment: "聆音",
 		},
 		"tu88": &config.SiteConfigStruct{
-			Type:      "nexusphp",
-			Url:       "http://pt.tu88.men/",
-			GlobalHnR: true,
-			Comment:   "TU88",
+			Type:              "nexusphp",
+			Url:               "http://pt.tu88.men/",
+			TorrentsExtraUrls: []string{"special.php"},
+			GlobalHnR:         true,
+			Comment:           "TU88",
 		},
 		"u2": &config.SiteConfigStruct{
 			Type:    "nexusphp",

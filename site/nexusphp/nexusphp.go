@@ -331,7 +331,7 @@ func (npclient *Site) syncExtra() error {
 	}
 	extraTorrents := []site.Torrent{}
 	for _, extraUrl := range npclient.SiteConfig.TorrentsExtraUrls {
-		doc, res, err := utils.GetUrlDoc(extraUrl, npclient.HttpClient,
+		doc, res, err := utils.GetUrlDoc(npclient.SiteConfig.ParseSiteUrl(extraUrl, false), npclient.HttpClient,
 			npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, nil)
 		if err != nil {
 			log.Errorf("failed to parse site page dom: %v", err)
