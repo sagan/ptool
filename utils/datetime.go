@@ -132,7 +132,7 @@ func ParseTimeDuration(str string) (int64, error) {
 	str = strings.ReplaceAll(str, "小時", "h")
 	str = strings.ReplaceAll(str, "时", "h")
 	str = strings.ReplaceAll(str, "時", "h")
-	str = strings.ReplaceAll(str, "分种", "m")
+	str = strings.ReplaceAll(str, "分钟", "m")
 	str = strings.ReplaceAll(str, "分鐘", "m")
 	str = strings.ReplaceAll(str, "分", "m")
 	str = strings.ReplaceAll(str, "秒", "s")
