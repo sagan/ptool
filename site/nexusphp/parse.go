@@ -55,23 +55,39 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		option.selectorTorrentDetailsLink = SELECTOR_DETAILS_LINK
 	}
 
-	// @todo: improve this fragile checking
 	globalDiscountEndTime := int64(0)
-	doc.Find(`b a[href="torrents.php"]`).EachWithBreak(func(i int, s *goquery.Selection) bool {
-		txt := utils.DomSanitizedText(s)
-		// eg. '全站 [2X Free] 生效中！时间：2023-04-12 13:50:00 ~ 2023-04-15 13:50:00'
-		re := regexp.MustCompile(`全站 \[(?P<discount>(\dX Free|Free))\] 生效中！时间：(?P<start>[-\d\s:]+)\s*~\s*(?P<end>[-\d\s:]+)`)
-		m := re.FindStringSubmatch(txt)
-		if m != nil {
-			t1, err1 := utils.ParseTime(m[re.SubexpIndex("start")], option.location)
-			t2, err2 := utils.ParseTime(m[re.SubexpIndex("end")], option.location)
-			if err1 == nil && err2 == nil && doctime >= t1 && doctime < t2 {
-				globalDiscountEndTime = t2
-			}
-			return false
-		}
-		return true
+	globalDiscountLabels := doc.Find("p,span,b,i,a").FilterFunction(func(i int, s *goquery.Selection) bool {
+		txt := utils.DomRemovedSpecialCharsTextPreservingTime(s)
+		re := regexp.MustCompile(`(全站|全局)\s*(\dX Free|Free|优惠)\s*生效`)
+		return re.MatchString(txt)
 	})
+	if globalDiscountLabels.Length() > 0 {
+		var globalDiscountLabel *goquery.Selection
+		globalDiscountLabels.EachWithBreak(func(i int, s *goquery.Selection) bool {
+			if globalDiscountLabel == nil {
+				globalDiscountLabel = s
+			} else if globalDiscountLabel.Contains(s.Get(0)) {
+				globalDiscountLabel = s
+			} else {
+				return false
+			}
+			return true
+		})
+		globalDiscountEl := globalDiscountLabel.Parent()
+		for i := 0; globalDiscountEl.Prev().Length() == 0 && i < 3; i++ {
+			globalDiscountEl = globalDiscountEl.Parent()
+		}
+		txt := utils.DomRemovedSpecialCharsTextPreservingTime(globalDiscountEl)
+		var time1, time2, offset int64
+		time1, offset = utils.ExtractTime(txt, option.location)
+		if offset > 0 {
+			time2, _ = utils.ExtractTime(txt[offset:], option.location)
+		}
+		if time1 > 0 && time2 > 0 && doctime >= time1 && doctime < time2 {
+			log.Tracef("Found global discount timespan: %s ~ %s", utils.FormatTime(time1), utils.FormatTime(time2))
+			globalDiscountEndTime = time2
+		}
+	}
 
 	var containerElNode *html.Node
 	var containerEl *goquery.Selection
@@ -334,9 +350,9 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		}
 		if fieldColumIndex["time"] == -1 {
 			if option.selectorTorrentTime != "" {
-				time = utils.ExtractTime(utils.DomSelectorText(s, option.selectorTorrentTime), option.location)
+				time, _ = utils.ExtractTime(utils.DomSelectorText(s, option.selectorTorrentTime), option.location)
 			} else {
-				time = utils.ExtractTime(text, option.location)
+				time, _ = utils.ExtractTime(text, option.location)
 			}
 		}
 		if fieldColumIndex["seeders"] == -1 {

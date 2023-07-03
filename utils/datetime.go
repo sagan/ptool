@@ -7,13 +7,18 @@ import (
 	"time"
 )
 
-func ExtractTime(str string, location *time.Location) (time int64) {
-	timeRegexp := regexp.MustCompile(`(?P<time>\d{4}-\d{2}-\d{2}\s*\d{2}:\d{2}:\d{2})`)
+// offset: if > 0, indicates the bytes offset of the end of found time string in original str
+func ExtractTime(str string, location *time.Location) (time int64, offset int64) {
+	timeRegexp := regexp.MustCompile(`.*?(?P<time>\d{4}-\d{2}-\d{2}\s*\d{2}:\d{2}:\d{2})`)
 	m := timeRegexp.FindStringSubmatch(str)
 	if m != nil {
 		str = m[timeRegexp.SubexpIndex("time")]
+		offset = int64(len(m[0]))
 	}
-	time, _ = ParseTime(str, location)
+	time, err := ParseTime(str, location)
+	if err != nil {
+		offset = 0
+	}
 	return
 }
 

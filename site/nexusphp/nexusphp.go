@@ -354,7 +354,7 @@ func (npclient *Site) syncExtra() error {
 
 func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.ConfigStruct) (site.Site, error) {
 	if siteConfig.Cookie == "" {
-		return nil, fmt.Errorf("cann't create site: no cookie provided")
+		return nil, fmt.Errorf("no cookie provided")
 	}
 	location, err := time.LoadLocation(siteConfig.Timezone)
 	if err != nil {

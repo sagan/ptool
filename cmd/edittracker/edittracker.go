@@ -25,6 +25,7 @@ It may return an error in such case or not, depending on specific client impleme
 Examples:
 ptool edittracker <client> _all --old-tracker "https://..." --new-tracker "https://..."
 ptool edittracker <client> _all --old-tracker old-tracker.com --new-tracker new-tracker.com --replace-host
+ptool edittracker <client> _all --old-tracker old-tracker.com --new-tracker "https://..." --replace-host
 `,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	Run:  edittracker,

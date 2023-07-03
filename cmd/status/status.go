@@ -38,14 +38,14 @@ clientOrSiteOrGroup: name of a client, site, group, or "_all" which means all si
 }
 
 func init() {
-	command.Flags().StringVarP(&filter, "filter", "", "", "filter client torrents by name")
-	command.Flags().StringVarP(&category, "category", "", "", "filter client torrents by category")
-	command.Flags().BoolVarP(&dense, "dense", "", false, "dense mode: show full torrent title & subtitle")
-	command.Flags().BoolVarP(&showAll, "all", "a", false, "show all clients / sites.")
-	command.Flags().BoolVarP(&showAllClients, "clients", "c", false, "show all clients.")
-	command.Flags().BoolVarP(&showAllSites, "sites", "s", false, "show all sites.")
-	command.Flags().BoolVarP(&showTorrents, "torrents", "t", false, "show torrents (active torrents for client / latest torrents for site).")
-	command.Flags().BoolVarP(&showFull, "full", "f", false, "show full info of each client / site")
+	command.Flags().StringVarP(&filter, "filter", "", "", "Filter client torrents by name")
+	command.Flags().StringVarP(&category, "category", "", "", "Filter client torrents by category")
+	command.Flags().BoolVarP(&dense, "dense", "", false, "Dense mode: show full torrent title & subtitle")
+	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all clients / sites.")
+	command.Flags().BoolVarP(&showAllClients, "clients", "c", false, "Show all clients.")
+	command.Flags().BoolVarP(&showAllSites, "sites", "s", false, "Show all sites.")
+	command.Flags().BoolVarP(&showTorrents, "torrents", "t", false, "Show torrents (active torrents for client / latest torrents for site).")
+	command.Flags().BoolVarP(&showFull, "full", "f", false, "Show full info of each client / site")
 	cmd.RootCmd.AddCommand(command)
 }
 

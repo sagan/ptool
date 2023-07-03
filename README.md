@@ -357,7 +357,7 @@ ptool dltorrent <torrentIdOrUrl>...
 ptool addlocal <client> <filename.torrent>...
 ```
 
-将本地硬盘里的种子文件添加到 BT 客户端。
+将本地硬盘里的种子文件添加到 BT 客户端。种子文件名支持使用 * 通配符，例如 "*.torrent"。
 
 
 ### 搜索 PT 站点种子 (search)

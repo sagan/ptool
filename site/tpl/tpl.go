@@ -401,7 +401,9 @@ var (
 			Aliases: []string{"dmhy"},
 			Url:     "https://u2.dmhy.org/",
 			Domains: []string{"dmhy.best"},
-			Comment: "U2 (动漫花园)",
+			// 下载中,下载完成过,做种中,当前未做种
+			SelectorTorrentProcessBar: `.leechhlc_current,.snatchhlc_finish,.seedhlc_current,.seedhlc_ever_inenough`,
+			Comment:                   "U2 (动漫花园)",
 		},
 		"ubits": &config.SiteConfigStruct{
 			Type:    "nexusphp",

@@ -18,7 +18,14 @@ func DomHtml(el *goquery.Selection) string {
 
 func DomRemovedSpecialCharsText(node *goquery.Selection) string {
 	str := DomSanitizedText(node)
-	m := regexp.MustCompile(`[-\[\]\(\)【】（）：:]`)
+	m := regexp.MustCompile(`[-\[\]\(\)【】（）！：:\n\r\t]+`)
+	str = m.ReplaceAllString(str, " ")
+	return str
+}
+
+func DomRemovedSpecialCharsTextPreservingTime(node *goquery.Selection) string {
+	str := DomSanitizedText(node)
+	m := regexp.MustCompile(`[\[\]\(\)【】（）！：\n\r\t]+`)
 	str = m.ReplaceAllString(str, " ")
 	return str
 }

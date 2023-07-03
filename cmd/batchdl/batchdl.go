@@ -66,12 +66,12 @@ var (
 
 func init() {
 	command.Flags().BoolVarP(&addPaused, "add-paused", "", false, "Add torrents to client in paused state")
-	command.Flags().BoolVarP(&dense, "dense", "", false, "dense mode: show full torrent title & subtitle")
+	command.Flags().BoolVarP(&dense, "dense", "", false, "Dense mode: show full torrent title & subtitle")
 	command.Flags().BoolVarP(&freeOnly, "free", "", false, "Skip none-free torrents")
 	command.Flags().BoolVarP(&noPaid, "no-paid", "", false, "Skip paid (use bonus points) torrents")
 	command.Flags().BoolVarP(&addRespectNoadd, "add-respect-noadd", "", false, "Used with '--action add'. Check and respect _noadd flag in client")
 	command.Flags().BoolVarP(&nohr, "no-hr", "", false, "Skip torrents that has any type of HnR (Hit and Run) restriction")
-	command.Flags().BoolVarP(&allowBreak, "break", "", false, "Break (stop finding more torrents) if all torrents of current page does not meet criterion")
+	command.Flags().BoolVarP(&allowBreak, "break", "", false, "Break (stop finding more torrents) if all torrents of current page do not meet criterion")
 	command.Flags().BoolVarP(&includeDownloaded, "include-downloaded", "", false, "Do NOT skip torrents that has been downloaded before")
 	command.Flags().BoolVarP(&addCategoryAuto, "add-category-auto", "", false, "Automatically set category of added torrent to corresponding sitename")
 	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "m", 0, "Number limit of torrents handled. Default (0) == unlimited (Press Ctrl+C to stop at any time)")
