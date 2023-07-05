@@ -28,7 +28,7 @@ var (
 func init() {
 	command.Flags().StringVarP(&filter, "filter", "f", "", "Filter torrents by name")
 	command.Flags().StringVarP(&category, "category", "c", "", "Filter torrents by category")
-	command.Flags().StringVarP(&tag, "tag", "t", "", "Filter torrents by tag")
+	command.Flags().StringVarP(&tag, "tag", "t", "", "Filter torrents by tag. Comma-separated string list. Torrent which tags contain any one in the list will match")
 	cmd.RootCmd.AddCommand(command)
 }
 

@@ -451,104 +451,105 @@ func XseedCheckTorrentContents(clientTorrentContents []TorrentContentFile, torre
 	return 0
 }
 
+// parse and return torrents that meet criterion
+// tag: comma-separated list, a torrent will match if it has any tag that in the list
 func QueryTorrents(clientInstance Client, category string, tag string, filter string,
 	hashOrStateFilters ...string) ([]Torrent, error) {
+	isAll := len(hashOrStateFilters) == 0
 	for _, arg := range hashOrStateFilters {
 		if !IsValidInfoHashOrStateFilter(arg) {
 			return nil, fmt.Errorf("%s is not a valid infoHash or stateFilter", arg)
+		}
+		if arg == "_all" {
+			isAll = true
 		}
 	}
 	torrents, err := clientInstance.GetTorrents("", category, true)
 	if err != nil {
 		return nil, err
 	}
-	if slices.Index(hashOrStateFilters, "_all") != -1 {
+	if category == "" && tag == "" && filter == "" && isAll {
 		return torrents, nil
 	}
-	torrents = utils.Filter(torrents, func(torrent Torrent) bool {
-		if tag != "" && !torrent.HasTag(tag) {
-			return false
+	var tags []string
+	if tag != "" {
+		tags = strings.Split(tag, ",")
+	}
+	torrents2 := []Torrent{}
+	for _, torrent := range torrents {
+		if tags != nil && slices.IndexFunc(tags, func(tag string) bool {
+			return torrent.HasTag(tag)
+		}) == -1 {
+			continue
 		}
 		if filter != "" && !utils.ContainsI(torrent.Name, filter) {
-			return false
+			continue
 		}
-		return true
-	})
-	if len(hashOrStateFilters) == 0 {
-		return torrents, nil
-	}
-
-	torrents2 := []Torrent{}
-	for _, arg := range hashOrStateFilters {
-		if strings.HasPrefix(arg, "_") {
-			for _, torrent := range torrents {
-				if torrent.MatchStateFilter(arg) {
+		if isAll {
+			torrents2 = append(torrents2, torrent)
+		} else {
+			for _, arg := range hashOrStateFilters {
+				if strings.HasPrefix(arg, "_") {
+					if torrent.MatchStateFilter(arg) {
+						torrents2 = append(torrents2, torrent)
+					}
+				} else if arg == torrent.InfoHash {
 					torrents2 = append(torrents2, torrent)
 				}
 			}
-		} else {
-			torrent, err := clientInstance.GetTorrent(arg)
-			if err == nil && torrent != nil {
-				torrents2 = append(torrents2, *torrent)
-			}
 		}
 	}
-	torrents2 = utils.UniqueSliceFn(torrents2, func(t Torrent) string {
-		return t.InfoHash
-	})
-
 	return torrents2, nil
 }
 
-// parse torrents that meet criterion. specially, return nil slice if all torrents selected
+// parse torrents that meet criterion and return infoHashes. specially, return nil slice if all torrents selected
+// tag: comma-separated list, a torrent will match if it has any tag that in the list
 func SelectTorrents(clientInstance Client, category string, tag string, filter string,
 	hashOrStateFilters ...string) ([]string, error) {
+	isAll := len(hashOrStateFilters) == 0
 	for _, arg := range hashOrStateFilters {
 		if !IsValidInfoHashOrStateFilter(arg) {
 			return nil, fmt.Errorf("%s is not a valid infoHash or stateFilter", arg)
 		}
+		if arg == "_all" {
+			isAll = true
+		}
 	}
-	if slices.Index(hashOrStateFilters, "_all") != -1 {
+	if category == "" && tag == "" && filter == "" && isAll {
 		return nil, nil
 	}
-	if category == "" && tag == "" && filter == "" && len(hashOrStateFilters) == 0 {
-		return nil, nil
-	}
-
 	torrents, err := clientInstance.GetTorrents("", category, true)
 	if err != nil {
 		return nil, err
 	}
-	torrents = utils.Filter(torrents, func(torrent Torrent) bool {
-		if tag != "" && !torrent.HasTag(tag) {
-			return false
+	var tags []string
+	if tag != "" {
+		tags = strings.Split(tag, ",")
+	}
+	infoHashes := []string{}
+	for _, torrent := range torrents {
+		if tags != nil && slices.IndexFunc(tags, func(tag string) bool {
+			return torrent.HasTag(tag)
+		}) == -1 {
+			continue
 		}
 		if filter != "" && !utils.ContainsI(torrent.Name, filter) {
-			return false
+			continue
 		}
-		return true
-	})
-
-	if len(hashOrStateFilters) == 0 {
-		infoHashes := utils.Map(torrents, func(t Torrent) string {
-			return t.InfoHash
-		})
-		return infoHashes, nil
-	}
-
-	infoHashes := []string{}
-	for _, arg := range hashOrStateFilters {
-		if strings.HasPrefix(arg, "_") {
-			for _, torrent := range torrents {
-				if torrent.MatchStateFilter(arg) {
+		if isAll {
+			infoHashes = append(infoHashes, torrent.InfoHash)
+		} else {
+			for _, arg := range hashOrStateFilters {
+				if strings.HasPrefix(arg, "_") {
+					if torrent.MatchStateFilter(arg) {
+						infoHashes = append(infoHashes, torrent.InfoHash)
+					}
+				} else if arg == torrent.InfoHash {
 					infoHashes = append(infoHashes, torrent.InfoHash)
 				}
 			}
-		} else {
-			infoHashes = append(infoHashes, arg)
 		}
 	}
-	infoHashes = utils.UniqueSlice(infoHashes)
 	return infoHashes, nil
 }
 

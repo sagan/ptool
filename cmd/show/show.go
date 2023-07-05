@@ -50,7 +50,7 @@ func init() {
 	command.Flags().BoolVarP(&showFiles, "show-files", "", false, "Show torrent content files info")
 	command.Flags().StringVarP(&filter, "filter", "f", "", "Filter torrents by name")
 	command.Flags().StringVarP(&category, "category", "c", "", "Filter torrents by category")
-	command.Flags().StringVarP(&tag, "tag", "t", "", "Filter torrents by tag")
+	command.Flags().StringVarP(&tag, "tag", "t", "", "Filter torrents by tag. Comma-separated string list. Torrent which tags contain any one in the list will match")
 	command.Flags().VarP(&sortFieldEnumFlag, "sort", "s", "Manually set the sort field, "+common.ClientTorrentSortFieldEnumTip)
 	command.Flags().VarP(&orderEnumFlag, "order", "o", "Manually set the sort order, "+common.OrderEnumTip)
 	command.RegisterFlagCompletionFunc("sort", common.ClientTorrentSortFieldEnumCompletion)

@@ -31,6 +31,7 @@ var command = &cobra.Command{
 }
 
 var (
+	onePage                                            = false
 	addPaused                                          = false
 	dense                                              = false
 	addRespectNoadd                                    = false
@@ -65,24 +66,25 @@ var (
 )
 
 func init() {
+	command.Flags().BoolVarP(&onePage, "one-page", "", false, "Only fetch one page torrents")
 	command.Flags().BoolVarP(&addPaused, "add-paused", "", false, "Add torrents to client in paused state")
 	command.Flags().BoolVarP(&dense, "dense", "", false, "Dense mode: show full torrent title & subtitle")
-	command.Flags().BoolVarP(&freeOnly, "free", "", false, "Skip none-free torrents")
-	command.Flags().BoolVarP(&noPaid, "no-paid", "", false, "Skip paid (use bonus points) torrents")
+	command.Flags().BoolVarP(&freeOnly, "free", "", false, "Skip none-free torrent")
+	command.Flags().BoolVarP(&noPaid, "no-paid", "", false, "Skip paid (use bonus points) torrent")
 	command.Flags().BoolVarP(&addRespectNoadd, "add-respect-noadd", "", false, "Used with '--action add'. Check and respect _noadd flag in client")
-	command.Flags().BoolVarP(&nohr, "no-hr", "", false, "Skip torrents that has any type of HnR (Hit and Run) restriction")
+	command.Flags().BoolVarP(&nohr, "no-hr", "", false, "Skip torrent that has any type of HnR (Hit and Run) restriction")
 	command.Flags().BoolVarP(&allowBreak, "break", "", false, "Break (stop finding more torrents) if all torrents of current page do not meet criterion")
-	command.Flags().BoolVarP(&includeDownloaded, "include-downloaded", "", false, "Do NOT skip torrents that has been downloaded before")
+	command.Flags().BoolVarP(&includeDownloaded, "include-downloaded", "", false, "Do NOT skip torrent that has been downloaded before")
 	command.Flags().BoolVarP(&addCategoryAuto, "add-category-auto", "", false, "Automatically set category of added torrent to corresponding sitename")
 	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "m", 0, "Number limit of torrents handled. Default (0) == unlimited (Press Ctrl+C to stop at any time)")
 	command.Flags().StringVarP(&action, "action", "", "show", "Choose action for found torrents: show (print torrent details) | export (export torrents info [csv] to stdout or file) | printid (print torrent id to stdout or file) | download (download torrent) | add (add torrent to client)")
-	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "0", "Skip torrents with size smaller than (<) this value")
-	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "0", "Skip torrents with size large than (>) this value. Default (0) == unlimited")
+	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "0", "Skip torrent with size smaller than (<) this value")
+	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "0", "Skip torrent with size large than (>) this value. Default (0) == unlimited")
 	command.Flags().StringVarP(&maxTotalSizeStr, "max-total-size", "", "0", "Will at most download torrents with total contents size of this value. Default (0) == unlimited")
-	command.Flags().Int64VarP(&minSeeders, "min-seeders", "", 1, "Skip torrents with seeders less than (<) this value")
-	command.Flags().Int64VarP(&maxSeeders, "max-seeders", "", -1, "Skip torrents with seeders large than (>) this value. Default (-1) == no limit")
+	command.Flags().Int64VarP(&minSeeders, "min-seeders", "", 1, "Skip torrent with seeders less than (<) this value")
+	command.Flags().Int64VarP(&maxSeeders, "max-seeders", "", -1, "Skip torrent with seeders large than (>) this value. Default (-1) == no limit")
 	command.Flags().StringVarP(&freeTimeAtLeastStr, "free-time", "", "", "Used with --free. Set the allowed minimal remaining torrent free time. eg. 12h, 1d")
-	command.Flags().StringVarP(&filter, "filter", "f", "", "If set, skip torrents which name does NOT contains this string")
+	command.Flags().StringVarP(&filter, "filter", "f", "", "If set, skip torrent which name does NOT contains this string")
 	command.Flags().StringArrayVarP(&includes, "includes", "", nil, "A comma-separated string list. If set, ONLY torrent which name contains any one in the list will be downloaded. Can be provided multiple times, in which case every list MUST be matched")
 	command.Flags().StringVarP(&excludes, "excludes", "", "", "A comma-separated string list that torrent which name contains any one in the list will be skipped")
 	command.Flags().StringVarP(&startPage, "start-page", "", "", "Start fetching torrents from here (should be the returned LastPage value last time you run this command)")
@@ -406,7 +408,7 @@ mainloop:
 				break mainloop
 			}
 		}
-		if marker == "" {
+		if onePage || marker == "" {
 			break
 		}
 		if cntTorrentsThisPage == 0 {
