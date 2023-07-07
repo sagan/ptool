@@ -208,6 +208,8 @@ clientctl 命令可以显示或修改指定 name 的 BT 客户端的配置参数
 * global_upload_speed : (只读)当前上传速度。
 * free_disk_space : (只读)默认下载目录的剩余磁盘空间(-1: Unknown)。
 * save_path : 默认下载目录。
+* ```qb_*``` : qBittorrent 的所有 [application Preferences](https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-4.1)#get-application-preferences) 配置项，例如 "qb_create_subfolder_enabled"。
+* ```tr_*``` : (只读) transmission 的所有 [Session Arguments](https://github.com/transmission/transmission/blob/3.00/extras/rpc-spec.txt#L482) 配置项(转换为 snake_case 格式)，例如 "tr_config_dir"。
 
 示例：
 

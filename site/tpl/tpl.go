@@ -508,3 +508,17 @@ func GuessSiteByDomain(domain string, defaultSite string) string {
 	}
 	return site.GetConfigSiteNameByTypes(siteTypes...)
 }
+
+func GuessSiteByTrackers(trackers []string, defaultSite string) string {
+	for _, tracker := range trackers {
+		domain := utils.GetUrlDomain(tracker)
+		if domain == "" {
+			continue
+		}
+		sitename := GuessSiteByDomain(domain, defaultSite)
+		if sitename != "" {
+			return sitename
+		}
+	}
+	return ""
+}

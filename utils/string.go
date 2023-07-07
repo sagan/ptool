@@ -28,6 +28,10 @@ func IsUrl(str string) bool {
 	return strings.HasPrefix(str, "http://") || strings.HasPrefix(str, "https://")
 }
 
+func IsIntString(str string) bool {
+	return regexp.MustCompile(`^\d+$`).MatchString(str)
+}
+
 func ParseInt(str string) int64 {
 	str = strings.ReplaceAll(str, ",", "")
 	v, _ := strconv.ParseInt(str, 10, 0)

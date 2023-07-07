@@ -6,6 +6,7 @@ replace github.com/hekmon/transmissionrpc/v2 => ./transmissionrpc
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.1
+	github.com/ettle/strcase v0.1.1
 	github.com/glebarez/sqlite v1.8.0
 	github.com/hekmon/transmissionrpc/v2 v2.0.1
 	github.com/j-muller/go-torrent-parser v0.0.0-20211014072822-db02b4099054
@@ -48,5 +49,4 @@ require (
 	github.com/zeebo/bencode v1.0.0 // indirect
 	golang.org/x/crypto v0.9.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
 )

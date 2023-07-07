@@ -12,6 +12,7 @@ import (
 	"net/http/cookiejar"
 	"net/textproto"
 	"net/url"
+	"reflect"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -28,6 +29,7 @@ type Client struct {
 	Config                    *config.ConfigStruct
 	HttpClient                *http.Client
 	data                      *apiSyncMaindata
+	preferences               *apiPreferences
 	Logined                   bool
 	datatime                  int64
 	unfinishedSize            int64
@@ -595,6 +597,7 @@ func (qbclient *Client) ModifyTorrent(infoHash string,
 
 func (qbclient *Client) PurgeCache() {
 	qbclient.data = nil
+	qbclient.preferences = nil
 	qbclient.unfinishedSize = 0
 	qbclient.unfinishedDownloadingSize = 0
 	qbclient.datatime = 0
@@ -704,9 +707,11 @@ func (qbclient *Client) getPreferences() (*apiPreferences, error) {
 	if err != nil {
 		return nil, fmt.Errorf("login error: %v", err)
 	}
-	var preferences *apiPreferences
-	err = qbclient.apiRequest("api/v2/app/preferences", &preferences)
-	return preferences, err
+	if qbclient.preferences != nil {
+		return qbclient.preferences, nil
+	}
+	err = qbclient.apiRequest("api/v2/app/preferences", &qbclient.preferences)
+	return qbclient.preferences, err
 }
 
 func (qbclient *Client) GetConfig(variable string) (string, error) {
@@ -714,6 +719,15 @@ func (qbclient *Client) GetConfig(variable string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("login error: %v", err)
 	}
+	if strings.HasPrefix(variable, "qb_") && len(variable) > 3 {
+		preferences, err := qbclient.getPreferences()
+		if err != nil {
+			return "", err
+		}
+		value := reflect.Indirect(reflect.ValueOf(preferences)).FieldByName(utils.Capitalize(variable[3:])).Interface()
+		return fmt.Sprint(value), nil
+	}
+
 	switch variable {
 	case "global_download_speed_limit":
 		v := 0
@@ -756,6 +770,19 @@ func (qbclient *Client) SetConfig(variable string, value string) error {
 	err := qbclient.login()
 	if err != nil {
 		return fmt.Errorf("login error: %v", err)
+	}
+	if strings.HasPrefix(variable, "qb_") && len(variable) > 3 {
+		data := map[string]any{}
+		if value == "true" {
+			data[variable[3:]] = true
+		} else if value == "false" {
+			data[variable[3:]] = false
+		} else if utils.IsIntString(value) {
+			data[variable[3:]] = utils.ParseInt(value)
+		} else {
+			data[variable[3:]] = value
+		}
+		return qbclient.setPreferences(data)
 	}
 	switch variable {
 	case "global_download_speed_limit":

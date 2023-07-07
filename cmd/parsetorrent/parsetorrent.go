@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/site/tpl"
 	"github.com/sagan/ptool/utils"
 )
 
@@ -44,12 +45,13 @@ func parsetorrent(cmd *cobra.Command, args []string) {
 		if len(torrentInfo.Announce) > 0 {
 			trackerHostname = utils.ParseUrlHostname(torrentInfo.Announce[0])
 		}
+		sitename := tpl.GuessSiteByTrackers(torrentInfo.Announce, "")
 		size := int64(0)
 		for _, file := range torrentInfo.Files {
 			size += file.Length
 		}
-		fmt.Printf("Torrent %s: infohash = %s ; size = %s ; tracker = %s // %s\n", torrentFileName, torrentInfo.InfoHash, utils.BytesSize(float64(size)),
-			trackerHostname, torrentInfo.Comment)
+		fmt.Printf("Torrent %s: infohash = %s ; size = %s ; tracker = %s (site: %s) // %s\n", torrentFileName, torrentInfo.InfoHash, utils.BytesSize(float64(size)),
+			trackerHostname, sitename, torrentInfo.Comment)
 
 		if showAll {
 			fmt.Printf("RawSize = %d ; FullTrackerUrls: %s\n", size, strings.Join(torrentInfo.Announce, " | "))

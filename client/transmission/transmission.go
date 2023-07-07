@@ -8,7 +8,10 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/url"
+	"reflect"
+	"strings"
 
+	"github.com/ettle/strcase"
 	transmissionrpc "github.com/hekmon/transmissionrpc/v2"
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/config"
@@ -616,6 +619,16 @@ func (trclient *Client) SetConfig(variable string, value string) error {
 
 func (trclient *Client) GetConfig(variable string) (string, error) {
 	transmissionbt := trclient.client
+	if strings.HasPrefix(variable, "tr_") && len(variable) > 3 {
+		trvariable := strcase.ToKebab(variable[3:])
+		args, err := transmissionbt.SessionArgumentsGet(context.TODO(), []string{trvariable})
+		if err != nil {
+			return "", err
+		}
+		key := strcase.ToPascal(trvariable)
+		value := reflect.Indirect(reflect.ValueOf(args).FieldByName(key)).Interface()
+		return fmt.Sprint(value), nil
+	}
 	switch variable {
 	case "global_download_speed_limit":
 		sessionStats, err := transmissionbt.SessionArgumentsGet(context.TODO(), nil)

@@ -99,17 +99,7 @@ func add(cmd *cobra.Command, args []string) {
 			errCnt++
 			continue
 		}
-		sitename := ""
-		for _, tracker := range tinfo.Announce {
-			domain := utils.GetUrlDomain(tracker)
-			if domain == "" {
-				continue
-			}
-			sitename = tpl.GuessSiteByDomain(domain, defaultSite)
-			if sitename != "" {
-				break
-			}
-		}
+		sitename := tpl.GuessSiteByTrackers(tinfo.Announce, defaultSite)
 		if addCategoryAuto {
 			if sitename != "" {
 				option.Category = sitename

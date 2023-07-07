@@ -37,6 +37,8 @@ var (
 		{"global_upload_speed", 1, true, false, "Current global upload speed (/s)"},
 		{"free_disk_space", 2, true, false, "Current free disk space of default save path"},
 		{"save_path", 0, false, false, "Default save path"},
+		{"qb_*", 0, false, false, "The qBittorrent specific preferences. For full list see https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-4.1)#get-application-preferences . eg. qb_create_subfolder_enabled"},
+		{"tr_*", 0, true, false, "The transmission specific preferences (read-only for now). For full list see https://github.com/transmission/transmission/blob/3.00/extras/rpc-spec.txt#L482 . Convert argument name to snake_case. eg. tr_config_dir"},
 	}
 	showRaw        = false
 	showValueOnly  = false
@@ -78,7 +80,7 @@ func clientctl(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 	args = args[1:]
-	cntError := int64(0)
+	errorCnt := int64(0)
 	if len(args) == 0 {
 		args = []string{}
 		for _, option := range allOptions {
@@ -93,6 +95,31 @@ func clientctl(cmd *cobra.Command, args []string) {
 		name := s[0]
 		value := ""
 		var err error
+		if (clientInstance.GetClientConfig().Type == "qbittorrent" && strings.HasPrefix(variable, "qb_") ||
+			clientInstance.GetClientConfig().Type == "transmission" && strings.HasPrefix(variable, "tr_")) && len(variable) > 3 {
+			if len(s) == 1 {
+				value, err = clientInstance.GetConfig(name)
+				if err != nil {
+					log.Errorf("Error get %s: %v", name, err)
+				}
+			} else {
+				value = s[1]
+				err = clientInstance.SetConfig(name, value)
+				if err != nil {
+					log.Errorf("Error set %s: %v", name, err)
+				}
+			}
+			if err == nil {
+				if showValueOnly {
+					fmt.Printf("%v\n", value)
+				} else {
+					fmt.Printf("%s=%v\n", name, value)
+				}
+			} else {
+				errorCnt++
+			}
+			continue
+		}
 		index := slices.IndexFunc(allOptions, func(o Option) bool { return o.Name == name })
 		if index == -1 {
 			log.Fatal("Unrecognized parameter: " + name)
@@ -102,12 +129,12 @@ func clientctl(cmd *cobra.Command, args []string) {
 			value, err = clientInstance.GetConfig(name)
 			if err != nil {
 				log.Errorf("Error get client %s config %s: %v", clientInstance.GetName(), name, err)
-				cntError++
+				errorCnt++
 			}
 		} else {
 			if option.Readonly {
 				log.Errorf("Error set client %s config %s: read-only", clientInstance.GetName(), name)
-				cntError++
+				errorCnt++
 				continue
 			}
 			value = s[1]
@@ -120,7 +147,7 @@ func clientctl(cmd *cobra.Command, args []string) {
 			if err != nil {
 				log.Errorf("Error set client %s config %s=%s: %v", clientInstance.GetName(), name, value, err)
 				value = ""
-				cntError++
+				errorCnt++
 			}
 		}
 		if showValueOnly {
@@ -130,7 +157,7 @@ func clientctl(cmd *cobra.Command, args []string) {
 		}
 	}
 	clientInstance.Close()
-	if cntError > 0 {
+	if errorCnt > 0 {
 		os.Exit(1)
 	}
 }
