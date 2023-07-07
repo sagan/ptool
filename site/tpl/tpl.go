@@ -45,6 +45,7 @@ var (
 		"audiences": &config.SiteConfigStruct{
 			Type:    "nexusphp",
 			Url:     "https://audiences.me/",
+			Domains: []string{"cinefiles.info"},
 			Comment: "观众",
 		},
 		"azusa": &config.SiteConfigStruct{
@@ -296,7 +297,7 @@ var (
 			Type:              "nexusphp",
 			Aliases:           []string{"mteam", "mt"},
 			Url:               "https://kp.m-team.cc/",
-			TorrentsExtraUrls: []string{"adult.php"},
+			TorrentsExtraUrls: []string{"adult.php", "music.php"},
 			Comment:           "馒头",
 		},
 		"monikadesign": &config.SiteConfigStruct{

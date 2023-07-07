@@ -15,14 +15,15 @@ import (
 )
 
 type Option struct {
-	Name string
-	Type int64 // 0 - normal; 1 - Speed; 2 - Size
-	Auto bool
+	Name        string
+	Type        int64 // 0 - normal; 1 - Speed; 2 - Size
+	Readonly    bool
+	Auto        bool
+	Description string
 }
 
 var command = &cobra.Command{
 	Use:   "clientctl <client> [<variable>[=value] ...]",
-	Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	Short: "Get or set client config.",
 	Long:  `Get or set client config.`,
 	Run:   clientctl,
@@ -30,27 +31,49 @@ var command = &cobra.Command{
 
 var (
 	allOptions = []Option{
-		{"global_download_speed_limit", 1, true},
-		{"global_upload_speed_limit", 1, true},
-		{"global_download_speed", 1, false},
-		{"global_upload_speed", 1, false},
-		{"free_disk_space", 2, false},
+		{"global_download_speed_limit", 1, false, true, "Global download speed limit (/s)"},
+		{"global_upload_speed_limit", 1, false, true, "Global upload speed limit (/s)"},
+		{"global_download_speed", 1, true, false, "Current global download speed (/s)"},
+		{"global_upload_speed", 1, true, false, "Current global upload speed (/s)"},
+		{"free_disk_space", 2, true, false, "Current free disk space of default save path"},
+		{"save_path", 0, false, false, "Default save path"},
 	}
-	showRaw       = false
-	showValueOnly = false
+	showRaw        = false
+	showValueOnly  = false
+	showParameters = false
 )
 
 func init() {
+	command.Flags().BoolVarP(&showParameters, "show-parameters", "", false, "Print all parameters list and exit")
 	command.Flags().BoolVarP(&showRaw, "raw", "", false, "Display config value data in raw format")
-	command.Flags().BoolVarP(&showValueOnly, "show-value-only", "", false, "show config value data only")
+	command.Flags().BoolVarP(&showValueOnly, "show-value-only", "", false, "Show config value data only")
 	cmd.RootCmd.AddCommand(command)
 }
 
 func clientctl(cmd *cobra.Command, args []string) {
+	if showParameters {
+		fmt.Printf("%-30s %-5s %-5s %s\n", "Name", "Type", "Auto", "Description")
+		for _, option := range allOptions {
+			permission := "rw"
+			if option.Readonly {
+				permission = "r"
+			}
+			auto := ""
+			if option.Auto {
+				auto = "✓"
+			}
+			fmt.Printf("%-30s %-5s %-5s %s\n", option.Name, permission, auto, option.Description)
+		}
+		os.Exit(0)
+	}
+	if len(args) < 1 {
+		log.Fatalf("<client> not provided")
+	}
 	if showRaw && showValueOnly {
 		log.Fatalf("--raw and --show-value-only flags are NOT compatible")
 	}
-	clientInstance, err := client.CreateClient(args[0])
+	clientName := args[0]
+	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -72,7 +95,7 @@ func clientctl(cmd *cobra.Command, args []string) {
 		var err error
 		index := slices.IndexFunc(allOptions, func(o Option) bool { return o.Name == name })
 		if index == -1 {
-			log.Fatal("Unrecognized option " + name)
+			log.Fatal("Unrecognized parameter: " + name)
 		}
 		option := allOptions[index]
 		if len(s) == 1 {
@@ -82,6 +105,11 @@ func clientctl(cmd *cobra.Command, args []string) {
 				cntError++
 			}
 		} else {
+			if option.Readonly {
+				log.Errorf("Error set client %s config %s: read-only", clientInstance.GetName(), name)
+				cntError++
+				continue
+			}
 			value = s[1]
 			if option.Type > 0 {
 				v, _ := utils.RAMInBytes(value)

@@ -9,6 +9,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/utils"
 )
 
 var command = &cobra.Command{
@@ -19,12 +20,18 @@ var command = &cobra.Command{
 	Run:   getcategories,
 }
 
+var (
+	showNamesOnly = false
+)
+
 func init() {
+	command.Flags().BoolVarP(&showNamesOnly, "show-names-only", "", false, "Show category names only")
 	cmd.RootCmd.AddCommand(command)
 }
 
 func getcategories(cmd *cobra.Command, args []string) {
-	clientInstance, err := client.CreateClient(args[0])
+	clientName := args[0]
+	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -34,5 +41,14 @@ func getcategories(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatalf("Failed to get categories: %v", err)
 	}
-	fmt.Printf("%s\n", strings.Join(cats, ", "))
+	if showNamesOnly {
+		fmt.Printf("%s\n", strings.Join(utils.Map(cats, func(cat client.TorrentCategory) string {
+			return cat.Name
+		}), ", "))
+	} else {
+		fmt.Printf("%-20s  %s\n", "Name", "SavePath")
+		for _, cat := range cats {
+			fmt.Printf("%-20s  %s\n", cat.Name, cat.SavePath)
+		}
+	}
 }

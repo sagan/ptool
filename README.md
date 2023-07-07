@@ -93,7 +93,7 @@ ptool <command> args... [flags]
 * add : 将某个站点的指定种子添加到 BT 客户端。
 * dltorrent : 下载站点的种子。
 * addlocal : 将本地的种子文件添加到 BT 客户端。
-* BT 客户端控制命令集: clientctl / show / pause / resume / delete / reannounce / recheck / getcategories / setcategory / gettags / createtags / deletetags / addtags / removetags / edittracker / addtrackers / removetrackers / setsavepath。
+* BT 客户端控制命令集: clientctl / show / pause / resume / delete / reannounce / recheck / getcategories / createcategory / removecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / edittracker / addtrackers / removetrackers / setsavepath。
 * parsetorrent : 显示种子(torrent)文件信息。
 * sites : 显示本程序内置支持的所有 PT 站点列表。
 * version : 显示本程序版本信息。
@@ -207,6 +207,7 @@ clientctl 命令可以显示或修改指定 name 的 BT 客户端的配置参数
 * global_download_speed : (只读)当前下载速度。
 * global_upload_speed : (只读)当前上传速度。
 * free_disk_space : (只读)默认下载目录的剩余磁盘空间(-1: Unknown)。
+* save_path : 默认下载目录。
 
 示例：
 
@@ -251,11 +252,17 @@ ptool delete local 31a615d5984cb63c6f999f72bb3961dce49c194a
 ptool show local 31a615d5984cb63c6f999f72bb3961dce49c194a
 ```
 
-#### 管理 BT 客户端里的的种子分类 / 标签 / Trackers 等(getcategories / setcategory / gettags / createtags / deletetags / addtags / removetags / edittracker / addtrackers / removetrackers / setsavepath)
+#### 管理 BT 客户端里的的种子分类 / 标签 / Trackers 等(getcategories / createcategory / removecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / edittracker / addtrackers / removetrackers / setsavepath)
 
 ```
 # 获取所有分类
 ptool getcategories <client>
+
+# 新增分类(也可用于修改已有分类的下载目录)
+ptool createcategory <client> <category> --save-path "/root/downloads"
+
+# 删除分类
+ptool removecategories <client> <category>...
 
 # 修改种子的所属分类
 ptool setcategory <client> <category> <infoHashes>...

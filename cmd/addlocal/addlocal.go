@@ -40,7 +40,7 @@ var (
 )
 
 func init() {
-	command.Flags().BoolVarP(&skipCheck, "no-hash", "", false, "Skip hash checking when adding torrents")
+	command.Flags().BoolVarP(&skipCheck, "skip-check", "", false, "Skip hash checking when adding torrents")
 	command.Flags().BoolVarP(&renameAdded, "rename-added", "", false, "Rename successfully added torrents to .added extension")
 	command.Flags().BoolVarP(&deleteAdded, "delete-added", "", false, "Delete successfully added torrents")
 	command.Flags().BoolVarP(&paused, "add-paused", "", false, "Add torrents to client in paused state")

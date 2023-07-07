@@ -42,7 +42,7 @@ func init() {
 	command.Flags().BoolVarP(&dense, "dense", "", false, "Dense mode: show full torrent title & subtitle")
 	command.Flags().BoolVarP(&largestFlag, "largest", "l", false, "Sort search result by torrent size in desc order")
 	command.Flags().Int64VarP(&maxResults, "max-results", "m", 100, "Number limit of search result of all sites combined. 0 == unlimited")
-	command.Flags().Int64VarP(&perSiteMaxREsults, "per-site-max-results", "p", 0, "Number limit of search result of any single site. Default (0) == unlimited")
+	command.Flags().Int64VarP(&perSiteMaxREsults, "per-site-max-results", "", 0, "Number limit of search result of any single site. Default (0) == unlimited")
 	command.Flags().StringVarP(&baseUrl, "base-url", "", "", "Manually set the base url of search page. eg. adult.php or https://kp.m-team.cc/adult.php for M-Team site")
 	cmd.RootCmd.AddCommand(command)
 }

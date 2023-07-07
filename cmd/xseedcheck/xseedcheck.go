@@ -23,11 +23,11 @@ Only filename and size will be comared. Not the file contents themselves.`,
 }
 
 var (
-	showFull = false
+	showAll = false
 )
 
 func init() {
-	command.Flags().BoolVarP(&showFull, "full", "f", false, "show full comparison result")
+	command.Flags().BoolVarP(&showAll, "all", "a", false, "show full comparison result")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -89,7 +89,7 @@ func xseedcheck(cmd *cobra.Command, args []string) {
 			clientName,
 		)
 	}
-	if showFull {
+	if showAll {
 		fmt.Printf("\n")
 		fmt.Printf("Client: %s torrent\n", infoHash)
 		for _, clientTorrentFile := range clientTorrentContents {

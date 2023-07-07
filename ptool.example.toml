@@ -42,6 +42,6 @@ cookie = "cookie_here"
 #brushTorrentMaxSizeLimit = "1PiB" # 刷流：种子最大体积限制。体积大于此值的种子不会被选择
 #brushAllowNoneFree = false # 是否允许使用非免费种子刷流
 #brushAllowPaid = false # 是否允许使用"付费"种子刷流（付费种子：第一次下载或汇报时需要扣除积分）
-#brushAllowHr = false # 是否允许使用HR种子刷流。程序不会特意维持HR种子的做种时长，所以仅当你的账户无视HR(如VIP)时开启此选项
+#brushAllowHr = false # 是否允许使用HR种子刷流。程序不会特意保证HR种子的做种时长，所以仅当你的账户无视HR(如VIP)时开启此选项
 #brushAllowZeroSeeders = false # 是否允许刷流任务添加当前0做种的种子到客户端
 #timezone = "Asia/Shanghai" # 网站页面显示时间的时区

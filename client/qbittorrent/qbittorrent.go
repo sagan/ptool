@@ -380,19 +380,52 @@ func (qbclient *Client) DeleteTags(tags ...string) error {
 	return qbclient.apiPost("api/v2/torrents/deleteTags", data)
 }
 
-func (qbclient *Client) GetCategories() ([]string, error) {
+func (qbclient *Client) MakeCategory(category string, savePath string) error {
+	err := qbclient.login()
+	if err != nil {
+		return fmt.Errorf("login error: %v", err)
+	}
+	data := url.Values{
+		"category": {category},
+	}
+	if savePath != "none" {
+		data.Add("savePath", savePath)
+	}
+	err = qbclient.apiPost("api/v2/torrents/createCategory", data)
+	// 简单粗暴
+	if err != nil && strings.Contains(err.Error(), "status=409") {
+		if data.Has("savePath") {
+			return qbclient.apiPost("api/v2/torrents/editCategory", data)
+		}
+		return nil
+	}
+	return err
+}
+
+func (qbclient *Client) RemoveCategories(categories []string) error {
+	err := qbclient.login()
+	if err != nil {
+		return fmt.Errorf("login error: %v", err)
+	}
+	data := url.Values{
+		"categories": {strings.Join(categories, "\n")},
+	}
+	return qbclient.apiPost("api/v2/torrents/removeCategories", data)
+}
+
+func (qbclient *Client) GetCategories() ([]client.TorrentCategory, error) {
 	err := qbclient.login()
 	if err != nil {
 		return nil, fmt.Errorf("login error: %v", err)
 	}
-	var categories map[string](apiCategoryStruct)
+	var categories map[string](client.TorrentCategory)
 	err = qbclient.apiRequest("api/v2/torrents/categories", &categories)
 	if err != nil {
 		return nil, err
 	}
-	cats := []string{}
+	cats := []client.TorrentCategory{}
 	for _, category := range categories {
-		cats = append(cats, category.Name)
+		cats = append(cats, category)
 	}
 	return cats, nil
 }
@@ -650,6 +683,32 @@ func (qbclient *Client) GetStatus() (*client.Status, error) {
 	return &status, nil
 }
 
+func (qbclient *Client) setPreferences(preferences map[string](any)) error {
+	err := qbclient.login()
+	if err != nil {
+		return fmt.Errorf("login error: %v", err)
+	}
+	data, err := json.Marshal(preferences)
+	if err != nil {
+		return err
+	}
+	// setPreferences qb API expects a "raw" form data (without %XX escapes)
+	dataStr := "json=" + string(data)
+	_, err = qbclient.HttpClient.Post(qbclient.ClientConfig.Url+"api/v2/app/setPreferences",
+		"application/x-www-form-urlencoded", strings.NewReader(dataStr))
+	return err
+}
+
+func (qbclient *Client) getPreferences() (*apiPreferences, error) {
+	err := qbclient.login()
+	if err != nil {
+		return nil, fmt.Errorf("login error: %v", err)
+	}
+	var preferences *apiPreferences
+	err = qbclient.apiRequest("api/v2/app/preferences", &preferences)
+	return preferences, err
+}
+
 func (qbclient *Client) GetConfig(variable string) (string, error) {
 	err := qbclient.login()
 	if err != nil {
@@ -682,6 +741,12 @@ func (qbclient *Client) GetConfig(variable string) (string, error) {
 			return "", err
 		}
 		return fmt.Sprint(status.UploadSpeed), nil
+	case "save_path":
+		preferences, err := qbclient.getPreferences()
+		if err != nil {
+			return "", err
+		}
+		return preferences.Save_path, nil
 	default:
 		return "", nil
 	}
@@ -701,6 +766,8 @@ func (qbclient *Client) SetConfig(variable string, value string) error {
 		return err
 	case "free_disk_space", "global_download_speed", "global_upload_speed":
 		return fmt.Errorf("%s is read-only", variable)
+	case "save_path":
+		return qbclient.setPreferences(map[string]any{"save_path": value})
 	default:
 		return nil
 	}

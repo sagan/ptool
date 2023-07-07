@@ -451,17 +451,27 @@ func (trclient *Client) DeleteTags(tags ...string) error {
 	return trclient.RemoveTagsFromAllTorrents(tags)
 }
 
-func (trclient *Client) GetCategories() ([]string, error) {
+func (trclient *Client) MakeCategory(category string, savePath string) error {
+	return fmt.Errorf("unsupported")
+}
+
+func (trclient *Client) RemoveCategories(categories []string) error {
+	return fmt.Errorf("unsupported")
+}
+
+func (trclient *Client) GetCategories() ([]client.TorrentCategory, error) {
 	if err := trclient.sync(); err != nil {
 		return nil, err
 	}
-	cats := []string{}
+	cats := []client.TorrentCategory{}
 	catsFlag := map[string](bool){}
 	for _, trtorrent := range trclient.torrents {
 		torrent := tr2Torrent(trtorrent)
 		cat := torrent.GetCategoryFromTag()
 		if cat != "" && !catsFlag[cat] {
-			cats = append(cats, cat)
+			cats = append(cats, client.TorrentCategory{
+				Name: cat,
+			})
 			catsFlag[cat] = true
 		}
 	}
@@ -595,6 +605,10 @@ func (trclient *Client) SetConfig(variable string, value string) error {
 		})
 	case "free_disk_space", "global_download_speed", "global_upload_speed":
 		return fmt.Errorf("%s is read-only", variable)
+	case "save_path":
+		return transmissionbt.SessionArgumentsSet(context.TODO(), transmissionrpc.SessionArguments{
+			DownloadDir: &value,
+		})
 	default:
 		return nil
 	}
@@ -639,6 +653,12 @@ func (trclient *Client) GetConfig(variable string) (string, error) {
 			return "", err
 		}
 		return fmt.Sprint(status.UploadSpeed), nil
+	case "save_path":
+		args, err := transmissionbt.SessionArgumentsGet(context.TODO(), []string{"download-dir"})
+		if err != nil {
+			return "", err
+		}
+		return *args.DownloadDir, nil
 	default:
 		return "", nil
 	}

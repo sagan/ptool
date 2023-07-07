@@ -78,6 +78,11 @@ type TorrentOption struct {
 	Resume             bool // use only in ModifyTorrent, to start a paused torrent
 }
 
+type TorrentCategory struct {
+	Name     string `json:"name"`
+	SavePath string `json:"savePath"`
+}
+
 type Client interface {
 	GetTorrent(infoHash string) (*Torrent, error)
 	// stateFilter: _all|_active|_done|_undone, or any state value (possibly with a _ prefix)
@@ -102,7 +107,10 @@ type Client interface {
 	GetTags() ([]string, error)
 	CreateTags(tags ...string) error
 	DeleteTags(tags ...string) error
-	GetCategories() ([]string, error)
+	// create category if not existed, edit category if already exists
+	MakeCategory(category string, savePath string) error
+	RemoveCategories(categories []string) error
+	GetCategories() ([]TorrentCategory, error)
 	SetTorrentsCatetory(infoHashes []string, category string) error
 	SetAllTorrentsCatetory(category string) error
 	TorrentRootPathExists(rootFolder string) bool

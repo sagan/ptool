@@ -30,7 +30,7 @@ By default it will add xseed torrents from All sites unless --include-sites or -
 
 var (
 	dryRun                 = false
-	paused                 = false
+	addPaused              = false
 	check                  = false
 	slowMode               = false
 	maxXseedTorrents       = int64(0)
@@ -50,8 +50,8 @@ var (
 func init() {
 	command.Flags().BoolVarP(&slowMode, "slow", "", false, "Slow mode. wait after handling each xseed torrent. For dev / test purpose")
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do NOT actually add xseed torrents to client")
-	command.Flags().BoolVarP(&paused, "add-paused", "", false, "Add xseed torrents to client in paused state")
-	command.Flags().BoolVarP(&check, "hash", "", false, "Let client do hash checking when add xseed torrents")
+	command.Flags().BoolVarP(&addPaused, "add-paused", "", false, "Add xseed torrents to client in paused state")
+	command.Flags().BoolVarP(&check, "check", "", false, "Let client do hash checking when add xseed torrents")
 	command.Flags().Int64VarP(&maxXseedTorrents, "max-torrents", "m", 0, "Number limit of xseed torrents added. Default (0) == unlimited")
 	command.Flags().Int64VarP(&iyuuRequestMaxTorrents, "max-request-torrents", "", 2000, "Number limit of target torrents sent to iyuu server at once")
 	command.Flags().StringVarP(&includeSites, "include-sites", "", "", "Only add xseed torrents from these sites or groups (comma-separated)")
@@ -341,7 +341,7 @@ mainloop:
 					SavePath:     targetTorrent.SavePath,
 					Category:     xseedTorrentCategory,
 					Tags:         tags,
-					Pause:        paused,
+					Pause:        addPaused,
 					SkipChecking: !check,
 				}, nil)
 				log.Infof("Add xseed torrent %s result: error=%v", xseedTorrent.InfoHash, err)

@@ -26,17 +26,19 @@ var command = &cobra.Command{
 }
 
 var (
-	paused      = false
-	addCategory = ""
-	defaultSite = ""
-	addTags     = ""
-	savePath    = ""
-	skipCheck   = false
+	addCategoryAuto = false
+	addPaused       = false
+	skipCheck       = false
+	addCategory     = ""
+	defaultSite     = ""
+	addTags         = ""
+	savePath        = ""
 )
 
 func init() {
-	command.Flags().BoolVarP(&skipCheck, "no-hash", "", false, "Skip hash checking when adding torrents")
-	command.Flags().BoolVarP(&paused, "add-paused", "", false, "Add torrents to client in paused state")
+	command.Flags().BoolVarP(&skipCheck, "skip-check", "", false, "Skip hash checking when adding torrents")
+	command.Flags().BoolVarP(&addPaused, "add-paused", "", false, "Add torrents to client in paused state")
+	command.Flags().BoolVarP(&addCategoryAuto, "add-category-auto", "", false, "Automatically set category of added torrent to corresponding sitename")
 	command.Flags().StringVarP(&addCategory, "add-category", "", "", "Set category of added torrents")
 	command.Flags().StringVarP(&savePath, "add-save-path", "", "", "Set save path of added torrents")
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of torrents")
@@ -55,8 +57,7 @@ func add(cmd *cobra.Command, args []string) {
 	siteInstanceMap := map[string](site.Site){}
 	errCnt := int64(0)
 	option := &client.TorrentOption{
-		Pause:        paused,
-		Category:     addCategory,
+		Pause:        addPaused,
 		SavePath:     savePath,
 		SkipChecking: skipCheck,
 	}
@@ -115,6 +116,17 @@ func add(cmd *cobra.Command, args []string) {
 			fmt.Printf("add site %s torrent %s error: failed to parse torrent: %v\n", siteInstance.GetName(), torrentId, err)
 			errCnt++
 			continue
+		}
+		if addCategoryAuto {
+			if siteName != "" {
+				option.Category = siteName
+			} else if addCategory != "" {
+				option.Category = addCategory
+			} else {
+				option.Category = "Others"
+			}
+		} else {
+			option.Category = addCategory
 		}
 		option.Tags = []string{client.GenerateTorrentTagFromSite(siteName)}
 		option.Tags = append(option.Tags, fixedTags...)
