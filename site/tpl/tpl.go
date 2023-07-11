@@ -131,6 +131,10 @@ var (
 			SelectorTorrentsList:       `.torrent_panel_inner`,
 			SelectorTorrentBlock:       `.torrent_wrap`,
 			SelectorTorrentTime:        `.time_col span:last-child`,
+			SelectorTorrentSize:        `.video_size`,
+			SelectorTorrentSeeders:     `.seeder_col`,
+			SelectorTorrentLeechers:    `.leecher_col`,
+			SelectorTorrentSnatched:    `.snatched_col`,
 			Comment:                    "海胆",
 		},
 		"hares": &config.SiteConfigStruct{

@@ -23,7 +23,8 @@ const (
 	STALL_TORRENT_DELETEION_TIMESPAN      = int64(30 * 60) // stalled torrent will be deleted after this time passed
 	BANDWIDTH_FULL_PERCENT                = float64(0.8)
 	DELETE_TORRENT_IMMEDIATELY_STORE      = float64(99999)
-	RESUME_TORRENTS_FREE_DISK_SPACE_TIER  = int64(5 * 1024 * 1024 * 1024) // 5GB
+	RESUME_TORRENTS_FREE_DISK_SPACE_TIER  = int64(5 * 1024 * 1024 * 1024)  // 5GB
+	DELETE_TORRENTS_FREE_DISK_SPACE_TIER  = int64(10 * 1024 * 1024 * 1024) // 10GB
 )
 
 type BrushOptionStruct struct {
@@ -113,10 +114,18 @@ func isTorrentStalled(torrent *client.Torrent) bool {
 }
 
 /*
- * Strategy
- * Delete a torrent from client ONLY when it's uploading speed become SLOW enough AND free disk space insufficient.
+ * @todo : this function requires a major rework. It's a mess right now.
+ *
+ * Strategy (Desired)
+ * Delete a torrent from client when (any of the the follow criterion matches):
+ *   a. Tt's uploading speed become SLOW enough AND free disk space insufficient
+ *   b. It's consuming too much downloading bandwidth and uploading speed / downloading speed is too low
+ *   c. It's incomplete and been totally stalled (no uploading and downloading activity) for some time
  * Stall ALL torrent of client (limit download speed to 1B/s, so upload only) when free disk space insufficient
- * Add new torrents to client when server uploading bandwidth is somewhat idle AND there is SOME free disk space.
+ *   * This's somwwhat broken in qBittorrent for now (See https://github.com/qbittorrent/qBittorrent/issues/2185 ).
+ *   * Simply limiting downloading speed (to a very low tier) will also drop uploading speed to the same level
+ *   * Consider removing this behavior
+ * Add new torrents to client when server uploading bandwidth is somewhat idle AND there is SOME free disk space
  *
  */
 func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTorrents []site.Torrent, option *BrushOptionStruct) (result *AlgorithmResult) {
@@ -126,6 +135,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	cntDownloadingTorrents := int64(0)
 	freespace := clientStatus.FreeSpaceOnDisk
 	freespaceChange := int64(0)
+	freespaceTarget := utils.Min(option.MinDiskSpace*2, option.MinDiskSpace+DELETE_TORRENTS_FREE_DISK_SPACE_TIER)
 	estimateUploadSpeed := clientStatus.UploadSpeed
 
 	var candidateTorrents []candidateTorrentStruct
@@ -298,7 +308,8 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	for _, deleteTorrent := range deleteCandidateTorrents {
 		torrent := clientTorrentsMap[deleteTorrent.InfoHash].Torrent
 		shouldDelete := false
-		if deleteTorrent.Score >= DELETE_TORRENT_IMMEDIATELY_STORE || (freespace >= 0 && freespace <= option.MinDiskSpace) {
+		if deleteTorrent.Score >= DELETE_TORRENT_IMMEDIATELY_STORE ||
+			(freespace >= 0 && freespace <= option.MinDiskSpace && freespace+freespaceChange <= freespaceTarget) {
 			shouldDelete = true
 		} else if torrent.Ctime <= 0 &&
 			torrent.Meta["stt"] > 0 &&
@@ -323,7 +334,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	}
 
 	// if still not enough free space, delete ALL stalled incomplete torrents
-	if freespace >= 0 && freespace+freespaceChange <= option.MinDiskSpace {
+	if freespace >= 0 && freespace <= option.MinDiskSpace && freespace+freespaceChange <= freespaceTarget {
 		for _, torrent := range clientTorrents {
 			if clientTorrentsMap[torrent.InfoHash].DeleteFlag || !isTorrentStalled(&torrent) {
 				continue
