@@ -37,8 +37,8 @@ var (
 		{"global_upload_speed", 1, true, false, "Current global upload speed (/s)"},
 		{"free_disk_space", 2, true, false, "Current free disk space of default save path"},
 		{"save_path", 0, false, false, "Default save path"},
-		{"qb_*", 0, false, false, "The qBittorrent specific preferences. For full list see https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-4.1)#get-application-preferences . eg. qb_create_subfolder_enabled"},
-		{"tr_*", 0, true, false, "The transmission specific preferences (read-only for now). For full list see https://github.com/transmission/transmission/blob/3.00/extras/rpc-spec.txt#L482 . Convert argument name to snake_case. eg. tr_config_dir"},
+		{"qb_*", 0, false, false, "The qBittorrent specific preferences. For full list see https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-4.1)#get-application-preferences . eg. qb_start_paused_enabled"},
+		{"tr_*", 0, true, false, "The transmission specific preferences. For full list see https://github.com/transmission/transmission/blob/3.00/extras/rpc-spec.txt#L482 . Convert argument name to snake_case. eg. tr_config_dir"},
 	}
 	showRaw        = false
 	showValueOnly  = false

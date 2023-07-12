@@ -773,15 +773,7 @@ func (qbclient *Client) SetConfig(variable string, value string) error {
 	}
 	if strings.HasPrefix(variable, "qb_") && len(variable) > 3 {
 		data := map[string]any{}
-		if value == "true" {
-			data[variable[3:]] = true
-		} else if value == "false" {
-			data[variable[3:]] = false
-		} else if utils.IsIntString(value) {
-			data[variable[3:]] = utils.ParseInt(value)
-		} else {
-			data[variable[3:]] = value
-		}
+		data[variable[3:]], _ = utils.String2Any(value)
 		return qbclient.setPreferences(data)
 	}
 	switch variable {

@@ -11,9 +11,65 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/constraints"
 	"golang.org/x/exp/slices"
 )
+
+func String2Any(value string) (any, reflect.Kind) {
+	if value == "true" {
+		return true, reflect.Bool
+	} else if value == "false" {
+		return false, reflect.Bool
+	} else if IsIntString(value) {
+		return ParseInt(value), reflect.Int64
+	} else {
+		return value, reflect.String
+	}
+}
+
+func ResolvePointerValue(obj any) any {
+	ref := reflect.ValueOf(obj)
+	if ref.Kind() == reflect.Ptr {
+		obj = reflect.Indirect(ref).Interface()
+	}
+	return obj
+}
+
+func GetStructFieldValue(obj any, field string, defaultValue any) any {
+	ref := reflect.ValueOf(obj)
+
+	if ref.Kind() == reflect.Ptr {
+		ref = reflect.Indirect(ref)
+	}
+	prop := ref.FieldByName(field)
+	if !prop.IsValid() {
+		return defaultValue
+	}
+	return prop.Interface()
+}
+
+// https://stackoverflow.com/questions/6395076/using-reflect-how-do-you-set-the-value-of-a-struct-field
+func SetStructFieldValue(obj any, field string, value any) {
+	ref := reflect.ValueOf(obj)
+
+	if ref.Kind() != reflect.Ptr {
+		log.Fatalf("SetStructFieldValue: you must pass obj as a pointer")
+	}
+	ref = reflect.Indirect(ref)
+
+	if ref.Kind() == reflect.Interface {
+		ref = ref.Elem()
+	}
+
+	// should double check we now have a struct (could still be anything)
+	if ref.Kind() != reflect.Struct {
+		log.Fatalf("SetStructFieldValue field %s: unexpected type", field)
+	}
+
+	prop := ref.FieldByName(field)
+	prop.Set(reflect.ValueOf(value))
+}
 
 // https://stackoverflow.com/questions/23350173
 // copy none-empty field values from src to dst. dst and src must be pointors of same type of plain struct

@@ -577,6 +577,26 @@ func (trclient *Client) GetClientConfig() *config.ClientConfigStruct {
 
 func (trclient *Client) SetConfig(variable string, value string) error {
 	transmissionbt := trclient.client
+	if strings.HasPrefix(variable, "tr_") && len(variable) > 3 {
+		trvariable := strcase.ToKebab(variable[3:])
+		key := strcase.ToPascal(trvariable)
+		args := transmissionrpc.SessionArguments{}
+		argValue, kind := utils.String2Any(value)
+		// it's ugly for now
+		if kind == reflect.Int64 {
+			value := argValue.(int64)
+			utils.SetStructFieldValue(&args, key, &value)
+		} else if kind == reflect.Bool {
+			value := argValue.(bool)
+			utils.SetStructFieldValue(&args, key, &value)
+		} else if kind == reflect.String {
+			value := argValue.(string)
+			utils.SetStructFieldValue(&args, key, &value)
+		} else {
+			return fmt.Errorf("invalid value type: %v", kind)
+		}
+		return transmissionbt.SessionArgumentsSet(context.TODO(), args)
+	}
 	switch variable {
 	case "global_download_speed_limit":
 		limit := utils.ParseInt(value)
@@ -618,34 +638,26 @@ func (trclient *Client) SetConfig(variable string, value string) error {
 }
 
 func (trclient *Client) GetConfig(variable string) (string, error) {
-	transmissionbt := trclient.client
+	err := trclient.syncMeta()
+	if err != nil {
+		return "", err
+	}
 	if strings.HasPrefix(variable, "tr_") && len(variable) > 3 {
 		trvariable := strcase.ToKebab(variable[3:])
-		args, err := transmissionbt.SessionArgumentsGet(context.TODO(), []string{trvariable})
-		if err != nil {
-			return "", err
-		}
 		key := strcase.ToPascal(trvariable)
-		value := reflect.Indirect(reflect.ValueOf(args).FieldByName(key)).Interface()
+		defaultValue := ""
+		value := utils.ResolvePointerValue(utils.GetStructFieldValue(trclient.sessionArgs, key, &defaultValue))
 		return fmt.Sprint(value), nil
 	}
 	switch variable {
 	case "global_download_speed_limit":
-		sessionStats, err := transmissionbt.SessionArgumentsGet(context.TODO(), nil)
-		if err != nil {
-			return "", nil
-		}
-		if *sessionStats.SpeedLimitDownEnabled {
-			return fmt.Sprint(*sessionStats.SpeedLimitDown * 1024), nil
+		if *trclient.sessionArgs.SpeedLimitDownEnabled {
+			return fmt.Sprint(*trclient.sessionArgs.SpeedLimitDown * 1024), nil
 		}
 		return "0", nil
 	case "global_upload_speed_limit":
-		sessionStats, err := transmissionbt.SessionArgumentsGet(context.TODO(), nil)
-		if err != nil {
-			return "", nil
-		}
-		if *sessionStats.SpeedLimitUpEnabled {
-			return fmt.Sprint(*sessionStats.SpeedLimitUp * 1024), nil
+		if *trclient.sessionArgs.SpeedLimitUpEnabled {
+			return fmt.Sprint(*trclient.sessionArgs.SpeedLimitUp * 1024), nil
 		}
 		return "0", nil
 	case "free_disk_space":
@@ -667,11 +679,7 @@ func (trclient *Client) GetConfig(variable string) (string, error) {
 		}
 		return fmt.Sprint(status.UploadSpeed), nil
 	case "save_path":
-		args, err := transmissionbt.SessionArgumentsGet(context.TODO(), []string{"download-dir"})
-		if err != nil {
-			return "", err
-		}
-		return *args.DownloadDir, nil
+		return *trclient.sessionArgs.DownloadDir, nil
 	default:
 		return "", nil
 	}
