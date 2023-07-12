@@ -380,7 +380,7 @@ mainloop:
 					} else if action == "add" {
 						tags := []string{}
 						tags = append(tags, clientAddFixedTags...)
-						if torrent.HasHnR {
+						if torrent.HasHnR || siteInstance.GetSiteConfig().GlobalHnR {
 							tags = append(tags, "_hr")
 						}
 						clientAddTorrentOption.Tags = tags

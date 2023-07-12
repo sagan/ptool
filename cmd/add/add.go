@@ -130,6 +130,9 @@ func add(cmd *cobra.Command, args []string) {
 		}
 		option.Tags = []string{client.GenerateTorrentTagFromSite(siteName)}
 		option.Tags = append(option.Tags, fixedTags...)
+		if siteInstance.GetSiteConfig().GlobalHnR {
+			option.Tags = append(option.Tags, "_hr")
+		}
 		err = clientInstance.AddTorrent(torrentContent, option, nil)
 		if err != nil {
 			fmt.Printf("add site %s torrent %s error: failed to add torrent to client: %v\n", siteInstance.GetName(), torrentId, err)

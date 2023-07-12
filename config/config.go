@@ -118,12 +118,14 @@ type ConfigStruct struct {
 }
 
 var (
-	VerboseLevel               = 0
-	ConfigDir                  = ""
-	ConfigFile                 = ""
-	configLoaded               = false
-	configData   *ConfigStruct = &ConfigStruct{}
-	mu           sync.Mutex
+	VerboseLevel                   = 0
+	ConfigDir                      = ""
+	ConfigFile                     = ""
+	configLoaded                   = false
+	configData       *ConfigStruct = &ConfigStruct{}
+	clientsConfigMap               = map[string](*ClientConfigStruct){}
+	sitesConfigMap                 = map[string](*SiteConfigStruct){}
+	mu               sync.Mutex
 )
 
 func init() {
@@ -193,6 +195,8 @@ func Get() *ConfigStruct {
 				if client.Name == "" {
 					client.Name = client.Type
 				}
+
+				clientsConfigMap[client.Name] = client
 			}
 			for _, site := range configData.Sites {
 				v, err := utils.RAMInBytes(site.TorrentUploadSpeedLimit)
@@ -238,6 +242,8 @@ func Get() *ConfigStruct {
 					v = DEFAULT_SITE_BRUSH_TORRENT_MAX_SIZE_LIMIT
 				}
 				site.BrushTorrentMaxSizeLimitValue = v
+
+				sitesConfigMap[site.GetName()] = site
 			}
 			configLoaded = true
 		}
@@ -256,24 +262,14 @@ func GetClientConfig(name string) *ClientConfigStruct {
 	if name == "" {
 		return nil
 	}
-	for _, client := range Get().Clients {
-		if client.Name == name {
-			return client
-		}
-	}
-	return nil
+	return clientsConfigMap[name]
 }
 
 func GetSiteConfig(name string) *SiteConfigStruct {
 	if name == "" {
 		return nil
 	}
-	for _, site := range Get().Sites {
-		if site.GetName() == name {
-			return site
-		}
-	}
-	return nil
+	return sitesConfigMap[name]
 }
 
 // if name is a group, return it's sites, otherwise return nil

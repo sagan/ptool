@@ -12,6 +12,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site/tpl"
 	"github.com/sagan/ptool/utils"
 )
@@ -114,6 +115,10 @@ func add(cmd *cobra.Command, args []string) {
 		option.Tags = []string{}
 		if sitename != "" {
 			option.Tags = append(option.Tags, client.GenerateTorrentTagFromSite(sitename))
+			siteConfig := config.GetSiteConfig(sitename)
+			if siteConfig.GlobalHnR {
+				option.Tags = append(option.Tags, "_hr")
+			}
 		}
 		option.Tags = append(option.Tags, fixedTags...)
 		err = clientInstance.AddTorrent(torrentContent, option, nil)
