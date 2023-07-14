@@ -805,11 +805,11 @@ func (qbclient *Client) GetTorrent(infoHash string) (*client.Torrent, error) {
 }
 
 func (qbclient *Client) GetTorrents(stateFilter string, category string, showAll bool) ([]client.Torrent, error) {
-	torrents := []client.Torrent{}
 	err := qbclient.sync()
 	if err != nil {
 		return nil, err
 	}
+	torrents := []client.Torrent{}
 
 	for _, qbtorrent := range qbclient.data.Torrents {
 		if category != "" && category != qbtorrent.Category {

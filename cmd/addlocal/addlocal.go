@@ -1,12 +1,10 @@
 package add
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"strings"
 
-	goTorrentParser "github.com/j-muller/go-torrent-parser"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -14,6 +12,7 @@ import (
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site/tpl"
+	"github.com/sagan/ptool/torrentutil"
 	"github.com/sagan/ptool/utils"
 )
 
@@ -94,13 +93,13 @@ func add(cmd *cobra.Command, args []string) {
 			errCnt++
 			continue
 		}
-		tinfo, err := goTorrentParser.Parse(bytes.NewReader(torrentContent))
+		tinfo, err := torrentutil.ParseTorrent(torrentContent, 99)
 		if err != nil {
 			fmt.Printf("✕torrent (%d/%d) %s: failed to parse torrent (%v)\n", i+1, cntAll, torrentFile, err)
 			errCnt++
 			continue
 		}
-		sitename := tpl.GuessSiteByTrackers(tinfo.Announce, defaultSite)
+		sitename := tpl.GuessSiteByTrackers(tinfo.Trackers, defaultSite)
 		if addCategoryAuto {
 			if sitename != "" {
 				option.Category = sitename
@@ -139,11 +138,7 @@ func add(cmd *cobra.Command, args []string) {
 			}
 		}
 		cntAdded++
-		tsize := int64(0)
-		for _, f := range tinfo.Files {
-			tsize += f.Length
-		}
-		sizeAdded += tsize
+		sizeAdded += tinfo.Size
 		fmt.Printf("✓torrent (%d/%d) %s: added to client\n", i+1, cntAll, torrentFile)
 	}
 	fmt.Printf("\nDone. Added torrent (Size/Cnt): %s / %d; ErrorCnt: %d\n", utils.BytesSize(float64(sizeAdded)), cntAdded, errCnt)

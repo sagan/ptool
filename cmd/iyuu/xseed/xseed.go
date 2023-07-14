@@ -1,12 +1,10 @@
 package xseed
 
 import (
-	"bytes"
 	"fmt"
 	"sort"
 	"strings"
 
-	goTorrentParser "github.com/j-muller/go-torrent-parser"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/exp/slices"
@@ -16,6 +14,7 @@ import (
 	"github.com/sagan/ptool/cmd/iyuu"
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
+	"github.com/sagan/ptool/torrentutil"
 	"github.com/sagan/ptool/utils"
 )
 
@@ -244,9 +243,6 @@ mainloop:
 				log.Tracef("Failed to get target torrent %s contents from client: %v", infoHash, err)
 				continue
 			}
-			sort.Slice(targetTorrentContentFiles, func(i, j int) bool {
-				return targetTorrentContentFiles[i].Path < targetTorrentContentFiles[j].Path
-			})
 			for _, xseedTorrent := range xseedTorrents {
 				clientExistingTorrent, err := clientInstance.GetTorrent(xseedTorrent.InfoHash)
 				if err != nil {
@@ -313,15 +309,12 @@ mainloop:
 					log.Errorf("Failed to download torrent from site: %v", err)
 					continue
 				}
-				xseedTorrentInfo, err := goTorrentParser.Parse(bytes.NewReader(xseedTorrentContent))
+				xseedTorrentInfo, err := torrentutil.ParseTorrent(xseedTorrentContent, 99)
 				if err != nil {
 					log.Errorf("Failed to parse xseed torrent contents: %v", err)
 					continue
 				}
-				sort.Slice(xseedTorrentInfo.Files, func(i, j int) bool {
-					return strings.Join(xseedTorrentInfo.Files[i].Path, "/") < strings.Join(xseedTorrentInfo.Files[j].Path, "/")
-				})
-				compareResult := client.XseedCheckTorrentContents(targetTorrentContentFiles, xseedTorrentInfo.Files)
+				compareResult := xseedTorrentInfo.XseedCheckWithClientTorrent(targetTorrentContentFiles)
 				if compareResult < 0 {
 					if compareResult == -2 {
 						log.Tracef("xseed candidate is NOT identital with client torrent. (Only ROOT folders diff)")

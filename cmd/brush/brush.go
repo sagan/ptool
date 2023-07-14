@@ -1,12 +1,10 @@
 package brush
 
 import (
-	"bytes"
 	"fmt"
 	"math/rand"
 	"os"
 
-	goTorrentParser "github.com/j-muller/go-torrent-parser"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -15,6 +13,7 @@ import (
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/stats"
+	"github.com/sagan/ptool/torrentutil"
 	"github.com/sagan/ptool/utils"
 )
 
@@ -250,26 +249,17 @@ func brush(cmd *cobra.Command, args []string) {
 				log.Printf("Failed to download: %s. Skip \n", err)
 				continue
 			}
-			tinfo, err := goTorrentParser.Parse(bytes.NewReader(torrentdata))
+			tinfo, err := torrentutil.ParseTorrent(torrentdata, 99)
 			if err != nil {
 				continue
 			}
-			pClientTorrent := utils.FindInSlice(clientTorrents, func(ts client.Torrent) bool {
-				return ts.InfoHash == tinfo.InfoHash
-			})
+			pClientTorrent, _ := clientInstance.GetTorrent(tinfo.InfoHash)
 			if pClientTorrent != nil {
 				log.Printf("Already existing in client. skip\n")
 				continue
 			}
-			torrentRootPath := ""
-			if len(tinfo.Files) > 0 {
-				fp := tinfo.Files[0].Path
-				if len(fp) > 0 {
-					torrentRootPath = fp[0]
-				}
-			}
-			if clientInstance.TorrentRootPathExists(torrentRootPath) {
-				log.Printf("torrent rootpath %s existing in client. skip\n", torrentRootPath)
+			if clientInstance.TorrentRootPathExists(tinfo.RootDir) {
+				log.Printf("torrent rootpath %s existing in client. skip\n", tinfo.RootDir)
 				continue
 			}
 			log.Printf("torrent info: %s\n", tinfo.InfoHash)

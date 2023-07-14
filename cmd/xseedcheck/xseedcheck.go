@@ -2,15 +2,13 @@ package xseedcheck
 
 import (
 	"fmt"
-	"sort"
-	"strings"
 
-	goTorrentParser "github.com/j-muller/go-torrent-parser"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/torrentutil"
 )
 
 var command = &cobra.Command{
@@ -39,7 +37,7 @@ func xseedcheck(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}
-	torrentInfo, err := goTorrentParser.ParseFromFile(torrentFileName)
+	torrentInfo, err := torrentutil.ParseTorrentFile(torrentFileName, 99)
 	if err != nil {
 		clientInstance.Close()
 		log.Fatalf("Failed to parse %s: %v", torrentFileName, err)
@@ -52,18 +50,12 @@ func xseedcheck(cmd *cobra.Command, args []string) {
 		)
 		return
 	}
-	sort.Slice(torrentInfo.Files, func(i, j int) bool {
-		return strings.Join(torrentInfo.Files[i].Path, "/") < strings.Join(torrentInfo.Files[j].Path, "/")
-	})
 	clientTorrentContents, err := clientInstance.GetTorrentContents(infoHash)
 	if err != nil {
 		clientInstance.Close()
 		log.Fatalf("Failed to get client torrent contents info: %v", err)
 	}
-	sort.Slice(clientTorrentContents, func(i, j int) bool {
-		return clientTorrentContents[i].Path < clientTorrentContents[j].Path
-	})
-	compareResult := client.XseedCheckTorrentContents(clientTorrentContents, torrentInfo.Files)
+	compareResult := torrentInfo.XseedCheckWithClientTorrent(clientTorrentContents)
 	if compareResult == 0 {
 		fmt.Printf(
 			"Result: ✓. Torrent file %s has the same contents with client %s torrent.\n",
@@ -92,15 +84,13 @@ func xseedcheck(cmd *cobra.Command, args []string) {
 	if showAll {
 		fmt.Printf("\n")
 		fmt.Printf("Client: %s torrent\n", infoHash)
-		for _, clientTorrentFile := range clientTorrentContents {
-			fmt.Printf("%-15d %s\n", clientTorrentFile.Size, clientTorrentFile.Path)
+		for i, clientTorrentFile := range clientTorrentContents {
+			fmt.Printf("%-5d  %-15d  %s\n", i+1, clientTorrentFile.Size, clientTorrentFile.Path)
 		}
 
 		fmt.Printf("\n")
-		fmt.Printf("File: %s\n", torrentFileName)
-		for _, tfile := range torrentInfo.Files {
-			fmt.Printf("%-15d %s\n", tfile.Length, strings.Join(tfile.Path, "/"))
-		}
+		fmt.Printf("Torrent file: %s\n", torrentFileName)
+		torrentInfo.PrintFiles(true, true)
 	}
 	clientInstance.Close()
 }

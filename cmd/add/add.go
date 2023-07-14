@@ -1,12 +1,10 @@
 package add
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"strings"
 
-	goTorrentParser "github.com/j-muller/go-torrent-parser"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -14,6 +12,7 @@ import (
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/site/tpl"
+	"github.com/sagan/ptool/torrentutil"
 	"github.com/sagan/ptool/utils"
 )
 
@@ -111,7 +110,7 @@ func add(cmd *cobra.Command, args []string) {
 			errCnt++
 			continue
 		}
-		tinfo, err := goTorrentParser.Parse(bytes.NewReader(torrentContent))
+		tinfo, err := torrentutil.ParseTorrent(torrentContent, 0)
 		if err != nil {
 			fmt.Printf("add site %s torrent %s error: failed to parse torrent: %v\n", siteInstance.GetName(), torrentId, err)
 			errCnt++

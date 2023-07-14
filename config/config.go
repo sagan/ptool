@@ -259,6 +259,7 @@ func Get() *ConfigStruct {
 }
 
 func GetClientConfig(name string) *ClientConfigStruct {
+	Get()
 	if name == "" {
 		return nil
 	}
@@ -266,6 +267,7 @@ func GetClientConfig(name string) *ClientConfigStruct {
 }
 
 func GetSiteConfig(name string) *SiteConfigStruct {
+	Get()
 	if name == "" {
 		return nil
 	}
@@ -326,9 +328,7 @@ func (siteConfig *SiteConfigStruct) ParseSiteUrl(siteUrl string, appendQueryStri
 		if utils.IsUrl(siteUrl) {
 			pageUrl = siteUrl
 		} else {
-			if strings.HasPrefix(siteUrl, "/") {
-				siteUrl = siteUrl[1:]
-			}
+			siteUrl = strings.TrimPrefix(siteUrl, "/")
 			pageUrl = siteConfig.Url + siteUrl
 		}
 	}

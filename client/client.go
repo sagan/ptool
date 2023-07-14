@@ -5,7 +5,6 @@ import (
 	"regexp"
 	"strings"
 
-	goTorrentParser "github.com/j-muller/go-torrent-parser"
 	"golang.org/x/exp/slices"
 
 	"github.com/sagan/ptool/config"
@@ -404,59 +403,6 @@ func PrintTorrents(torrents []Torrent, filter string, showSum bool) {
 	if showSum {
 		fmt.Printf("// Summary - Cnt / Size / SizeUnfinished: %d / %s / %s", cnt, utils.BytesSize(float64(size)), utils.BytesSize(float64(sizeUnfinished)))
 	}
-}
-
-// return 0 if equal; 1 if clientTorrentContents contains all files of torrentContents.
-// return -2 if the ROOT folder(file) of two torrents are different, but all innner files are SAME.
-// return -1 if contents of two torrents are NOT same.
-// inputed slices of filenames MUST be lexicographic ordered.
-func XseedCheckTorrentContents(clientTorrentContents []TorrentContentFile, torrentContents []*goTorrentParser.File) int64 {
-	if len(clientTorrentContents) < len(torrentContents) || len(torrentContents) == 0 {
-		return -1
-	}
-	length := len(torrentContents)
-	leftContainerFolder := ""
-	rightContainerFolder := ""
-	leftNoContainerFolder := false
-	rightNoContainerFolder := false
-	for i := 0; i < length; i++ {
-		if clientTorrentContents[i].Size != torrentContents[i].Length {
-			return -1
-		}
-		leftPathes := strings.Split(clientTorrentContents[i].Path, "/")
-		if !leftNoContainerFolder && !rightNoContainerFolder {
-			_leftContainerFolder := leftPathes[0]
-			if leftContainerFolder == "" {
-				leftContainerFolder = _leftContainerFolder
-			} else if leftContainerFolder != _leftContainerFolder {
-				leftNoContainerFolder = true
-			}
-			_rightContainerFolder := torrentContents[i].Path[0]
-			if rightContainerFolder == "" {
-				rightContainerFolder = _rightContainerFolder
-			} else if rightContainerFolder != _rightContainerFolder {
-				rightNoContainerFolder = true
-			}
-		}
-		if clientTorrentContents[i].Path != strings.Join(torrentContents[i].Path, "/") {
-			if !leftNoContainerFolder && !rightNoContainerFolder {
-				leftPath := strings.Join(leftPathes[1:], "/")
-				rightPath := strings.Join(torrentContents[i].Path[1:], "/")
-				if leftPath == rightPath {
-					continue
-				}
-			}
-			return -1
-		}
-	}
-	if !leftNoContainerFolder && !rightNoContainerFolder && leftContainerFolder != rightContainerFolder {
-		return -2
-	}
-	// it's somewhat broken for now
-	if length < len(clientTorrentContents) {
-		return 1
-	}
-	return 0
 }
 
 // parse and return torrents that meet criterion

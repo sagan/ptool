@@ -3,14 +3,12 @@ package parsetorrent
 import (
 	"fmt"
 	"os"
-	"strings"
 
-	goTorrentParser "github.com/j-muller/go-torrent-parser"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/cmd"
-	"github.com/sagan/ptool/site/tpl"
+	"github.com/sagan/ptool/torrentutil"
 	"github.com/sagan/ptool/utils"
 )
 
@@ -33,36 +31,22 @@ func init() {
 
 func parsetorrent(cmd *cobra.Command, args []string) {
 	torrentFileNames := utils.ParseFilenameArgs(args...)
-	hasError := false
+	errorCnt := int64(0)
 
 	for _, torrentFileName := range torrentFileNames {
-		torrentInfo, err := goTorrentParser.ParseFromFile(torrentFileName)
+		torrentInfo, err := torrentutil.ParseTorrentFile(torrentFileName, 99)
 		if err != nil {
 			log.Printf("Failed to parse %s: %v", torrentFileName, err)
+			errorCnt++
 			continue
 		}
-		trackerHostname := ""
-		if len(torrentInfo.Announce) > 0 {
-			trackerHostname = utils.ParseUrlHostname(torrentInfo.Announce[0])
-		}
-		sitename := tpl.GuessSiteByTrackers(torrentInfo.Announce, "")
-		size := int64(0)
-		for _, file := range torrentInfo.Files {
-			size += file.Length
-		}
-		fmt.Printf("Torrent %s: infohash = %s ; size = %s ; tracker = %s (site: %s) // %s\n", torrentFileName, torrentInfo.InfoHash, utils.BytesSize(float64(size)),
-			trackerHostname, sitename, torrentInfo.Comment)
-
+		torrentInfo.Print(torrentFileName, showAll)
 		if showAll {
-			fmt.Printf("RawSize = %d ; FullTrackerUrls: %s\n", size, strings.Join(torrentInfo.Announce, " | "))
 			fmt.Printf("\n")
-			for i, file := range torrentInfo.Files {
-				fmt.Printf("%d. %s\n", i, strings.Join(file.Path, "/"))
-			}
-			fmt.Printf("\n")
+			torrentInfo.PrintFiles(true, false)
 		}
 	}
-	if hasError {
+	if errorCnt > 0 {
 		os.Exit(1)
 	}
 }

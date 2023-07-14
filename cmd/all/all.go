@@ -34,6 +34,7 @@ import (
 	_ "github.com/sagan/ptool/cmd/statscmd"
 	_ "github.com/sagan/ptool/cmd/status"
 	_ "github.com/sagan/ptool/cmd/tidyup"
+	_ "github.com/sagan/ptool/cmd/verifytorrent"
 	_ "github.com/sagan/ptool/cmd/versioncmd"
 	_ "github.com/sagan/ptool/cmd/xseedcheck"
 )
