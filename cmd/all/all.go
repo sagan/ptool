@@ -19,6 +19,7 @@ import (
 	_ "github.com/sagan/ptool/cmd/gettags"
 	_ "github.com/sagan/ptool/cmd/iyuu/all"
 	_ "github.com/sagan/ptool/cmd/parsetorrent"
+	_ "github.com/sagan/ptool/cmd/partialdownload"
 	_ "github.com/sagan/ptool/cmd/pause"
 	_ "github.com/sagan/ptool/cmd/reannounce"
 	_ "github.com/sagan/ptool/cmd/recheck"

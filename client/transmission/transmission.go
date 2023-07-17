@@ -803,6 +803,10 @@ func (trclient *Client) RemoveTorrentTrackers(infoHash string, trackers []string
 	return nil
 }
 
+func (trclient *Client) SetFilePriority(infoHash string, fileIndexes []int64, priority int64) error {
+	return fmt.Errorf("unsupported")
+}
+
 func (trclient *Client) Close() {
 	trclient.PurgeCache()
 }

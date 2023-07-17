@@ -124,6 +124,8 @@ type Client interface {
 	EditTorrentTracker(infoHash string, oldTracker string, newTracker string, replaceHost bool) error
 	AddTorrentTrackers(infoHash string, trackers []string, oldTracker string) error
 	RemoveTorrentTrackers(infoHash string, trackers []string) error
+	// QB only, priority: 0	Do not download; 1	Normal priority; 6	High priority; 7	Maximal priority
+	SetFilePriority(infoHash string, fileIndexes []int64, priority int64) error
 	Close()
 }
 

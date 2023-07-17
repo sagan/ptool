@@ -13,6 +13,7 @@ import (
 	"net/textproto"
 	"net/url"
 	"reflect"
+	"sort"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -847,6 +848,9 @@ func (qbclient *Client) GetTorrentContents(infoHash string) ([]client.TorrentCon
 			Complete: qbTorrentContent.Is_seed,
 		})
 	}
+	sort.Slice(torrentContents, func(i, j int) bool {
+		return torrentContents[i].Index < torrentContents[j].Index
+	})
 	return torrentContents, nil
 }
 
@@ -972,6 +976,25 @@ func (qbclient *Client) RemoveTorrentTrackers(infoHash string, trackers []string
 		"urls": {strings.Join(trackers, "|")},
 	}
 	return qbclient.apiPost("api/v2/torrents/removeTrackers", data)
+}
+
+func (qbclient *Client) SetFilePriority(infoHash string, fileIndexes []int64, priority int64) error {
+	if len(fileIndexes) == 0 {
+		return fmt.Errorf("must provide at least fileIndex")
+	}
+	id := ""
+	for i, index := range fileIndexes {
+		if i > 0 {
+			id += "|"
+		}
+		id += fmt.Sprint(index)
+	}
+	data := url.Values{
+		"hash":     {infoHash},
+		"id":       {id},
+		"priority": {fmt.Sprint(priority)},
+	}
+	return qbclient.apiPost("api/v2/torrents/filePrio", data)
 }
 
 func (qbclient *Client) Close() {
