@@ -13,11 +13,12 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "parsetorrent file.torrent...",
-	Short: "Parse torrent files and show their content.",
-	Long:  `Parse torrent files and show their content.`,
-	Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
-	Run:   parsetorrent,
+	Use:     "parsetorrent file.torrent...",
+	Aliases: []string{"parse"},
+	Short:   "Parse torrent files and show their content.",
+	Long:    `Parse torrent files and show their content.`,
+	Args:    cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
+	Run:     parsetorrent,
 }
 
 var (
@@ -25,15 +26,18 @@ var (
 )
 
 func init() {
-	command.Flags().BoolVarP(&showAll, "all", "a", false, "show all info.")
+	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all info")
 	cmd.RootCmd.AddCommand(command)
 }
 
 func parsetorrent(cmd *cobra.Command, args []string) {
-	torrentFileNames := utils.ParseFilenameArgs(args...)
+	torrentFilenames := utils.ParseFilenameArgs(args...)
 	errorCnt := int64(0)
 
-	for _, torrentFileName := range torrentFileNames {
+	for i, torrentFileName := range torrentFilenames {
+		if showAll && i > 0 {
+			fmt.Printf("\n")
+		}
 		torrentInfo, err := torrentutil.ParseTorrentFile(torrentFileName, 99)
 		if err != nil {
 			log.Printf("Failed to parse %s: %v", torrentFileName, err)
@@ -42,7 +46,6 @@ func parsetorrent(cmd *cobra.Command, args []string) {
 		}
 		torrentInfo.Print(torrentFileName, showAll)
 		if showAll {
-			fmt.Printf("\n")
 			torrentInfo.PrintFiles(true, false)
 		}
 	}

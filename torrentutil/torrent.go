@@ -101,10 +101,10 @@ func (meta *TorrentMeta) Print(name string, showAll bool) {
 		trackerHostname, sitename, meta.MetaInfo.Comment)
 	if showAll {
 		if meta.SingleFileTorrent {
-			fmt.Printf("RawSize = %d ; SingleFile = %s ; FullTrackerUrls: %s\n",
+			fmt.Printf("-- RawSize = %d ; SingleFile = %s ; FullTrackerUrls: %s\n",
 				meta.Size, meta.Files[0].Path, strings.Join(meta.Trackers, " | "))
 		} else {
-			fmt.Printf("RawSize = %d ; RootDir = %s ; FullTrackerUrls: %s\n",
+			fmt.Printf("-- RawSize = %d ; RootDir = %s ; FullTrackerUrls: %s\n",
 				meta.Size, meta.RootDir, strings.Join(meta.Trackers, " | "))
 		}
 	}

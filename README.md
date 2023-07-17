@@ -95,6 +95,7 @@ ptool <command> args... [flags]
 * addlocal : 将本地的种子文件添加到 BT 客户端。
 * BT 客户端控制命令集: clientctl / show / pause / resume / delete / reannounce / recheck / getcategories / createcategory / removecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / edittracker / addtrackers / removetrackers / setsavepath。
 * parsetorrent : 显示种子(torrent)文件信息。
+* verifytorrent : 测试种子(torrent)文件与硬盘上的文件内容一致。
 * sites : 显示本程序内置支持的所有 PT 站点列表。
 * version : 显示本程序版本信息。
 
@@ -395,16 +396,17 @@ ptool batchdl <site> --action download
 ptool batchdl <site> --action add --add-client local
 ```
 
-常用参数：
+此命令提供非常多的配置参数。部分常用参数：
 
-* -m int : 最多下载多少个种子。默认 0（无限制，一直运行除非手动 Ctrl + C 停止）.
+* -m int : 最多下载多少个种子。默认 0 (无限制，一直运行除非手动 Ctrl + C 停止)。
 * --sort string : 站点种子排序方式：size|time|name|seeders|leechers|snatched|none (default size)
 * --order string : 排序顺序：asc|desc。默认 asc。
-* --min-torrent-size string : 种子大小的最小值限制(eg. "100MiB", "1GiB")。默认为 "0"。
+* --min-torrent-size string : 种子大小的最小值限制 (eg. "100MiB", "1GiB")。默认为 "0"。
 * --max-torrent-size string : 种子大小的最大值限制。默认为 "0"（无限制）。
+* --max-total-size string : 下载种子内容总体积最大值限制 (eg. "512GiB", "1TiB")。默认为 "0"（无限制）。
 * --free : 只下载免费种子。
 * --no-hr : 跳过存在 HR 的种子。
-* --no-paid : 跳过"付费"的种子。（部分站点存在"付费"种子，第一次下载或汇报时扣除积分）
+* --no-paid : 跳过"付费"的种子。(部分站点存在"付费"种子，第一次下载或汇报时扣除积分)
 * --base-url : 手动指定种子列表页 URL，例如："special.php"、"adult.php"、"torrents.php?cat=100"。
 
 ### 显示种子文件信息 (parsetorrent)
@@ -414,6 +416,23 @@ ptool parsetorrent file.torrent...
 ```
 
 显示本地硬盘里的种子文件的元信息。
+
+### 校验种子文件与硬盘内容是否一致 (verifytorrent)
+
+示例：
+
+```
+ptool verifytorrent file.torrent --save-path D:\Downloads --check
+
+ptool verifytorrent MyTorrent.torrent --content-path D:\Downloads\MyTorrent --check
+```
+
+参数
+
+* ```--save-path``` : 种子内容保存路径(下载文件夹)。可以用于校验多个 torrent 文件。
+* ```--content-path``` : 种子内容路径(root folder 或单文件种子的文件路径)。只能用于校验1个 torrent 文件。必须且只能提供 ```--save-path``` 和 ```-content-path``` 两者中的其中1个参数。
+* ```--check``` : 对硬盘上文件进行 hash 校验。如果不提供此参数，默认只对比文件元信息(文件名、文件大小)。
+
 
 ### 站点分组 (group) 功能
 
