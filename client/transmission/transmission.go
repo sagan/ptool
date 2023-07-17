@@ -523,10 +523,11 @@ func (trclient *Client) GetTorrentContents(infoHash string) ([]client.TorrentCon
 		return nil, err
 	}
 	files := []client.TorrentContentFile{}
-	for _, trTorrentFile := range torrent.Files {
+	for i, trTorrentFile := range torrent.Files {
 		files = append(files, client.TorrentContentFile{
 			Path:     trTorrentFile.Name,
 			Size:     trTorrentFile.Length,
+			Ignored:  !torrent.FileStats[i].Wanted,
 			Complete: trTorrentFile.BytesCompleted == trTorrentFile.Length,
 		})
 	}
@@ -804,7 +805,7 @@ func (trclient *Client) RemoveTorrentTrackers(infoHash string, trackers []string
 }
 
 func (trclient *Client) SetFilePriority(infoHash string, fileIndexes []int64, priority int64) error {
-	return fmt.Errorf("unsupported")
+	return fmt.Errorf("not implemented yet")
 }
 
 func (trclient *Client) Close() {

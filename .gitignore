@@ -28,5 +28,7 @@ devtest/
 
 # test torrent files
 *.torrent
+*.bak
+*.log
 
 dist/

@@ -96,6 +96,7 @@ ptool <command> args... [flags]
 * BT 客户端控制命令集: clientctl / show / pause / resume / delete / reannounce / recheck / getcategories / createcategory / removecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / edittracker / addtrackers / removetrackers / setsavepath。
 * parsetorrent : 显示种子(torrent)文件信息。
 * verifytorrent : 测试种子(torrent)文件与硬盘上的文件内容一致。
+* partialdownload : 拆包下载。
 * sites : 显示本程序内置支持的所有 PT 站点列表。
 * version : 显示本程序版本信息。
 
@@ -433,6 +434,20 @@ ptool verifytorrent MyTorrent.torrent --content-path D:\Downloads\MyTorrent --ch
 * ```--content-path``` : 种子内容路径(root folder 或单文件种子的文件路径)。只能用于校验1个 torrent 文件。必须且只能提供 ```--save-path``` 和 ```-content-path``` 两者中的其中1个参数。
 * ```--check``` : 对硬盘上文件进行 hash 校验。如果不提供此参数，默认只对比文件元信息(文件名、文件大小)。
 
+### 拆包下载 (partialdownload)
+
+使用方法：
+
+```
+# 使用本命令前，将种子以暂停状态添加到客户端里
+# 将客户端的某个种子内容的所有文件按 1TiB 切成几块，显示分片信息。
+ptool partialdownload <client> <infoHash> --chunk-size 1TiB --show-chucks
+
+# 设置客户端只下载该种子第 0 块切片(0-indexed)的内容。
+ptool partialdownload <client> <infoHash> --chunk-size 1TiB --chuck-index 0
+```
+
+该命令的设计目的不是用于刷流。而是用于使用 VPS 等硬盘空间有限的云服务器(分多次)下载体积非常大的单个种子，然后配合 rclone 将下载的文件直接上传到云盘。
 
 ### 站点分组 (group) 功能
 

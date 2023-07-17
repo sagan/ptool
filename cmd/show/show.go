@@ -37,6 +37,7 @@ var (
 	category                                            = ""
 	tag                                                 = ""
 	showAll                                             = false
+	showRaw                                             = false
 	sortFieldEnumFlag common.ClientTorrentSortFieldEnum = "none"
 	orderEnumFlag     common.OrderEnum                  = "asc"
 )
@@ -45,6 +46,7 @@ func init() {
 	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "m", 0, "Show at most this number of torrents. Default (0) == unlimited")
 	command.Flags().BoolVarP(&largest, "largest", "l", false, "Show largest torrents first. Equavalent with '--sort size --order desc'")
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all torrents. Equavalent with pass a '_all' arg")
+	command.Flags().BoolVarP(&showRaw, "raw", "", false, "Show torrent size in raw format")
 	command.Flags().BoolVarP(&showTrackers, "show-trackers", "", false, "Show torrent trackers info")
 	command.Flags().BoolVarP(&showInfoHashOnly, "show-info-hash-only", "", false, "Output torrents info hash only")
 	command.Flags().BoolVarP(&showFiles, "show-files", "", false, "Show torrent content files info")
@@ -111,7 +113,7 @@ func show(cmd *cobra.Command, args []string) {
 			if err != nil {
 				log.Errorf("Failed to get torrent contents: %v", err)
 			} else {
-				client.PrintTorrentFiles(files)
+				client.PrintTorrentFiles(files, showRaw)
 			}
 		}
 		os.Exit(0)

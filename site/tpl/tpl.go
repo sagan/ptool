@@ -58,6 +58,11 @@ var (
 			Url:     "https://www.beitai.pt/",
 			Comment: "备胎",
 		},
+		"biho": &config.SiteConfigStruct{
+			Type:    "nexusphp",
+			Url:     "https://www.biho.xyz/",
+			Comment: "必火pt",
+		},
 		"btschool": &config.SiteConfigStruct{
 			Type:      "nexusphp",
 			Url:       "https://pt.btschool.club/",
@@ -107,10 +112,12 @@ var (
 			Comment: "丐帮",
 		},
 		"gamegamept": &config.SiteConfigStruct{
-			Type:    "nexusphp",
-			Aliases: []string{"ggpt"},
-			Url:     "https://www.gamegamept.com/",
-			Comment: "GGPT",
+			Type:              "nexusphp",
+			Aliases:           []string{"ggpt"},
+			GlobalHnR:         true,
+			Url:               "https://www.gamegamept.com/",
+			TorrentsExtraUrls: []string{"special.php"},
+			Comment:           "GGPT",
 		},
 		"greatposterwall": &config.SiteConfigStruct{
 			Type:    "gazellepw",
@@ -149,6 +156,7 @@ var (
 		"hdarea": &config.SiteConfigStruct{
 			Type:    "nexusphp",
 			Url:     "https://www.hdarea.co/",
+			Domains: []string{"hdarea.club"},
 			Comment: "高清地带",
 		},
 		"hdatmos": &config.SiteConfigStruct{
@@ -279,11 +287,16 @@ var (
 			TorrentsExtraUrls: []string{"special.php"}, // 龟龟的后花园
 			Comment:           "KamePT",
 		},
+		"kufei": &config.SiteConfigStruct{
+			Type:    "nexusphp",
+			Url:     "https://kufei.org/",
+			Comment: "库非",
+		},
 		"leaves": &config.SiteConfigStruct{
 			Type:                "nexusphp",
 			Aliases:             []string{"redleaves"},
 			Url:                 "https://leaves.red/",
-			TorrentsExtraUrls:   []string{"special.php"},
+			TorrentsExtraUrls:   []string{"special.php", "games.php"},
 			SearchUrl:           `https://leaves.red/search.php?search=%s&search_area=0`,
 			SelectorTorrentPaid: `span[title="收费种子"]`,
 			Comment:             "红叶",
@@ -430,6 +443,12 @@ var (
 			Type:    "nexusphp",
 			Url:     "https://wintersakura.net/",
 			Comment: "冬樱",
+		},
+		"wukongwendao": &config.SiteConfigStruct{
+			Type:    "nexusphp",
+			Aliases: []string{"wukong"},
+			Url:     "https://wukongwendao.top/",
+			Comment: "悟空问道",
 		},
 		"xingtan": &config.SiteConfigStruct{
 			Type:    "nexusphp",

@@ -42,6 +42,7 @@ type TorrentContentFile struct {
 	Index    int64
 	Path     string // full file path
 	Size     int64
+	Ignored  bool // true if file is ignored (excluded from downloading)
 	Complete bool // true if file is fullly downloaded
 }
 
@@ -335,15 +336,30 @@ func PrintTorrentTrackers(trackers TorrentTrackers) {
 		fmt.Printf("  %s\n", tracker.Url)
 	}
 }
-func PrintTorrentFiles(files []TorrentContentFile) {
+func PrintTorrentFiles(files []TorrentContentFile, showRaw bool) {
 	fmt.Printf("Files (%d):\n", len(files))
-	fmt.Printf("%-5s  %-10s  %-6s  %s\n", "Index", "Size", "IsDone", "Path")
+	fmt.Printf("%-5s  %-5s  %-10s  %-6s  %s\n", "No.", "Index", "Size", "IsDone", "Path")
+	ignoredFilesCnt := int64(0)
 	for i, file := range files {
-		isDone := "✗"
+		isDone := ""
 		if file.Complete {
-			isDone = "✓"
+			isDone += "✓"
+		} else {
+			isDone += "✗"
 		}
-		fmt.Printf("%-5d  %-10d  %-6s  %s\n", i+1, file.Size, isDone, file.Path)
+		if file.Ignored {
+			isDone += "!"
+			ignoredFilesCnt++
+		}
+		if showRaw {
+			fmt.Printf("%-5d  %-5d  %-10d  %-6s  %s\n", i+1, file.Index, file.Size, isDone, file.Path)
+		} else {
+			fmt.Printf("%-5d  %-5d  %-10s  %-6s  %s\n", i+1, file.Index, utils.BytesSize(float64(file.Size)), isDone, file.Path)
+		}
+	}
+	if ignoredFilesCnt > 0 {
+		fmt.Printf("// Note: some files (marked with !) are ignored (not_download). Download / Ignore / All files: %d / %d / %d\n",
+			len(files)-int(ignoredFilesCnt), ignoredFilesCnt, len(files))
 	}
 }
 

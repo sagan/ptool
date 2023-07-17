@@ -845,6 +845,7 @@ func (qbclient *Client) GetTorrentContents(infoHash string) ([]client.TorrentCon
 			Index:    qbTorrentContent.Index,
 			Path:     strings.ReplaceAll(qbTorrentContent.Name, "\\", "/"),
 			Size:     qbTorrentContent.Size,
+			Ignored:  qbTorrentContent.Priority == 0,
 			Complete: qbTorrentContent.Is_seed,
 		})
 	}
