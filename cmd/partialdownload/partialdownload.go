@@ -23,21 +23,32 @@ var command = &cobra.Command{
 	Use:   "partialdownload <client> <infoHash>",
 	Short: "Partially download a (large) torrent in client.",
 	Long: `Partially download a (large) torrent in client.
-Before running this command, you should add the target torrent to client in paused state.
+Before running this command, you should add the target torrent to client in paused
+state. You need to anually start the torrent task after running this command.
 
 Example usage:
 
-# See how much chunks a torrent has
-ptool partialdownload local e447d424dd0e6fba7bf9494008111f3bbb1f56a9 --chunk-size 100GiB --show-chucks
+# View chunks info of the torrent
+ptool partialdownload local e447d424dd0e6fba7bf9494008111f3bbb1f56a9 --chunk-size 500GiB -a
 
-# Download the first (0-indexed) chuck in client (Mark files of other chucks as no-download)
-ptool partialdownload local e447d424dd0e6fba7bf9494008111f3bbb1f56a9 --chunk-size 100GiB --chuck-index 0
+# Download the first (0-indexed) chunk of the torrent in client (Mark files of other chunks as no-download)
+ptool partialdownload local e447d424dd0e6fba7bf9494008111f3bbb1f56a9 --chunk-size 500GiB --chunk-index 0
+
+Without --strict flag, ptool will always split torrent contents to chunks.
+The size of each chunk may be larger then chunk size. And there may be less
+chunks than expected.
+
+With --strict flag, ptool will ensure that the size of every chunk is strictly
+less or equal than (<=) chunk size. There may be more chunks than expected. If
+there is a single large file in torrent contents which is larger than (>) chunk
+size, the command will fail.
 
 Use case of this command:
-You have a cloud VPS / Server with limited disk space, and you want to use this machine to download a large torrent.
-And then upload the downloaded files to cloud drive using rclone, for example.
-The above task is trivial using this command.
-`,
+You have a cloud VPS / Server with limited disk space, and you want to use this
+machine to download a large torrent. And then upload the downloaded torrent contents
+to cloud drive using rclone, for example.
+
+The above task is trivial using this command.`,
 	Args: cobra.MatchAll(cobra.ExactArgs(2), cobra.OnlyValidArgs),
 	Run:  partialdownload,
 }
@@ -46,15 +57,15 @@ var (
 	chunkSizeStr  = ""
 	chunkIndex    = int64(0)
 	showAll       = false
-	showChunks    = false
+	strict        = false
 	originalOrder = false
 )
 
 func init() {
-	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show full comparison result")
+	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show full chunks info and exit")
+	command.Flags().BoolVarP(&strict, "strict", "", false, "Set strict mode that the size of every chunk MUST be strictly <= chunk-size")
 	command.Flags().BoolVarP(&originalOrder, "original-order", "", false, "Split torrent files to chunks by their original order instead of path order")
-	command.Flags().BoolVarP(&showChunks, "show-chunks", "", false, "Show torrent chunks info and exit")
-	command.Flags().Int64VarP(&chunkIndex, "chunk-index", "", 0, "Set The split chunk index (0-indexed) to download")
+	command.Flags().Int64VarP(&chunkIndex, "chunk-index", "", 0, "Set the split chunk index (0-indexed) to download")
 	command.Flags().StringVarP(&chunkSizeStr, "chunk-size", "", "", "Set the split chunk size string. eg. 500GiB")
 	command.MarkFlagRequired("chunk-size")
 	cmd.RootCmd.AddCommand(command)
@@ -97,7 +108,12 @@ func partialdownload(cmd *cobra.Command, args []string) {
 	allSize := int64(0)
 	for _, file := range torrentFiles {
 		allSize += file.Size
-		if currentChunkSize >= chunkSize {
+		if strict && file.Size > chunkSize {
+			fmt.Printf("Torrent can NOT be strictly splitted to %s chunks: file %s is too large: %s",
+				utils.BytesSize(float64(chunkSize)), file.Path, utils.BytesSize(float64(file.Size)))
+			os.Exit(1)
+		}
+		if currentChunkSize >= chunkSize || (strict && (currentChunkSize+file.Size) > chunkSize) {
 			chunks = append(chunks, &Chunk{currentChunkIndex, currentChunkFilesCnt, currentChunkSize})
 			currentChunkIndex++
 			currentChunkSize = 0
@@ -112,7 +128,7 @@ func partialdownload(cmd *cobra.Command, args []string) {
 		}
 	}
 	chunks = append(chunks, &Chunk{currentChunkIndex, currentChunkFilesCnt, currentChunkSize}) // last chunk
-	if showChunks {
+	if showAll {
 		fmt.Printf("Torrent Size: %s (%d) / Chunk Size: %s; All %d Chunks:\n",
 			utils.BytesSize(float64(allSize)), len(torrentFiles), utils.BytesSize(float64(chunkSize)), len(chunks))
 		fmt.Printf("%-5s  %-5s  %s\n", "Index", "Files", "Size")

@@ -29,6 +29,7 @@ type TorrentMeta struct {
 	Size              int64
 	SingleFileTorrent bool
 	RootDir           string
+	ContentPath       string // root folder or single file name
 	Files             []TorrentMetaFile
 	MetaInfo          *metainfo.MetaInfo
 	Info              metainfo.Info
@@ -65,9 +66,11 @@ func ParseTorrent(torrentdata []byte, fields int64) (*TorrentMeta, error) {
 		})
 		torrentMeta.SingleFileTorrent = true
 		torrentMeta.Size = info.Length
+		torrentMeta.ContentPath = info.Name
 	} else {
 		if info.Name != "" && info.Name != metainfo.NoName {
 			torrentMeta.RootDir = info.Name
+			torrentMeta.ContentPath = info.Name
 		}
 		for _, metafile := range info.Files {
 			torrentMeta.Files = append(torrentMeta.Files, TorrentMetaFile{
