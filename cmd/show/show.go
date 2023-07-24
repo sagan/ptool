@@ -38,6 +38,7 @@ var (
 	tag                                                 = ""
 	showAll                                             = false
 	showRaw                                             = false
+	showSum                                             = false
 	sortFieldEnumFlag common.ClientTorrentSortFieldEnum = "none"
 	orderEnumFlag     common.OrderEnum                  = "asc"
 )
@@ -47,6 +48,7 @@ func init() {
 	command.Flags().BoolVarP(&largest, "largest", "l", false, "Show largest torrents first. Equavalent with '--sort size --order desc'")
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all torrents. Equavalent with pass a '_all' arg")
 	command.Flags().BoolVarP(&showRaw, "raw", "", false, "Show torrent size in raw format")
+	command.Flags().BoolVarP(&showSum, "sum", "", false, "Show torrents summary only")
 	command.Flags().BoolVarP(&showTrackers, "show-trackers", "", false, "Show torrent trackers info")
 	command.Flags().BoolVarP(&showInfoHashOnly, "show-info-hash-only", "", false, "Output torrents info hash only")
 	command.Flags().BoolVarP(&showFiles, "show-files", "", false, "Show torrent content files info")
@@ -175,7 +177,11 @@ func show(cmd *cobra.Command, args []string) {
 			)
 		}
 		clientInstance.Close()
-		client.PrintTorrents(torrents, "", true)
+		showSummary := int64(1)
+		if showSum {
+			showSummary = 2
+		}
+		client.PrintTorrents(torrents, "", showSummary)
 	} else {
 		for i, torrent := range torrents {
 			if i > 0 {

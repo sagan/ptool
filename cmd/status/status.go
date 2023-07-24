@@ -161,7 +161,7 @@ func status(cmd *cobra.Command, args []string) {
 			}
 			if response.ClientTorrents != nil {
 				fmt.Printf("\n")
-				client.PrintTorrents(response.ClientTorrents, filter, false)
+				client.PrintTorrents(response.ClientTorrents, filter, 0)
 				if i != len(responses)-1 {
 					fmt.Printf("\n")
 				}

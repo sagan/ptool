@@ -24,7 +24,7 @@ var command = &cobra.Command{
 	Short: "Partially download a (large) torrent in client.",
 	Long: `Partially download a (large) torrent in client.
 Before running this command, you should add the target torrent to client in paused
-state. You need to anually start the torrent task after running this command.
+state. You need to manually start the torrent task after running this command.
 
 Example usage:
 

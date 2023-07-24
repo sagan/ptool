@@ -393,33 +393,52 @@ func PrintTorrent(torrent *Torrent) {
 	)
 }
 
-func PrintTorrents(torrents []Torrent, filter string, showSum bool) {
+// showSum: 0 - no; 1 - yes; 2 - sum only
+func PrintTorrents(torrents []Torrent, filter string, showSum int64) {
 	cnt := int64(0)
+	var cntPaused, cntDownloading, cntSeeding, cntCompleted, cntOthers int64
 	size := int64(0)
 	sizeUnfinished := int64(0)
-	fmt.Printf("%-25s  %-40s  %-7s  %-5s  %-8s  %-8s  %-5s  %-5s  %-20s\n", "Name", "InfoHash", "Size", "State", "↓S(/s)", "↑S(/s)", "Seeds", "Peers", "Tracker")
+	if showSum < 2 {
+		fmt.Printf("%-25s  %-40s  %-7s  %-5s  %-8s  %-8s  %-5s  %-5s  %-20s\n", "Name", "InfoHash", "Size", "State", "↓S(/s)", "↑S(/s)", "Seeds", "Peers", "Tracker")
+	}
 	for _, torrent := range torrents {
 		if filter != "" && !utils.ContainsI(torrent.Name, filter) && !utils.ContainsI(torrent.InfoHash, filter) {
 			continue
 		}
 		cnt++
+		switch torrent.State {
+		case "paused":
+			cntPaused++
+		case "downloading":
+			cntDownloading++
+		case "seeding":
+			cntSeeding++
+		case "completed":
+			cntCompleted++
+		default:
+			cntOthers++
+		}
 		size += torrent.Size
-		name := torrent.Name
 		sizeUnfinished += torrent.Size - torrent.SizeCompleted
-		utils.PrintStringInWidth(name, 25, true)
-		fmt.Printf("  %-40s  %-7s  %-5s  %-8s  %-8s  %-5d  %-5d  %-20s\n",
-			torrent.InfoHash,
-			utils.BytesSize(float64(torrent.Size)),
-			torrent.StateIconText(),
-			utils.BytesSize(float64(torrent.DownloadSpeed)),
-			utils.BytesSize(float64(torrent.UploadSpeed)),
-			torrent.Seeders,
-			torrent.Leechers,
-			torrent.TrackerDomain,
-		)
+		if showSum < 2 {
+			utils.PrintStringInWidth(torrent.Name, 25, true)
+			fmt.Printf("  %-40s  %-7s  %-5s  %-8s  %-8s  %-5d  %-5d  %-20s\n",
+				torrent.InfoHash,
+				utils.BytesSize(float64(torrent.Size)),
+				torrent.StateIconText(),
+				utils.BytesSize(float64(torrent.DownloadSpeed)),
+				utils.BytesSize(float64(torrent.UploadSpeed)),
+				torrent.Seeders,
+				torrent.Leechers,
+				torrent.TrackerDomain,
+			)
+		}
 	}
-	if showSum {
-		fmt.Printf("// Summary - Cnt / Size / SizeUnfinished: %d / %s / %s", cnt, utils.BytesSize(float64(size)), utils.BytesSize(float64(sizeUnfinished)))
+	if showSum > 0 {
+		fmt.Printf("// Summary - Cnt / Size / SizeUnfinished: %d / %s / %s\n", cnt, utils.BytesSize(float64(size)), utils.BytesSize(float64(sizeUnfinished)))
+		fmt.Printf("// Torrents: ↓%d / -%d / ↑%d / ✓%d / +%d\n",
+			cntDownloading, cntPaused, cntSeeding, cntCompleted, cntOthers)
 	}
 }
 

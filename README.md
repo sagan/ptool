@@ -441,7 +441,7 @@ ptool verifytorrent MyTorrent.torrent --content-path D:\Downloads\MyTorrent --ch
 ```
 # 使用本命令前，将种子以暂停状态添加到客户端里
 # 将客户端的某个种子内容的所有文件按 1TiB 切成几块，显示分片信息。
-ptool partialdownload <client> <infoHash> --chunk-size 1TiB --show-chucks
+ptool partialdownload <client> <infoHash> --chunk-size 1TiB -a
 
 # 设置客户端只下载该种子第 0 块切片(0-indexed)的内容。
 ptool partialdownload <client> <infoHash> --chunk-size 1TiB --chuck-index 0
