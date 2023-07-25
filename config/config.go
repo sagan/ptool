@@ -121,6 +121,7 @@ var (
 	VerboseLevel                   = 0
 	ConfigDir                      = ""
 	ConfigFile                     = ""
+	LockFile                       = ""
 	configLoaded                   = false
 	configData       *ConfigStruct = &ConfigStruct{}
 	clientsConfigMap               = map[string](*ClientConfigStruct){}

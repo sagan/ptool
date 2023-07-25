@@ -56,6 +56,7 @@ The above task is trivial using this command.`,
 var (
 	chunkSizeStr  = ""
 	chunkIndex    = int64(0)
+	startIndex    = int64(0)
 	showAll       = false
 	strict        = false
 	originalOrder = false
@@ -65,7 +66,8 @@ func init() {
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show full chunks info and exit")
 	command.Flags().BoolVarP(&strict, "strict", "", false, "Set strict mode that the size of every chunk MUST be strictly <= chunk-size")
 	command.Flags().BoolVarP(&originalOrder, "original-order", "", false, "Split torrent files to chunks by their original order instead of path order")
-	command.Flags().Int64VarP(&chunkIndex, "chunk-index", "", 0, "Set the split chunk index (0-indexed) to download")
+	command.Flags().Int64VarP(&chunkIndex, "chunk-index", "", 0, "Set the split chunk index (0-based) to download")
+	command.Flags().Int64VarP(&startIndex, "start-index", "", 0, "Set the index (0-based) of the first file in torrent to download. The prior files of torrent will be skipped")
 	command.Flags().StringVarP(&chunkSizeStr, "chunk-size", "", "", "Set the split chunk size string. eg. 500GiB")
 	command.MarkFlagRequired("chunk-size")
 	cmd.RootCmd.AddCommand(command)
@@ -92,6 +94,10 @@ func partialdownload(cmd *cobra.Command, args []string) {
 		clientInstance.Close()
 		log.Fatalf("Failed to get client files: %v", err)
 	}
+	if startIndex < 0 || startIndex >= int64(len(torrentFiles))-1 {
+		log.Fatalf("Invalid start-index %d, valid range: [0, %d] (torrent has %d files)",
+			startIndex, len(torrentFiles)-2, len(torrentFiles))
+	}
 	if !originalOrder {
 		sort.Slice(torrentFiles, func(i, j int) bool {
 			return torrentFiles[i].Path < torrentFiles[j].Path
@@ -106,7 +112,13 @@ func partialdownload(cmd *cobra.Command, args []string) {
 	downloadFileIndexes := []int64{}
 	noDownloadFileIndexes := []int64{}
 	allSize := int64(0)
-	for _, file := range torrentFiles {
+	skippedSize := int64(0)
+	for i, file := range torrentFiles {
+		if int64(i) < startIndex {
+			skippedSize += file.Size
+			noDownloadFileIndexes = append(noDownloadFileIndexes, file.Index)
+			continue
+		}
 		allSize += file.Size
 		if strict && file.Size > chunkSize {
 			fmt.Printf("Torrent can NOT be strictly splitted to %s chunks: file %s is too large: %s",
@@ -129,11 +141,15 @@ func partialdownload(cmd *cobra.Command, args []string) {
 	}
 	chunks = append(chunks, &Chunk{currentChunkIndex, currentChunkFilesCnt, currentChunkSize}) // last chunk
 	if showAll {
-		fmt.Printf("Torrent Size: %s (%d) / Chunk Size: %s; All %d Chunks:\n",
-			utils.BytesSize(float64(allSize)), len(torrentFiles), utils.BytesSize(float64(chunkSize)), len(chunks))
-		fmt.Printf("%-5s  %-5s  %s\n", "Index", "Files", "Size")
+		fmt.Printf("Torrent Size: %s (%d) / Chunk Size: %s; Skipped files: %d; All %d Chunks:\n",
+			utils.BytesSize(float64(allSize)), len(torrentFiles),
+			utils.BytesSize(float64(chunkSize)), startIndex, len(chunks))
+		fmt.Printf("%-6s  %-5s  %s\n", "Index", "Files", "Size")
+		if startIndex > 0 {
+			fmt.Printf("%-6s  %-5d  %s\n", "<skip>", startIndex, utils.BytesSize(float64(skippedSize)))
+		}
 		for _, chunk := range chunks {
-			fmt.Printf("%-5d  %-5d  %s\n", chunk.Index, chunk.FilesCnt, utils.BytesSize(float64(chunk.Size)))
+			fmt.Printf("%-6d  %-5d  %s\n", chunk.Index, chunk.FilesCnt, utils.BytesSize(float64(chunk.Size)))
 		}
 		clientInstance.Close()
 		os.Exit(0)
@@ -154,8 +170,8 @@ func partialdownload(cmd *cobra.Command, args []string) {
 		clientInstance.Close()
 		log.Fatalf("Failed to set no download files: %v", err)
 	}
-	fmt.Printf("Torrent Size: %s (%d) / Chunks: %d; DownloadChunkIndex: %d; DownloadChunkSize: %s (%d)",
-		utils.BytesSize(float64(allSize)), len(torrentFiles), len(chunks),
+	fmt.Printf("Torrent Size: %s (%d) / Chunks: %d; Skipped files: %d; DownloadChunkIndex: %d; DownloadChunkSize: %s (%d)",
+		utils.BytesSize(float64(allSize)), len(torrentFiles), len(chunks), startIndex,
 		chunkIndex, utils.BytesSize(float64(chunk.Size)), chunk.FilesCnt,
 	)
 	clientInstance.Close()

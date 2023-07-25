@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/gofrs/flock"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -28,6 +29,14 @@ func Execute() {
 		log.SetLevel(log.Level(logLevel))
 		log.Debugf("ptool start: %s", os.Args)
 		log.Infof("config file: %s", config.ConfigFile)
+		if config.LockFile != "" {
+			log.Debugf("Locking file: %s", config.LockFile)
+			err := flock.New(config.LockFile).Lock()
+			if err != nil {
+				log.Fatalf("Unable to lock file %s: %v", config.LockFile, err)
+			}
+			log.Infof("Lock acquired")
+		}
 	})
 	err := RootCmd.Execute()
 	if err != nil {
@@ -53,6 +62,7 @@ func init() {
 	}
 
 	// global flags
-	RootCmd.PersistentFlags().StringVarP(&config.ConfigFile, "config", "", configFile, "config file ([ptool.toml])")
+	RootCmd.PersistentFlags().StringVarP(&config.ConfigFile, "config", "", configFile, "Config file ([ptool.toml])")
+	RootCmd.PersistentFlags().StringVarP(&config.LockFile, "lock", "", "", "Lock filename. If set, ptool will acquire the lock on the file before executing command. It is intended to be used to prevent multiple invocations of ptool process at the same time. If the lock file does not exist, it will be created automatically. However, it will NOT be deleted after ptool process exits")
 	RootCmd.PersistentFlags().CountVarP(&config.VerboseLevel, "verbose", "v", "verbose (-v, -vv, -vvv)")
 }
