@@ -13,8 +13,8 @@ import (
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/stats"
-	"github.com/sagan/ptool/torrentutil"
 	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/utils/torrentutil"
 )
 
 var command = &cobra.Command{

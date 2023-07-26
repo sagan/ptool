@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/cmd"
-	"github.com/sagan/ptool/torrentutil"
 	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/utils/torrentutil"
 )
 
 var command = &cobra.Command{

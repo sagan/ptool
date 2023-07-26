@@ -122,6 +122,7 @@ var (
 	ConfigDir                      = ""
 	ConfigFile                     = ""
 	LockFile                       = ""
+	Fork                           = false
 	configLoaded                   = false
 	configData       *ConfigStruct = &ConfigStruct{}
 	clientsConfigMap               = map[string](*ClientConfigStruct){}
