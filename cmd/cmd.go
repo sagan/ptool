@@ -18,6 +18,11 @@ var RootCmd = &cobra.Command{
 	Short: "ptool is a command-line program which facilitate the use of private tracker sites.",
 	Long:  `ptool is a command-line program which facilitate the use of private tracker sites.`,
 	// Run: func(cmd *cobra.Command, args []string) { },
+	// SilenceErrors: true,
+	SilenceUsage: true,
+	PostRun: func(cmd *cobra.Command, args []string) {
+		log.Tracef("ptool root command PostRun")
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -42,6 +47,9 @@ func Execute() {
 			log.Infof("Lock acquired")
 		}
 	})
+	// see https://github.com/spf13/cobra/issues/914
+	// errors in flag parsing are printed together with command usage help;
+	// all other errors are handled in command self's Run func.
 	err := RootCmd.Execute()
 	if err != nil {
 		os.Exit(1)

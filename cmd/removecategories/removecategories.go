@@ -1,7 +1,8 @@
 package removecategories
 
 import (
-	log "github.com/sirupsen/logrus"
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
@@ -13,24 +14,25 @@ var command = &cobra.Command{
 	Short: "Remove categories from client.",
 	Long:  `Remove categories from client.`,
 	Args:  cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
-	Run:   removecategories,
+	RunE:  removecategories,
 }
 
 func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func removecategories(cmd *cobra.Command, args []string) {
+func removecategories(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
 	categories := args[1:]
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to create client: %v", err)
 	}
 
 	err = clientInstance.RemoveCategories(categories)
 	clientInstance.Close()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	return nil
 }

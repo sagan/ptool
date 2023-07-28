@@ -16,7 +16,7 @@ var command = &cobra.Command{
 	Long: `Bind (authenticate) iyuu service using PT site passkey.
 Use "ptool iyuu sites -b" to list all available sites.
 `,
-	Run: bind,
+	RunE: bind,
 }
 
 var (
@@ -35,12 +35,13 @@ func init() {
 	iyuu.Command.AddCommand(command)
 }
 
-func bind(cmd *cobra.Command, args []string) {
+func bind(cmd *cobra.Command, args []string) error {
 	log.Tracef("iyuu token: %s", config.Get().IyuuToken)
 	if config.Get().IyuuToken == "" {
-		log.Fatalf("You must config iyuuToken in ptool.toml to use iyuu functions")
+		return fmt.Errorf("you must config iyuuToken in ptool.toml to use iyuu functions")
 	}
 
 	data, err := iyuu.IyuuApiBind(config.Get().IyuuToken, site, uid, passkey)
 	fmt.Printf("Iyuu api status: error=%v, user=%v", err, data)
+	return err
 }

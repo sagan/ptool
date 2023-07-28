@@ -3,7 +3,6 @@ package xseedcheck
 import (
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
@@ -17,7 +16,7 @@ var command = &cobra.Command{
 	Long: `Check whether a torrent in client is identical with a torrent file.
 Only filename and size will be comared. Not the file contents themselves.`,
 	Args: cobra.MatchAll(cobra.ExactArgs(3), cobra.OnlyValidArgs),
-	Run:  xseedcheck,
+	RunE: xseedcheck,
 }
 
 var (
@@ -29,18 +28,18 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func xseedcheck(cmd *cobra.Command, args []string) {
+func xseedcheck(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
 	infoHash := args[1]
 	torrentFileName := args[2]
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
+		return fmt.Errorf("failed to create client: %v", err)
 	}
 	torrentInfo, err := torrentutil.ParseTorrentFile(torrentFileName, 99)
 	if err != nil {
 		clientInstance.Close()
-		log.Fatalf("Failed to parse %s: %v", torrentFileName, err)
+		return fmt.Errorf("failed to parse %s: %v", torrentFileName, err)
 	}
 	if torrentInfo.InfoHash == infoHash {
 		fmt.Printf(
@@ -48,12 +47,12 @@ func xseedcheck(cmd *cobra.Command, args []string) {
 			torrentFileName,
 			clientName,
 		)
-		return
+		return nil
 	}
 	clientTorrentContents, err := clientInstance.GetTorrentContents(infoHash)
 	if err != nil {
 		clientInstance.Close()
-		log.Fatalf("Failed to get client torrent contents info: %v", err)
+		return fmt.Errorf("failed to get client torrent contents info: %v", err)
 	}
 	compareResult := torrentInfo.XseedCheckWithClientTorrent(clientTorrentContents)
 	if compareResult == 0 {
@@ -93,4 +92,5 @@ func xseedcheck(cmd *cobra.Command, args []string) {
 		torrentInfo.PrintFiles(true, true)
 	}
 	clientInstance.Close()
+	return nil
 }

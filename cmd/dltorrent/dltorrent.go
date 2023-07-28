@@ -19,7 +19,7 @@ var command = &cobra.Command{
 	Short: "Download site torrents to local.",
 	Long:  `Download site torrents to local.`,
 	Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
-	Run:   dltorrent,
+	RunE:  dltorrent,
 }
 
 var (
@@ -33,8 +33,8 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func dltorrent(cmd *cobra.Command, args []string) {
-	errCnt := int64(0)
+func dltorrent(cmd *cobra.Command, args []string) error {
+	errorCnt := int64(0)
 	torrentIds := args
 	siteInstanceMap := map[string](site.Site){}
 	domainSiteMap := map[string](string){}
@@ -67,13 +67,13 @@ func dltorrent(cmd *cobra.Command, args []string) {
 		}
 		if siteName == "" {
 			fmt.Printf("torrent %s: no site provided\n", torrentId)
-			errCnt++
+			errorCnt++
 			continue
 		}
 		if siteInstanceMap[siteName] == nil {
 			siteInstance, err := site.CreateSite(siteName)
 			if err != nil {
-				log.Fatalf("Failed to create site %s: %v", siteName, err)
+				return fmt.Errorf("failed to create site %s: %v", siteName, err)
 			}
 			siteInstanceMap[siteName] = siteInstance
 		}
@@ -81,18 +81,19 @@ func dltorrent(cmd *cobra.Command, args []string) {
 		torrentContent, filename, err := siteInstance.DownloadTorrent(torrentId)
 		if err != nil {
 			fmt.Printf("add site %s torrent %s error: failed to get site torrent: %v\n", siteInstance.GetName(), torrentId, err)
-			errCnt++
+			errorCnt++
 			continue
 		}
 		err = os.WriteFile(downloadDir+"/"+filename, torrentContent, 0777)
 		if err != nil {
 			fmt.Printf("torrent %s: failed to download to %s/: %v\n", filename, downloadDir, err)
-			errCnt++
+			errorCnt++
 		} else {
 			fmt.Printf("torrent %s: downloaded to %s/\n", filename, downloadDir)
 		}
 	}
-	if errCnt > 0 {
-		os.Exit(1)
+	if errorCnt > 0 {
+		return fmt.Errorf("%d errors", errorCnt)
 	}
+	return nil
 }

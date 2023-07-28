@@ -3,7 +3,6 @@ package statscmd
 import (
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/spf13/cobra"
 
@@ -20,7 +19,7 @@ Only torrents added by ptool (of this machine) will be counted.
 The traffic info of a torrent will ONLY be recorded when it's been DELETED from the client.
 To use this command, you must manually enable the statistics feature by add the "brushEnableStats = true" line to ptool.toml config file.
 `,
-	Run: statscmd,
+	RunE: statscmd,
 }
 
 var (
@@ -33,13 +32,10 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func statscmd(cmd *cobra.Command, args []string) {
+func statscmd(cmd *cobra.Command, args []string) error {
 	clientnames := args
 	if !config.Get().BrushEnableStats {
-		fmt.Printf(`Statistics feature is NOT enabled currently. To enable it, add the "brushEnableStats = true" line to the top of ptool.toml config file.
-It will use the "ptool_stats.txt" (in the same dir of ptool.toml file) as the statistics data file.
-`)
-		os.Exit(1)
+		return fmt.Errorf(`statistics feature is NOT enabled currently. To enable it, add the "brushEnableStats = true" line to the top of ptool.toml config file. It will use the "ptool_stats.txt" (in the same dir of ptool.toml file) as the statistics data file`)
 	}
 	if statsFilename == "" {
 		statsFilename = config.ConfigDir + "/" + config.STATS_FILENAME
@@ -50,7 +46,7 @@ It will use the "ptool_stats.txt" (in the same dir of ptool.toml file) as the st
 	}
 	if len(clientnames) == 0 {
 		statDb.ShowTrafficStats("")
-		return
+		return nil
 	}
 
 	doneFlag := map[string](bool){}
@@ -64,4 +60,5 @@ It will use the "ptool_stats.txt" (in the same dir of ptool.toml file) as the st
 		}
 		statDb.ShowTrafficStats(clientname)
 	}
+	return nil
 }

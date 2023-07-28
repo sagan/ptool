@@ -2,7 +2,6 @@ package clientctl
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -26,7 +25,7 @@ var command = &cobra.Command{
 	Use:   "clientctl <client> [<variable>[=value] ...]",
 	Short: "Get or set client config.",
 	Long:  `Get or set client config.`,
-	Run:   clientctl,
+	RunE:  clientctl,
 }
 
 var (
@@ -52,7 +51,7 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func clientctl(cmd *cobra.Command, args []string) {
+func clientctl(cmd *cobra.Command, args []string) error {
 	if showParameters {
 		fmt.Printf("%-30s %-5s %-5s %s\n", "Name", "Type", "Auto", "Description")
 		for _, option := range allOptions {
@@ -66,18 +65,18 @@ func clientctl(cmd *cobra.Command, args []string) {
 			}
 			fmt.Printf("%-30s %-5s %-5s %s\n", option.Name, permission, auto, option.Description)
 		}
-		os.Exit(0)
+		return nil
 	}
 	if len(args) < 1 {
-		log.Fatalf("<client> not provided")
+		return fmt.Errorf("<client> not provided")
 	}
 	if showRaw && showValueOnly {
-		log.Fatalf("--raw and --show-value-only flags are NOT compatible")
+		return fmt.Errorf("--raw and --show-value-only flags are NOT compatible")
 	}
 	clientName := args[0]
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	args = args[1:]
 	errorCnt := int64(0)
@@ -122,7 +121,7 @@ func clientctl(cmd *cobra.Command, args []string) {
 		}
 		index := slices.IndexFunc(allOptions, func(o Option) bool { return o.Name == name })
 		if index == -1 {
-			log.Fatal("Unrecognized parameter: " + name)
+			return fmt.Errorf("Unrecognized parameter: " + name)
 		}
 		option := allOptions[index]
 		if len(s) == 1 {
@@ -158,8 +157,9 @@ func clientctl(cmd *cobra.Command, args []string) {
 	}
 	clientInstance.Close()
 	if errorCnt > 0 {
-		os.Exit(1)
+		return fmt.Errorf("%d errors", errorCnt)
 	}
+	return nil
 }
 
 func printOption(name string, value string, option Option, showRaw bool) {

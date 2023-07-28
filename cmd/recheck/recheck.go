@@ -1,6 +1,8 @@
 package recheck
 
 import (
+	"fmt"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -16,7 +18,7 @@ var command = &cobra.Command{
 _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.
 `,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
-	Run:  recheck,
+	RunE: recheck,
 }
 
 var (
@@ -32,7 +34,7 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func recheck(cmd *cobra.Command, args []string) {
+func recheck(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
 	args = args[1:]
 	if category == "" && tag == "" && filter == "" && len(args) == 0 {
@@ -40,26 +42,27 @@ func recheck(cmd *cobra.Command, args []string) {
 	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to create client: %v", err)
 	}
 
 	infoHashes, err := client.SelectTorrents(clientInstance, category, tag, filter, args...)
 	if err != nil {
 		clientInstance.Close()
-		log.Fatal(err)
+		return err
 	}
 	if infoHashes == nil {
 		err = clientInstance.RecheckAllTorrents()
 		if err != nil {
 			clientInstance.Close()
-			log.Fatal(err)
+			return err
 		}
 	} else if len(infoHashes) > 0 {
 		err = clientInstance.RecheckTorrents(infoHashes)
 		if err != nil {
 			clientInstance.Close()
-			log.Fatal(err)
+			return err
 		}
 	}
 	clientInstance.Close()
+	return nil
 }

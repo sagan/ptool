@@ -1,7 +1,8 @@
 package createcategory
 
 import (
-	log "github.com/sirupsen/logrus"
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
@@ -14,7 +15,7 @@ var command = &cobra.Command{
 	Long: `Create category in client. If category already exists, edit it.
 Use --save-path to set (or modify) the save path of the category.`,
 	Args: cobra.MatchAll(cobra.ExactArgs(2), cobra.OnlyValidArgs),
-	Run:  createcategory,
+	RunE: createcategory,
 }
 
 var (
@@ -26,17 +27,18 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func createcategory(cmd *cobra.Command, args []string) {
+func createcategory(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
 	category := args[1]
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to create client: %v", err)
 	}
 
 	err = clientInstance.MakeCategory(category, savePath)
 	clientInstance.Close()
 	if err != nil {
-		log.Fatalf("Failed to create category: %v", err)
+		return fmt.Errorf("failed to create category: %v", err)
 	}
+	return nil
 }

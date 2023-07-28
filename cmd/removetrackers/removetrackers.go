@@ -2,7 +2,6 @@ package removetrackers
 
 import (
 	"fmt"
-	"os"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -24,7 +23,7 @@ ptool removetrackers <client> <infoHashes...> --tracker "https://..."
 --tracker flag can be used many times.
 `,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
-	Run:  removetrackers,
+	RunE: removetrackers,
 }
 
 var (
@@ -45,39 +44,39 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func removetrackers(cmd *cobra.Command, args []string) {
+func removetrackers(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
 	args = args[1:]
 	if category == "" && tag == "" && filter == "" && len(args) == 0 {
-		log.Fatalf("You must provide at least a condition flag or hashFilter")
+		return fmt.Errorf("you must provide at least a condition flag or hashFilter")
 	}
 	if len(trackers) == 0 {
-		log.Fatalf("At least an --tracker MUST be provided")
+		return fmt.Errorf("at least an --tracker MUST be provided")
 	}
 	for _, tracker := range trackers {
 		if !utils.IsUrl(tracker) {
-			log.Fatalf("The provided tracker %s is not a valid URL", tracker)
+			return fmt.Errorf("the provided tracker %s is not a valid URL", tracker)
 		}
 	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to create client: %v", err)
 	}
 
 	torrents, err := client.QueryTorrents(clientInstance, category, tag, filter, args...)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	if len(torrents) == 0 {
 		log.Infof("No matched torrents found")
-		os.Exit(0)
+		return nil
 	}
 	if !dryRun {
 		log.Warnf("Found %d torrents, will remove %d trackers to them in 3 seconds. Press Ctrl+C to stop",
 			len(torrents), len(trackers))
 	}
 	utils.Sleep(3)
-	cntError := int64(0)
+	errorCnt := int64(0)
 	for _, torrent := range torrents {
 		fmt.Printf("Remove trackers from torrent %s (%s)\n", torrent.InfoHash, torrent.Name)
 		if dryRun {
@@ -86,11 +85,12 @@ func removetrackers(cmd *cobra.Command, args []string) {
 		err := clientInstance.RemoveTorrentTrackers(torrent.InfoHash, trackers)
 		if err != nil {
 			log.Errorf("Failed to remove trackers: %v\n", err)
-			cntError++
+			errorCnt++
 		}
 	}
 	clientInstance.Close()
-	if cntError > 0 {
-		os.Exit(1)
+	if errorCnt > 0 {
+		return fmt.Errorf("%d errors", errorCnt)
 	}
+	return nil
 }

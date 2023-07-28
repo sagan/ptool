@@ -19,7 +19,7 @@ var command = &cobra.Command{
 Set appropriate tags to all torrents of a client. For example, it will set the "site:m-team" tag for all torrents downloaded from M-Team.
 `,
 	Args: cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
-	Run:  tidyup,
+	RunE: tidyup,
 }
 
 var (
@@ -39,16 +39,16 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func tidyup(cmd *cobra.Command, args []string) {
+func tidyup(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to create client: %v", err)
 	}
 	torrents, err := client.QueryTorrents(clientInstance, category, tag, filter)
 	if err != nil {
 		clientInstance.Close()
-		log.Fatalf("Failed to get torrents: %v", err)
+		return fmt.Errorf("failed to get torrents: %v", err)
 	}
 	domainSiteMap := map[string](string){}
 	cntTorrents := int64(0)
@@ -106,4 +106,5 @@ func tidyup(cmd *cobra.Command, args []string) {
 	}
 	clientInstance.Close()
 	fmt.Printf("Done tidying up %d torrents. Modify / success torrents = %d / %d\n", len(torrents), cntTorrents, cntSuccessTorrents)
+	return nil
 }

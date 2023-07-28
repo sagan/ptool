@@ -1,7 +1,8 @@
 package createtags
 
 import (
-	log "github.com/sirupsen/logrus"
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
@@ -13,24 +14,25 @@ var command = &cobra.Command{
 	Short: "Create tags in client.",
 	Long:  `Create tags in client.`,
 	Args:  cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
-	Run:   createtags,
+	RunE:  createtags,
 }
 
 func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func createtags(cmd *cobra.Command, args []string) {
+func createtags(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
 	tags := args[1:]
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to create client: %v", err)
 	}
 
 	err = clientInstance.CreateTags(tags...)
 	clientInstance.Close()
 	if err != nil {
-		log.Fatalf("Failed to create tags: %v", err)
+		return fmt.Errorf("Failed to create tags: %v", err)
 	}
+	return nil
 }

@@ -2,7 +2,6 @@ package edittracker
 
 import (
 	"fmt"
-	"os"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -28,7 +27,7 @@ ptool edittracker <client> _all --old-tracker old-tracker.com --new-tracker new-
 ptool edittracker <client> _all --old-tracker old-tracker.com --new-tracker "https://..." --replace-host
 `,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
-	Run:  edittracker,
+	RunE: edittracker,
 }
 
 var (
@@ -54,36 +53,36 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func edittracker(cmd *cobra.Command, args []string) {
+func edittracker(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
 	args = args[1:]
 	if !replaceHost && (!utils.IsUrl(oldTracker) || !utils.IsUrl(newTracker)) {
-		log.Fatalf("Both --old-tracker and --new-tracker MUST be valid URL ( 'http(s)://...' )")
+		return fmt.Errorf("both --old-tracker and --new-tracker MUST be valid URL ( 'http(s)://...' )")
 	}
 	if category == "" && tag == "" && filter == "" && len(args) == 0 {
-		log.Fatalf("You must provide at least a condition flag or hashFilter")
+		return fmt.Errorf("you must provide at least a condition flag or hashFilter")
 	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to create client: %v", err)
 	}
 
 	torrents, err := client.QueryTorrents(clientInstance, category, tag, filter, args...)
 	if err != nil {
 		clientInstance.Close()
-		log.Fatal(err)
+		return err
 	}
 	if len(torrents) == 0 {
 		clientInstance.Close()
 		log.Infof("No matched torrents found")
-		os.Exit(0)
+		return nil
 	}
 	if !dryRun {
 		log.Warnf("Found %d torrents, will edit their trackers (%s => %s, replaceHost=%t) in few seconds. Press Ctrl+C to stop",
 			len(torrents), oldTracker, newTracker, replaceHost)
 	}
 	utils.Sleep(3)
-	cntError := int64(0)
+	errorCnt := int64(0)
 	for _, torrent := range torrents {
 		fmt.Printf("Edit torrent %s (%s) tracker\n", torrent.InfoHash, torrent.Name)
 		if dryRun {
@@ -92,11 +91,12 @@ func edittracker(cmd *cobra.Command, args []string) {
 		err := clientInstance.EditTorrentTracker(torrent.InfoHash, oldTracker, newTracker, replaceHost)
 		if err != nil {
 			log.Errorf("Failed to edit tracker: %v\n", err)
-			cntError++
+			errorCnt++
 		}
 	}
 	clientInstance.Close()
-	if cntError > 0 {
-		os.Exit(1)
+	if errorCnt > 0 {
+		return fmt.Errorf("%d errors", errorCnt)
 	}
+	return nil
 }

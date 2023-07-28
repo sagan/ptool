@@ -1,7 +1,8 @@
 package deletetags
 
 import (
-	log "github.com/sirupsen/logrus"
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
@@ -13,17 +14,17 @@ var command = &cobra.Command{
 	Short: "Delete tags from client.",
 	Long:  `Delete tags from client.`,
 	Args:  cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
-	Run:   deletetags,
+	RunE:  deletetags,
 }
 
 func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func deletetags(cmd *cobra.Command, args []string) {
+func deletetags(cmd *cobra.Command, args []string) error {
 	clientInstance, err := client.CreateClient(args[0])
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to create client: %v", err)
 	}
 
 	tags := args[1:]
@@ -31,6 +32,7 @@ func deletetags(cmd *cobra.Command, args []string) {
 	err = clientInstance.DeleteTags(tags...)
 	clientInstance.Close()
 	if err != nil {
-		log.Fatalf("Failed to delete tags: %v", err)
+		return fmt.Errorf("failed to delete tags: %v", err)
 	}
+	return nil
 }

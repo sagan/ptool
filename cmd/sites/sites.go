@@ -16,7 +16,7 @@ var command = &cobra.Command{
 	Short: "Show internal supported PT sites list which can be used with this software.",
 	Long:  `Show internal supported PT sites list which can be used with this software.`,
 	Args:  cobra.MatchAll(cobra.ExactArgs(0), cobra.OnlyValidArgs),
-	Run:   sites,
+	RunE:  sites,
 }
 
 var (
@@ -28,7 +28,7 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func sites(cmd *cobra.Command, args []string) {
+func sites(cmd *cobra.Command, args []string) error {
 	fmt.Printf("<internal supported sites by this program. use --filter flag to find a specific site>\n")
 	fmt.Printf("%-15s  %-15s  %-30s  %10s  %s\n", "Type", "Aliases", "Url", "Schema", "Comment")
 	for _, name := range tpl.SITENAMES {
@@ -39,4 +39,5 @@ func sites(cmd *cobra.Command, args []string) {
 		}
 		fmt.Printf("%-15s  %-15s  %-30s  %10s  %s\n", name, strings.Join(siteInfo.Aliases, ","), siteInfo.Url, siteInfo.Type, siteInfo.Comment)
 	}
+	return nil
 }

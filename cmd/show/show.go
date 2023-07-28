@@ -2,7 +2,6 @@ package show
 
 import (
 	"fmt"
-	"os"
 	"sort"
 	"strings"
 
@@ -24,7 +23,7 @@ _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _err
 If no flags or args are provided, it will display current active torrents.
 `,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
-	Run:  show,
+	RunE: show,
 }
 
 var (
@@ -62,15 +61,15 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func show(cmd *cobra.Command, args []string) {
+func show(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
 	args = args[1:]
 	if showInfoHashOnly && (showFiles || showTrackers) {
-		log.Fatalf("--show-files or --show-trackers is NOT compatible with --show-info-hash-only flag")
+		return fmt.Errorf("--show-files or --show-trackers is NOT compatible with --show-info-hash-only flag")
 	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to create client: %v", err)
 	}
 	desc := false
 	if largest {
@@ -90,14 +89,14 @@ func show(cmd *cobra.Command, args []string) {
 		len(args) == 1 && !strings.HasPrefix(args[0], "_") {
 		// display single torrent details
 		if !client.IsValidInfoHash(args[0]) {
-			log.Fatalf("%s is not a valid infoHash", args[0])
+			return fmt.Errorf("%s is not a valid infoHash", args[0])
 		}
 		torrent, err := clientInstance.GetTorrent(args[0])
 		if err != nil {
-			log.Fatalf("Failed to get torrent %s details: %v", args[0], err)
+			return fmt.Errorf("failed to get torrent %s details: %v", args[0], err)
 		}
 		if torrent == nil {
-			log.Fatalf("torrent %s not found", args[0])
+			return fmt.Errorf("torrent %s not found", args[0])
 		}
 		client.PrintTorrent(torrent)
 		if showTrackers {
@@ -118,12 +117,12 @@ func show(cmd *cobra.Command, args []string) {
 				client.PrintTorrentFiles(files, showRaw)
 			}
 		}
-		os.Exit(0)
+		return nil
 	} else {
 		torrents, err = client.QueryTorrents(clientInstance, category, tag, filter, args...)
 	}
 	if err != nil {
-		log.Fatalf("Failed to fetch client torrents: %v", err)
+		return fmt.Errorf("failed to fetch client torrents: %v", err)
 	}
 	if sortFieldEnumFlag != "" && sortFieldEnumFlag != "none" {
 		sort.Slice(torrents, func(i, j int) bool {
@@ -190,4 +189,5 @@ func show(cmd *cobra.Command, args []string) {
 			fmt.Printf(torrent.InfoHash)
 		}
 	}
+	return nil
 }

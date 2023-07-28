@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
@@ -16,23 +15,24 @@ var command = &cobra.Command{
 	Short: "Get all tags of client.",
 	Long:  `Get all tags of client.`,
 	Args:  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
-	Run:   gettags,
+	RunE:  gettags,
 }
 
 func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func gettags(cmd *cobra.Command, args []string) {
+func gettags(cmd *cobra.Command, args []string) error {
 	clientInstance, err := client.CreateClient(args[0])
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to create client: %v", err)
 	}
 
 	tags, err := clientInstance.GetTags()
 	clientInstance.Close()
 	if err != nil {
-		log.Fatalf("Failed to get tags: %v", err)
+		return fmt.Errorf("failed to get tags: %v", err)
 	}
 	fmt.Printf("%s\n", strings.Join(tags, ", "))
+	return nil
 }

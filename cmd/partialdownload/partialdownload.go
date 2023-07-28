@@ -2,10 +2,8 @@ package partialdownload
 
 import (
 	"fmt"
-	"os"
 	"sort"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
@@ -50,7 +48,7 @@ to cloud drive using rclone, for example.
 
 The above task is trivial using this command.`,
 	Args: cobra.MatchAll(cobra.ExactArgs(2), cobra.OnlyValidArgs),
-	Run:  partialdownload,
+	RunE: partialdownload,
 }
 
 var (
@@ -73,29 +71,29 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func partialdownload(cmd *cobra.Command, args []string) {
+func partialdownload(cmd *cobra.Command, args []string) error {
 	chunkSize, _ := utils.RAMInBytes(chunkSizeStr)
 	clientName := args[0]
 	infoHash := args[1]
 	if chunkSize <= 0 {
-		log.Fatalf("Invalid chunk size %d", chunkSize)
+		return fmt.Errorf("invalid chunk size %d", chunkSize)
 	}
 	if chunkIndex < 0 {
-		log.Fatalf("Invalid chunk index %d", chunkIndex)
+		return fmt.Errorf("invalid chunk index %d", chunkIndex)
 	}
 
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
 		clientInstance.Close()
-		log.Fatalf("Failed to create client: %v", err)
+		return fmt.Errorf("failed to create client: %v", err)
 	}
 	torrentFiles, err := clientInstance.GetTorrentContents(infoHash)
 	if err != nil {
 		clientInstance.Close()
-		log.Fatalf("Failed to get client files: %v", err)
+		return fmt.Errorf("failed to get client files: %v", err)
 	}
 	if startIndex < 0 || startIndex >= int64(len(torrentFiles))-1 {
-		log.Fatalf("Invalid start-index %d, valid range: [0, %d] (torrent has %d files)",
+		return fmt.Errorf("invalid start-index %d, valid range: [0, %d] (torrent has %d files)",
 			startIndex, len(torrentFiles)-2, len(torrentFiles))
 	}
 	if !originalOrder {
@@ -121,9 +119,8 @@ func partialdownload(cmd *cobra.Command, args []string) {
 		}
 		allSize += file.Size
 		if strict && file.Size > chunkSize {
-			fmt.Printf("Torrent can NOT be strictly splitted to %s chunks: file %s is too large: %s",
+			return fmt.Errorf("torrent can NOT be strictly splitted to %s chunks: file %s is too large: %s",
 				utils.BytesSize(float64(chunkSize)), file.Path, utils.BytesSize(float64(file.Size)))
-			os.Exit(1)
 		}
 		if currentChunkSize >= chunkSize || (strict && (currentChunkSize+file.Size) > chunkSize) {
 			chunks = append(chunks, &Chunk{currentChunkIndex, currentChunkFilesCnt, currentChunkSize})
@@ -152,27 +149,28 @@ func partialdownload(cmd *cobra.Command, args []string) {
 			fmt.Printf("%-6d  %-5d  %s\n", chunk.Index, chunk.FilesCnt, utils.BytesSize(float64(chunk.Size)))
 		}
 		clientInstance.Close()
-		os.Exit(0)
+		return nil
 	}
 	if chunkIndex >= int64(len(chunks)) {
 		clientInstance.Close()
-		log.Fatalf("Invalid chunkIndex %d. Torrent has %d chunks", chunkIndex, currentChunkIndex+1)
+		return fmt.Errorf("invalid chunkIndex %d. Torrent has %d chunks", chunkIndex, currentChunkIndex+1)
 	}
 	chunk := chunks[chunkIndex]
 	err = clientInstance.SetFilePriority(infoHash, downloadFileIndexes, 1)
 	if err != nil {
 		clientInstance.Close()
-		log.Fatalf("Failed to set download files: %v", err)
+		return fmt.Errorf("failed to set download files: %v", err)
 	}
 	utils.Sleep(5)
 	err = clientInstance.SetFilePriority(infoHash, noDownloadFileIndexes, 0)
 	if err != nil {
 		clientInstance.Close()
-		log.Fatalf("Failed to set no download files: %v", err)
+		return fmt.Errorf("failed to set no download files: %v", err)
 	}
 	fmt.Printf("Torrent Size: %s (%d) / Chunks: %d; Skipped files: %d; DownloadChunkIndex: %d; DownloadChunkSize: %s (%d)",
 		utils.BytesSize(float64(allSize)), len(torrentFiles), len(chunks), startIndex,
 		chunkIndex, utils.BytesSize(float64(chunk.Size)), chunk.FilesCnt,
 	)
 	clientInstance.Close()
+	return nil
 }

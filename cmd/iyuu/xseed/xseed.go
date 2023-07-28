@@ -24,7 +24,7 @@ var command = &cobra.Command{
 	Long: `Cross seed using iyuu API.
 By default it will add xseed torrents from All sites unless --include-sites or --exclude-sites flag is set.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
-	Run:  xseed,
+	RunE: xseed,
 }
 
 var (
@@ -66,17 +66,17 @@ func init() {
 	iyuu.Command.AddCommand(command)
 }
 
-func xseed(cmd *cobra.Command, args []string) {
+func xseed(cmd *cobra.Command, args []string) error {
 	log.Tracef("iyuu token: %s", config.Get().IyuuToken)
 	if config.Get().IyuuToken == "" {
-		log.Fatalf("You must config iyuuToken in ptool.toml to use iyuu functions")
+		return fmt.Errorf("you must config iyuuToken in ptool.toml to use iyuu functions")
 	}
 
 	includeSitesMode := false
 	includeSitesFlag := map[string](bool){}
 	excludeSitesFlag := map[string](bool){}
 	if includeSites != "" && excludeSites != "" {
-		log.Fatalf("--include-sites and --exclude-sites flags can NOT be both set")
+		return fmt.Errorf("--include-sites and --exclude-sites flags can NOT be both set")
 	}
 	if includeSites != "" {
 		includeSitesMode = true
@@ -93,7 +93,7 @@ func xseed(cmd *cobra.Command, args []string) {
 	minTorrentSize, _ := utils.RAMInBytes(minTorrentSizeStr)
 	maxTorrentSize, _ := utils.RAMInBytes(maxTorrentSizeStr)
 	if iyuuRequestServer != "auto" && iyuuRequestServer != "yes" && iyuuRequestServer != "no" {
-		log.Fatalf("Invalid --request-server flag value %s", iyuuRequestServer)
+		return fmt.Errorf("invalid --request-server flag value %s", iyuuRequestServer)
 	}
 	filter = strings.ToLower(filter)
 	var fixedTags []string
@@ -114,7 +114,7 @@ func xseed(cmd *cobra.Command, args []string) {
 	for _, clientName := range clientNames {
 		clientInstance, err := client.CreateClient(clientName)
 		if err != nil {
-			log.Fatal(err)
+			return fmt.Errorf("failed to create client: %v", err)
 		}
 		clientInstanceMap[clientName] = clientInstance
 
@@ -175,7 +175,7 @@ func xseed(cmd *cobra.Command, args []string) {
 
 	if cntCandidateTargetTorrents == 0 {
 		fmt.Printf("No cadidate torrents to to xseed.")
-		return
+		return nil
 	}
 
 	reqInfoHashes = utils.UniqueSlice(reqInfoHashes)
@@ -288,7 +288,7 @@ mainloop:
 				if siteInstancesMap[sitename] == nil {
 					siteInstance, err := site.CreateSite(sitename)
 					if err != nil {
-						log.Fatalf("Failed to create iyuu sid %d (local %s) site instance: %v",
+						return fmt.Errorf("failed to create iyuu sid %d (local %s) site instance: %v",
 							xseedTorrent.Sid, sitename, err)
 					}
 					siteInstancesMap[sitename] = siteInstance
@@ -351,6 +351,7 @@ mainloop:
 	}
 	fmt.Printf("Done xseed %d clients. Target / Xseed / SuccessXseed torrents: %d / %d / %d\n",
 		len(clientNames), cntTargetTorrents, cntXseedTorrents, cntSucccessXseedTorrents)
+	return nil
 }
 
 func updateIyuuDatabase(token string, infoHashes []string) error {

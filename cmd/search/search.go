@@ -27,7 +27,7 @@ var command = &cobra.Command{
 siteOrGroups: A comma-separated name list of sites or groups. Can use "_all" to search all sites.
 `,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
-	Run:  search,
+	RunE: search,
 }
 
 var (
@@ -47,14 +47,14 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func search(cmd *cobra.Command, args []string) {
+func search(cmd *cobra.Command, args []string) error {
 	sitenames := config.ParseGroupAndOtherNames(strings.Split(args[0], ",")...)
 	keyword := strings.Join(args[1:], " ")
 	siteInstancesMap := map[string](site.Site){}
 	for _, sitename := range sitenames {
 		siteInstance, err := site.CreateSite(sitename)
 		if err != nil {
-			log.Fatalf("Failed to create site %s: %v", sitename, err)
+			return fmt.Errorf("failed to create site %s: %v", sitename, err)
 		}
 		siteInstancesMap[sitename] = siteInstance
 	}
@@ -114,4 +114,5 @@ func search(cmd *cobra.Command, args []string) {
 	}
 	fmt.Printf("\n")
 	site.PrintTorrents(torrents, "", now, false, dense)
+	return nil
 }

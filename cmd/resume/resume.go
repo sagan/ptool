@@ -1,7 +1,8 @@
 package resume
 
 import (
-	log "github.com/sirupsen/logrus"
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
@@ -17,7 +18,7 @@ var command = &cobra.Command{
 _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.
 `,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
-	Run:  resume,
+	RunE: resume,
 }
 
 var (
@@ -33,34 +34,35 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func resume(cmd *cobra.Command, args []string) {
+func resume(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
 	args = args[1:]
 	if category == "" && tag == "" && filter == "" && len(args) == 0 {
-		log.Fatalf("You must provide at least a condition flag or hashFilter")
+		return fmt.Errorf("you must provide at least a condition flag or hashFilter")
 	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to create client: %v", err)
 	}
 
 	infoHashes, err := client.SelectTorrents(clientInstance, category, tag, filter, args...)
 	if err != nil {
 		clientInstance.Close()
-		log.Fatal(err)
+		return err
 	}
 	if infoHashes == nil {
 		err = clientInstance.ResumeAllTorrents()
 		if err != nil {
 			clientInstance.Close()
-			log.Fatal(err)
+			return err
 		}
 	} else if len(infoHashes) > 0 {
 		err = clientInstance.ResumeTorrents(infoHashes)
 		if err != nil {
 			clientInstance.Close()
-			log.Fatal(err)
+			return err
 		}
 	}
 	clientInstance.Close()
+	return nil
 }

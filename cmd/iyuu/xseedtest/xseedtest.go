@@ -1,6 +1,8 @@
 package xseedtest
 
 import (
+	"fmt"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -12,7 +14,7 @@ var command = &cobra.Command{
 	Use:   "xseedtest",
 	Short: "Cross seed test.",
 	Long:  `Cross seed test.`,
-	Run:   xseed,
+	RunE:  xseed,
 }
 
 var (
@@ -24,13 +26,14 @@ func init() {
 	iyuu.Command.AddCommand(command)
 }
 
-func xseed(cmd *cobra.Command, args []string) {
+func xseed(cmd *cobra.Command, args []string) error {
 	log.Tracef("iyuu token: %s", config.Get().IyuuToken)
 	if config.Get().IyuuToken == "" {
-		log.Fatalf("You must config iyuuToken in ptool.toml to use iyuu functions")
+		return fmt.Errorf("you must config iyuuToken in ptool.toml to use iyuu functions")
 	}
 
 	if infoHash != "" {
 		iyuu.IyuuApiHash(config.Get().IyuuToken, []string{infoHash})
 	}
+	return nil
 }

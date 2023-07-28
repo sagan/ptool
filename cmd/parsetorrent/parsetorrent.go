@@ -2,7 +2,6 @@ package parsetorrent
 
 import (
 	"fmt"
-	"os"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -18,7 +17,7 @@ var command = &cobra.Command{
 	Short:   "Parse torrent files and show their content.",
 	Long:    `Parse torrent files and show their content.`,
 	Args:    cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
-	Run:     parsetorrent,
+	RunE:    parsetorrent,
 }
 
 var (
@@ -30,7 +29,7 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func parsetorrent(cmd *cobra.Command, args []string) {
+func parsetorrent(cmd *cobra.Command, args []string) error {
 	torrentFilenames := utils.ParseFilenameArgs(args...)
 	errorCnt := int64(0)
 
@@ -50,6 +49,7 @@ func parsetorrent(cmd *cobra.Command, args []string) {
 		}
 	}
 	if errorCnt > 0 {
-		os.Exit(1)
+		return fmt.Errorf("%d errors", errorCnt)
 	}
+	return nil
 }

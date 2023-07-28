@@ -2,7 +2,6 @@ package sites
 
 import (
 	"fmt"
-	"os"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -16,7 +15,7 @@ var command = &cobra.Command{
 	Use:   "sites",
 	Short: "Show iyuu sites list.",
 	Long:  `Show iyuu sites list.`,
-	Run:   sites,
+	RunE:  sites,
 }
 
 var (
@@ -32,11 +31,11 @@ func init() {
 	iyuu.Command.AddCommand(command)
 }
 
-func sites(cmd *cobra.Command, args []string) {
+func sites(cmd *cobra.Command, args []string) error {
 	if showBindable {
 		bindableSites, err := iyuu.IyuuApiGetRecommendSites()
 		if err != nil {
-			log.Fatalf("Failed to get iyuu bindable sites: %v", err)
+			return fmt.Errorf("failed to get iyuu bindable sites: %v", err)
 		}
 		fmt.Printf("%-20s  %7s  %20s\n", "SiteName", "SiteId", "BindParams")
 		for _, site := range bindableSites {
@@ -45,17 +44,17 @@ func sites(cmd *cobra.Command, args []string) {
 			}
 			fmt.Printf("%-20s  %7d  %20s\n", site.Site, site.Id, site.Bind_check)
 		}
-		os.Exit(0)
+		return nil
 	}
 
 	log.Tracef("iyuu token: %s", config.Get().IyuuToken)
 	if config.Get().IyuuToken == "" {
-		log.Fatalf("You must config iyuuToken in ptool.toml to use iyuu functions")
+		return fmt.Errorf("you must config iyuuToken in ptool.toml to use iyuu functions")
 	}
 
 	iyuuApiSites, err := iyuu.IyuuApiSites(config.Get().IyuuToken)
 	if err != nil {
-		log.Fatalf("Failed to get iyuu sites: %v", err)
+		return fmt.Errorf("failed to get iyuu sites: %v", err)
 	}
 	iyuuSites := utils.Map(iyuuApiSites, func(site iyuu.IyuuApiSite) iyuu.Site {
 		return site.ToSite()
@@ -94,4 +93,5 @@ func sites(cmd *cobra.Command, args []string) {
 				"X (None)", iyuuSite.Url, iyuuSite.DownloadPage)
 		}
 	}
+	return nil
 }

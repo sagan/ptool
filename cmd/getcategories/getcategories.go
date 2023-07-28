@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
@@ -17,7 +16,7 @@ var command = &cobra.Command{
 	Short: "Get all categories of client.",
 	Long:  `Get all categories of client.`,
 	Args:  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
-	Run:   getcategories,
+	RunE:  getcategories,
 }
 
 var (
@@ -29,17 +28,17 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func getcategories(cmd *cobra.Command, args []string) {
+func getcategories(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to create client: %v", err)
 	}
 
 	cats, err := clientInstance.GetCategories()
 	clientInstance.Close()
 	if err != nil {
-		log.Fatalf("Failed to get categories: %v", err)
+		return fmt.Errorf("failed to get categories: %v", err)
 	}
 	if showNamesOnly {
 		fmt.Printf("%s\n", strings.Join(utils.Map(cats, func(cat client.TorrentCategory) string {
@@ -51,4 +50,5 @@ func getcategories(cmd *cobra.Command, args []string) {
 			fmt.Printf("%-20s  %s\n", cat.Name, cat.SavePath)
 		}
 	}
+	return nil
 }

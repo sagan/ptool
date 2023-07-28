@@ -43,6 +43,7 @@ require (
 	github.com/anacrolix/missinggo/v2 v2.7.2-0.20230527121029-a582b4f397b9 // indirect
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
+	github.com/c-bata/go-prompt v0.2.6 // indirect
 	github.com/gaukas/godicttls v0.0.3 // indirect
 	github.com/glebarez/go-sqlite v1.21.1 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
@@ -52,7 +53,11 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/klauspost/compress v1.16.5 // indirect
+	github.com/mattn/go-colorable v0.1.11 // indirect
+	github.com/mattn/go-tty v0.0.3 // indirect
+	github.com/pkg/term v1.2.0-beta.2 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
+	github.com/stromland/cobra-prompt v0.5.0 // indirect
 	golang.org/x/crypto v0.9.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
 )

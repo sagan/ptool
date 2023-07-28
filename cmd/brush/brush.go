@@ -22,7 +22,7 @@ var command = &cobra.Command{
 	Short: "Brush sites using client.",
 	Long:  `Brush sites using client.`,
 	Args:  cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
-	Run:   brush,
+	RunE:  brush,
 }
 
 var (
@@ -42,10 +42,10 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func brush(cmd *cobra.Command, args []string) {
+func brush(cmd *cobra.Command, args []string) error {
 	clientInstance, err := client.CreateClient(args[0])
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	if clientInstance.GetClientConfig().Type == "transmission" {
 		log.Warnf("Warning: brush function of transmission client has NOT been tested")
@@ -313,6 +313,7 @@ func brush(cmd *cobra.Command, args []string) {
 	os.RemoveAll(tmpdir)
 	clientInstance.Close()
 	if cntSuccessSite == 0 {
-		os.Exit(1)
+		return fmt.Errorf("no sites successed")
 	}
+	return nil
 }

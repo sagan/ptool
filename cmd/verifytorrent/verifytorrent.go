@@ -31,7 +31,7 @@ If you provide multiple <file.torrent> arg, only --save-path flag can be used.
 By default it will only examine file meta infos (file path & size).
 If --check flag is set, it will also do the hash checking.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
-	Run:  verifytorrent,
+	RunE: verifytorrent,
 }
 
 var (
@@ -49,13 +49,13 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func verifytorrent(cmd *cobra.Command, args []string) {
+func verifytorrent(cmd *cobra.Command, args []string) error {
 	if savePath == "" && contentPath == "" || (savePath != "" && contentPath != "") {
-		log.Fatalf("Exact one of the --save-path or --content-path (but not both) flag must be set.")
+		return fmt.Errorf("exact one of the --save-path or --content-path (but not both) flag must be set")
 	}
 	torrentFilenames := utils.ParseFilenameArgs(args...)
 	if len(torrentFilenames) > 1 && contentPath != "" {
-		log.Fatalf("You must use --save-path flag (instead of --content-path) when verifying multiple torrents")
+		return fmt.Errorf("you must use --save-path flag (instead of --content-path) when verifying multiple torrents")
 	}
 	errorCnt := int64(0)
 
@@ -87,6 +87,7 @@ func verifytorrent(cmd *cobra.Command, args []string) {
 		}
 	}
 	if errorCnt > 0 {
-		os.Exit(1)
+		return fmt.Errorf("%d errors", errorCnt)
 	}
+	return nil
 }

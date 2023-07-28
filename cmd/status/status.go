@@ -2,7 +2,6 @@ package status
 
 import (
 	"fmt"
-	"os"
 	"sort"
 
 	log "github.com/sirupsen/logrus"
@@ -34,7 +33,7 @@ var command = &cobra.Command{
 	Long: `Show clients or sites status.
 clientOrSiteOrGroup: name of a client, site, group, or "_all" which means all sites.
 `,
-	Run: status,
+	RunE: status,
 }
 
 func init() {
@@ -49,7 +48,7 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func status(cmd *cobra.Command, args []string) {
+func status(cmd *cobra.Command, args []string) error {
 	names := args
 	if showAll || showAllClients || showAllSites {
 		if len(args) > 0 {
@@ -78,7 +77,7 @@ func status(cmd *cobra.Command, args []string) {
 		log.Fatalf("No sites or clients provided")
 	}
 	now := utils.Now()
-	hasError := false
+	errorCnt := int64(0)
 	doneFlag := map[string](bool){}
 	cnt := int64(0)
 	ch := make(chan *StatusResponse, len(names))
@@ -91,7 +90,7 @@ func status(cmd *cobra.Command, args []string) {
 			clientInstance, err := client.CreateClient(name)
 			if err != nil {
 				log.Errorf("Error: failed to create client %s: %v\n", name, err)
-				hasError = true
+				errorCnt++
 				continue
 			}
 			go fetchClientStatus(clientInstance, showTorrents, showFull, category, ch)
@@ -100,14 +99,14 @@ func status(cmd *cobra.Command, args []string) {
 			siteInstance, err := site.CreateSite(name)
 			if err != nil {
 				log.Errorf("Error: failed to create site %s: %v\n", name, err)
-				hasError = true
+				errorCnt++
 				continue
 			}
 			go fetchSiteStatus(siteInstance, showTorrents, showFull, ch)
 			cnt++
 		} else {
 			log.Errorf("Error: %s is not a client or site\n", name)
-			hasError = true
+			errorCnt++
 		}
 	}
 
@@ -130,7 +129,7 @@ func status(cmd *cobra.Command, args []string) {
 		if response.Kind == 1 {
 			if response.Error != nil {
 				errorsStr += fmt.Sprintf("Error get client %s status: error=%v\n", response.Name, response.Error)
-				hasError = true
+				errorCnt++
 			}
 			if response.ClientStatus != nil {
 				fmt.Printf("%-6s  %-13s  %-25s  %-25s  %-25s",
@@ -169,7 +168,7 @@ func status(cmd *cobra.Command, args []string) {
 		} else if response.Kind == 2 {
 			if response.Error != nil {
 				errorsStr += fmt.Sprintf("Error get site %s status: error=%v\n", response.Name, response.Error)
-				hasError = true
+				errorCnt++
 			}
 			if response.SiteStatus != nil {
 				fmt.Printf("%-6s  %-13s  %-25s  %-25s  %-25s",
@@ -206,7 +205,8 @@ func status(cmd *cobra.Command, args []string) {
 		fmt.Printf("\nErrors:\n%s", errorsStr)
 	}
 
-	if hasError {
-		os.Exit(1)
+	if errorCnt > 0 {
+		return fmt.Errorf("%d errors", errorCnt)
 	}
+	return nil
 }

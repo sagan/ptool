@@ -23,7 +23,7 @@ var command = &cobra.Command{
 It's possible to use "*" wildcard in filename to match multiple torrents. eg. "*.torrent".
 `,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
-	Run:  add,
+	RunE: addlocal,
 }
 
 var (
@@ -53,20 +53,20 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func add(cmd *cobra.Command, args []string) {
+func addlocal(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
 	args = args[1:]
 	if renameAdded && deleteAdded {
-		log.Fatalf("--rename-added and --delete-added flags are NOT compatible")
+		return fmt.Errorf("--rename-added and --delete-added flags are NOT compatible")
 	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to create client: %v", err)
 	}
-	errCnt := int64(0)
+	errorCnt := int64(0)
 	torrentFiles := utils.ParseFilenameArgs(args...)
 	if rename != "" && len(torrentFiles) > 1 {
-		log.Fatalf("--rename flag can only be used with exact one torrent file arg")
+		return fmt.Errorf("--rename flag can only be used with exact one torrent file arg")
 	}
 	option := &client.TorrentOption{
 		Pause:        paused,
@@ -90,13 +90,13 @@ func add(cmd *cobra.Command, args []string) {
 		torrentContent, err := os.ReadFile(torrentFile)
 		if err != nil {
 			fmt.Printf("✕torrent (%d/%d) %s: failed to read file (%v)\n", i+1, cntAll, torrentFile, err)
-			errCnt++
+			errorCnt++
 			continue
 		}
 		tinfo, err := torrentutil.ParseTorrent(torrentContent, 99)
 		if err != nil {
 			fmt.Printf("✕torrent (%d/%d) %s: failed to parse torrent (%v)\n", i+1, cntAll, torrentFile, err)
-			errCnt++
+			errorCnt++
 			continue
 		}
 		sitename := tpl.GuessSiteByTrackers(tinfo.Trackers, defaultSite)
@@ -123,7 +123,7 @@ func add(cmd *cobra.Command, args []string) {
 		err = clientInstance.AddTorrent(torrentContent, option, nil)
 		if err != nil {
 			fmt.Printf("✕torrent (%d/%d) %s: failed to add to client (%v)\n", i+1, cntAll, torrentFile, err)
-			errCnt++
+			errorCnt++
 			continue
 		}
 		if renameAdded {
@@ -141,9 +141,10 @@ func add(cmd *cobra.Command, args []string) {
 		sizeAdded += tinfo.Size
 		fmt.Printf("✓torrent (%d/%d) %s: added to client\n", i+1, cntAll, torrentFile)
 	}
-	fmt.Printf("\nDone. Added torrent (Size/Cnt): %s / %d; ErrorCnt: %d\n", utils.BytesSize(float64(sizeAdded)), cntAdded, errCnt)
+	fmt.Printf("\nDone. Added torrent (Size/Cnt): %s / %d; ErrorCnt: %d\n", utils.BytesSize(float64(sizeAdded)), cntAdded, errorCnt)
 	clientInstance.Close()
-	if errCnt > 0 {
-		os.Exit(1)
+	if errorCnt > 0 {
+		return fmt.Errorf("%d errors", errorCnt)
 	}
+	return nil
 }

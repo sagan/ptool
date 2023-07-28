@@ -104,3 +104,14 @@ func ExtractSizeStr(str string) (int64, error) {
 	}
 	return 0, fmt.Errorf("no size str found")
 }
+
+func QuoteFilename(str string) string {
+	hasSpacialChars := strings.ContainsAny(str, " '\r\n\t\b\"")
+	if hasSpacialChars {
+		str = strings.ReplaceAll(str, "\r", " ")
+		str = strings.ReplaceAll(str, "\n", " ")
+		str = strings.ReplaceAll(str, `"`, `\"`)
+		str = `"` + str + `"`
+	}
+	return str
+}

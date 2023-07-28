@@ -27,7 +27,7 @@ var command = &cobra.Command{
 	Short:   "Batch download the smallest (or by any other order) torrents from a site.",
 	Long:    `Batch download the smallest (or by any other order) torrents from a site.`,
 	Args:    cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
-	Run:     batchdl,
+	RunE:    batchdl,
 }
 
 var (
@@ -103,15 +103,15 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func batchdl(cmd *cobra.Command, args []string) {
+func batchdl(cmd *cobra.Command, args []string) error {
 	sitename := args[0]
 	siteInstance, err := site.CreateSite(sitename)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	if action != "show" && action != "export" && action != "printid" && action != "download" && action != "add" {
-		log.Fatalf("Invalid action flag value: %s", action)
+		return fmt.Errorf("invalid action flag value: %s", action)
 	}
 	var includesList [][]string
 	var excludesList []string
@@ -134,7 +134,7 @@ func batchdl(cmd *cobra.Command, args []string) {
 	if freeTimeAtLeastStr != "" {
 		t, err := utils.ParseTimeDuration(freeTimeAtLeastStr)
 		if err != nil {
-			log.Fatalf("Invalid --free-time value %s: %v", freeTimeAtLeastStr, err)
+			return fmt.Errorf("Invalid --free-time value %s: %v", freeTimeAtLeastStr, err)
 		}
 		freeTimeAtLeast = t
 	}
@@ -142,7 +142,7 @@ func batchdl(cmd *cobra.Command, args []string) {
 		log.Errorf("No torrents will be downloaded: site %s enforces global HnR restrictions",
 			siteInstance.GetName(),
 		)
-		os.Exit(0)
+		return nil
 	}
 	var clientInstance client.Client
 	var clientAddTorrentOption *client.TorrentOption
@@ -151,19 +151,19 @@ func batchdl(cmd *cobra.Command, args []string) {
 	var csvWriter *csv.Writer
 	if action == "add" {
 		if addClient == "" {
-			log.Fatalf("You much specify the client used to add torrents to via --add-client flag.")
+			return fmt.Errorf("You much specify the client used to add torrents to via --add-client flag.")
 		}
 		clientInstance, err = client.CreateClient(addClient)
 		if err != nil {
-			log.Fatalf("Failed to create client %s: %v", addClient, err)
+			return fmt.Errorf("Failed to create client %s: %v", addClient, err)
 		}
 		status, err := clientInstance.GetStatus()
 		if err != nil {
-			log.Fatalf("Failed to get client %s status: %v", clientInstance.GetName(), err)
+			return fmt.Errorf("Failed to get client %s status: %v", clientInstance.GetName(), err)
 		}
 		if addRespectNoadd && status.NoAdd {
 			log.Warnf("Client has _noadd flag and --add-respect-noadd flag is set. Abort task")
-			os.Exit(0)
+			return nil
 		}
 		if addReserveSpace > 0 {
 			if status.FreeSpaceOnDisk < 0 {
@@ -178,7 +178,7 @@ func batchdl(cmd *cobra.Command, args []string) {
 				addRemainSpace := freeSpace - addReserveSpace
 				if addRemainSpace < addReserveSpaceGap {
 					log.Warnf("Client free space insufficient. Abort task")
-					os.Exit(0)
+					return nil
 				}
 				if maxTotalSize <= 0 || maxTotalSize > addRemainSpace {
 					maxTotalSize = addRemainSpace
@@ -197,7 +197,7 @@ func batchdl(cmd *cobra.Command, args []string) {
 		if exportFile != "" {
 			outputFileFd, err = os.OpenFile(exportFile, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
 			if err != nil {
-				log.Fatalf("Failed to create output file %s: %v", exportFile, err)
+				return fmt.Errorf("Failed to create output file %s: %v", exportFile, err)
 			}
 		}
 		if action == "export" {
@@ -230,17 +230,17 @@ func batchdl(cmd *cobra.Command, args []string) {
 		if clientInstance != nil {
 			clientInstance.Close()
 		}
-		if errorCnt > 0 {
-			os.Exit(1)
-		} else {
-			os.Exit(0)
-		}
 	}
 	sigs := make(chan os.Signal, 1)
 	go func() {
 		sig := <-sigs
 		log.Debugf("Received signal %v", sig)
 		doneHandle()
+		if errorCnt > 0 {
+			os.Exit(1)
+		} else {
+			os.Exit(0)
+		}
 	}()
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 mainloop:
@@ -423,4 +423,5 @@ mainloop:
 		utils.Sleep(3)
 	}
 	doneHandle()
+	return nil
 }
