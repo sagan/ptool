@@ -24,6 +24,7 @@ const (
 
 type TorrentsParserOption struct {
 	location                       *time.Location
+	globalHr                       bool
 	siteurl                        string
 	selectorTorrentsListHeader     string
 	selectorTorrentsList           string
@@ -32,14 +33,14 @@ type TorrentsParserOption struct {
 	selectorTorrentDownloadLink    string
 	selectorTorrentDetailsLink     string
 	selectorTorrentTime            string
-	SelectorTorrentSeeders         string
-	SelectorTorrentLeechers        string
-	SelectorTorrentSnatched        string
-	SelectorTorrentSize            string
-	SelectorTorrentProcessBar      string
-	SelectorTorrentFree            string
-	SelectorTorrentPaid            string
-	SelectorTorrentDiscountEndTime string
+	selectorTorrentSeeders         string
+	selectorTorrentLeechers        string
+	selectorTorrentSnatched        string
+	selectorTorrentSize            string
+	selectorTorrentProcessBar      string
+	selectorTorrentFree            string
+	selectorTorrentPaid            string
+	selectorTorrentDiscountEndTime string
 }
 
 func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
@@ -356,23 +357,23 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 			}
 		}
 		if fieldColumIndex["seeders"] == -1 {
-			if option.SelectorTorrentSeeders != "" {
-				seeders = utils.ParseInt(utils.DomSelectorText(s, option.SelectorTorrentSeeders))
+			if option.selectorTorrentSeeders != "" {
+				seeders = utils.ParseInt(utils.DomSelectorText(s, option.selectorTorrentSeeders))
 			}
 		}
 		if fieldColumIndex["leechers"] == -1 {
-			if option.SelectorTorrentLeechers != "" {
-				leechers = utils.ParseInt(utils.DomSelectorText(s, option.SelectorTorrentLeechers))
+			if option.selectorTorrentLeechers != "" {
+				leechers = utils.ParseInt(utils.DomSelectorText(s, option.selectorTorrentLeechers))
 			}
 		}
 		if fieldColumIndex["snatched"] == -1 {
-			if option.SelectorTorrentSnatched != "" {
-				snatched = utils.ParseInt(utils.DomSelectorText(s, option.SelectorTorrentSnatched))
+			if option.selectorTorrentSnatched != "" {
+				snatched = utils.ParseInt(utils.DomSelectorText(s, option.selectorTorrentSnatched))
 			}
 		}
 		if fieldColumIndex["size"] == -1 {
-			if option.SelectorTorrentSize != "" {
-				size, _ = utils.RAMInBytes(utils.DomSelectorText(s, option.SelectorTorrentSize))
+			if option.selectorTorrentSize != "" {
+				size, _ = utils.RAMInBytes(utils.DomSelectorText(s, option.selectorTorrentSize))
 			}
 		}
 		if s.Find(`*[title="H&R"],*[alt="H&R"]`).Length() > 0 {
@@ -384,22 +385,22 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		} else if s.Find(`*[title="免费"],*[title="免費"],*[alt="Free"],*[alt="FREE"]`).Length() > 0 ||
 			domCheckTextTagExisting(s, "free") {
 			downloadMultiplier = 0
-		} else if option.SelectorTorrentFree != "" {
-			text := strings.ToLower(utils.DomSelectorText(s, option.SelectorTorrentFree))
+		} else if option.selectorTorrentFree != "" {
+			text := strings.ToLower(utils.DomSelectorText(s, option.selectorTorrentFree))
 			if strings.Contains(text, "免费") || strings.Contains(text, "免費") || strings.Contains(text, "free") {
 				downloadMultiplier = 0
 			}
 		}
-		if option.SelectorTorrentPaid != "" && s.Find(option.SelectorTorrentPaid).Length() > 0 {
+		if option.selectorTorrentPaid != "" && s.Find(option.selectorTorrentPaid).Length() > 0 {
 			paid = true
 		}
 		if s.Find(`*[title^="seeding"],*[title^="leeching"],*[title^="downloading"],*[title^="uploading"],*[title^="inactivity"]`).Length() > 0 {
 			isActive = true
-		} else if option.SelectorTorrentProcessBar != "" && s.Find(option.SelectorTorrentProcessBar).Length() > 0 {
+		} else if option.selectorTorrentProcessBar != "" && s.Find(option.selectorTorrentProcessBar).Length() > 0 {
 			isActive = true
 		}
-		if option.SelectorTorrentDiscountEndTime != "" {
-			discountEndTime, _ = utils.ParseFutureTime(utils.DomRemovedSpecialCharsText(s.Find(option.SelectorTorrentDiscountEndTime)))
+		if option.selectorTorrentDiscountEndTime != "" {
+			discountEndTime, _ = utils.ParseFutureTime(utils.DomRemovedSpecialCharsText(s.Find(option.selectorTorrentDiscountEndTime)))
 		} else {
 			re := regexp.MustCompile(`(?i)(?P<free>(^|\s)(免费|免費|FREE)\s*)?(剩余|剩餘|限时|限時)(时间|時間)?\s*(?P<time>[YMDHMSymdhms年月周天小时時分种鐘秒\d]+)`)
 			m := re.FindStringSubmatch(utils.DomRemovedSpecialCharsText(s))
@@ -427,7 +428,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 				Seeders:            seeders,
 				Snatched:           snatched,
 				Time:               time,
-				HasHnR:             hnr,
+				HasHnR:             hnr || option.globalHr,
 				DownloadMultiplier: downloadMultiplier,
 				UploadMultiplier:   uploadMultiplier,
 				DiscountEndTime:    discountEndTime,

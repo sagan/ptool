@@ -847,6 +847,7 @@ func (qbclient *Client) GetTorrentContents(infoHash string) ([]client.TorrentCon
 			Size:     qbTorrentContent.Size,
 			Ignored:  qbTorrentContent.Priority == 0,
 			Complete: qbTorrentContent.Is_seed,
+			Progress: qbTorrentContent.Progress,
 		})
 	}
 	sort.Slice(torrentContents, func(i, j int) bool {

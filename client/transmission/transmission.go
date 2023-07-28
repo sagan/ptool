@@ -529,6 +529,7 @@ func (trclient *Client) GetTorrentContents(infoHash string) ([]client.TorrentCon
 			Size:     trTorrentFile.Length,
 			Ignored:  !torrent.FileStats[i].Wanted,
 			Complete: trTorrentFile.BytesCompleted == trTorrentFile.Length,
+			Progress: float64(trTorrentFile.BytesCompleted) / float64(trTorrentFile.Length),
 		})
 	}
 	return files, nil

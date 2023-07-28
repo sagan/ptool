@@ -119,13 +119,14 @@ func isTorrentStalled(torrent *client.Torrent) bool {
  * Strategy (Desired)
  * Delete a torrent from client when (any of the the follow criterion matches):
  *   a. Tt's uploading speed become SLOW enough AND free disk space insufficient
- *   b. It's consuming too much downloading bandwidth and uploading speed / downloading speed is too low
- *   c. It's incomplete and been totally stalled (no uploading and downloading activity) for some time
- * Stall ALL torrent of client (limit download speed to 1B/s, so upload only) when free disk space insufficient
+ *   b. It's consuming too much downloading bandwidth and uploading / downloading speed ratio is too low
+ *   c. It's incomplete and been totally stalled (no uploading or downloading activity) for some time
+ *   d. It's incomplete and the free discount expired (or will soon expire)
+ * Stall ALL incomplete torrent of client (limit download speed to 1B/s, so upload only) when free disk space insufficient
  *   * This's somwwhat broken in qBittorrent for now (See https://github.com/qbittorrent/qBittorrent/issues/2185 ).
  *   * Simply limiting downloading speed (to a very low tier) will also drop uploading speed to the same level
  *   * Consider removing this behavior
- * Add new torrents to client when server uploading bandwidth is somewhat idle AND there is SOME free disk space
+ * Add new torrents to client when server uploading and downloading bandwidth is somewhat idle AND there is SOME free disk space
  *
  */
 func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTorrents []site.Torrent, option *BrushOptionStruct) (result *AlgorithmResult) {

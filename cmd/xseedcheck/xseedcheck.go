@@ -70,13 +70,13 @@ func xseedcheck(cmd *cobra.Command, args []string) {
 		)
 	} else if compareResult == -2 {
 		fmt.Printf(
-			"Result: ✗*. Torrent file %s has the DIFFERENT root folder, but same contents with client %s torrent.\n",
+			"Result: X*. Torrent file %s has the DIFFERENT root folder, but same contents with client %s torrent.\n",
 			torrentFileName,
 			clientName,
 		)
 	} else {
 		fmt.Printf(
-			"Result: ✗. Torrent file %s does NOT has the same contents with client %s torrent.\n",
+			"Result: X. Torrent file %s does NOT has the same contents with client %s torrent.\n",
 			torrentFileName,
 			clientName,
 		)
