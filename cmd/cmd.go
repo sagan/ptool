@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/c-bata/go-prompt"
 	"github.com/gofrs/flock"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -26,6 +27,7 @@ var RootCmd = &cobra.Command{
 }
 
 var (
+	shellCompletions   = map[string](func(document *prompt.Document) []prompt.Suggest){}
 	resourcesWaitGroup sync.WaitGroup
 )
 
@@ -100,4 +102,16 @@ func Exit(code int) {
 	}()
 	resourcesWaitGroup.Wait()
 	os.Exit(code)
+}
+
+// cobra-prompt dynamic suggestions
+func AddShellCompletion(name string, f func(document *prompt.Document) []prompt.Suggest) {
+	shellCompletions[name] = f
+}
+func ShellDynamicSuggestionsFunc(name string, document *prompt.Document) []prompt.Suggest {
+	f := shellCompletions[name]
+	if f == nil {
+		return nil
+	}
+	return f(document)
 }

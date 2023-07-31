@@ -34,6 +34,7 @@ var advancedPrompt = &cobraprompt.CobraPrompt{
 		prompt.OptionPrefix("> "),
 		prompt.OptionMaxSuggestion(5),
 	},
+	DynamicSuggestionsFunc: cmd.ShellDynamicSuggestionsFunc,
 	OnErrorFunc: func(err error) {
 		cmd.RootCmd.PrintErrln(err)
 	},
@@ -44,6 +45,9 @@ func shell(command *cobra.Command, args []string) {
 		log.Fatalf("--fork or --lock flag can NOT be used with shell")
 	}
 	cmd.RootCmd.AddCommand(ShellCommands...)
+	for name := range ShellCommandSuggestions {
+		cmd.AddShellCompletion(name, ShellCommandSuggestions[name])
+	}
 	if !config.Get().Hushshell {
 		fmt.Printf("Welcome to ptool shell\n")
 		fmt.Printf("In addition to normal ptool commands, you can use the shell commands here:\n")
@@ -52,6 +56,7 @@ func shell(command *cobra.Command, args []string) {
 		}
 		fmt.Printf(`Type "<command> -h" to see full help` + "\n")
 		fmt.Printf(`Note client data will be cached in shell, run "purge [client]..." to purge cache` + "\n")
+		fmt.Printf(`Use "exit" or Ctrl + D to exit shell` + "\n")
 		fmt.Printf(`To mute this message, add "hushshell = true" line to the top of ptool.toml config file` + "\n")
 	}
 	advancedPrompt.Run()

@@ -4,32 +4,45 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"sort"
 
+	"github.com/c-bata/go-prompt"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/cmd/shell/suggest"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/utils"
 )
 
 var (
-	listMode      = false
-	ShellCommands = []*cobra.Command{}
+	listMode = false
 )
 
-var Cd = &cobra.Command{
-	Use:   "cd {dir}",
-	Short: "(shell only) Change current working dir.",
-	Long:  `Change current working dir.`,
-	Args:  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
+var cdCmd = &cobra.Command{
+	Use:         "cd {dir}",
+	Short:       "(shell only) Change current working dir.",
+	Long:        `Change current working dir.`,
+	Args:        cobra.MatchAll(cobra.MaximumNArgs(1), cobra.OnlyValidArgs),
+	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "cd"},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		err := os.Chdir(args[0])
+		dir := ""
+		var err error
+		if len(args) == 0 {
+			dir, err = os.UserHomeDir()
+			if err != nil {
+				return fmt.Errorf("failed to get user home dir: %v", err)
+			}
+		} else {
+			dir = args[0]
+		}
+		err = os.Chdir(dir)
 		if err != nil {
 			return fmt.Errorf("failed to change work dir to %s: %v", args[0], err)
 		}
+		pwd, _ := os.Getwd()
+		fmt.Printf("Changed work dir to %s\n", pwd)
 		return nil
 	},
 }
@@ -50,26 +63,29 @@ var pwdCwd = &cobra.Command{
 }
 
 var execCmd = &cobra.Command{
-	Use:     "! {external_program} [arg]...",
-	Aliases: []string{"exec"},
-	Short:   "(shell only) Execute external program.",
-	Long:    `Execute external program.`,
-	Args:    cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
+	Use:                "! {external_program} [arg]...",
+	Aliases:            []string{"exec"},
+	Short:              `(shell only) (alias "exec") Execute external program.`,
+	Long:               `Execute external program.`,
+	DisableFlagParsing: true,
+	Args:               cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		externalCmd := exec.Command(args[0], args[1:]...)
 		out, err := externalCmd.CombinedOutput()
+		fmt.Printf("%s\n", out)
 		if err != nil {
 			return fmt.Errorf("failed to execute %s: %v", args[0], err)
 		}
-		fmt.Printf("%s\n", out)
 		return nil
 	},
 }
 
 var lsCmd = &cobra.Command{
-	Use:   "ls [-l] [dir]...",
-	Short: "(shell only) List directory contents.",
-	Long:  `List directory contents.`,
+	Use:         "ls [-l] [dir]...",
+	Aliases:     []string{"dir"},
+	Short:       "(shell only) List directory contents.",
+	Long:        `List directory contents.`,
+	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "ls"},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dirs := []string{}
 		dirs = append(dirs, args...)
@@ -82,9 +98,6 @@ var lsCmd = &cobra.Command{
 				log.Errorf("ls: cannot access '%s': %v", dir, err)
 				continue
 			}
-			sort.Slice(files, func(i, j int) bool {
-				return files[i].Name() < files[j].Name()
-			})
 			if i > 0 {
 				fmt.Printf("\n")
 			}
@@ -133,8 +146,9 @@ var exitCmd = &cobra.Command{
 }
 
 var purgeCmd = &cobra.Command{
-	Use:   "purge [client | site]...",
-	Short: "(shell only) Purge client or site cache",
+	Use:         "purge [client | site]...",
+	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "purge"},
+	Short:       "(shell only) Purge client or site cache",
 	Long: `(shell only) Purge client or site cache
 If no args provided, the cache of ALL clients and sites will be purged`,
 	RunE: func(command *cobra.Command, args []string) error {
@@ -161,7 +175,32 @@ If no args provided, the cache of ALL clients and sites will be purged`,
 	},
 }
 
+func cdCmdSuggestion(document *prompt.Document) []prompt.Suggest {
+	args := suggest.Parse(document)
+	if len(args) == 2 {
+		return suggest.DirArg(args[1])
+	}
+	return nil
+}
+
+func lsCmdSuggestion(document *prompt.Document) []prompt.Suggest {
+	args := suggest.Parse(document)
+	return suggest.FileArg(args[len(args)-1])
+}
+
+func PurgeCmdSuggestion(document *prompt.Document) []prompt.Suggest {
+	args := suggest.Parse(document)
+	return suggest.ClientArg(args[len(args)-1])
+}
+
+var ShellCommands = []*cobra.Command{pwdCwd, cdCmd, lsCmd, exitCmd, purgeCmd, execCmd}
+
+var ShellCommandSuggestions = map[string](func(document *prompt.Document) []prompt.Suggest){
+	"cd":    cdCmdSuggestion,
+	"ls":    lsCmdSuggestion,
+	"purge": PurgeCmdSuggestion,
+}
+
 func init() {
 	lsCmd.Flags().BoolVarP(&listMode, "list", "l", false, "Use a long listing format")
-	ShellCommands = append(ShellCommands, pwdCwd, Cd, lsCmd, exitCmd, purgeCmd, execCmd)
 }

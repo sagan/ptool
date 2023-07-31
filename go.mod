@@ -2,13 +2,18 @@ module github.com/sagan/ptool
 
 go 1.20
 
+// workaround for some problem
 replace github.com/hekmon/transmissionrpc/v2 => ./transmissionrpc
+
+// workaround for https://github.com/c-bata/go-prompt/issues/228, with elyscape's fix applied
+replace github.com/c-bata/go-prompt => ./go-prompt
 
 require (
 	github.com/Emyrk/torrent v0.0.0-20170330203609-3216b1ef9450
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/anacrolix/torrent v1.52.3
 	github.com/bradfitz/iter v0.0.0-20191230175014-e8f45d346db8
+	github.com/c-bata/go-prompt v0.2.6
 	github.com/edsrzf/mmap-go v1.1.0
 	github.com/ettle/strcase v0.1.1
 	github.com/glebarez/sqlite v1.8.0
@@ -21,6 +26,7 @@ require (
 	github.com/sirupsen/logrus v1.9.1
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
+	github.com/stromland/cobra-prompt v0.5.0
 	golang.org/x/exp v0.0.0-20230515195305-f3d0a9c9a5cc
 	golang.org/x/net v0.10.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -43,7 +49,6 @@ require (
 	github.com/anacrolix/missinggo/v2 v2.7.2-0.20230527121029-a582b4f397b9 // indirect
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
-	github.com/c-bata/go-prompt v0.2.6 // indirect
 	github.com/gaukas/godicttls v0.0.3 // indirect
 	github.com/glebarez/go-sqlite v1.21.1 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
@@ -57,7 +62,6 @@ require (
 	github.com/mattn/go-tty v0.0.3 // indirect
 	github.com/pkg/term v1.2.0-beta.2 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
-	github.com/stromland/cobra-prompt v0.5.0 // indirect
 	golang.org/x/crypto v0.9.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
 )

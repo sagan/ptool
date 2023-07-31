@@ -128,6 +128,7 @@ var (
 	configData       *ConfigStruct = &ConfigStruct{}
 	clientsConfigMap               = map[string](*ClientConfigStruct){}
 	sitesConfigMap                 = map[string](*SiteConfigStruct){}
+	groupsConfigMap                = map[string](*GroupConfigStruct){}
 	mu               sync.Mutex
 )
 
@@ -196,7 +197,7 @@ func Get() *ConfigStruct {
 				}
 
 				if client.Name == "" {
-					client.Name = client.Type
+					log.Fatalf("Invalid config file: client name can not be empty")
 				}
 
 				clientsConfigMap[client.Name] = client
@@ -250,6 +251,12 @@ func Get() *ConfigStruct {
 			}
 			configLoaded = true
 		}
+		for _, group := range configData.Groups {
+			if group.Name == "" {
+				log.Fatalf("Invalid config file: group name can not be empty")
+			}
+			groupsConfigMap[group.Name] = group
+		}
 		configData.Clients = utils.Filter(configData.Clients, func(c *ClientConfigStruct) bool {
 			return !c.Disabled
 		})
@@ -277,6 +284,14 @@ func GetSiteConfig(name string) *SiteConfigStruct {
 	return sitesConfigMap[name]
 }
 
+func GetGroupConfig(name string) *GroupConfigStruct {
+	Get()
+	if name == "" {
+		return nil
+	}
+	return groupsConfigMap[name]
+}
+
 // if name is a group, return it's sites, otherwise return nil
 func GetGroupSites(name string) []string {
 	if name == "_all" { // special group of all sites
@@ -289,10 +304,9 @@ func GetGroupSites(name string) []string {
 		}
 		return sitenames
 	}
-	for _, group := range Get().Groups {
-		if group.Name == name {
-			return group.Sites
-		}
+	group := GetGroupConfig(name)
+	if group != nil {
+		return group.Sites
 	}
 	return nil
 }
