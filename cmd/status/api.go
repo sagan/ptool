@@ -27,7 +27,6 @@ func fetchClientStatus(clientInstance client.Client, showTorrents bool, showAllT
 	if err != nil {
 		response.Error = fmt.Errorf("cann't get client %s status: error=%v", clientInstance.GetName(), err)
 		ch <- response
-		clientInstance.Close()
 		return
 	}
 
@@ -38,7 +37,6 @@ func fetchClientStatus(clientInstance client.Client, showTorrents bool, showAllT
 			response.Error = fmt.Errorf("cann't get client %s torrents: %v", clientInstance.GetName(), err)
 		}
 	}
-	clientInstance.Close()
 	ch <- response
 }
 

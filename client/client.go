@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
 
 	"github.com/sagan/ptool/config"
@@ -143,6 +145,9 @@ var (
 	STATE_FILTERS      = []string{"_all", "_active", "_done", "_undone"}
 	Registry           = []*RegInfo{}
 	substituteTagRegex = regexp.MustCompile(`^(category|meta\..+):.+$`)
+	// all clientInstances created during this ptool program session
+	clients            = map[string](Client){}
+	resourcesWaitGroup sync.WaitGroup
 )
 
 func Register(regInfo *RegInfo) {
@@ -164,6 +169,9 @@ func ClientExists(name string) bool {
 }
 
 func CreateClient(name string) (Client, error) {
+	if clients[name] != nil {
+		return clients[name], nil
+	}
 	clientConfig := config.GetClientConfig(name)
 	if clientConfig == nil {
 		return nil, fmt.Errorf("client %s not existed", name)
@@ -172,7 +180,11 @@ func CreateClient(name string) (Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unsupported client type %s", clientConfig.Type)
 	}
-	return regInfo.Creator(name, clientConfig, config.Get())
+	clientInstance, err := regInfo.Creator(name, clientConfig, config.Get())
+	if err == nil {
+		clients[name] = clientInstance
+	}
+	return clientInstance, err
 }
 
 func GenerateNameWithMeta(name string, meta map[string](int64)) string {
@@ -583,4 +595,29 @@ func IsValidInfoHashOrStateFilter(stateFilter string) bool {
 }
 
 func init() {
+}
+
+// called by main codes on program exit. clean resources
+func Exit() {
+	for clientName, clientInstance := range clients {
+		resourcesWaitGroup.Add(1)
+		go func(clientName string, clientInstance Client) {
+			defer resourcesWaitGroup.Done()
+			log.Tracef("Close client %s instance", clientName)
+			clientInstance.Close()
+			delete(clients, clientName)
+		}(clientName, clientInstance)
+	}
+	resourcesWaitGroup.Wait()
+}
+
+// Purge client cache
+func Purge(clientName string) {
+	if clientName == "" {
+		for _, clientInstance := range clients {
+			clientInstance.PurgeCache()
+		}
+	} else if clients[clientName] != nil {
+		clients[clientName].PurgeCache()
+	}
 }

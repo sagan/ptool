@@ -18,7 +18,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "brush <client> <siteOrGroup>...",
+	Use:   "brush {client} {site | group}...",
 	Short: "Brush sites using client.",
 	Long:  `Brush sites using client.`,
 	Args:  cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
@@ -311,7 +311,6 @@ func brush(cmd *cobra.Command, args []string) error {
 	fmt.Printf("Finish brushing %d sites: successSites=%d, skipSites=%d; Added / Deleted torrents: %d / %d to client %s\n",
 		len(sitenames), cntSuccessSite, cntSkipSite, cntAddTorrents, cntDeleteTorrents, clientInstance.GetName())
 	os.RemoveAll(tmpdir)
-	clientInstance.Close()
 	if cntSuccessSite == 0 {
 		return fmt.Errorf("no sites successed")
 	}

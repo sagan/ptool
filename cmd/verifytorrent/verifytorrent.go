@@ -13,7 +13,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:     "verifytorrent <file.torrent>...",
+	Use:     "verifytorrent {file.torrent}... {--save-path dir | --content-path path} [--check]",
 	Aliases: []string{"verify"},
 	Short:   "Verify *.torrent file(s) are consistent with local disk files.",
 	Long: `Verify *.torrent file(s) are consistent with local disk files.
@@ -23,10 +23,10 @@ ptool verifytorrent file1.torrent file2.torrent --save-path /root/Downloads
 ptool verifytorrent file.torrent --content-path /root/Downloads/TorrentContentFolder
 
 Exact one of the --save-path or --content-path (but not both) flag must be set.
-* --save-path : the parent folder of torrent content(s)
-* --content-path : the torrent content(s) path, could be a folder or a single file
+* --save-path dir : the parent folder of torrent content(s)
+* --content-path path : the torrent content(s) path, could be a folder or a single file
 
-If you provide multiple <file.torrent> arg, only --save-path flag can be used.
+If you provide multiple {file.torrent} args, only --save-path flag can be used.
 
 By default it will only examine file meta infos (file path & size).
 If --check flag is set, it will also do the hash checking.`,

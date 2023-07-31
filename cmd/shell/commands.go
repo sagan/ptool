@@ -9,16 +9,19 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/utils"
 )
 
 var (
-	listMode = false
+	listMode      = false
+	ShellCommands = []*cobra.Command{}
 )
 
 var Cd = &cobra.Command{
-	Use:   "cd",
+	Use:   "cd {dir}",
 	Short: "(shell only) Change current working dir.",
 	Long:  `Change current working dir.`,
 	Args:  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
@@ -31,7 +34,7 @@ var Cd = &cobra.Command{
 	},
 }
 
-var Pwd = &cobra.Command{
+var pwdCwd = &cobra.Command{
 	Use:   "pwd",
 	Short: "(shell only) Print current working dir.",
 	Long:  `Print current working dir.`,
@@ -46,8 +49,8 @@ var Pwd = &cobra.Command{
 	},
 }
 
-var Exec = &cobra.Command{
-	Use:     "!",
+var execCmd = &cobra.Command{
+	Use:     "! {external_program} [arg]...",
 	Aliases: []string{"exec"},
 	Short:   "(shell only) Execute external program.",
 	Long:    `Execute external program.`,
@@ -63,8 +66,8 @@ var Exec = &cobra.Command{
 	},
 }
 
-var Ls = &cobra.Command{
-	Use:   "ls",
+var lsCmd = &cobra.Command{
+	Use:   "ls [-l] [dir]...",
 	Short: "(shell only) List directory contents.",
 	Long:  `List directory contents.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -121,15 +124,44 @@ var Ls = &cobra.Command{
 	},
 }
 
-var Exit = &cobra.Command{
+var exitCmd = &cobra.Command{
 	Use:   "exit",
 	Short: "(shell only) Exit shell",
 	Run: func(command *cobra.Command, args []string) {
-		cmd.RootCmd.PostRun(nil, nil)
-		os.Exit(0)
+		cmd.Exit(0)
+	},
+}
+
+var purgeCmd = &cobra.Command{
+	Use:   "purge [client | site]...",
+	Short: "(shell only) Purge client or site cache",
+	Long: `(shell only) Purge client or site cache
+If no args provided, the cache of ALL clients and sites will be purged`,
+	RunE: func(command *cobra.Command, args []string) error {
+		errorCnt := int64(0)
+		if len(args) == 0 {
+			client.Purge("")
+			site.Purge("")
+		} else {
+			for _, name := range args {
+				if client.ClientExists(name) {
+					client.Purge(name)
+				} else if site.SiteExists(name) {
+					site.Purge(name)
+				} else {
+					log.Errorf("%s is not a client or site", name)
+					errorCnt++
+				}
+			}
+		}
+		if errorCnt > 0 {
+			return fmt.Errorf("%d errors", errorCnt)
+		}
+		return nil
 	},
 }
 
 func init() {
-	Ls.Flags().BoolVarP(&listMode, "list", "l", false, "Use a long listing format")
+	lsCmd.Flags().BoolVarP(&listMode, "list", "l", false, "Use a long listing format")
+	ShellCommands = append(ShellCommands, pwdCwd, Cd, lsCmd, exitCmd, purgeCmd, execCmd)
 }

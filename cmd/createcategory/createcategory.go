@@ -10,7 +10,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "createcategory <client> <category>",
+	Use:   "createcategory {client} {category} [--save-path path]",
 	Short: "Create or edit category in client.",
 	Long: `Create category in client. If category already exists, edit it.
 Use --save-path to set (or modify) the save path of the category.`,
@@ -36,7 +36,6 @@ func createcategory(cmd *cobra.Command, args []string) error {
 	}
 
 	err = clientInstance.MakeCategory(category, savePath)
-	clientInstance.Close()
 	if err != nil {
 		return fmt.Errorf("failed to create category: %v", err)
 	}

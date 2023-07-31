@@ -10,10 +10,10 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "reannounce <client> [<infoHash>...]",
+	Use:   "reannounce {client} [-c category] [-t tags] [-f filter] [infoHash]...",
 	Short: "Reannounce torrents of client.",
 	Long: `Reannounce torrents of client.
-<infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
+[infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
 _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: reannounce,
@@ -45,22 +45,18 @@ func reannounce(cmd *cobra.Command, args []string) error {
 
 	infoHashes, err := client.SelectTorrents(clientInstance, category, tag, filter, args...)
 	if err != nil {
-		clientInstance.Close()
 		return err
 	}
 	if infoHashes == nil {
 		err = clientInstance.ReannounceAllTorrents()
 		if err != nil {
-			clientInstance.Close()
 			return err
 		}
 	} else if len(infoHashes) > 0 {
 		err = clientInstance.ReannounceTorrents(infoHashes)
 		if err != nil {
-			clientInstance.Close()
 			return err
 		}
 	}
-	clientInstance.Close()
 	return nil
 }

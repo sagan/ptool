@@ -18,7 +18,7 @@ type Chunk struct {
 }
 
 var command = &cobra.Command{
-	Use:   "partialdownload <client> <infoHash>",
+	Use:   "partialdownload {client} {infoHash} --chunk-size {size_str} {-a | --chunk-index index}",
 	Short: "Partially download a (large) torrent in client.",
 	Long: `Partially download a (large) torrent in client.
 Before running this command, you should add the target torrent to client in paused
@@ -84,12 +84,10 @@ func partialdownload(cmd *cobra.Command, args []string) error {
 
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		clientInstance.Close()
 		return fmt.Errorf("failed to create client: %v", err)
 	}
 	torrentFiles, err := clientInstance.GetTorrentContents(infoHash)
 	if err != nil {
-		clientInstance.Close()
 		return fmt.Errorf("failed to get client files: %v", err)
 	}
 	if startIndex < 0 || startIndex >= int64(len(torrentFiles))-1 {
@@ -148,29 +146,24 @@ func partialdownload(cmd *cobra.Command, args []string) error {
 		for _, chunk := range chunks {
 			fmt.Printf("%-6d  %-5d  %s\n", chunk.Index, chunk.FilesCnt, utils.BytesSize(float64(chunk.Size)))
 		}
-		clientInstance.Close()
 		return nil
 	}
 	if chunkIndex >= int64(len(chunks)) {
-		clientInstance.Close()
 		return fmt.Errorf("invalid chunkIndex %d. Torrent has %d chunks", chunkIndex, currentChunkIndex+1)
 	}
 	chunk := chunks[chunkIndex]
 	err = clientInstance.SetFilePriority(infoHash, downloadFileIndexes, 1)
 	if err != nil {
-		clientInstance.Close()
 		return fmt.Errorf("failed to set download files: %v", err)
 	}
 	utils.Sleep(5)
 	err = clientInstance.SetFilePriority(infoHash, noDownloadFileIndexes, 0)
 	if err != nil {
-		clientInstance.Close()
 		return fmt.Errorf("failed to set no download files: %v", err)
 	}
 	fmt.Printf("Torrent Size: %s (%d) / Chunks: %d; Skipped files: %d; DownloadChunkIndex: %d; DownloadChunkSize: %s (%d)",
 		utils.BytesSize(float64(allSize)), len(torrentFiles), len(chunks), startIndex,
 		chunkIndex, utils.BytesSize(float64(chunk.Size)), chunk.FilesCnt,
 	)
-	clientInstance.Close()
 	return nil
 }

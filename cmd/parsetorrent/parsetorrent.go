@@ -12,7 +12,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:     "parsetorrent file.torrent...",
+	Use:     "parsetorrent {file.torrent}...",
 	Aliases: []string{"parse"},
 	Short:   "Parse torrent files and show their content.",
 	Long:    `Parse torrent files and show their content.`,

@@ -22,7 +22,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:     "batchdl <site>",
+	Use:     "batchdl {site} [--action add|download] [--base-url torrents_page_url]",
 	Aliases: []string{"ebookgod"},
 	Short:   "Batch download the smallest (or by any other order) torrents from a site.",
 	Long:    `Batch download the smallest (or by any other order) torrents from a site.`,
@@ -103,7 +103,7 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func batchdl(cmd *cobra.Command, args []string) error {
+func batchdl(command *cobra.Command, args []string) error {
 	sitename := args[0]
 	siteInstance, err := site.CreateSite(sitename)
 	if err != nil {
@@ -134,7 +134,7 @@ func batchdl(cmd *cobra.Command, args []string) error {
 	if freeTimeAtLeastStr != "" {
 		t, err := utils.ParseTimeDuration(freeTimeAtLeastStr)
 		if err != nil {
-			return fmt.Errorf("Invalid --free-time value %s: %v", freeTimeAtLeastStr, err)
+			return fmt.Errorf("invalid --free-time value %s: %v", freeTimeAtLeastStr, err)
 		}
 		freeTimeAtLeast = t
 	}
@@ -151,15 +151,15 @@ func batchdl(cmd *cobra.Command, args []string) error {
 	var csvWriter *csv.Writer
 	if action == "add" {
 		if addClient == "" {
-			return fmt.Errorf("You much specify the client used to add torrents to via --add-client flag.")
+			return fmt.Errorf("you much specify the client used to add torrents to via --add-client flag")
 		}
 		clientInstance, err = client.CreateClient(addClient)
 		if err != nil {
-			return fmt.Errorf("Failed to create client %s: %v", addClient, err)
+			return fmt.Errorf("failed to create client %s: %v", addClient, err)
 		}
 		status, err := clientInstance.GetStatus()
 		if err != nil {
-			return fmt.Errorf("Failed to get client %s status: %v", clientInstance.GetName(), err)
+			return fmt.Errorf("failed to get client %s status: %v", clientInstance.GetName(), err)
 		}
 		if addRespectNoadd && status.NoAdd {
 			log.Warnf("Client has _noadd flag and --add-respect-noadd flag is set. Abort task")
@@ -197,7 +197,7 @@ func batchdl(cmd *cobra.Command, args []string) error {
 		if exportFile != "" {
 			outputFileFd, err = os.OpenFile(exportFile, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
 			if err != nil {
-				return fmt.Errorf("Failed to create output file %s: %v", exportFile, err)
+				return fmt.Errorf("failed to create output file %s: %v", exportFile, err)
 			}
 		}
 		if action == "export" {
@@ -227,9 +227,6 @@ func batchdl(cmd *cobra.Command, args []string) error {
 		if csvWriter != nil {
 			csvWriter.Flush()
 		}
-		if clientInstance != nil {
-			clientInstance.Close()
-		}
 	}
 	sigs := make(chan os.Signal, 1)
 	go func() {
@@ -237,9 +234,9 @@ func batchdl(cmd *cobra.Command, args []string) error {
 		log.Debugf("Received signal %v", sig)
 		doneHandle()
 		if errorCnt > 0 {
-			os.Exit(1)
+			cmd.Exit(1)
 		} else {
-			os.Exit(0)
+			cmd.Exit(0)
 		}
 	}()
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)

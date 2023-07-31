@@ -17,7 +17,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "addlocal <client> <filename.torrent>...",
+	Use:   "addlocal {client} {file.torrent}...",
 	Short: "Add local torrents to client.",
 	Long: `Add local torrents to client.
 It's possible to use "*" wildcard in filename to match multiple torrents. eg. "*.torrent".
@@ -142,7 +142,6 @@ func addlocal(cmd *cobra.Command, args []string) error {
 		fmt.Printf("✓torrent (%d/%d) %s: added to client\n", i+1, cntAll, torrentFile)
 	}
 	fmt.Printf("\nDone. Added torrent (Size/Cnt): %s / %d; ErrorCnt: %d\n", utils.BytesSize(float64(sizeAdded)), cntAdded, errorCnt)
-	clientInstance.Close()
 	if errorCnt > 0 {
 		return fmt.Errorf("%d errors", errorCnt)
 	}

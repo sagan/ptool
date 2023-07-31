@@ -27,11 +27,11 @@ var (
 )
 
 var command = &cobra.Command{
-	Use: "status <clientOrSiteOrGroup>...",
+	Use: "status [client | site | group]... [-a]",
 	// Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	Short: "Show clients or sites status.",
 	Long: `Show clients or sites status.
-clientOrSiteOrGroup: name of a client, site, group, or "_all" which means all sites.
+[client | site | group]: name of a client, site or group, or "_all" which means all sites.
 `,
 	RunE: status,
 }

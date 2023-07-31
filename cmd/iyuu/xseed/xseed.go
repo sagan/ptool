@@ -19,7 +19,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "xseed <client>...",
+	Use:   "xseed {client}...",
 	Short: "Cross seed using iyuu API.",
 	Long: `Cross seed using iyuu API.
 By default it will add xseed torrents from All sites unless --include-sites or --exclude-sites flag is set.`,
@@ -347,7 +347,6 @@ mainloop:
 				utils.Sleep(2)
 			}
 		}
-		clientInstance.Close()
 	}
 	fmt.Printf("Done xseed %d clients. Target / Xseed / SuccessXseed torrents: %d / %d / %d\n",
 		len(clientNames), cntTargetTorrents, cntXseedTorrents, cntSucccessXseedTorrents)

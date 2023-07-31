@@ -13,7 +13,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "tidyup <client>",
+	Use:   "tidyup {client}",
 	Short: "Tidy up all torrents of client.",
 	Long: `Tidy up all torrents of client.
 Set appropriate tags to all torrents of a client. For example, it will set the "site:m-team" tag for all torrents downloaded from M-Team.
@@ -47,7 +47,6 @@ func tidyup(cmd *cobra.Command, args []string) error {
 	}
 	torrents, err := client.QueryTorrents(clientInstance, category, tag, filter)
 	if err != nil {
-		clientInstance.Close()
 		return fmt.Errorf("failed to get torrents: %v", err)
 	}
 	domainSiteMap := map[string](string){}
@@ -104,7 +103,6 @@ func tidyup(cmd *cobra.Command, args []string) error {
 			}
 		}
 	}
-	clientInstance.Close()
 	fmt.Printf("Done tidying up %d torrents. Modify / success torrents = %d / %d\n", len(torrents), cntTorrents, cntSuccessTorrents)
 	return nil
 }

@@ -10,10 +10,10 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "setsavepath <client> <savePath> [<infoHash>...]",
+	Use:   "setsavepath {client} {savePath} [-c category] [-t tags] [-f filter] [infoHash]...",
 	Short: "Set the save path of torrents in client.",
 	Long: `Set the save path of torrents in client.
-<infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
+[infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
 _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	RunE: setsavepath,
@@ -46,22 +46,18 @@ func setsavepath(cmd *cobra.Command, args []string) error {
 
 	infoHashes, err := client.SelectTorrents(clientInstance, category, tag, filter, args...)
 	if err != nil {
-		clientInstance.Close()
 		return err
 	}
 	if infoHashes == nil {
 		err = clientInstance.SetAllTorrentsSavePath(savePath)
 		if err != nil {
-			clientInstance.Close()
 			return err
 		}
 	} else if len(infoHashes) > 0 {
 		err = clientInstance.SetTorrentsSavePath(infoHashes, savePath)
 		if err != nil {
-			clientInstance.Close()
 			return err
 		}
 	}
-	clientInstance.Close()
 	return nil
 }

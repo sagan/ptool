@@ -12,7 +12,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "sites",
+	Use:   "sites [{-b | -a}] [-f filter]",
 	Short: "Show iyuu sites list.",
 	Long:  `Show iyuu sites list.`,
 	RunE:  sites,

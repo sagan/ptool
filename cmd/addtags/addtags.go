@@ -11,11 +11,11 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "addtags <client> <tags> [<infoHash>...]",
+	Use:   "addtags {client} {tags} [-c category] [-t tags] [-f filter] [infoHash]...",
 	Short: "Add tags to torrents in client.",
 	Long: `Add tags to torrents in client.
-<tags> : comma-seperated tags list.
-<infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
+{tags} : comma-seperated tags list.
+[infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
 _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	RunE: addtags,
@@ -48,22 +48,18 @@ func addtags(cmd *cobra.Command, args []string) error {
 
 	infoHashes, err := client.SelectTorrents(clientInstance, category, tag, filter, args...)
 	if err != nil {
-		clientInstance.Close()
 		return err
 	}
 	if infoHashes == nil {
 		err = clientInstance.AddTagsToAllTorrents(tags)
 		if err != nil {
-			clientInstance.Close()
 			return err
 		}
 	} else if len(infoHashes) > 0 {
 		err = clientInstance.AddTagsToTorrents(infoHashes, tags)
 		if err != nil {
-			clientInstance.Close()
 			return err
 		}
 	}
-	clientInstance.Close()
 	return nil
 }

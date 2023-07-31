@@ -1,6 +1,8 @@
 package shell
 
 import (
+	"fmt"
+
 	"github.com/c-bata/go-prompt"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -41,10 +43,16 @@ func shell(command *cobra.Command, args []string) {
 	if config.Fork || config.LockFile != "" {
 		log.Fatalf("--fork or --lock flag can NOT be used with shell")
 	}
-	cmd.RootCmd.AddCommand(Pwd)
-	cmd.RootCmd.AddCommand(Cd)
-	cmd.RootCmd.AddCommand(Exec)
-	cmd.RootCmd.AddCommand(Ls)
-	cmd.RootCmd.AddCommand(Exit)
+	cmd.RootCmd.AddCommand(ShellCommands...)
+	if !config.Get().Hushshell {
+		fmt.Printf("Welcome to ptool shell\n")
+		fmt.Printf("In addition to normal ptool commands, you can use the shell commands here:\n")
+		for _, shellCmd := range ShellCommands {
+			fmt.Printf("* %s : %s\n", shellCmd.Name(), shellCmd.Short)
+		}
+		fmt.Printf(`Type "<command> -h" to see full help` + "\n")
+		fmt.Printf(`Note client data will be cached in shell, run "purge [client]..." to purge cache` + "\n")
+		fmt.Printf(`To mute this message, add "hushshell = true" line to the top of ptool.toml config file` + "\n")
+	}
 	advancedPrompt.Run()
 }

@@ -3,12 +3,15 @@ package cmd
 import (
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/gofrs/flock"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/utils/osutil"
 )
 
@@ -20,10 +23,11 @@ var RootCmd = &cobra.Command{
 	// Run: func(cmd *cobra.Command, args []string) { },
 	// SilenceErrors: true,
 	SilenceUsage: true,
-	PostRun: func(cmd *cobra.Command, args []string) {
-		log.Tracef("ptool root command PostRun")
-	},
 }
+
+var (
+	resourcesWaitGroup sync.WaitGroup
+)
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
@@ -52,7 +56,9 @@ func Execute() {
 	// all other errors are handled in command self's Run func.
 	err := RootCmd.Execute()
 	if err != nil {
-		os.Exit(1)
+		Exit(1)
+	} else {
+		Exit(0)
 	}
 }
 
@@ -78,4 +84,20 @@ func init() {
 	RootCmd.PersistentFlags().StringVarP(&config.ConfigFile, "config", "", configFile, "Config file ([ptool.toml])")
 	RootCmd.PersistentFlags().StringVarP(&config.LockFile, "lock", "", "", "Lock filename. If set, ptool will acquire the lock on the file before executing command. It is intended to be used to prevent multiple invocations of ptool process at the same time. If the lock file does not exist, it will be created automatically. However, it will NOT be deleted after ptool process exits")
 	RootCmd.PersistentFlags().CountVarP(&config.VerboseLevel, "verbose", "v", "verbose (-v, -vv, -vvv)")
+}
+
+// clean all resources created during this session and exit
+func Exit(code int) {
+	log.Tracef("Exit. Closing resources")
+	resourcesWaitGroup.Add(2)
+	go func() {
+		defer resourcesWaitGroup.Done()
+		client.Exit()
+	}()
+	go func() {
+		defer resourcesWaitGroup.Done()
+		site.Exit()
+	}()
+	resourcesWaitGroup.Wait()
+	os.Exit(code)
 }

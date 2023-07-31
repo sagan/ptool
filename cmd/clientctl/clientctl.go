@@ -22,7 +22,7 @@ type Option struct {
 }
 
 var command = &cobra.Command{
-	Use:   "clientctl <client> [<variable>[=value] ...]",
+	Use:   "clientctl {client} [<variable>[=value] ...]",
 	Short: "Get or set client config.",
 	Long:  `Get or set client config.`,
 	RunE:  clientctl,
@@ -155,7 +155,6 @@ func clientctl(cmd *cobra.Command, args []string) error {
 			printOption(name, value, option, showRaw)
 		}
 	}
-	clientInstance.Close()
 	if errorCnt > 0 {
 		return fmt.Errorf("%d errors", errorCnt)
 	}

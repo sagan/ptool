@@ -119,6 +119,11 @@ var (
 			TorrentsExtraUrls: []string{"special.php"},
 			Comment:           "GGPT",
 		},
+		"gamerapt": &config.SiteConfigStruct{
+			Type:    "nexusphp",
+			Url:     "https://gamerapt.link/",
+			Comment: "駕瞑羅",
+		},
 		"greatposterwall": &config.SiteConfigStruct{
 			Type:    "gazellepw",
 			Aliases: []string{"gpw"},

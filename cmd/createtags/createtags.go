@@ -10,7 +10,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "createtags <client> <tags>...",
+	Use:   "createtags {client} {tags}...",
 	Short: "Create tags in client.",
 	Long:  `Create tags in client.`,
 	Args:  cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
@@ -30,7 +30,6 @@ func createtags(cmd *cobra.Command, args []string) error {
 	}
 
 	err = clientInstance.CreateTags(tags...)
-	clientInstance.Close()
 	if err != nil {
 		return fmt.Errorf("Failed to create tags: %v", err)
 	}

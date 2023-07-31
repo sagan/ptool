@@ -10,11 +10,11 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:     "pause <client> [<infoHash>...]",
+	Use:     "pause {client} [-c category] [-t tags] [-f filter] [infoHash]...",
 	Aliases: []string{"stop"},
 	Short:   "Pause torrents of client.",
 	Long: `Pause torrents of client.
-<infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
+[infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
 _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: pause,
@@ -46,22 +46,18 @@ func pause(cmd *cobra.Command, args []string) error {
 
 	infoHashes, err := client.SelectTorrents(clientInstance, category, tag, filter, args...)
 	if err != nil {
-		clientInstance.Close()
 		return err
 	}
 	if infoHashes == nil {
 		err = clientInstance.PauseAllTorrents()
 		if err != nil {
-			clientInstance.Close()
 			return nil
 		}
 	} else if len(infoHashes) > 0 {
 		err = clientInstance.PauseTorrents(infoHashes)
 		if err != nil {
-			clientInstance.Close()
 			return nil
 		}
 	}
-	clientInstance.Close()
 	return nil
 }

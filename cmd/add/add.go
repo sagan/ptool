@@ -16,7 +16,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "add <client> <torrentIdOrUrl>...",
+	Use:   "add {client} {torrentId | torrentUrl}...",
 	Short: "Add site torrents to client.",
 	Long:  `Add site torrents to client.`,
 	Args:  cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
@@ -139,7 +139,6 @@ func add(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Printf("add site %s torrent %s success. infoHash=%s\n", siteInstance.GetName(), torrentId, tinfo.InfoHash)
 	}
-	clientInstance.Close()
 	if errorCnt > 0 {
 		return fmt.Errorf("%d errors", errorCnt)
 	}

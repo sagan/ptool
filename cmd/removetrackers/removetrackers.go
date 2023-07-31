@@ -12,10 +12,10 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "removetrackers <client> [<infoHash>...]",
+	Use:   "removetrackers {client} [-c category] [-t tags] [-f filter] [infoHash]...",
 	Short: "Remove trackers from torrents of client.",
 	Long: `Remove trackers from torrents of client.
-<infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
+[infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
 _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.
 
 Example:
@@ -88,7 +88,6 @@ func removetrackers(cmd *cobra.Command, args []string) error {
 			errorCnt++
 		}
 	}
-	clientInstance.Close()
 	if errorCnt > 0 {
 		return fmt.Errorf("%d errors", errorCnt)
 	}

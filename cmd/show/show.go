@@ -15,10 +15,10 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "show <client> [<infoHash>...]",
+	Use:   "show {client} [-c category] [-t tags] [-f filter] [infoHash]...",
 	Short: "Show torrents of client.",
 	Long: `Show torrents of client.
-<infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
+[infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
 _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.
 If no flags or args are provided, it will display current active torrents.
 `,
@@ -175,7 +175,6 @@ func show(cmd *cobra.Command, args []string) error {
 				len(torrents),
 			)
 		}
-		clientInstance.Close()
 		showSummary := int64(1)
 		if showSum {
 			showSummary = 2

@@ -11,11 +11,16 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "bind",
+	Use:   "bind --site {iyuu_site_name} --uid {site_uid} --passkey {site_passkey}",
 	Short: "Bind (authenticate) iyuu service using PT site passkey.",
 	Long: `Bind (authenticate) iyuu service using PT site passkey.
-Use "ptool iyuu sites -b" to list all available sites.
-`,
+
+Example:
+ptool iyuu bind --site zhuque --uid 123456 --passkey 0123456789abcdef
+
+* --site {iyuu_site_name} : iyuu site name. Use "ptool iyuu sites -b" to list all bindable sites.
+* --uid {site_uid} : the uid (user id) of corresponding site
+* --passkey {site_passkey} : the passkey (or equivalent) of corresponding site`,
 	RunE: bind,
 }
 

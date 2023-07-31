@@ -12,10 +12,10 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "edittracker <client> [<infoHash>...]",
+	Use:   "edittracker <client> [-c category] [-t tags] [-f filter] [infoHash]... --old-tracker {url} --new-tracker {url} [--replace-host]",
 	Short: "Edit tracker of torrents in client.",
 	Long: `Edit tracker of torrents in client, replace the old tracker url with the new one.
-<infoHash>...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
+[infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
 _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.
 
 A torrent will not be updated if old tracker does NOT exist in it's trackers list.
@@ -69,11 +69,9 @@ func edittracker(cmd *cobra.Command, args []string) error {
 
 	torrents, err := client.QueryTorrents(clientInstance, category, tag, filter, args...)
 	if err != nil {
-		clientInstance.Close()
 		return err
 	}
 	if len(torrents) == 0 {
-		clientInstance.Close()
 		log.Infof("No matched torrents found")
 		return nil
 	}
@@ -94,7 +92,6 @@ func edittracker(cmd *cobra.Command, args []string) error {
 			errorCnt++
 		}
 	}
-	clientInstance.Close()
 	if errorCnt > 0 {
 		return fmt.Errorf("%d errors", errorCnt)
 	}

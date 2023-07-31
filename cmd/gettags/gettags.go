@@ -11,7 +11,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "gettags <client>",
+	Use:   "gettags {client}",
 	Short: "Get all tags of client.",
 	Long:  `Get all tags of client.`,
 	Args:  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
@@ -29,7 +29,6 @@ func gettags(cmd *cobra.Command, args []string) error {
 	}
 
 	tags, err := clientInstance.GetTags()
-	clientInstance.Close()
 	if err != nil {
 		return fmt.Errorf("failed to get tags: %v", err)
 	}

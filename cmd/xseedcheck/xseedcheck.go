@@ -11,7 +11,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "xseedcheck <client> <infoHash> file.torrent",
+	Use:   "xseedcheck {client} {infoHash} {file.torrent}",
 	Short: "Check whether a torrent in client is identical with a torrent file.",
 	Long: `Check whether a torrent in client is identical with a torrent file.
 Only filename and size will be comared. Not the file contents themselves.`,
@@ -38,7 +38,6 @@ func xseedcheck(cmd *cobra.Command, args []string) error {
 	}
 	torrentInfo, err := torrentutil.ParseTorrentFile(torrentFileName, 99)
 	if err != nil {
-		clientInstance.Close()
 		return fmt.Errorf("failed to parse %s: %v", torrentFileName, err)
 	}
 	if torrentInfo.InfoHash == infoHash {
@@ -51,7 +50,6 @@ func xseedcheck(cmd *cobra.Command, args []string) error {
 	}
 	clientTorrentContents, err := clientInstance.GetTorrentContents(infoHash)
 	if err != nil {
-		clientInstance.Close()
 		return fmt.Errorf("failed to get client torrent contents info: %v", err)
 	}
 	compareResult := torrentInfo.XseedCheckWithClientTorrent(clientTorrentContents)
@@ -91,6 +89,5 @@ func xseedcheck(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Torrent file: %s\n", torrentFileName)
 		torrentInfo.PrintFiles(true, true)
 	}
-	clientInstance.Close()
 	return nil
 }

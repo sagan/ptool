@@ -10,7 +10,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "removecategories <client> <categories>...",
+	Use:   "removecategories {client} {category}...",
 	Short: "Remove categories from client.",
 	Long:  `Remove categories from client.`,
 	Args:  cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
@@ -30,7 +30,6 @@ func removecategories(cmd *cobra.Command, args []string) error {
 	}
 
 	err = clientInstance.RemoveCategories(categories)
-	clientInstance.Close()
 	if err != nil {
 		return err
 	}

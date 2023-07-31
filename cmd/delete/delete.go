@@ -10,11 +10,11 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:     "delete <client> <infoHash>...",
+	Use:     "delete {client} {infoHash}...",
 	Aliases: []string{"rm"},
 	Short:   "Delete torrents from client.",
 	Long: `Delete torrents from client.
-<infoHash>...: infoHash list of torrents.`,
+{infoHash}...: infoHash list of torrents.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	RunE: delete,
 }
@@ -37,7 +37,6 @@ func delete(cmd *cobra.Command, args []string) error {
 	}
 
 	err = clientInstance.DeleteTorrents(infoHashes, !preserve)
-	clientInstance.Close()
 	if err != nil {
 		return fmt.Errorf("failed to delete torrent: %v", err)
 	}

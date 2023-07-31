@@ -107,6 +107,7 @@ type SiteConfigStruct struct {
 }
 
 type ConfigStruct struct {
+	Hushshell        bool                  `yaml:"hushshell"`
 	IyuuToken        string                `yaml:"iyuuToken"`
 	SiteProxy        string                `yaml:"siteProxy"`
 	SiteUserAgent    string                `yaml:"siteUserAgent"`

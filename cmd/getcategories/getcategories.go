@@ -12,7 +12,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "getcategories <client>",
+	Use:   "getcategories {client}",
 	Short: "Get all categories of client.",
 	Long:  `Get all categories of client.`,
 	Args:  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
@@ -36,7 +36,6 @@ func getcategories(cmd *cobra.Command, args []string) error {
 	}
 
 	cats, err := clientInstance.GetCategories()
-	clientInstance.Close()
 	if err != nil {
 		return fmt.Errorf("failed to get categories: %v", err)
 	}

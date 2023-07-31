@@ -6,6 +6,7 @@ import (
 	"mime"
 	"net/http"
 	"net/url"
+	"sync"
 
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/ja3transport"
@@ -66,7 +67,9 @@ type RegInfo struct {
 type SiteCreator func(*RegInfo) (Site, error)
 
 var (
-	registryMap = map[string](*RegInfo){}
+	registryMap        = map[string](*RegInfo){}
+	sites              = map[string](Site){}
+	resourcesWaitGroup sync.WaitGroup
 )
 
 func (torrent *Torrent) MatchFilter(filter string) bool {
@@ -101,13 +104,24 @@ func GetConfigSiteReginfo(name string) *RegInfo {
 	return nil
 }
 
+func SiteExists(name string) bool {
+	siteConfig := config.GetSiteConfig(name)
+	return siteConfig != nil
+}
+
 func CreateSite(name string) (Site, error) {
-	for _, siteConfig := range config.Get().Sites {
-		if siteConfig.GetName() == name {
-			return CreateSiteInternal(name, siteConfig, config.Get())
-		}
+	if sites[name] != nil {
+		return sites[name], nil
 	}
-	return nil, fmt.Errorf("site %s not found", name)
+	siteConfig := config.GetSiteConfig(name)
+	if siteConfig == nil {
+		return nil, fmt.Errorf("site %s not found", name)
+	}
+	siteInstance, err := CreateSiteInternal(name, siteConfig, config.Get())
+	if err != nil {
+		sites[name] = siteInstance
+	}
+	return siteInstance, err
 }
 
 func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool, dense bool) {
@@ -240,4 +254,24 @@ func DownloadTorrentByUrl(siteInstance Site, httpClient *http.Client, torrentUrl
 }
 
 func init() {
+}
+
+// called by main codes on program exit. clean resources
+func Exit() {
+	// for now, nothing to close
+	for siteName := range sites {
+		delete(sites, siteName)
+	}
+	resourcesWaitGroup.Wait()
+}
+
+// Purge site cache
+func Purge(siteName string) {
+	if siteName == "" {
+		for _, siteInstance := range sites {
+			siteInstance.PurgeCache()
+		}
+	} else if sites[siteName] != nil {
+		sites[siteName].PurgeCache()
+	}
 }

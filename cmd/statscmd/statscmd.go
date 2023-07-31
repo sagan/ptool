@@ -12,7 +12,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "stats [clients...] [flags]",
+	Use:   "stats [clients]... [flags]",
 	Short: "Show client brushing traffic statistics.",
 	Long: `Show client brushing traffic statistics.
 Only torrents added by ptool (of this machine) will be counted.

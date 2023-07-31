@@ -10,7 +10,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "deletetags <client> <tags>...",
+	Use:   "deletetags {client} {tags}...",
 	Short: "Delete tags from client.",
 	Long:  `Delete tags from client.`,
 	Args:  cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
@@ -30,7 +30,6 @@ func deletetags(cmd *cobra.Command, args []string) error {
 	tags := args[1:]
 
 	err = clientInstance.DeleteTags(tags...)
-	clientInstance.Close()
 	if err != nil {
 		return fmt.Errorf("failed to delete tags: %v", err)
 	}
