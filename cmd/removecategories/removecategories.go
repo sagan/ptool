@@ -10,11 +10,12 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "removecategories {client} {category}...",
-	Short: "Remove categories from client.",
-	Long:  `Remove categories from client.`,
-	Args:  cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
-	RunE:  removecategories,
+	Use:         "removecategories {client} {category}...",
+	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "removecategories"},
+	Short:       "Remove categories from client.",
+	Long:        `Remove categories from client.`,
+	Args:        cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
+	RunE:        removecategories,
 }
 
 func init() {

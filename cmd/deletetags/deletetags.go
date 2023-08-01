@@ -10,11 +10,12 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "deletetags {client} {tags}...",
-	Short: "Delete tags from client.",
-	Long:  `Delete tags from client.`,
-	Args:  cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
-	RunE:  deletetags,
+	Use:         "deletetags {client} {tags}...",
+	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "deletetags"},
+	Short:       "Delete tags from client.",
+	Long:        `Delete tags from client.`,
+	Args:        cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
+	RunE:        deletetags,
 }
 
 func init() {

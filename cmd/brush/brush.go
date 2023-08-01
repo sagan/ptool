@@ -18,11 +18,12 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "brush {client} {site | group}...",
-	Short: "Brush sites using client.",
-	Long:  `Brush sites using client.`,
-	Args:  cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
-	RunE:  brush,
+	Use:         "brush {client} {site | group}...",
+	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "brush"},
+	Short:       "Brush sites using client.",
+	Long:        `Brush sites using client.`,
+	Args:        cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
+	RunE:        brush,
 }
 
 var (
@@ -36,7 +37,7 @@ var (
 func init() {
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do not actually controlling client")
 	command.Flags().BoolVarP(&addPaused, "add-paused", "", false, "Add torrents to client in paused state")
-	command.Flags().BoolVarP(&ordered, "ordered", "o", false, "Brush sites provided in order")
+	command.Flags().BoolVarP(&ordered, "ordered", "", false, "Brush sites provided in order")
 	command.Flags().BoolVarP(&force, "force", "", false, "Force mode. Ignore _noadd flag in client")
 	command.Flags().Int64VarP(&maxSites, "max-sites", "", 0, "Allowed max succcess sites number, Default (0) == unlimited")
 	cmd.RootCmd.AddCommand(command)

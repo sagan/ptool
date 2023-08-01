@@ -22,10 +22,11 @@ type Option struct {
 }
 
 var command = &cobra.Command{
-	Use:   "clientctl {client} [<variable>[=value] ...]",
-	Short: "Get or set client config.",
-	Long:  `Get or set client config.`,
-	RunE:  clientctl,
+	Use:         "clientctl {client} [<variable>[=value] ...]",
+	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "clientctl"},
+	Short:       "Get or set client config.",
+	Long:        `Get or set client config.`,
+	RunE:        clientctl,
 }
 
 var (

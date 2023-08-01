@@ -40,10 +40,16 @@ func Execute() {
 		}
 		// level: panic(0), fatal(1), error(2), warn(3), info(4), debug(5), trace(6). Default level = warning(3)
 		config.ConfigDir = filepath.Dir(config.ConfigFile)
+		config.ConfigFile = filepath.Base(config.ConfigFile)
+		configExt := filepath.Ext(config.ConfigFile)
+		config.ConfigName = config.ConfigFile[:len(config.ConfigFile)-len(configExt)]
+		if configExt != "" {
+			config.ConfigType = configExt[1:]
+		}
 		logLevel := 3 + config.VerboseLevel
 		log.SetLevel(log.Level(logLevel))
 		log.Debugf("ptool start: %s", os.Args)
-		log.Infof("config file: %s", config.ConfigFile)
+		log.Infof("config file: %s/%s", config.ConfigDir, config.ConfigFile)
 		if config.LockFile != "" {
 			log.Debugf("Locking file: %s", config.LockFile)
 			err := flock.New(config.LockFile).Lock()

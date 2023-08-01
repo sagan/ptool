@@ -176,21 +176,27 @@ If no args provided, the cache of ALL clients and sites will be purged`,
 }
 
 func cdCmdSuggestion(document *prompt.Document) []prompt.Suggest {
-	args := suggest.Parse(document)
-	if len(args) == 2 {
-		return suggest.DirArg(args[1])
+	info := suggest.Parse(document)
+	if info.LastArgIsFlag {
+		return nil
 	}
-	return nil
+	return suggest.DirArg(info.MatchingPrefix)
 }
 
 func lsCmdSuggestion(document *prompt.Document) []prompt.Suggest {
-	args := suggest.Parse(document)
-	return suggest.FileArg(args[len(args)-1])
+	info := suggest.Parse(document)
+	if info.LastArgIsFlag {
+		return nil
+	}
+	return suggest.FileArg(info.MatchingPrefix, "")
 }
 
 func PurgeCmdSuggestion(document *prompt.Document) []prompt.Suggest {
-	args := suggest.Parse(document)
-	return suggest.ClientArg(args[len(args)-1])
+	info := suggest.Parse(document)
+	if info.LastArgIsFlag {
+		return nil
+	}
+	return suggest.ClientArg(info.MatchingPrefix)
 }
 
 var ShellCommands = []*cobra.Command{pwdCwd, cdCmd, lsCmd, exitCmd, purgeCmd, execCmd}

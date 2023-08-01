@@ -10,11 +10,12 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "createtags {client} {tags}...",
-	Short: "Create tags in client.",
-	Long:  `Create tags in client.`,
-	Args:  cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
-	RunE:  createtags,
+	Use:         "createtags {client} {tags}...",
+	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "createtags"},
+	Short:       "Create tags in client.",
+	Long:        `Create tags in client.`,
+	Args:        cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
+	RunE:        createtags,
 }
 
 func init() {

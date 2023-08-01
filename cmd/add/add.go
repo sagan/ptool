@@ -16,11 +16,12 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "add {client} {torrentId | torrentUrl}...",
-	Short: "Add site torrents to client.",
-	Long:  `Add site torrents to client.`,
-	Args:  cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
-	RunE:  add,
+	Use:         "add {client} {torrentId | torrentUrl}...",
+	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "add"},
+	Short:       "Add site torrents to client.",
+	Long:        `Add site torrents to client.`,
+	Args:        cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
+	RunE:        add,
 }
 
 var (

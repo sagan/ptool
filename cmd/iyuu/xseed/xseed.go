@@ -19,8 +19,9 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "xseed {client}...",
-	Short: "Cross seed using iyuu API.",
+	Use:         "xseed {client}...",
+	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "iyuu.xseed"},
+	Short:       "Cross seed using iyuu API.",
 	Long: `Cross seed using iyuu API.
 By default it will add xseed torrents from All sites unless --include-sites or --exclude-sites flag is set.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),

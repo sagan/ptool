@@ -15,11 +15,12 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "dltorrent {torrentId | torrentUrl}... [--download-dir dir]",
-	Short: "Download site torrents to local.",
-	Long:  `Download site torrents to local.`,
-	Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
-	RunE:  dltorrent,
+	Use:         "dltorrent {torrentId | torrentUrl}... [--download-dir dir]",
+	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "dltorrent"},
+	Short:       "Download site torrents to local.",
+	Long:        `Download site torrents to local.`,
+	Args:        cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
+	RunE:        dltorrent,
 }
 
 var (

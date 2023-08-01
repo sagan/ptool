@@ -12,12 +12,13 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:     "parsetorrent {file.torrent}...",
-	Aliases: []string{"parse"},
-	Short:   "Parse torrent files and show their content.",
-	Long:    `Parse torrent files and show their content.`,
-	Args:    cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
-	RunE:    parsetorrent,
+	Use:         "parsetorrent {file.torrent}...",
+	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "parsetorrent"},
+	Aliases:     []string{"parse"},
+	Short:       "Parse torrent files and show their content.",
+	Long:        `Parse torrent files and show their content.`,
+	Args:        cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
+	RunE:        parsetorrent,
 }
 
 var (

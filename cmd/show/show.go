@@ -15,8 +15,9 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "show {client} [-c category] [-t tags] [-f filter] [infoHash]...",
-	Short: "Show torrents of client.",
+	Use:         "show {client} [-c category] [-t tags] [-f filter] [infoHash]...",
+	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "show"},
+	Short:       "Show torrents of client.",
 	Long: `Show torrents of client.
 [infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
 _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.
@@ -27,19 +28,19 @@ If no flags or args are provided, it will display current active torrents.
 }
 
 var (
-	largest           bool
-	showTrackers      bool
-	showFiles         bool
-	showInfoHashOnly  bool
-	maxTorrents                                         = int64(0)
-	filter                                              = ""
-	category                                            = ""
-	tag                                                 = ""
-	showAll                                             = false
-	showRaw                                             = false
-	showSum                                             = false
-	sortFieldEnumFlag common.ClientTorrentSortFieldEnum = "none"
-	orderEnumFlag     common.OrderEnum                  = "asc"
+	largest          bool
+	showTrackers     bool
+	showFiles        bool
+	showInfoHashOnly bool
+	maxTorrents      = int64(0)
+	filter           = ""
+	category         = ""
+	tag              = ""
+	showAll          = false
+	showRaw          = false
+	showSum          = false
+	sortFlag         string
+	orderFlag        string
 )
 
 func init() {
@@ -54,10 +55,8 @@ func init() {
 	command.Flags().StringVarP(&filter, "filter", "f", "", "Filter torrents by name")
 	command.Flags().StringVarP(&category, "category", "c", "", "Filter torrents by category")
 	command.Flags().StringVarP(&tag, "tag", "t", "", "Filter torrents by tag. Comma-separated string list. Torrent which tags contain any one in the list will match")
-	command.Flags().VarP(&sortFieldEnumFlag, "sort", "s", "Manually set the sort field, "+common.ClientTorrentSortFieldEnumTip)
-	command.Flags().VarP(&orderEnumFlag, "order", "o", "Manually set the sort order, "+common.OrderEnumTip)
-	command.RegisterFlagCompletionFunc("sort", common.ClientTorrentSortFieldEnumCompletion)
-	command.RegisterFlagCompletionFunc("order", common.OrderEnumCompletion)
+	cmd.AddEnumFlagP(command, &sortFlag, "sort", "", common.ClientTorrentSortFlag)
+	cmd.AddEnumFlagP(command, &orderFlag, "order", "", common.OrderFlag)
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -73,10 +72,10 @@ func show(cmd *cobra.Command, args []string) error {
 	}
 	desc := false
 	if largest {
-		sortFieldEnumFlag = "size"
+		sortFlag = "size"
 		desc = true
 	}
-	if orderEnumFlag == "desc" {
+	if orderFlag == "desc" {
 		desc = true
 	}
 
@@ -124,9 +123,9 @@ func show(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to fetch client torrents: %v", err)
 	}
-	if sortFieldEnumFlag != "" && sortFieldEnumFlag != "none" {
+	if sortFlag != "" && sortFlag != "none" {
 		sort.Slice(torrents, func(i, j int) bool {
-			switch sortFieldEnumFlag {
+			switch sortFlag {
 			case "name":
 				return torrents[i].Name < torrents[j].Name
 			case "size":

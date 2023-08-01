@@ -22,47 +22,48 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:     "batchdl {site} [--action add|download] [--base-url torrents_page_url]",
-	Aliases: []string{"ebookgod"},
-	Short:   "Batch download the smallest (or by any other order) torrents from a site.",
-	Long:    `Batch download the smallest (or by any other order) torrents from a site.`,
-	Args:    cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
-	RunE:    batchdl,
+	Use:         "batchdl {site} [--action add|download] [--base-url torrents_page_url]",
+	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "batchdl"},
+	Aliases:     []string{"ebookgod"},
+	Short:       "Batch download the smallest (or by any other order) torrents from a site.",
+	Long:        `Batch download the smallest (or by any other order) torrents from a site.`,
+	Args:        cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
+	RunE:        batchdl,
 }
 
 var (
-	onePage                                            = false
-	addPaused                                          = false
-	dense                                              = false
-	addRespectNoadd                                    = false
-	includeDownloaded                                  = false
-	freeOnly                                           = false
-	noPaid                                             = false
-	nohr                                               = false
-	allowBreak                                         = false
-	addCategoryAuto                                    = false
-	maxTorrents                                        = int64(0)
-	minSeeders                                         = int64(0)
-	maxSeeders                                         = int64(0)
-	addCategory                                        = ""
-	addClient                                          = ""
-	addReserveSpaceStr                                 = ""
-	addTags                                            = ""
-	filter                                             = ""
-	includes                                           = []string{}
-	excludes                                           = ""
-	savePath                                           = ""
-	minTorrentSizeStr                                  = ""
-	maxTorrentSizeStr                                  = ""
-	maxTotalSizeStr                                    = ""
-	freeTimeAtLeastStr                                 = ""
-	action                                             = ""
-	startPage                                          = ""
-	downloadDir                                        = ""
-	exportFile                                         = ""
-	baseUrl                                            = ""
-	sortFieldEnumFlag  common.SiteTorrentSortFieldEnum = "size"
-	orderEnumFlag      common.OrderEnum                = "asc"
+	onePage            = false
+	addPaused          = false
+	dense              = false
+	addRespectNoadd    = false
+	includeDownloaded  = false
+	freeOnly           = false
+	noPaid             = false
+	nohr               = false
+	allowBreak         = false
+	addCategoryAuto    = false
+	maxTorrents        = int64(0)
+	minSeeders         = int64(0)
+	maxSeeders         = int64(0)
+	addCategory        = ""
+	addClient          = ""
+	addReserveSpaceStr = ""
+	addTags            = ""
+	filter             = ""
+	includes           = []string{}
+	excludes           = ""
+	savePath           = ""
+	minTorrentSizeStr  = ""
+	maxTorrentSizeStr  = ""
+	maxTotalSizeStr    = ""
+	freeTimeAtLeastStr = ""
+	startPage          = ""
+	downloadDir        = ""
+	exportFile         = ""
+	baseUrl            = ""
+	action             string
+	sortFlag           string
+	orderFlag          string
 )
 
 func init() {
@@ -77,7 +78,6 @@ func init() {
 	command.Flags().BoolVarP(&includeDownloaded, "include-downloaded", "", false, "Do NOT skip torrent that has been downloaded before")
 	command.Flags().BoolVarP(&addCategoryAuto, "add-category-auto", "", false, "Automatically set category of added torrent to corresponding sitename")
 	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "m", 0, "Number limit of torrents handled. Default (0) == unlimited (Press Ctrl+C to stop at any time)")
-	command.Flags().StringVarP(&action, "action", "", "show", "Choose action for found torrents: show (print torrent details) | export (export torrents info [csv] to stdout or file) | printid (print torrent id to stdout or file) | download (download torrent) | add (add torrent to client)")
 	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "0", "Skip torrent with size smaller than (<) this value")
 	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "0", "Skip torrent with size large than (>) this value. Default (0) == unlimited")
 	command.Flags().StringVarP(&maxTotalSizeStr, "max-total-size", "", "0", "Will at most download torrents with total contents size of this value. Default (0) == unlimited")
@@ -96,10 +96,9 @@ func init() {
 	command.Flags().StringVarP(&savePath, "add-save-path", "", "", "Set contents save path of added torrents")
 	command.Flags().StringVarP(&exportFile, "export-file", "", "", "Used with '--action export|printid'. Set the output file. (If not set, will use stdout)")
 	command.Flags().StringVarP(&baseUrl, "base-url", "", "", `Manually set the base url of torrents list page. eg. "adult.php", "adult.php", "torrents.php?cat=100"`)
-	command.Flags().VarP(&sortFieldEnumFlag, "sort", "s", "Manually set the sort field, "+common.SiteTorrentSortFieldEnumTip)
-	command.Flags().VarP(&orderEnumFlag, "order", "o", "Manually set the sort order, "+common.OrderEnumTip)
-	command.RegisterFlagCompletionFunc("sort", common.SiteTorrentSortFieldEnumCompletion)
-	command.RegisterFlagCompletionFunc("order", common.OrderEnumCompletion)
+	cmd.AddEnumFlagP(command, &action, "action", "", ActionEnumFlag)
+	cmd.AddEnumFlagP(command, &sortFlag, "sort", "", common.SiteTorrentSortFlag)
+	cmd.AddEnumFlagP(command, &orderFlag, "order", "", common.OrderFlag)
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -108,10 +107,6 @@ func batchdl(command *cobra.Command, args []string) error {
 	siteInstance, err := site.CreateSite(sitename)
 	if err != nil {
 		return err
-	}
-
-	if action != "show" && action != "export" && action != "printid" && action != "download" && action != "add" {
-		return fmt.Errorf("invalid action flag value: %s", action)
 	}
 	var includesList [][]string
 	var excludesList []string
@@ -127,7 +122,7 @@ func batchdl(command *cobra.Command, args []string) error {
 	addReserveSpace, _ := utils.RAMInBytes(addReserveSpaceStr)
 	addReserveSpaceGap := utils.Min(addReserveSpace/10, 10*1024*1024*1024)
 	desc := false
-	if orderEnumFlag == "desc" {
+	if orderFlag == "desc" {
 		desc = true
 	}
 	freeTimeAtLeast := int64(0)
@@ -245,7 +240,7 @@ mainloop:
 		now := utils.Now()
 		lastMarker = marker
 		log.Printf("Get torrents with page parker '%s'", marker)
-		torrents, marker, err = siteInstance.GetAllTorrents(sortFieldEnumFlag.String(), desc, marker, baseUrl)
+		torrents, marker, err = siteInstance.GetAllTorrents(sortFlag, desc, marker, baseUrl)
 		cntTorrentsThisPage := 0
 
 		if err != nil {
@@ -261,7 +256,7 @@ mainloop:
 			totalAllSize += torrent.Size
 			if torrent.Size < minTorrentSize {
 				log.Tracef("Skip torrent %s due to size %d < minTorrentSize", torrent.Name, torrent.Size)
-				if sortFieldEnumFlag == "size" && desc {
+				if sortFlag == "size" && desc {
 					break mainloop
 				} else {
 					continue
@@ -269,7 +264,7 @@ mainloop:
 			}
 			if maxTorrentSize > 0 && torrent.Size > maxTorrentSize {
 				log.Tracef("Skip torrent %s due to size %d > maxTorrentSize", torrent.Name, torrent.Size)
-				if sortFieldEnumFlag == "size" && !desc {
+				if sortFlag == "size" && !desc {
 					break mainloop
 				} else {
 					continue
@@ -281,7 +276,7 @@ mainloop:
 			}
 			if minSeeders >= 0 && torrent.Seeders < minSeeders {
 				log.Tracef("Skip torrent %s due to too few seeders", torrent.Name)
-				if sortFieldEnumFlag == "seeders" && desc {
+				if sortFlag == "seeders" && desc {
 					break mainloop
 				} else {
 					continue
@@ -289,7 +284,7 @@ mainloop:
 			}
 			if maxSeeders >= 0 && torrent.Seeders > maxSeeders {
 				log.Tracef("Skip torrent %s due to too more seeders", torrent.Name)
-				if sortFieldEnumFlag == "seeders" && !desc {
+				if sortFlag == "seeders" && !desc {
 					break mainloop
 				} else {
 					continue
@@ -340,7 +335,7 @@ mainloop:
 			}
 			if maxTotalSize > 0 && totalSize+torrent.Size > maxTotalSize {
 				log.Tracef("Skip torrent %s which would break max total size limit", torrent.Name)
-				if sortFieldEnumFlag == "size" && !desc {
+				if sortFlag == "size" && !desc {
 					break mainloop
 				} else {
 					continue

@@ -13,8 +13,9 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "tidyup {client}",
-	Short: "Tidy up all torrents of client.",
+	Use:         "tidyup {client}",
+	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "tidyup"},
+	Short:       "Tidy up all torrents of client.",
 	Long: `Tidy up all torrents of client.
 Set appropriate tags to all torrents of a client. For example, it will set the "site:m-team" tag for all torrents downloaded from M-Team.
 `,

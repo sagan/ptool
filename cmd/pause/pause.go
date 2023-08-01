@@ -10,9 +10,10 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:     "pause {client} [-c category] [-t tags] [-f filter] [infoHash]...",
-	Aliases: []string{"stop"},
-	Short:   "Pause torrents of client.",
+	Use:         "pause {client} [-c category] [-t tags] [-f filter] [infoHash]...",
+	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "pause"},
+	Aliases:     []string{"stop"},
+	Short:       "Pause torrents of client.",
 	Long: `Pause torrents of client.
 [infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
 _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.`,

@@ -11,11 +11,12 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "gettags {client}",
-	Short: "Get all tags of client.",
-	Long:  `Get all tags of client.`,
-	Args:  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
-	RunE:  gettags,
+	Use:         "gettags {client}",
+	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "gettags"},
+	Short:       "Get all tags of client.",
+	Long:        `Get all tags of client.`,
+	Args:        cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
+	RunE:        gettags,
 }
 
 func init() {

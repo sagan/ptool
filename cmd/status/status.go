@@ -29,7 +29,8 @@ var (
 var command = &cobra.Command{
 	Use: "status [client | site | group]... [-a]",
 	// Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
-	Short: "Show clients or sites status.",
+	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "status"},
+	Short:       "Show clients or sites status.",
 	Long: `Show clients or sites status.
 [client | site | group]: name of a client, site or group, or "_all" which means all sites.
 `,

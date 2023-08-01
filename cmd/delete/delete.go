@@ -10,9 +10,10 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:     "delete {client} {infoHash}...",
-	Aliases: []string{"rm"},
-	Short:   "Delete torrents from client.",
+	Use:         "delete {client} {infoHash}...",
+	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "delete"},
+	Aliases:     []string{"rm"},
+	Short:       "Delete torrents from client.",
 	Long: `Delete torrents from client.
 {infoHash}...: infoHash list of torrents.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),

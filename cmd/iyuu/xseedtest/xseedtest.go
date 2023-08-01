@@ -11,10 +11,11 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "xseedtest",
-	Short: "Cross seed test.",
-	Long:  `Cross seed test.`,
-	RunE:  xseed,
+	Use:         "xseedtest",
+	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "iyuu.xseedtest"},
+	Short:       "Cross seed test.",
+	Long:        `Cross seed test.`,
+	RunE:        xseed,
 }
 
 var (

@@ -32,7 +32,6 @@ var advancedPrompt = &cobraprompt.CobraPrompt{
 	GoPromptOptions: []prompt.Option{
 		prompt.OptionTitle("ptool-shell"),
 		prompt.OptionPrefix("> "),
-		prompt.OptionMaxSuggestion(5),
 	},
 	DynamicSuggestionsFunc: cmd.ShellDynamicSuggestionsFunc,
 	OnErrorFunc: func(err error) {
@@ -57,7 +56,10 @@ func shell(command *cobra.Command, args []string) {
 		fmt.Printf(`Type "<command> -h" to see full help` + "\n")
 		fmt.Printf(`Note client data will be cached in shell, run "purge [client]..." to purge cache` + "\n")
 		fmt.Printf(`Use "exit" or Ctrl + D to exit shell` + "\n")
+		fmt.Printf(`To disable suggestions panel, add "shellMaxSuggestions = 0" line to the top of ptool.toml config file` + "\n")
 		fmt.Printf(`To mute this message, add "hushshell = true" line to the top of ptool.toml config file` + "\n")
 	}
+	advancedPrompt.GoPromptOptions = append(advancedPrompt.GoPromptOptions,
+		prompt.OptionMaxSuggestion(uint16(config.Get().ShellMaxSuggestions)))
 	advancedPrompt.Run()
 }

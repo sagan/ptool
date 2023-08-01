@@ -2,14 +2,12 @@ package config
 
 import (
 	"net/url"
-	"os"
 	"strings"
 	"sync"
 
 	"github.com/jpillora/go-tld"
-	toml "github.com/pelletier/go-toml/v2"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
+	"github.com/spf13/viper"
 
 	"github.com/sagan/ptool/utils"
 )
@@ -19,6 +17,7 @@ const (
 	XSEED_TAG      = "_xseed"
 	STATS_FILENAME = "ptool_stats.txt"
 
+	DEFAULT_SHELL_MAX_SUGGESTIONS                   = int64(5)
 	DEFAULT_SITE_TIMEZONE                           = "Asia/Shanghai"
 	DEFAULT_CLIENT_BRUSH_MIN_DISK_SPACE             = int64(5 * 1024 * 1024 * 1024)
 	DEFAULT_CLIENT_BRUSH_SLOW_UPLOAD_SPEED_TIER     = int64(100 * 1024)
@@ -107,21 +106,24 @@ type SiteConfigStruct struct {
 }
 
 type ConfigStruct struct {
-	Hushshell        bool                  `yaml:"hushshell"`
-	IyuuToken        string                `yaml:"iyuuToken"`
-	SiteProxy        string                `yaml:"siteProxy"`
-	SiteUserAgent    string                `yaml:"siteUserAgent"`
-	SiteJa3          string                `yaml:"siteJa3"`
-	BrushEnableStats bool                  `yaml:"brushEnableStats"`
-	Clients          []*ClientConfigStruct `yaml:"clients"`
-	Sites            []*SiteConfigStruct   `yaml:"sites"`
-	Groups           []*GroupConfigStruct  `yaml:"groups"`
+	Hushshell           bool                  `yaml:"hushshell"`
+	ShellMaxSuggestions int64                 `yaml:"shellMaxSuggestions"`
+	IyuuToken           string                `yaml:"iyuuToken"`
+	SiteProxy           string                `yaml:"siteProxy"`
+	SiteUserAgent       string                `yaml:"siteUserAgent"`
+	SiteJa3             string                `yaml:"siteJa3"`
+	BrushEnableStats    bool                  `yaml:"brushEnableStats"`
+	Clients             []*ClientConfigStruct `yaml:"clients"`
+	Sites               []*SiteConfigStruct   `yaml:"sites"`
+	Groups              []*GroupConfigStruct  `yaml:"groups"`
 }
 
 var (
 	VerboseLevel                   = 0
-	ConfigDir                      = ""
-	ConfigFile                     = ""
+	ConfigDir                      = "" // "/root/.config/ptool"
+	ConfigFile                     = "" // "ptool.toml"
+	ConfigName                     = "" // "ptool"
+	ConfigType                     = "" // "toml"
 	LockFile                       = ""
 	Fork                           = false
 	configLoaded                   = false
@@ -140,23 +142,20 @@ func Get() *ConfigStruct {
 	if !configLoaded {
 		mu.Lock()
 		if !configLoaded {
-			log.Debugf("Read config file %s", ConfigFile)
-			file, err := os.ReadFile(ConfigFile)
-			if err == nil {
-				if strings.HasSuffix(ConfigFile, ".yaml") {
-					err = yaml.Unmarshal(file, &configData)
-					if err != nil {
-						log.Fatalf("Error parsing config file: %v", err)
-					}
-				} else if strings.HasSuffix(ConfigFile, ".toml") {
-					err = toml.Unmarshal(file, &configData)
-					if err != nil {
-						log.Fatalf("Error parsing config file: %v", err)
-					}
-				} else {
-					log.Fatalf("Unsupported config file format. Neither toml nor yaml.")
-				}
+			log.Debugf("Read config file %s/%s", ConfigDir, ConfigFile)
+			viper.SetConfigName(ConfigName)
+			viper.SetConfigType(ConfigType)
+			viper.AddConfigPath(ConfigDir)
+			viper.SetDefault("ShellMaxSuggestions", DEFAULT_SHELL_MAX_SUGGESTIONS)
+			err := viper.ReadInConfig()
+			if err != nil {
+				log.Fatalf("Fail to read config file: %v", err)
 			}
+			err = viper.Unmarshal(&configData)
+			if err != nil {
+				log.Fatalf("Fail to parse config file: %v", err)
+			}
+
 			for _, client := range configData.Clients {
 				v, err := utils.RAMInBytes(client.BrushMinDiskSpace)
 				if err != nil || v < 0 {

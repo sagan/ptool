@@ -10,9 +10,10 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:     "resume {client} [-c category] [-t tags] [-f filter] [infoHash]...",
-	Aliases: []string{"start"},
-	Short:   "Resume torrents of client.",
+	Use:         "resume {client} [-c category] [-t tags] [-f filter] [infoHash]...",
+	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "resume"},
+	Aliases:     []string{"start"},
+	Short:       "Resume torrents of client.",
 	Long: `Resume torrents of client.
 [infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
 _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.

@@ -10,8 +10,9 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "setsavepath {client} {savePath} [-c category] [-t tags] [-f filter] [infoHash]...",
-	Short: "Set the save path of torrents in client.",
+	Use:         "setsavepath {client} {savePath} [-c category] [-t tags] [-f filter] [infoHash]...",
+	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "setsavepath"},
+	Short:       "Set the save path of torrents in client.",
 	Long: `Set the save path of torrents in client.
 [infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
 _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.`,

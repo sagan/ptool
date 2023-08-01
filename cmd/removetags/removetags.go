@@ -11,8 +11,9 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "removetags {client} {tags} [-c category] [-t tags] [-f filter] [infoHash]...",
-	Short: "Remove tags from torrents in client.",
+	Use:         "removetags {client} {tags} [-c category] [-t tags] [-f filter] [infoHash]...",
+	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "removetags"},
+	Short:       "Remove tags from torrents in client.",
 	Long: `Remove tags from torrents in client.
 {tags} : comma-seperated tags list.
 [infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:

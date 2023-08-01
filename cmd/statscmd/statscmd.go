@@ -12,8 +12,9 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "stats [clients]... [flags]",
-	Short: "Show client brushing traffic statistics.",
+	Use:         "stats [clients]... [flags]",
+	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "stats"},
+	Short:       "Show client brushing traffic statistics.",
 	Long: `Show client brushing traffic statistics.
 Only torrents added by ptool (of this machine) will be counted.
 The traffic info of a torrent will ONLY be recorded when it's been DELETED from the client.
