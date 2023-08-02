@@ -1,6 +1,7 @@
 package search
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -34,6 +35,7 @@ var command = &cobra.Command{
 var (
 	dense             = false
 	largestFlag       = false
+	showJson          = false
 	maxResults        = int64(0)
 	perSiteMaxREsults = int64(0)
 	baseUrl           = ""
@@ -42,6 +44,7 @@ var (
 func init() {
 	command.Flags().BoolVarP(&dense, "dense", "", false, "Dense mode: show full torrent title & subtitle")
 	command.Flags().BoolVarP(&largestFlag, "largest", "l", false, "Sort search result by torrent size in desc order")
+	command.Flags().BoolVarP(&showJson, "json", "", false, "Show output in json format")
 	command.Flags().Int64VarP(&maxResults, "max-results", "m", 100, "Number limit of search result of all sites combined. 0 == unlimited")
 	command.Flags().Int64VarP(&perSiteMaxREsults, "per-site-max-results", "", 0, "Number limit of search result of any single site. Default (0) == unlimited")
 	command.Flags().StringVarP(&baseUrl, "base-url", "", "", "Manually set the base url of search page. eg. adult.php or https://kp.m-team.cc/adult.php for M-Team site")
@@ -107,6 +110,21 @@ func search(cmd *cobra.Command, args []string) error {
 	}
 	if maxResults > 0 && len(torrents) > int(maxResults) {
 		torrents = torrents[:maxResults]
+	}
+	if showJson {
+		data := map[string](any){
+			"successSites":  cntSuccessSites,
+			"noResultSites": cntNoResultSites,
+			"errorSites":    cntErrorSites,
+			"errors":        errorStr,
+			"torrents":      torrents,
+		}
+		bytes, err := json.Marshal(data)
+		if err != nil {
+			return fmt.Errorf("failed to marshal json: %v", err)
+		}
+		fmt.Println(string(bytes))
+		return nil
 	}
 	fmt.Printf("Done searching %d sites. Success / NoResult / Error sites: %d / %d / %d. Showing %d result\n", cntSuccessSites+cntErrorSites+cntNoResultSites,
 		cntSuccessSites, cntNoResultSites, cntErrorSites, len(torrents))

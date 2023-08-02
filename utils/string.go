@@ -38,7 +38,9 @@ func ParseInt(str string) int64 {
 	return v
 }
 
-func PrintStringInWidth(str string, width int64, padRight bool) {
+// return prefix of string at most width and actual width.
+// ASCII char has 1 width. CJK char has 2 width
+func StringPrefixInWidth(str string, width int64) (string, int64) {
 	strWidth := int64(0)
 	pstr := ""
 	for _, char := range str {
@@ -49,6 +51,11 @@ func PrintStringInWidth(str string, width int64, padRight bool) {
 		pstr += string(char)
 		strWidth += runeWidth
 	}
+	return pstr, strWidth
+}
+
+func PrintStringInWidth(str string, width int64, padRight bool) {
+	pstr, strWidth := StringPrefixInWidth(str, width)
 	if padRight {
 		pstr += strings.Repeat(" ", int(width-strWidth))
 	} else {

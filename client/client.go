@@ -130,6 +130,7 @@ type Client interface {
 	RemoveTorrentTrackers(infoHash string, trackers []string) error
 	// QB only, priority: 0	Do not download; 1	Normal priority; 6	High priority; 7	Maximal priority
 	SetFilePriority(infoHash string, fileIndexes []int64, priority int64) error
+	Cached() bool
 	Close()
 }
 
@@ -236,16 +237,20 @@ func (torrent *Torrent) StateIconText() string {
 		s = "↓"
 		showProcess = true
 	case "seeding":
-		s = "↑U"
+		s = "✓↑"
 	case "paused":
-		s = "-P" // may be unicode symbol ⏸
+		s = "-↓" // may be unicode symbol ⏸
 		showProcess = true
 	case "completed":
-		s = "✓C"
+		s = "✓"
 	case "checking":
-		s = "→c"
+		if torrent.IsComplete() {
+			s = "→✓"
+		} else {
+			s = "→↓"
+		}
 	case "error":
-		s = "!e"
+		s = "!"
 		showProcess = true
 	default:
 		s = "?"

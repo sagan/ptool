@@ -177,6 +177,9 @@ If no args provided, the cache of ALL clients and sites will be purged`,
 
 func cdCmdSuggestion(document *prompt.Document) []prompt.Suggest {
 	info := suggest.Parse(document)
+	if info.LastArgIndex < 1 {
+		return nil
+	}
 	if info.LastArgIsFlag {
 		return nil
 	}
@@ -185,28 +188,42 @@ func cdCmdSuggestion(document *prompt.Document) []prompt.Suggest {
 
 func lsCmdSuggestion(document *prompt.Document) []prompt.Suggest {
 	info := suggest.Parse(document)
+	if info.LastArgIndex < 1 {
+		return nil
+	}
 	if info.LastArgIsFlag {
 		return nil
 	}
 	return suggest.FileArg(info.MatchingPrefix, "")
 }
 
-func PurgeCmdSuggestion(document *prompt.Document) []prompt.Suggest {
+func purgeCmdSuggestion(document *prompt.Document) []prompt.Suggest {
 	info := suggest.Parse(document)
+	if info.LastArgIndex < 1 {
+		return nil
+	}
 	if info.LastArgIsFlag {
 		return nil
 	}
 	return suggest.ClientArg(info.MatchingPrefix)
 }
 
-var ShellCommands = []*cobra.Command{pwdCwd, cdCmd, lsCmd, exitCmd, purgeCmd, execCmd}
+var shellCommands = []*cobra.Command{pwdCwd, cdCmd, lsCmd, exitCmd, purgeCmd, execCmd}
 
-var ShellCommandSuggestions = map[string](func(document *prompt.Document) []prompt.Suggest){
+var shellCommandSuggestions = map[string](func(document *prompt.Document) []prompt.Suggest){
 	"cd":    cdCmdSuggestion,
 	"ls":    lsCmdSuggestion,
-	"purge": PurgeCmdSuggestion,
+	"purge": purgeCmdSuggestion,
 }
+
+var shellCommandsDescription = "In addition to normal ptool commands, you can use the shell commands here:\n"
 
 func init() {
 	lsCmd.Flags().BoolVarP(&listMode, "list", "l", false, "Use a long listing format")
+	for i, shellCmd := range shellCommands {
+		if i > 0 {
+			shellCommandsDescription += "\n"
+		}
+		shellCommandsDescription += fmt.Sprintf("* %s : %s", shellCmd.Name(), shellCmd.Short)
+	}
 }

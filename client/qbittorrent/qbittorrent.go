@@ -604,6 +604,10 @@ func (qbclient *Client) PurgeCache() {
 	qbclient.datatime = 0
 }
 
+func (qbclient *Client) Cached() bool {
+	return qbclient.datatime > 0
+}
+
 func (qbclient *Client) sync() error {
 	if qbclient.datatime > 0 {
 		return nil

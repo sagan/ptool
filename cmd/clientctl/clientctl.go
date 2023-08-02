@@ -38,17 +38,17 @@ var (
 		{"free_disk_space", 2, true, false, "Current free disk space of default save path"},
 		{"save_path", 0, false, false, "Default save path"},
 		{"qb_*", 0, false, false, "The qBittorrent specific preferences. For full list see https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-4.1)#get-application-preferences . eg. qb_start_paused_enabled"},
-		{"tr_*", 0, true, false, "The transmission specific preferences. For full list see https://github.com/transmission/transmission/blob/3.00/extras/rpc-spec.txt#L482 . Convert argument name to snake_case. eg. tr_config_dir"},
+		{"tr_*", 0, false, false, "The transmission specific preferences. For full list see https://github.com/transmission/transmission/blob/3.00/extras/rpc-spec.txt#L482 . Convert argument name to snake_case. eg. tr_config_dir"},
 	}
 	showRaw        = false
-	showValueOnly  = false
+	showValuesOnly = false
 	showParameters = false
 )
 
 func init() {
-	command.Flags().BoolVarP(&showParameters, "show-parameters", "", false, "Print all parameters list and exit")
+	command.Flags().BoolVarP(&showParameters, "parameters", "", false, "Print all parameters list and exit")
 	command.Flags().BoolVarP(&showRaw, "raw", "", false, "Display config value data in raw format")
-	command.Flags().BoolVarP(&showValueOnly, "show-value-only", "", false, "Show config value data only")
+	command.Flags().BoolVarP(&showValuesOnly, "show-values-only", "", false, "Show config value data only")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -71,8 +71,8 @@ func clientctl(cmd *cobra.Command, args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("<client> not provided")
 	}
-	if showRaw && showValueOnly {
-		return fmt.Errorf("--raw and --show-value-only flags are NOT compatible")
+	if showRaw && showValuesOnly {
+		return fmt.Errorf("--raw and --show-values-only flags are NOT compatible")
 	}
 	clientName := args[0]
 	clientInstance, err := client.CreateClient(clientName)
@@ -110,7 +110,7 @@ func clientctl(cmd *cobra.Command, args []string) error {
 				}
 			}
 			if err == nil {
-				if showValueOnly {
+				if showValuesOnly {
 					fmt.Printf("%v\n", value)
 				} else {
 					fmt.Printf("%s=%v\n", name, value)
@@ -150,7 +150,7 @@ func clientctl(cmd *cobra.Command, args []string) error {
 				errorCnt++
 			}
 		}
-		if showValueOnly {
+		if showValuesOnly {
 			fmt.Printf("%v\n", value)
 		} else {
 			printOption(name, value, option, showRaw)

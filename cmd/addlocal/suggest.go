@@ -10,8 +10,16 @@ import (
 func init() {
 	cmd.AddShellCompletion("addlocal", func(document *prompt.Document) []prompt.Suggest {
 		info := suggest.Parse(document)
-		if info.LastArgIsFlag {
+		if info.LastArgIndex < 1 {
 			return nil
+		}
+		if info.LastArgIsFlag {
+			switch info.LastArgFlag {
+			case "site":
+				return suggest.SiteArg(info.MatchingPrefix)
+			default:
+				return nil
+			}
 		}
 		if info.LastArgIndex > 1 {
 			return suggest.FileArg(info.MatchingPrefix, "torrent")

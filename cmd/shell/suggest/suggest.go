@@ -6,6 +6,7 @@ import (
 	"unicode"
 
 	"github.com/c-bata/go-prompt"
+	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/cmd/common"
 	"github.com/sagan/ptool/config"
@@ -224,4 +225,54 @@ func EnumArg(prefix string, options [][2]string) []prompt.Suggest {
 
 func EnumFlagArg(prefix string, enumFlag *cmd.EnumFlag) []prompt.Suggest {
 	return EnumArg(prefix, enumFlag.Options)
+}
+
+// _all|_active|_done|_undone
+var infoHashFilters = [][2]string{
+	{"_all", ":: all torrents"},
+	{"_active", ":: current active torrents"},
+	{"_done", ":: completed downloaded torrents (_completed | _seeding)"},
+	{"_undone", ":: incomplete downloaded torrents (_downloading | _paused)"},
+	{"_seeding", "state: seeding"},
+	{"_downloading", "state: downloading"},
+	{"_completed", "state: completed"},
+	{"_paused", "state: paused"},
+	{"_checking", "state: checking"},
+	{"_error", "state: error"},
+	{"_unknown", "state: unknown"},
+}
+
+func InfoHashOrFilterArg(prefix string, clientName string) []prompt.Suggest {
+	if strings.HasPrefix(prefix, "_") {
+		return EnumArg(prefix, infoHashFilters)
+	}
+	return InfoHashArg(prefix, clientName)
+}
+
+func InfoHashArg(prefix string, clientName string) []prompt.Suggest {
+	if len(prefix) < 2 || clientName == "" {
+		return nil
+	}
+	clientInstance, err := client.CreateClient(clientName)
+	if err != nil {
+		return nil
+	}
+	if !clientInstance.Cached() {
+		return nil
+	}
+	torrents, err := clientInstance.GetTorrents("", "", true)
+	if err != nil {
+		return nil
+	}
+	suggestions := []prompt.Suggest{}
+	for _, torrent := range torrents {
+		if !strings.HasPrefix(torrent.InfoHash, prefix) {
+			continue
+		}
+		suggestions = append(suggestions, prompt.Suggest{
+			Text:        torrent.InfoHash,
+			Description: torrent.StateIconText() + " " + torrent.Name,
+		})
+	}
+	return suggestions
 }

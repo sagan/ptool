@@ -92,6 +92,7 @@ var (
 		},
 		"dicmusic": &config.SiteConfigStruct{
 			Type:    "gazelle",
+			Domains: []string{"dicmusic.com", "52dic.vip"},
 			Url:     "https://dicmusic.club/",
 			Comment: "海豚",
 		},

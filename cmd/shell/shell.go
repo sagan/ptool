@@ -15,12 +15,35 @@ import (
 var command = &cobra.Command{
 	Use:   "shell",
 	Short: "Start a interactive shell in which you can execute any ptool commands.",
-	Long:  `Start a interactive shell in which you can execute any ptool commands.`,
-	Args:  cobra.MatchAll(cobra.ExactArgs(0), cobra.OnlyValidArgs),
-	Run:   shell,
+	Long: `Start a interactive shell in which you can execute any ptool commands.
+
+It supports auto-completion for all commands and their arguments.
+
+Keyboard Shortcuts
+TAB    		Trigger auto-completion
+Ctrl + A	Go to the beginning of the line (Home)
+Ctrl + E	Go to the end of the line (End)
+Ctrl + P	Previous command (Up arrow)
+Ctrl + N	Next command (Down arrow)
+Ctrl + F	Forward one character
+Ctrl + B	Backward one character
+Ctrl + D	Delete character under the cursor
+Ctrl + H	Delete character before the cursor (Backspace)
+Ctrl + W	Cut the word before the cursor to the clipboard
+Ctrl + K	Cut the line after the cursor to the clipboard
+Ctrl + U	Cut the line before the cursor to the clipboard
+Ctrl + L	Clear the screen`,
+	Args: cobra.MatchAll(cobra.ExactArgs(0), cobra.OnlyValidArgs),
+	Run:  shell,
 }
 
+const simpleHelp = `Type "<command> -h" to see full help of any command
+Note client data will be cached in shell, run "purge [client]..." to purge cache
+Use "exit" or Ctrl + D (in new line) to exit shell
+To disable suggestions panel, add "shellMaxSuggestions = 0" line to the top of ptool.toml config file`
+
 func init() {
+	command.Long += fmt.Sprintf("\n\n%s\n\n%s", shellCommandsDescription, simpleHelp)
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -32,6 +55,7 @@ var advancedPrompt = &cobraprompt.CobraPrompt{
 	GoPromptOptions: []prompt.Option{
 		prompt.OptionTitle("ptool-shell"),
 		prompt.OptionPrefix("> "),
+		prompt.OptionShowCompletionAtStart(),
 	},
 	DynamicSuggestionsFunc: cmd.ShellDynamicSuggestionsFunc,
 	OnErrorFunc: func(err error) {
@@ -43,20 +67,15 @@ func shell(command *cobra.Command, args []string) {
 	if config.Fork || config.LockFile != "" {
 		log.Fatalf("--fork or --lock flag can NOT be used with shell")
 	}
-	cmd.RootCmd.AddCommand(ShellCommands...)
-	for name := range ShellCommandSuggestions {
-		cmd.AddShellCompletion(name, ShellCommandSuggestions[name])
+	cmd.RootCmd.AddCommand(shellCommands...)
+	for name := range shellCommandSuggestions {
+		cmd.AddShellCompletion(name, shellCommandSuggestions[name])
 	}
 	if !config.Get().Hushshell {
 		fmt.Printf("Welcome to ptool shell\n")
-		fmt.Printf("In addition to normal ptool commands, you can use the shell commands here:\n")
-		for _, shellCmd := range ShellCommands {
-			fmt.Printf("* %s : %s\n", shellCmd.Name(), shellCmd.Short)
-		}
-		fmt.Printf(`Type "<command> -h" to see full help` + "\n")
-		fmt.Printf(`Note client data will be cached in shell, run "purge [client]..." to purge cache` + "\n")
-		fmt.Printf(`Use "exit" or Ctrl + D to exit shell` + "\n")
-		fmt.Printf(`To disable suggestions panel, add "shellMaxSuggestions = 0" line to the top of ptool.toml config file` + "\n")
+		fmt.Printf("%s\n", shellCommandsDescription)
+		fmt.Printf("%s\n", simpleHelp)
+		fmt.Printf(`For full help of ptool shell, type "shell -h"` + "\n")
 		fmt.Printf(`To mute this message, add "hushshell = true" line to the top of ptool.toml config file` + "\n")
 	}
 	advancedPrompt.GoPromptOptions = append(advancedPrompt.GoPromptOptions,

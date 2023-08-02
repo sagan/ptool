@@ -80,6 +80,10 @@ func (trclient *Client) getAllInfoHashes() []string {
 	return infoHashes
 }
 
+func (trclient *Client) Cached() bool {
+	return trclient.datatime > 0
+}
+
 func (trclient *Client) sync() error {
 	if trclient.datatime > 0 {
 		return nil

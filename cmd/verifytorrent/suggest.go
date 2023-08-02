@@ -10,9 +10,12 @@ import (
 func init() {
 	cmd.AddShellCompletion("verifytorrent", func(document *prompt.Document) []prompt.Suggest {
 		info := suggest.Parse(document)
+		if info.LastArgIndex < 1 {
+			return nil
+		}
 		if info.LastArgIsFlag {
 			return nil
 		}
-		return suggest.ClientArg(info.MatchingPrefix)
+		return suggest.FileArg(info.MatchingPrefix, "torrent")
 	})
 }

@@ -10,6 +10,9 @@ import (
 func init() {
 	cmd.AddShellCompletion("iyuu.xseed", func(document *prompt.Document) []prompt.Suggest {
 		info := suggest.Parse(document)
+		if info.LastArgIndex < 2 {
+			return nil
+		}
 		if info.LastArgIsFlag {
 			return nil
 		}

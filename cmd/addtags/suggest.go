@@ -10,12 +10,18 @@ import (
 func init() {
 	cmd.AddShellCompletion("addtags", func(document *prompt.Document) []prompt.Suggest {
 		info := suggest.Parse(document)
+		if info.LastArgIndex < 1 {
+			return nil
+		}
 		if info.LastArgIsFlag {
 			return nil
 		}
-		if info.LastArgIndex != 1 {
-			return nil
+		if info.LastArgIndex == 1 {
+			return suggest.ClientArg(info.MatchingPrefix)
 		}
-		return suggest.ClientArg(info.MatchingPrefix)
+		if info.LastArgIndex >= 3 {
+			return suggest.InfoHashOrFilterArg(info.MatchingPrefix, info.Args[1])
+		}
+		return nil
 	})
 }

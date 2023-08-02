@@ -11,6 +11,9 @@ import (
 func init() {
 	cmd.AddShellCompletion("show", func(document *prompt.Document) []prompt.Suggest {
 		info := suggest.Parse(document)
+		if info.LastArgIndex < 1 {
+			return nil
+		}
 		if info.LastArgIsFlag {
 			switch info.LastArgFlag {
 			case "order":
@@ -21,9 +24,9 @@ func init() {
 				return nil
 			}
 		}
-		if info.LastArgIndex != 1 {
-			return nil
+		if info.LastArgIndex == 1 {
+			return suggest.ClientArg(info.MatchingPrefix)
 		}
-		return suggest.ClientArg(info.MatchingPrefix)
+		return suggest.InfoHashOrFilterArg(info.MatchingPrefix, info.Args[1])
 	})
 }

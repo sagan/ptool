@@ -1,6 +1,7 @@
 package show
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -38,6 +39,7 @@ var (
 	tag              = ""
 	showAll          = false
 	showRaw          = false
+	showJson         = false
 	showSum          = false
 	sortFlag         string
 	orderFlag        string
@@ -48,9 +50,10 @@ func init() {
 	command.Flags().BoolVarP(&largest, "largest", "l", false, "Show largest torrents first. Equavalent with '--sort size --order desc'")
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all torrents. Equavalent with pass a '_all' arg")
 	command.Flags().BoolVarP(&showRaw, "raw", "", false, "Show torrent size in raw format")
+	command.Flags().BoolVarP(&showJson, "json", "", false, "Show output in json format")
+	command.Flags().BoolVarP(&showInfoHashOnly, "show-info-hash-only", "", false, "Output torrents info hash only")
 	command.Flags().BoolVarP(&showSum, "sum", "", false, "Show torrents summary only")
 	command.Flags().BoolVarP(&showTrackers, "show-trackers", "", false, "Show torrent trackers info")
-	command.Flags().BoolVarP(&showInfoHashOnly, "show-info-hash-only", "", false, "Output torrents info hash only")
 	command.Flags().BoolVarP(&showFiles, "show-files", "", false, "Show torrent content files info")
 	command.Flags().StringVarP(&filter, "filter", "f", "", "Filter torrents by name")
 	command.Flags().StringVarP(&category, "category", "c", "", "Filter torrents by category")
@@ -63,6 +66,9 @@ func init() {
 func show(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
 	args = args[1:]
+	if showJson && showInfoHashOnly {
+		return fmt.Errorf("--json and --info-hash flags are NOT compatible")
+	}
 	if showInfoHashOnly && (showFiles || showTrackers) {
 		return fmt.Errorf("--show-files or --show-trackers is NOT compatible with --show-info-hash-only flag")
 	}
@@ -96,6 +102,14 @@ func show(cmd *cobra.Command, args []string) error {
 		}
 		if torrent == nil {
 			return fmt.Errorf("torrent %s not found", args[0])
+		}
+		if showJson {
+			bytes, err := json.Marshal(torrent)
+			if err != nil {
+				return fmt.Errorf("failed to marshal json: %v", err)
+			}
+			fmt.Println(string(bytes))
+			return nil
 		}
 		client.PrintTorrent(torrent)
 		if showTrackers {
@@ -159,6 +173,14 @@ func show(cmd *cobra.Command, args []string) error {
 	}
 
 	if !showInfoHashOnly {
+		if showJson {
+			bytes, err := json.Marshal(torrents)
+			if err != nil {
+				return fmt.Errorf("failed to marshal json: %v", err)
+			}
+			fmt.Println(string(bytes))
+			return nil
+		}
 		clientStatus, err := clientInstance.GetStatus()
 		if err != nil {
 			log.Errorf("Failed to get client status: %v", err)

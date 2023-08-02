@@ -11,6 +11,9 @@ import (
 func init() {
 	cmd.AddShellCompletion("batchdl", func(document *prompt.Document) []prompt.Suggest {
 		info := suggest.Parse(document)
+		if info.LastArgIndex < 1 {
+			return nil
+		}
 		if info.LastArgIsFlag {
 			switch info.LastArgFlag {
 			case "action":
