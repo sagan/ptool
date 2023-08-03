@@ -3,6 +3,7 @@ package cmd
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/c-bata/go-prompt"
@@ -24,6 +25,12 @@ var RootCmd = &cobra.Command{
 	// Run: func(cmd *cobra.Command, args []string) { },
 	// SilenceErrors: true,
 	SilenceUsage: true,
+	PersistentPostRun: func(cmd *cobra.Command, args []string) {
+		if config.InShell {
+			in := strings.Join(os.Args[1:], " ")
+			WriteHistory(in)
+		}
+	},
 }
 
 var (
@@ -35,6 +42,11 @@ var (
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	cobra.OnInitialize(func() {
+		// cobra-prompt will start a new cobra context each time executing a command
+		if config.Initialized {
+			return
+		}
+		config.Initialized = true
 		if config.Fork {
 			osutil.Fork("--fork")
 		}
@@ -60,8 +72,7 @@ func Execute() {
 		}
 	})
 	// see https://github.com/spf13/cobra/issues/914
-	// errors in flag parsing are printed together with command usage help;
-	// all other errors are handled in command self's Run func.
+	// Must use RunE to capture error
 	err := RootCmd.Execute()
 	if err != nil {
 		Exit(1)

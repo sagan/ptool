@@ -22,7 +22,7 @@ func init() {
 			}
 		}
 		if info.LastArgIndex > 1 {
-			return suggest.FileArg(info.MatchingPrefix, "torrent")
+			return suggest.FileArg(info.MatchingPrefix, ".torrent", false)
 		}
 		return suggest.ClientArg(info.MatchingPrefix)
 	})

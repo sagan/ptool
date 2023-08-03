@@ -16,6 +16,6 @@ func init() {
 		if info.LastArgIsFlag {
 			return nil
 		}
-		return suggest.FileArg(info.MatchingPrefix, "torrent")
+		return suggest.FileArg(info.MatchingPrefix, ".torrent", false)
 	})
 }

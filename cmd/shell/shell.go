@@ -2,6 +2,8 @@ package shell
 
 import (
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/google/shlex"
@@ -35,7 +37,7 @@ Ctrl + K	Cut the line after the cursor to the clipboard
 Ctrl + U	Cut the line before the cursor to the clipboard
 Ctrl + L	Clear the screen`,
 	Args: cobra.MatchAll(cobra.ExactArgs(0), cobra.OnlyValidArgs),
-	Run:  shell,
+	RunE: shell,
 }
 
 const simpleHelp = `Type "<command> -h" to see full help of any command
@@ -60,7 +62,8 @@ var advancedPrompt = &cobraprompt.CobraPrompt{
 	},
 	DynamicSuggestionsFunc: cmd.ShellDynamicSuggestionsFunc,
 	OnErrorFunc: func(err error) {
-		cmd.RootCmd.PrintErrln(err)
+		// error already printed in RootCmd
+		// cmd.RootCmd.PrintErrln(err)
 	},
 	// InArgsParser: utils.ParseArgs,
 	InArgsParser: func(in string) []string {
@@ -72,9 +75,22 @@ var advancedPrompt = &cobraprompt.CobraPrompt{
 	},
 }
 
-func shell(command *cobra.Command, args []string) {
+func shell(command *cobra.Command, args []string) error {
+	if config.InShell {
+		return fmt.Errorf(`you cann't run "shell" command in shell itself`)
+	}
 	if config.Fork || config.LockFile != "" {
-		log.Fatalf("--fork or --lock flag can NOT be used with shell")
+		return fmt.Errorf("--fork or --lock flag can NOT be used with shell")
+	}
+	config.InShell = true
+	historyData, err := os.ReadFile(config.ConfigDir + "/" + config.HISTORY_FILENAME)
+	log.Tracef("load history file %s, err=%v", config.ConfigDir+"/"+config.HISTORY_FILENAME, err)
+	if err == nil {
+		history := strings.Split(string(historyData), "\n")
+		if history[len(history)-1] == "" {
+			history = history[:len(history)-1] // remove last empty new line
+		}
+		advancedPrompt.GoPromptOptions = append(advancedPrompt.GoPromptOptions, prompt.OptionHistory(history))
 	}
 	cmd.RootCmd.AddCommand(shellCommands...)
 	for name := range shellCommandSuggestions {
@@ -90,4 +106,5 @@ func shell(command *cobra.Command, args []string) {
 	advancedPrompt.GoPromptOptions = append(advancedPrompt.GoPromptOptions,
 		prompt.OptionMaxSuggestion(uint16(config.Get().ShellMaxSuggestions)))
 	advancedPrompt.Run()
+	return nil
 }

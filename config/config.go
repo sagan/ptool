@@ -13,9 +13,10 @@ import (
 )
 
 const (
-	BRUSH_CAT      = "_brush"
-	XSEED_TAG      = "_xseed"
-	STATS_FILENAME = "ptool_stats.txt"
+	BRUSH_CAT        = "_brush"
+	XSEED_TAG        = "_xseed"
+	STATS_FILENAME   = "ptool_stats.txt"
+	HISTORY_FILENAME = "ptool_history"
 
 	DEFAULT_SHELL_MAX_SUGGESTIONS                   = int64(5)
 	DEFAULT_SITE_TIMEZONE                           = "Asia/Shanghai"
@@ -120,6 +121,8 @@ type ConfigStruct struct {
 
 var (
 	VerboseLevel                   = 0
+	InShell                        = false
+	Initialized                    = false
 	ConfigDir                      = "" // "/root/.config/ptool"
 	ConfigFile                     = "" // "ptool.toml"
 	ConfigName                     = "" // "ptool"
@@ -141,6 +144,7 @@ func init() {
 func Get() *ConfigStruct {
 	if !configLoaded {
 		mu.Lock()
+		defer mu.Unlock()
 		if !configLoaded {
 			log.Debugf("Read config file %s/%s", ConfigDir, ConfigFile)
 			viper.SetConfigName(ConfigName)
@@ -248,21 +252,20 @@ func Get() *ConfigStruct {
 
 				sitesConfigMap[site.GetName()] = site
 			}
+			for _, group := range configData.Groups {
+				if group.Name == "" {
+					log.Fatalf("Invalid config file: group name can not be empty")
+				}
+				groupsConfigMap[group.Name] = group
+			}
+			configData.Clients = utils.Filter(configData.Clients, func(c *ClientConfigStruct) bool {
+				return !c.Disabled
+			})
+			configData.Sites = utils.Filter(configData.Sites, func(s *SiteConfigStruct) bool {
+				return !s.Disabled
+			})
 			configLoaded = true
 		}
-		for _, group := range configData.Groups {
-			if group.Name == "" {
-				log.Fatalf("Invalid config file: group name can not be empty")
-			}
-			groupsConfigMap[group.Name] = group
-		}
-		configData.Clients = utils.Filter(configData.Clients, func(c *ClientConfigStruct) bool {
-			return !c.Disabled
-		})
-		configData.Sites = utils.Filter(configData.Sites, func(s *SiteConfigStruct) bool {
-			return !s.Disabled
-		})
-		mu.Unlock()
 	}
 	return configData
 }

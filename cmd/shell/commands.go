@@ -194,7 +194,7 @@ func lsCmdSuggestion(document *prompt.Document) []prompt.Suggest {
 	if info.LastArgIsFlag {
 		return nil
 	}
-	return suggest.FileArg(info.MatchingPrefix, "")
+	return suggest.FileArg(info.MatchingPrefix, "", false)
 }
 
 func purgeCmdSuggestion(document *prompt.Document) []prompt.Suggest {

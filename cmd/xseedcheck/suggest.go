@@ -22,7 +22,7 @@ func init() {
 		case 2:
 			return suggest.InfoHashArg(info.MatchingPrefix, info.Args[1])
 		case 3:
-			return suggest.FileArg(info.MatchingPrefix, "torrent")
+			return suggest.FileArg(info.MatchingPrefix, ".torrent", false)
 		default:
 			return nil
 		}

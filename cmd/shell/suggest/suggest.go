@@ -27,48 +27,49 @@ type InputingCommand struct {
 	// normal (positional) args of the inputing command
 	Args           []string
 	MatchingPrefix string // the prefix of inputing arg or flag, could be an empty string.
-	// the index of last arg, in all args but excluding flags.
-	// It does not matter whether last arg itself is a flag.
+	// count of positional args, excluding the last arg if it self is positional flag.
 	// eg: "brush --dry-run --max-sites 10 local mteam" => 2,
-	// as "brush" and "local" are none-flag args (excluding the last arg).
-	// "--dry-run" and "--max-sites 10" are flags
+	// as "brush" and "local" are positional args. last arg "mteam" also is, but is not counted.
+	// "--dry-run" and "--max-sites 10" are flags.
 	LastArgIndex  int64
 	LastArgIsFlag bool   // if last arg is a flag
 	LastArgFlag   string // the flag name of last arg
 }
 
 func DirArg(prefix string) []prompt.Suggest {
-	files, err := os.ReadDir(".")
-	if err != nil {
-		return nil
-	}
-	suggestions := []prompt.Suggest{}
-	for _, file := range files {
-		if file.IsDir() && strings.HasPrefix(file.Name(), prefix) {
-			suggestions = append(suggestions, prompt.Suggest{Text: file.Name(), Description: "<dir>"})
-		}
-	}
-	return suggestions
+	return FileArg(prefix, "", true)
 }
 
-func FileArg(prefix string, extension string) []prompt.Suggest {
-	files, err := os.ReadDir(".")
+// any dir is included as it may be an intermediate dir
+func FileArg(prefix string, suffix string, dirOnly bool) []prompt.Suggest {
+	dirprefix := ""
+	dir := "."
+	// cann't use filepath.Dir here as it will discard the leading ./ or ../
+	if index := strings.LastIndex(prefix, "/"); index != -1 {
+		dir = prefix[:index]
+		dirprefix = dir + "/"
+		prefix = prefix[index+1:]
+	}
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		return nil
 	}
 	suggestions := []prompt.Suggest{}
 	for _, file := range files {
-		if extension != "" && (file.IsDir() || !strings.HasSuffix(file.Name(), "."+extension)) {
+		if dirOnly && !file.IsDir() {
 			continue
 		}
-		if strings.HasPrefix(file.Name(), prefix) {
+		if !file.IsDir() && suffix != "" && !strings.HasSuffix(file.Name(), suffix) {
+			continue
+		}
+		if file.IsDir() || strings.HasPrefix(file.Name(), prefix) {
 			desc := ""
 			if file.IsDir() {
 				desc = "<dir>"
 			} else {
 				desc = "<file>"
 			}
-			suggestions = append(suggestions, prompt.Suggest{Text: file.Name(), Description: desc})
+			suggestions = append(suggestions, prompt.Suggest{Text: dirprefix + file.Name(), Description: desc})
 		}
 	}
 	return suggestions
