@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/c-bata/go-prompt"
+	"github.com/google/shlex"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	cobraprompt "github.com/stromland/cobra-prompt"
@@ -60,6 +61,14 @@ var advancedPrompt = &cobraprompt.CobraPrompt{
 	DynamicSuggestionsFunc: cmd.ShellDynamicSuggestionsFunc,
 	OnErrorFunc: func(err error) {
 		cmd.RootCmd.PrintErrln(err)
+	},
+	// InArgsParser: utils.ParseArgs,
+	InArgsParser: func(in string) []string {
+		words, err := shlex.Split(in)
+		if err != nil {
+			return nil
+		}
+		return words
 	},
 }
 

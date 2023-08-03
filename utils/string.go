@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/jpillora/go-tld"
 	runewidth "github.com/mattn/go-runewidth"
@@ -42,16 +43,16 @@ func ParseInt(str string) int64 {
 // ASCII char has 1 width. CJK char has 2 width
 func StringPrefixInWidth(str string, width int64) (string, int64) {
 	strWidth := int64(0)
-	pstr := ""
+	sb := &strings.Builder{}
 	for _, char := range str {
 		runeWidth := int64(runewidth.RuneWidth(char))
 		if strWidth+runeWidth > width {
 			break
 		}
-		pstr += string(char)
+		sb.WriteRune(char)
 		strWidth += runeWidth
 	}
-	return pstr, strWidth
+	return sb.String(), strWidth
 }
 
 func PrintStringInWidth(str string, width int64, padRight bool) {
@@ -121,4 +122,36 @@ func QuoteFilename(str string) string {
 		str = `"` + str + `"`
 	}
 	return str
+}
+
+// Splitting a string at Space, except inside quotation marks.
+// from https://stackoverflow.com/questions/47489745/splitting-a-string-at-space-except-inside-quotation-marks
+func ParseArgs(s string) []string {
+	a := []string{}
+	sb := &strings.Builder{}
+	quoted := false
+	for _, r := range s {
+		if r == '"' {
+			if quoted {
+				a = append(a, sb.String())
+				sb.Reset()
+			}
+			quoted = !quoted
+		} else if !quoted {
+			if unicode.IsSpace(r) {
+				if sb.Len() > 0 {
+					a = append(a, sb.String())
+					sb.Reset()
+				}
+			} else {
+				sb.WriteRune(r)
+			}
+		} else {
+			sb.WriteRune(r)
+		}
+	}
+	if sb.Len() > 0 {
+		a = append(a, sb.String())
+	}
+	return a
 }

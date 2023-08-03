@@ -4,8 +4,11 @@ import (
 	"os"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/c-bata/go-prompt"
+	"github.com/google/shlex"
+
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/cmd/common"
@@ -19,13 +22,16 @@ type InputFlag struct {
 	Bare bool
 }
 
-// parsed info of current inputing command
+// parsed info of current inputing ptool command
 type InputingCommand struct {
+	// normal (positional) args of the inputing command
 	Args           []string
-	MatchingPrefix string // the prefix of inputing arg or flag, could be an empty string
+	MatchingPrefix string // the prefix of inputing arg or flag, could be an empty string.
 	// the index of last arg, in all args but excluding flags.
-	// It does not matter whether last arg itself is a flag
-	// eg: "ls -lh /root" => 2
+	// It does not matter whether last arg itself is a flag.
+	// eg: "brush --dry-run --max-sites 10 local mteam" => 2,
+	// as "brush" and "local" are none-flag args (excluding the last arg).
+	// "--dry-run" and "--max-sites 10" are flags
 	LastArgIndex  int64
 	LastArgIsFlag bool   // if last arg is a flag
 	LastArgFlag   string // the flag name of last arg
@@ -138,67 +144,81 @@ func SiteOrGroupArg(prefix string) []prompt.Suggest {
 	return suggestions
 }
 
-// parse current inputing command (from start to cursor)
-// everything after cursor is ignored
-// it's far from complete, does not handle a lot of thing (eg. spaces, quotes) at all.
+// parse current inputing ptool command (from start to cursor).
+// everything after cursor is ignored.
 // this func requires external info to discriminate whether a flag is pure or not
 func Parse(document *prompt.Document) *InputingCommand {
-	args := []string{}
 	noneFlagArgsCnt := int64(0)
-	currentArg := ""
-	var previousFlag *InputFlag
-	for index, char := range document.Text {
-		if index >= document.CursorPositionCol() {
-			break
-		}
-		if unicode.IsSpace(char) {
-			if currentArg != "" {
-				flag, isFlag := ParseFlag(currentArg)
-				if isFlag {
-					previousFlag = flag
-				} else {
-					if previousFlag == nil || !previousFlag.Bare || common.IsPureFlag(previousFlag.Name) {
-						noneFlagArgsCnt++
-					}
-					previousFlag = nil
-				}
-				args = append(args, currentArg)
-				currentArg = ""
+	var previousFlag, lastArgFlag *InputFlag
+	txt := document.CurrentLineBeforeCursor()
+	lastToken := ""
+	tokens, err := shlex.Split(txt)
+	args := []string{}
+	flagsTerminated := false
+	if err == nil {
+		for _, token := range tokens {
+			var flag *InputFlag
+			if !flagsTerminated {
+				flag = parseFlag(token)
 			}
-			continue
-		} else {
-			currentArg += string(char)
+			if flag == nil {
+				if lastArgFlag == nil || !lastArgFlag.Bare || lastArgFlag.Name == "" ||
+					common.IsPureFlag(lastArgFlag.Name) {
+					noneFlagArgsCnt++
+					args = append(args, token)
+				}
+			} else if flag.Name == "" {
+				// The argument -- terminates all options parsing
+				// see https://www.gnu.org/software/libc/manual/html_node/Argument-Syntax.html
+				flagsTerminated = true
+			}
+			previousFlag = lastArgFlag
+			lastArgFlag = flag
+		}
+		// If the char before cursor is space, treat it as user just started inputing a new (still empty) arg
+		// it's a workaround for now as shlex discard all info about spaces
+		lastRune, _ := utf8.DecodeLastRuneInString(txt)
+		if unicode.IsSpace(lastRune) {
+			tokens = append(tokens, "")
+			if lastArgFlag == nil || !lastArgFlag.Bare || lastArgFlag.Name == "" ||
+				common.IsPureFlag(lastArgFlag.Name) {
+				noneFlagArgsCnt++
+				args = append(args, "")
+			}
+			previousFlag = lastArgFlag
+			lastArgFlag = nil
+		}
+		if len(tokens) > 0 {
+			lastToken = tokens[len(tokens)-1]
 		}
 	}
-	// last arg, even blank
-	args = append(args, currentArg)
 	var inputingCommand InputingCommand
 	inputingCommand.Args = args
 	inputingCommand.LastArgIndex = noneFlagArgsCnt
-	flag, isFlag := ParseFlag(currentArg) // last arg flag
-	if isFlag {
+	if lastArgFlag != nil {
+		// input suffix: "... --name=va"
 		inputingCommand.LastArgIsFlag = true
-		// only parse last flag name when it is complete
-		if !flag.Bare {
-			inputingCommand.LastArgFlag = flag.Name
-			inputingCommand.MatchingPrefix = flag.Value
+		if !lastArgFlag.Bare {
+			inputingCommand.LastArgFlag = lastArgFlag.Name
+			inputingCommand.MatchingPrefix = lastArgFlag.Value
 		}
+	} else if previousFlag != nil && previousFlag.Bare && previousFlag.Name != "" &&
+		!common.IsPureFlag(previousFlag.Name) {
+		// input suffix: "... --name va"
+		inputingCommand.MatchingPrefix = lastToken
+		inputingCommand.LastArgFlag = previousFlag.Name
+		inputingCommand.LastArgIsFlag = true
 	} else {
-		inputingCommand.MatchingPrefix = currentArg
-		// if second last arg is a none-pure bare flag, treat it as the flag of lastArg
-		// a none-pure flag should has a value part
-		// So in the case of penultimate arg be none-pure bare flag, the last arg should be the value of that flag
-		if previousFlag != nil && previousFlag.Bare && !common.IsPureFlag(previousFlag.Name) {
-			inputingCommand.LastArgFlag = previousFlag.Name
-			inputingCommand.LastArgIsFlag = true
-		}
+		// input suffix is a normal (positional) argument
+		inputingCommand.MatchingPrefix = lastToken
+		inputingCommand.LastArgIndex--
 	}
 	return &inputingCommand
 }
 
-func ParseFlag(arg string) (flag *InputFlag, isFlag bool) {
-	if strings.HasPrefix(arg, "-") {
-		isFlag = true
+func parseFlag(arg string) (flag *InputFlag) {
+	// POSIX treat single '-' as NOT flag
+	if strings.HasPrefix(arg, "-") && len(arg) > 1 {
 		flag = &InputFlag{}
 		if i := strings.Index(arg, "="); i == -1 {
 			flag.Bare = true
@@ -250,7 +270,7 @@ func InfoHashOrFilterArg(prefix string, clientName string) []prompt.Suggest {
 }
 
 func InfoHashArg(prefix string, clientName string) []prompt.Suggest {
-	if len(prefix) < 2 || clientName == "" {
+	if clientName == "" {
 		return nil
 	}
 	clientInstance, err := client.CreateClient(clientName)
@@ -260,7 +280,7 @@ func InfoHashArg(prefix string, clientName string) []prompt.Suggest {
 	if !clientInstance.Cached() {
 		return nil
 	}
-	torrents, err := clientInstance.GetTorrents("", "", true)
+	torrents, err := clientInstance.GetTorrents("", "", len(prefix) >= 2)
 	if err != nil {
 		return nil
 	}

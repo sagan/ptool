@@ -37,9 +37,9 @@ var (
 
 func init() {
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do NOT actually modify torrent trackers")
-	command.Flags().StringVarP(&filter, "filter", "f", "", "Filter torrents by name")
-	command.Flags().StringVarP(&category, "category", "c", "", "Filter torrents by category")
-	command.Flags().StringVarP(&tag, "tag", "t", "", "Filter torrents by tag. Comma-separated string list. Torrent which tags contain any one in the list will match")
+	command.Flags().StringVarP(&filter, "filter", "", "", "Filter torrents by name")
+	command.Flags().StringVarP(&category, "category", "", "", "Filter torrents by category")
+	command.Flags().StringVarP(&tag, "tag", "", "", "Filter torrents by tag. Comma-separated string list. Torrent which tags contain any one in the list will match")
 	command.Flags().StringArrayVarP(&trackers, "tracker", "", nil, "Set the tracker to remove. Can be used multiple times")
 	command.MarkFlagRequired("tracker")
 	cmd.RootCmd.AddCommand(command)

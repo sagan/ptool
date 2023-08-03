@@ -8,6 +8,9 @@ replace github.com/hekmon/transmissionrpc/v2 => ./transmissionrpc
 // workaround for https://github.com/c-bata/go-prompt/issues/228, with elyscape's fix applied
 replace github.com/c-bata/go-prompt => ./go-prompt
 
+// workaround for some problem
+replace github.com/stromland/cobra-prompt => ./cobra-prompt
+
 require (
 	github.com/Emyrk/torrent v0.0.0-20170330203609-3216b1ef9450
 	github.com/PuerkitoBio/goquery v1.8.1
@@ -18,6 +21,7 @@ require (
 	github.com/ettle/strcase v0.1.1
 	github.com/glebarez/sqlite v1.8.0
 	github.com/gofrs/flock v0.8.1
+	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/hekmon/transmissionrpc/v2 v2.0.1
 	github.com/jpillora/go-tld v1.2.1
 	github.com/mattn/go-runewidth v0.0.14

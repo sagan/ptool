@@ -126,7 +126,7 @@ func CreateSite(name string) (Site, error) {
 
 func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool, dense bool) {
 	if !noHeader {
-		fmt.Printf("%-40s  %10s  %-13s  %-19s  %4s  %4s  %4s  %20s  %2s\n", "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "P")
+		fmt.Printf("%-40s  %8s  %-13s  %-19s  %4s  %4s  %4s  %20s  %2s\n", "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "P")
 	}
 	for _, torrent := range torrents {
 		if filter != "" && !torrent.MatchFilter(filter) {
@@ -159,7 +159,7 @@ func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool, 
 			fmt.Printf("// %s  %s\n", torrent.Name, torrent.Description)
 		}
 		utils.PrintStringInWidth(name, 40, true)
-		fmt.Printf("  %10s  %-13s  %-19s  %4s  %4s  %4s  %20s  %2s\n",
+		fmt.Printf("  %8s  %-13s  %-19s  %4s  %4s  %4s  %20s  %2s\n",
 			utils.BytesSize(float64(torrent.Size)),
 			freeStr,
 			utils.FormatTime(torrent.Time),

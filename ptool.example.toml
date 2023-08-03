@@ -3,6 +3,8 @@ iyuuToken = "" # iyuu token。用于自动辅种功能
 #siteProxy = "" # 使用代理访问 PT 站点。（不适用于访问 BT 客户端）。格式为 "http://127.0.0.1:1080"
 #siteUserAgent = "" #  所有站点默认使用的 ua。默认使用最新稳定版 Chrome on Windows x64 en-US 的 ua
 #brushEnableStats = false # 启用刷流统计功能
+#hushshell = false # 如果设为 true, 启动 ptool shell 时将不显示欢迎信息 
+#shellMaxSuggestions = 5 # ptool shell 自动补全显示建议数量。设为 0 禁用
 
 
 # 完整支持 qBittorrent  v4.1+ (推荐使用 qb v4.4+)
@@ -17,7 +19,7 @@ password = "adminadmin"
 #brushMinDiskSpace = "5GiB" # 刷流：保留最小剩余磁盘空间
 #brushSlowUploadSpeedTier = "100KiB" # 刷流：上传速度(/s)持续低于此值的种子将可能被删除
 #brushMaxDownloadingTorrents = 6 # 刷流：位于下载状态的种子数上限
-#brushMaxTorrents = 500 # 刷流：种子数（所有状态）上限
+#brushMaxTorrents = 9999 # 刷流：种子数（所有状态）上限
 #brushMinRatio = 0.2 # 刷流：最小 ratio (上传量/下载量)比例。ratio 持续低于此值的种子将可能被删除
 #brushDefaultUploadSpeedLimit = "10MiB" # 刷流：默认最大上传速度限制(/s)
 
