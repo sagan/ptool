@@ -46,7 +46,7 @@ var (
 )
 
 func init() {
-	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "m", 0, "Show at most this number of torrents. Default (0) == unlimited")
+	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "", 0, "Show at most this number of torrents. Default (0) == unlimited")
 	command.Flags().BoolVarP(&largest, "largest", "l", false, "Show largest torrents first. Equavalent with '--sort size --order desc'")
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all torrents. Equavalent with pass a '_all' arg")
 	command.Flags().BoolVarP(&showRaw, "raw", "", false, "Show torrent size in raw format")

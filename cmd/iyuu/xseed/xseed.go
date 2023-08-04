@@ -52,7 +52,7 @@ func init() {
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do NOT actually add xseed torrents to client")
 	command.Flags().BoolVarP(&addPaused, "add-paused", "", false, "Add xseed torrents to client in paused state")
 	command.Flags().BoolVarP(&check, "check", "", false, "Let client do hash checking when add xseed torrents")
-	command.Flags().Int64VarP(&maxXseedTorrents, "max-torrents", "m", 0, "Number limit of xseed torrents added. Default (0) == unlimited")
+	command.Flags().Int64VarP(&maxXseedTorrents, "max-torrents", "", 0, "Number limit of xseed torrents added. Default (0) == unlimited")
 	command.Flags().Int64VarP(&iyuuRequestMaxTorrents, "max-request-torrents", "", 2000, "Number limit of target torrents sent to iyuu server at once")
 	command.Flags().StringVarP(&includeSites, "include-sites", "", "", "Only add xseed torrents from these sites or groups (comma-separated)")
 	command.Flags().StringVarP(&excludeSites, "exclude-sites", "", "", "Do NOT add xseed torrents from these sites or groups (comma-separated)")

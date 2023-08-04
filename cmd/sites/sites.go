@@ -24,7 +24,7 @@ var (
 )
 
 func init() {
-	command.Flags().StringVarP(&filter, "filter", "f", "", "Filter sites. Only show sites which name / url / comment contain this string")
+	command.Flags().StringVarP(&filter, "filter", "", "", "Filter sites. Only show sites which name / url / comment contain this string")
 	cmd.RootCmd.AddCommand(command)
 }
 

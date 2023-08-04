@@ -26,9 +26,9 @@ var RootCmd = &cobra.Command{
 	// SilenceErrors: true,
 	SilenceUsage: true,
 	PersistentPostRun: func(cmd *cobra.Command, args []string) {
-		if config.InShell {
+		if config.InShell && config.Get().ShellMaxHistory != 0 {
 			in := strings.Join(os.Args[1:], " ")
-			WriteHistory(in)
+			ShellHistory.Write(in)
 		}
 	},
 }
@@ -36,6 +36,7 @@ var RootCmd = &cobra.Command{
 var (
 	shellCompletions   = map[string](func(document *prompt.Document) []prompt.Suggest){}
 	resourcesWaitGroup sync.WaitGroup
+	ShellHistory       *ShellHistoryStruct
 )
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -70,6 +71,7 @@ func Execute() {
 			}
 			log.Infof("Lock acquired")
 		}
+		ShellHistory = &ShellHistoryStruct{filename: config.ConfigDir + "/" + config.HISTORY_FILENAME}
 	})
 	// see https://github.com/spf13/cobra/issues/914
 	// Must use RunE to capture error
@@ -118,6 +120,7 @@ func Exit(code int) {
 		site.Exit()
 	}()
 	resourcesWaitGroup.Wait()
+	ShellHistory.Truncate(int(config.Get().ShellMaxHistory))
 	os.Exit(code)
 }
 

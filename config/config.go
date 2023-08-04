@@ -19,6 +19,7 @@ const (
 	HISTORY_FILENAME = "ptool_history"
 
 	DEFAULT_SHELL_MAX_SUGGESTIONS                   = int64(5)
+	DEFAULT_SHELL_MAX_HISTORY                       = int64(500)
 	DEFAULT_SITE_TIMEZONE                           = "Asia/Shanghai"
 	DEFAULT_CLIENT_BRUSH_MIN_DISK_SPACE             = int64(5 * 1024 * 1024 * 1024)
 	DEFAULT_CLIENT_BRUSH_SLOW_UPLOAD_SPEED_TIER     = int64(100 * 1024)
@@ -109,6 +110,7 @@ type SiteConfigStruct struct {
 type ConfigStruct struct {
 	Hushshell           bool                  `yaml:"hushshell"`
 	ShellMaxSuggestions int64                 `yaml:"shellMaxSuggestions"`
+	ShellMaxHistory     int64                 `yaml:"shellMaxHistory"`
 	IyuuToken           string                `yaml:"iyuuToken"`
 	SiteProxy           string                `yaml:"siteProxy"`
 	SiteUserAgent       string                `yaml:"siteUserAgent"`
@@ -151,6 +153,7 @@ func Get() *ConfigStruct {
 			viper.SetConfigType(ConfigType)
 			viper.AddConfigPath(ConfigDir)
 			viper.SetDefault("ShellMaxSuggestions", DEFAULT_SHELL_MAX_SUGGESTIONS)
+			viper.SetDefault("ShellMaxHistory", DEFAULT_SHELL_MAX_HISTORY)
 			err := viper.ReadInConfig()
 			if err != nil {
 				log.Fatalf("Fail to read config file: %v", err)

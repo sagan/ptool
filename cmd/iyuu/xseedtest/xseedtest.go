@@ -23,7 +23,7 @@ var (
 )
 
 func init() {
-	command.Flags().StringVarP(&infoHash, "info-hash", "i", "", "Torrent info hash")
+	command.Flags().StringVarP(&infoHash, "info-hash", "", "", "Torrent info hash")
 	iyuu.Command.AddCommand(command)
 }
 

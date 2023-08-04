@@ -42,10 +42,11 @@ var OrderFlag = &cmd.EnumFlag{
 	},
 }
 
-// pure flag: bool or counter flag. It does not have a value
-// all single-letter name (shorthand) flags are pure and not included in the list
-// none-pure flag: a flag which has a value. eg. "--name=value", "--name value"
-// This list is manually maintenanced for now
+// pure flag: bool or counter flag. It does not have a value.
+// all single-letter name (shorthand) flags are always considered as pure (for now),
+// so they are not included in the list
+// none-pure flag: a flag which has a value. eg. "--name=value", "--name value".
+// This list is manually maintenanced for now.
 var pureFlags = []string{
 	"add-category-auto",
 	"add-paused",
@@ -80,5 +81,5 @@ var pureFlags = []string{
 }
 
 func IsPureFlag(name string) bool {
-	return len(name) == 1 || slices.Index(pureFlags, name) != -1
+	return slices.Index(pureFlags, name) != -1
 }

@@ -18,6 +18,7 @@ import (
 type InputFlag struct {
 	Name  string
 	Value string
+	Short bool // -a or -abc style
 	// a bare flag does not have value part (which means it's NOT in "--name=value" format)
 	Bare bool
 }
@@ -163,7 +164,7 @@ func Parse(document *prompt.Document) *InputingCommand {
 				flag = parseFlag(token)
 			}
 			if flag == nil {
-				if lastArgFlag == nil || !lastArgFlag.Bare || lastArgFlag.Name == "" ||
+				if lastArgFlag == nil || !lastArgFlag.Bare || lastArgFlag.Short || lastArgFlag.Name == "" ||
 					common.IsPureFlag(lastArgFlag.Name) {
 					noneFlagArgsCnt++
 					args = append(args, token)
@@ -181,7 +182,7 @@ func Parse(document *prompt.Document) *InputingCommand {
 		lastRune, _ := utf8.DecodeLastRuneInString(txt)
 		if unicode.IsSpace(lastRune) {
 			tokens = append(tokens, "")
-			if lastArgFlag == nil || !lastArgFlag.Bare || lastArgFlag.Name == "" ||
+			if lastArgFlag == nil || !lastArgFlag.Bare || lastArgFlag.Short || lastArgFlag.Name == "" ||
 				common.IsPureFlag(lastArgFlag.Name) {
 				noneFlagArgsCnt++
 				args = append(args, "")
@@ -199,11 +200,11 @@ func Parse(document *prompt.Document) *InputingCommand {
 	if lastArgFlag != nil {
 		// input suffix: "... --name=va"
 		inputingCommand.LastArgIsFlag = true
-		if !lastArgFlag.Bare {
+		if !lastArgFlag.Bare && !lastArgFlag.Short {
 			inputingCommand.LastArgFlag = lastArgFlag.Name
 			inputingCommand.MatchingPrefix = lastArgFlag.Value
 		}
-	} else if previousFlag != nil && previousFlag.Bare && previousFlag.Name != "" &&
+	} else if previousFlag != nil && previousFlag.Bare && !previousFlag.Short && previousFlag.Name != "" &&
 		!common.IsPureFlag(previousFlag.Name) {
 		// input suffix: "... --name va"
 		inputingCommand.MatchingPrefix = lastToken
@@ -227,8 +228,12 @@ func parseFlag(arg string) (flag *InputFlag) {
 			flag.Value = arg[i+1:]
 			arg = arg[:i]
 		}
-		arg = strings.TrimPrefix(arg, "--")
-		arg = strings.TrimPrefix(arg, "-")
+		if strings.HasPrefix(arg, "--") {
+			arg = arg[2:]
+		} else {
+			flag.Short = true
+			arg = arg[1:]
+		}
 		flag.Name = arg
 	}
 	return

@@ -2,12 +2,9 @@ package shell
 
 import (
 	"fmt"
-	"os"
-	"strings"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/google/shlex"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	cobraprompt "github.com/stromland/cobra-prompt"
 
@@ -50,7 +47,7 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-var advancedPrompt = &cobraprompt.CobraPrompt{
+var ptoolPrompt = &cobraprompt.CobraPrompt{
 	RootCmd:                  cmd.RootCmd,
 	PersistFlagValues:        true,
 	ShowHelpCommandAndFlags:  true,
@@ -83,14 +80,11 @@ func shell(command *cobra.Command, args []string) error {
 		return fmt.Errorf("--fork or --lock flag can NOT be used with shell")
 	}
 	config.InShell = true
-	historyData, err := os.ReadFile(config.ConfigDir + "/" + config.HISTORY_FILENAME)
-	log.Tracef("load history file %s, err=%v", config.ConfigDir+"/"+config.HISTORY_FILENAME, err)
+	ptoolPrompt.GoPromptOptions = append(ptoolPrompt.GoPromptOptions,
+		prompt.OptionMaxSuggestion(uint16(config.Get().ShellMaxSuggestions)))
+	history, err := cmd.ShellHistory.Load()
 	if err == nil {
-		history := strings.Split(string(historyData), "\n")
-		if history[len(history)-1] == "" {
-			history = history[:len(history)-1] // remove last empty new line
-		}
-		advancedPrompt.GoPromptOptions = append(advancedPrompt.GoPromptOptions, prompt.OptionHistory(history))
+		ptoolPrompt.GoPromptOptions = append(ptoolPrompt.GoPromptOptions, prompt.OptionHistory(history))
 	}
 	cmd.RootCmd.AddCommand(shellCommands...)
 	for name := range shellCommandSuggestions {
@@ -103,8 +97,6 @@ func shell(command *cobra.Command, args []string) error {
 		fmt.Printf(`For full help of ptool shell, type "shell -h"` + "\n")
 		fmt.Printf(`To mute this message, add "hushshell = true" line to the top of ptool.toml config file` + "\n")
 	}
-	advancedPrompt.GoPromptOptions = append(advancedPrompt.GoPromptOptions,
-		prompt.OptionMaxSuggestion(uint16(config.Get().ShellMaxSuggestions)))
-	advancedPrompt.Run()
+	ptoolPrompt.Run()
 	return nil
 }

@@ -27,7 +27,7 @@ var (
 
 func init() {
 	command.Flags().BoolVarP(&showBindable, "bindable", "b", false, "Show bindable sites")
-	command.Flags().StringVarP(&filter, "filter", "f", "", "Filter sites. Only show sites which name / url / comment contain this string")
+	command.Flags().StringVarP(&filter, "filter", "", "", "Filter sites. Only show sites which name / url / comment contain this string")
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all iyuu sites (instead of only owned sites)")
 	iyuu.Command.AddCommand(command)
 }

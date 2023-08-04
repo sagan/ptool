@@ -5,6 +5,7 @@ iyuuToken = "" # iyuu token。用于自动辅种功能
 #brushEnableStats = false # 启用刷流统计功能
 #hushshell = false # 如果设为 true, 启动 ptool shell 时将不显示欢迎信息 
 #shellMaxSuggestions = 5 # ptool shell 自动补全显示建议数量。设为 0 禁用
+#shellMaxHistory = 500 # ptool shell 命令历史记录保存数量。设为 0 禁用
 
 
 # 完整支持 qBittorrent  v4.1+ (推荐使用 qb v4.4+)

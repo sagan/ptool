@@ -18,6 +18,7 @@ import (
 
 var (
 	listMode = false
+	clear    = false
 )
 
 var cdCmd = &cobra.Command{
@@ -145,6 +146,21 @@ var exitCmd = &cobra.Command{
 	},
 }
 
+var historyCmd = &cobra.Command{
+	Use:   "history",
+	Short: "(shell only) List history of executed commands in shell",
+	Run: func(command *cobra.Command, args []string) {
+		if clear {
+			cmd.ShellHistory.Clear()
+			return
+		}
+		history, _ := cmd.ShellHistory.Load()
+		for i, h := range history {
+			fmt.Printf("%-5d  %5s\n", i, h)
+		}
+	},
+}
+
 var purgeCmd = &cobra.Command{
 	Use:         "purge [client | site]...",
 	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "purge"},
@@ -208,7 +224,7 @@ func purgeCmdSuggestion(document *prompt.Document) []prompt.Suggest {
 	return suggest.ClientArg(info.MatchingPrefix)
 }
 
-var shellCommands = []*cobra.Command{pwdCwd, cdCmd, lsCmd, exitCmd, purgeCmd, execCmd}
+var shellCommands = []*cobra.Command{pwdCwd, cdCmd, lsCmd, historyCmd, exitCmd, purgeCmd, execCmd}
 
 var shellCommandSuggestions = map[string](func(document *prompt.Document) []prompt.Suggest){
 	"cd":    cdCmdSuggestion,
@@ -220,6 +236,7 @@ var shellCommandsDescription = "In addition to normal ptool commands, you can us
 
 func init() {
 	lsCmd.Flags().BoolVarP(&listMode, "list", "l", false, "Use a long listing format")
+	historyCmd.Flags().BoolVarP(&clear, "clear", "c", false, "Clear history")
 	for i, shellCmd := range shellCommands {
 		if i > 0 {
 			shellCommandsDescription += "\n"
