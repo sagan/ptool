@@ -17,6 +17,7 @@ import (
 )
 
 var (
+	force    = false
 	listMode = false
 	clear    = false
 )
@@ -139,9 +140,13 @@ var lsCmd = &cobra.Command{
 }
 
 var exitCmd = &cobra.Command{
-	Use:   "exit",
-	Short: "(shell only) Exit shell",
+	Use:     "exit",
+	Aliases: []string{"quit"},
+	Short:   "(shell only) Exit shell",
 	Run: func(command *cobra.Command, args []string) {
+		if force {
+			os.Exit(0)
+		}
 		cmd.Exit(0)
 	},
 }
@@ -156,7 +161,7 @@ var historyCmd = &cobra.Command{
 		}
 		history, _ := cmd.ShellHistory.Load()
 		for i, h := range history {
-			fmt.Printf("%-5d  %5s\n", i, h)
+			fmt.Printf("%-5d  %s\n", i, h)
 		}
 	},
 }
@@ -235,6 +240,7 @@ var shellCommandSuggestions = map[string](func(document *prompt.Document) []prom
 var shellCommandsDescription = "In addition to normal ptool commands, you can use the shell commands here:\n"
 
 func init() {
+	exitCmd.Flags().BoolVarP(&force, "force", "f", false, "Force exit immediately. Do NOT clean resources")
 	lsCmd.Flags().BoolVarP(&listMode, "list", "l", false, "Use a long listing format")
 	historyCmd.Flags().BoolVarP(&clear, "clear", "c", false, "Clear history")
 	for i, shellCmd := range shellCommands {

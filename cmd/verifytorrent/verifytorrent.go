@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/cmd"
@@ -72,7 +71,9 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 		}
 		torrentMeta, err := torrentutil.ParseTorrent(torrentData, 99)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Printf("X torrent %s: failed to parse torrent file: %v\n", torrentFilename, err)
+			errorCnt++
+			continue
 		}
 		if showAll {
 			torrentMeta.Print(torrentFilename, true)

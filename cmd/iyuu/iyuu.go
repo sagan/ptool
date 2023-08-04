@@ -2,6 +2,7 @@ package iyuu
 
 import (
 	"fmt"
+	"path/filepath"
 	"sync"
 
 	"github.com/glebarez/sqlite"
@@ -61,7 +62,7 @@ func Db() *gorm.DB {
 	if db != nil {
 		return db
 	}
-	dbfile := config.ConfigDir + "/iyuu.db"
+	dbfile := filepath.Join(config.ConfigDir, "iyuu.db")
 	log.Tracef("iyuu open db file %s", dbfile)
 	_db, err := gorm.Open(sqlite.Open(dbfile), &gorm.Config{})
 	if err != nil {

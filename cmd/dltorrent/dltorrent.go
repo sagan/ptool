@@ -85,7 +85,7 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 			errorCnt++
 			continue
 		}
-		err = os.WriteFile(downloadDir+"/"+filename, torrentContent, 0777)
+		err = os.WriteFile(downloadDir+"/"+filename, torrentContent, 0666)
 		if err != nil {
 			fmt.Printf("torrent %s: failed to download to %s/: %v\n", filename, downloadDir, err)
 			errorCnt++

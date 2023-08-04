@@ -22,7 +22,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:         "batchdl {site} [--action add|download] [--base-url torrents_page_url]",
+	Use:         "batchdl {site} [--action add|download|...] [--base-url torrents_page_url]",
 	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "batchdl"},
 	Aliases:     []string{"ebookgod"},
 	Short:       "Batch download the smallest (or by any other order) torrents from a site.",
@@ -190,7 +190,7 @@ func batchdl(command *cobra.Command, args []string) error {
 		}
 	} else if action == "export" || action == "printid" {
 		if exportFile != "" {
-			outputFileFd, err = os.OpenFile(exportFile, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
+			outputFileFd, err = os.OpenFile(exportFile, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 			if err != nil {
 				return fmt.Errorf("failed to create output file %s: %v", exportFile, err)
 			}
@@ -363,7 +363,7 @@ mainloop:
 					fmt.Printf("torrent %s (%s): failed to download: %v\n", torrent.Id, torrent.Name, err)
 				} else {
 					if action == "download" {
-						err = os.WriteFile(downloadDir+"/"+filename, torrentContent, 0777)
+						err = os.WriteFile(downloadDir+"/"+filename, torrentContent, 0666)
 						if err != nil {
 							fmt.Printf("torrent %s: failed to write to %s/file %s: %v\n", torrent.Id, downloadDir, filename, err)
 						} else {

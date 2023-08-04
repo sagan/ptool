@@ -11,7 +11,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:         "addtags {client} {tags} [-c category] [-t tags] [-f filter] [infoHash]...",
+	Use:         "addtags {client} {tags} [--category category] [--tag tag] [--filter filter] [infoHash]...",
 	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "addtags"},
 	Short:       "Add tags to torrents in client.",
 	Long: `Add tags to torrents in client.

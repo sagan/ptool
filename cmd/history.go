@@ -31,7 +31,7 @@ func (sh *ShellHistoryStruct) reset() {
 func (sh *ShellHistoryStruct) openHistoryFile() {
 	if !sh.opened {
 		sh.opened = true
-		file, err := os.OpenFile(sh.filename, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
+		file, err := os.OpenFile(sh.filename, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0600)
 		if err != nil {
 			log.Debugf("Failed to open history file %s: %v", sh.filename, err)
 		} else {
@@ -120,7 +120,7 @@ func (sh *ShellHistoryStruct) Truncate(max int) {
 		sh.reset()
 		history = history[len(history)-max:]
 		historyData := strings.Join(history, "\n")
-		os.WriteFile(sh.filename, []byte(historyData), 0777)
+		os.WriteFile(sh.filename, []byte(historyData), 0600)
 		sh.cnt = len(history)
 	}
 }

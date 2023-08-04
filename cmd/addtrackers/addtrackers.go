@@ -12,7 +12,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:         "addtrackers {client} [-c category] [-t tags] [-f filter] [infoHash]...",
+	Use:         "addtrackers {client} [--category category] [--tag tag] [--filter filter] [infoHash]...",
 	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "addtrackers"},
 	Short:       "Add new trackers to torrents of client.",
 	Long: `Add new trackers to torrents of client.

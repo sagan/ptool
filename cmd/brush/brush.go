@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -64,7 +65,7 @@ func brush(cmd *cobra.Command, args []string) error {
 	tmpdir, _ := os.MkdirTemp(os.TempDir(), "ptool")
 	var statDb *stats.StatDb
 	if config.Get().BrushEnableStats {
-		statDb, err = stats.NewDb(config.ConfigDir + "/" + config.STATS_FILENAME)
+		statDb, err = stats.NewDb(filepath.Join(config.ConfigDir, config.STATS_FILENAME))
 		if err != nil {
 			log.Warnf("Failed to create stats db: %v.", err)
 		}
@@ -273,7 +274,7 @@ func brush(cmd *cobra.Command, args []string) error {
 				UploadSpeedLimit: siteInstance.GetSiteConfig().TorrentUploadSpeedLimitValue,
 			}
 			// torrentname := fmt.Sprint(torrent.Name, "_", i, ".torrent")
-			// os.WriteFile(tmpdir+"/"+torrentname, torrentdata, 0777)
+			// os.WriteFile(tmpdir+"/"+torrentname, torrentdata, 0666)
 			if !dryRun {
 				err = clientInstance.AddTorrent(torrentdata, torrentOption, torrent.Meta)
 				log.Printf("Add torrent result: error=%v", err)

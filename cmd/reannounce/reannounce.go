@@ -10,7 +10,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:         "reannounce {client} [-c category] [-t tags] [-f filter] [infoHash]...",
+	Use:         "reannounce {client} [--category category] [--tag tag] [--filter filter] [infoHash]...",
 	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "reannounce"},
 	Short:       "Reannounce torrents of client.",
 	Long: `Reannounce torrents of client.

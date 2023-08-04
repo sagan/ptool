@@ -12,7 +12,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:         "sites [{-b | -a}] [-f filter]",
+	Use:         "sites [{-b | -a}] [--filter filter]",
 	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "iyuu.sites"},
 	Short:       "Show iyuu sites list.",
 	Long:        `Show iyuu sites list.`,

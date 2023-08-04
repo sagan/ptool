@@ -25,7 +25,7 @@ var RootCmd = &cobra.Command{
 	// Run: func(cmd *cobra.Command, args []string) { },
 	// SilenceErrors: true,
 	SilenceUsage: true,
-	PersistentPostRun: func(cmd *cobra.Command, args []string) {
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		if config.InShell && config.Get().ShellMaxHistory != 0 {
 			in := strings.Join(os.Args[1:], " ")
 			ShellHistory.Write(in)
@@ -61,7 +61,7 @@ func Execute() {
 		}
 		logLevel := 3 + config.VerboseLevel
 		log.SetLevel(log.Level(logLevel))
-		log.Debugf("ptool start: %s", os.Args)
+		log.Debugf("ptool start: %v", os.Args)
 		log.Infof("config file: %s/%s", config.ConfigDir, config.ConfigFile)
 		if config.LockFile != "" {
 			log.Debugf("Locking file: %s", config.LockFile)
@@ -71,7 +71,7 @@ func Execute() {
 			}
 			log.Infof("Lock acquired")
 		}
-		ShellHistory = &ShellHistoryStruct{filename: config.ConfigDir + "/" + config.HISTORY_FILENAME}
+		ShellHistory = &ShellHistoryStruct{filename: filepath.Join(config.ConfigDir, config.HISTORY_FILENAME)}
 	})
 	// see https://github.com/spf13/cobra/issues/914
 	// Must use RunE to capture error
@@ -87,8 +87,8 @@ func init() {
 	UserHomeDir, _ := os.UserHomeDir()
 	configFile := "ptool.toml"
 	configFiles := []string{
-		UserHomeDir + "/.config/ptool/ptool.toml",
-		UserHomeDir + "/.config/ptool/ptool.yaml",
+		filepath.Join(UserHomeDir, ".config/ptool/ptool.toml"),
+		filepath.Join(UserHomeDir, ".config/ptool/ptool.yaml"),
 		"ptool.toml",
 		"ptool.yaml",
 	}
@@ -120,7 +120,9 @@ func Exit(code int) {
 		site.Exit()
 	}()
 	resourcesWaitGroup.Wait()
-	ShellHistory.Truncate(int(config.Get().ShellMaxHistory))
+	if config.InShell && config.Get().ShellMaxHistory > 0 {
+		ShellHistory.Truncate(int(config.Get().ShellMaxHistory))
+	}
 	os.Exit(code)
 }
 

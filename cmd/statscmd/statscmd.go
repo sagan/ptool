@@ -2,7 +2,7 @@ package statscmd
 
 import (
 	"fmt"
-	"log"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -39,11 +39,11 @@ func statscmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf(`statistics feature is NOT enabled currently. To enable it, add the "brushEnableStats = true" line to the top of ptool.toml config file. It will use the "ptool_stats.txt" (in the same dir of ptool.toml file) as the statistics data file`)
 	}
 	if statsFilename == "" {
-		statsFilename = config.ConfigDir + "/" + config.STATS_FILENAME
+		statsFilename = filepath.Join(config.ConfigDir, config.STATS_FILENAME)
 	}
 	statDb, err := stats.NewDb(statsFilename)
 	if err != nil {
-		log.Fatalf("Failed to create stats db: %v", err)
+		return fmt.Errorf("failed to create stats db: %v", err)
 	}
 	if len(clientnames) == 0 {
 		statDb.ShowTrafficStats("")

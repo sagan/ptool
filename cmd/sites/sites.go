@@ -12,7 +12,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "sites",
+	Use:   "sites [--filter filter]",
 	Short: "Show internal supported PT sites list which can be used with this software.",
 	Long:  `Show internal supported PT sites list which can be used with this software.`,
 	Args:  cobra.MatchAll(cobra.ExactArgs(0), cobra.OnlyValidArgs),

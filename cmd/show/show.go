@@ -16,7 +16,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:         "show {client} [-c category] [-t tags] [-f filter] [infoHash]...",
+	Use:         "show {client} [--category category] [--tag tag] [--filter filter] [infoHash]...",
 	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "show"},
 	Short:       "Show torrents of client.",
 	Long: `Show torrents of client.

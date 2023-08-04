@@ -53,7 +53,7 @@ func status(cmd *cobra.Command, args []string) error {
 	names := args
 	if showAll || showAllClients || showAllSites {
 		if len(args) > 0 {
-			log.Fatal("Illegal args: --all, --clients, --sites cann't be used with site or client names")
+			return fmt.Errorf("--all, --clients, --sites flags cann't be used with site or client names")
 		}
 		if showAll || showAllClients {
 			for _, client := range config.Get().Clients {
@@ -75,7 +75,7 @@ func status(cmd *cobra.Command, args []string) error {
 	names = config.ParseGroupAndOtherNames(names...)
 
 	if len(names) == 0 {
-		log.Fatalf("No sites or clients provided")
+		return fmt.Errorf("no sites or clients provided")
 	}
 	now := utils.Now()
 	errorCnt := int64(0)

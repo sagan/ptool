@@ -3,7 +3,6 @@ package recheck
 import (
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
@@ -11,7 +10,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:         "recheck {client} [-c category] [-t tags] [-f filter] [infoHash]...",
+	Use:         "recheck {client} [--category category] [--tag tag] [--filter filter] [infoHash]...",
 	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "recheck"},
 	Short:       "Recheck torrents of client.",
 	Long: `Recheck torrents of client.
@@ -39,7 +38,7 @@ func recheck(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
 	args = args[1:]
 	if category == "" && tag == "" && filter == "" && len(args) == 0 {
-		log.Fatalf("You must provide at least a condition flag or hashFilter")
+		return fmt.Errorf("you must provide at least a condition flag or hashFilter")
 	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {

@@ -98,6 +98,7 @@ ptool <command> args... [flags]
 * verifytorrent : 测试种子(torrent)文件与硬盘上的文件内容一致。
 * partialdownload : 拆包下载。
 * sites : 显示本程序内置支持的所有 PT 站点列表。
+* shell : 进入交互式终端环境。
 * version : 显示本程序版本信息。
 
 运行 ```ptool``` 查看程序支持的所有命令列表；运行 ```ptool <command> -h``` 查看指定命令的参数格式和使用说明。本程序目前仍位于 0.x.x 版本的开发阶段，各个命令、命令参数名称或格式、配置文件配置项等可能会经常变动。
@@ -448,6 +449,12 @@ ptool partialdownload <client> <infoHash> --chunk-size 1TiB --chuck-index 0
 ```
 
 该命令的设计目的不是用于刷流。而是用于使用 VPS 等硬盘空间有限的云服务器(分多次)下载体积非常大的单个种子，然后配合 rclone 将下载的文件直接上传到云盘。
+
+### 交互式终端 (shell)
+
+```ptool shell``` 可以启动一个交互式的 shell 终端环境。终端里可以运行所有 ptool 支持的命令。命令和命令参数输入支持完整的自动补全。
+
+ptool 也支持 bash、powershell 等操作系统 shell 环境下的命令自动补全，需要在系统 shell 里安装程序生成的自动补全脚本。运行 ```ptool completion``` 了解详细信息。但由于技术限制，系统 shell 里仅支持基本的自动补全（不支持BT客户端名称、站点名称等动态内容参数的自动补全）。
 
 ### 站点分组 (group) 功能
 

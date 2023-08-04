@@ -192,7 +192,7 @@ func (db *StatDb) ShowTrafficStats(client string) {
 func NewDb(statFilename string) (*StatDb, error) {
 	db := &StatDb{}
 
-	f, err := os.OpenFile(statFilename, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
+	f, err := os.OpenFile(statFilename, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0600)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open stats file %s: %v", statFilename, err)
 	}

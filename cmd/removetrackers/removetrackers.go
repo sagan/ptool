@@ -12,7 +12,7 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:         "removetrackers {client} [-c category] [-t tags] [-f filter] [infoHash]...",
+	Use:         "removetrackers {client} [--category category] [--tag tag] [--filter filter] [infoHash]...",
 	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "removetrackers"},
 	Short:       "Remove trackers from torrents of client.",
 	Long: `Remove trackers from torrents of client.
