@@ -2,6 +2,7 @@ package verifytorrent
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -63,13 +64,19 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 		if showAll && i > 0 {
 			fmt.Printf("\n")
 		}
-		torrentData, err := os.ReadFile(torrentFilename)
+		var torrentContent []byte
+		var err error
+		if torrentFilename == "-" {
+			torrentContent, err = io.ReadAll(os.Stdin)
+		} else {
+			torrentContent, err = os.ReadFile(torrentFilename)
+		}
 		if err != nil {
 			fmt.Printf("X torrent %s: failed to read torrent file: %v\n", torrentFilename, err)
 			errorCnt++
 			continue
 		}
-		torrentMeta, err := torrentutil.ParseTorrent(torrentData, 99)
+		torrentMeta, err := torrentutil.ParseTorrent(torrentContent, 99)
 		if err != nil {
 			fmt.Printf("X torrent %s: failed to parse torrent file: %v\n", torrentFilename, err)
 			errorCnt++

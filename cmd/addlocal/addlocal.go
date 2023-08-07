@@ -2,6 +2,7 @@ package addlocal
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -65,8 +66,8 @@ func addlocal(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to create client: %v", err)
 	}
 	errorCnt := int64(0)
-	torrentFiles := utils.ParseFilenameArgs(args...)
-	if rename != "" && len(torrentFiles) > 1 {
+	torrentFilenames := utils.ParseFilenameArgs(args...)
+	if rename != "" && len(torrentFilenames) > 1 {
 		return fmt.Errorf("--rename flag can only be used with exact one torrent file arg")
 	}
 	option := &client.TorrentOption{
@@ -79,24 +80,30 @@ func addlocal(cmd *cobra.Command, args []string) error {
 	if addTags != "" {
 		fixedTags = strings.Split(addTags, ",")
 	}
-	cntAll := len(torrentFiles)
+	cntAll := len(torrentFilenames)
 	cntAdded := int64(0)
 	sizeAdded := int64(0)
 
-	for i, torrentFile := range torrentFiles {
-		if strings.HasSuffix(torrentFile, ".added") {
-			log.Tracef("!torrent (%d/%d) %s: skipped", i+1, cntAll, torrentFile)
+	for i, torrentFilename := range torrentFilenames {
+		if strings.HasSuffix(torrentFilename, ".added") {
+			log.Tracef("!torrent (%d/%d) %s: skipped", i+1, cntAll, torrentFilename)
 			continue
 		}
-		torrentContent, err := os.ReadFile(torrentFile)
+		var torrentContent []byte
+		var err error
+		if torrentFilename == "-" {
+			torrentContent, err = io.ReadAll(os.Stdin)
+		} else {
+			torrentContent, err = os.ReadFile(torrentFilename)
+		}
 		if err != nil {
-			fmt.Printf("✕torrent (%d/%d) %s: failed to read file (%v)\n", i+1, cntAll, torrentFile, err)
+			fmt.Printf("✕torrent (%d/%d) %s: failed to read file (%v)\n", i+1, cntAll, torrentFilename, err)
 			errorCnt++
 			continue
 		}
 		tinfo, err := torrentutil.ParseTorrent(torrentContent, 99)
 		if err != nil {
-			fmt.Printf("✕torrent (%d/%d) %s: failed to parse torrent (%v)\n", i+1, cntAll, torrentFile, err)
+			fmt.Printf("✕torrent (%d/%d) %s: failed to parse torrent (%v)\n", i+1, cntAll, torrentFilename, err)
 			errorCnt++
 			continue
 		}
@@ -123,24 +130,24 @@ func addlocal(cmd *cobra.Command, args []string) error {
 		option.Tags = append(option.Tags, fixedTags...)
 		err = clientInstance.AddTorrent(torrentContent, option, nil)
 		if err != nil {
-			fmt.Printf("✕torrent (%d/%d) %s: failed to add to client (%v)\n", i+1, cntAll, torrentFile, err)
+			fmt.Printf("✕torrent (%d/%d) %s: failed to add to client (%v)\n", i+1, cntAll, torrentFilename, err)
 			errorCnt++
 			continue
 		}
 		if renameAdded {
-			err := os.Rename(torrentFile, torrentFile+".added")
+			err := os.Rename(torrentFilename, torrentFilename+".added")
 			if err != nil {
-				log.Debugf("Failed to rename successfully added torrent %s to .added extension: %v", torrentFile, err)
+				log.Debugf("Failed to rename successfully added torrent %s to .added extension: %v", torrentFilename, err)
 			}
 		} else if deleteAdded {
-			err := os.Remove(torrentFile)
+			err := os.Remove(torrentFilename)
 			if err != nil {
-				log.Debugf("Failed to delete successfully added torrent %s: %v", torrentFile, err)
+				log.Debugf("Failed to delete successfully added torrent %s: %v", torrentFilename, err)
 			}
 		}
 		cntAdded++
 		sizeAdded += tinfo.Size
-		fmt.Printf("✓torrent (%d/%d) %s: added to client\n", i+1, cntAll, torrentFile)
+		fmt.Printf("✓torrent (%d/%d) %s: added to client\n", i+1, cntAll, torrentFilename)
 	}
 	fmt.Printf("\nDone. Added torrent (Size/Cnt): %s / %d; ErrorCnt: %d\n", utils.BytesSize(float64(sizeAdded)), cntAdded, errorCnt)
 	if errorCnt > 0 {

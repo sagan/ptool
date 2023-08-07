@@ -2,6 +2,8 @@ package parsetorrent
 
 import (
 	"fmt"
+	"io"
+	"os"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -34,17 +36,29 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 	torrentFilenames := utils.ParseFilenameArgs(args...)
 	errorCnt := int64(0)
 
-	for i, torrentFileName := range torrentFilenames {
+	for i, torrentFilename := range torrentFilenames {
 		if showAll && i > 0 {
 			fmt.Printf("\n")
 		}
-		torrentInfo, err := torrentutil.ParseTorrentFile(torrentFileName, 99)
+		var torrentContent []byte
+		var err error
+		if torrentFilename == "-" {
+			torrentContent, err = io.ReadAll(os.Stdin)
+		} else {
+			torrentContent, err = os.ReadFile(torrentFilename)
+		}
 		if err != nil {
-			log.Printf("Failed to parse %s: %v", torrentFileName, err)
+			log.Errorf("Failed to read %s: %v", torrentFilename, err)
 			errorCnt++
 			continue
 		}
-		torrentInfo.Print(torrentFileName, showAll)
+		torrentInfo, err := torrentutil.ParseTorrent(torrentContent, 99)
+		if err != nil {
+			log.Printf("Failed to parse %s: %v", torrentFilename, err)
+			errorCnt++
+			continue
+		}
+		torrentInfo.Print(torrentFilename, showAll)
 		if showAll {
 			torrentInfo.PrintFiles(true, false)
 		}

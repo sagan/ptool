@@ -84,15 +84,6 @@ func ParseTorrent(torrentdata []byte, fields int64) (*TorrentMeta, error) {
 	return torrentMeta, nil
 }
 
-// fields: 0 - only infoHash; 1- infoHash + trackers; 2+ - all
-func ParseTorrentFile(filename string, fields int64) (*TorrentMeta, error) {
-	torrentContent, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read torrent file %s: %v", filename, err)
-	}
-	return ParseTorrent(torrentContent, fields)
-}
-
 func (meta *TorrentMeta) Print(name string, showAll bool) {
 	trackerHostname := ""
 	if len(meta.Trackers) > 0 {

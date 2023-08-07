@@ -2,6 +2,8 @@ package xseedcheck
 
 import (
 	"fmt"
+	"io"
+	"os"
 
 	"github.com/spf13/cobra"
 
@@ -32,19 +34,28 @@ func init() {
 func xseedcheck(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
 	infoHash := args[1]
-	torrentFileName := args[2]
+	torrentFilename := args[2]
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
 		return fmt.Errorf("failed to create client: %v", err)
 	}
-	torrentInfo, err := torrentutil.ParseTorrentFile(torrentFileName, 99)
+	var torrentContent []byte
+	if torrentFilename == "-" {
+		torrentContent, err = io.ReadAll(os.Stdin)
+	} else {
+		torrentContent, err = os.ReadFile(torrentFilename)
+	}
 	if err != nil {
-		return fmt.Errorf("failed to parse %s: %v", torrentFileName, err)
+		return fmt.Errorf("failed to read %s: %v", torrentFilename, err)
+	}
+	torrentInfo, err := torrentutil.ParseTorrent(torrentContent, 99)
+	if err != nil {
+		return fmt.Errorf("failed to parse %s: %v", torrentFilename, err)
 	}
 	if torrentInfo.InfoHash == infoHash {
 		fmt.Printf(
 			"Result: identical. Torrent file %s has the same infoHash with client %s torrent.\n",
-			torrentFileName,
+			torrentFilename,
 			clientName,
 		)
 		return nil
@@ -57,25 +68,25 @@ func xseedcheck(cmd *cobra.Command, args []string) error {
 	if compareResult == 0 {
 		fmt.Printf(
 			"Result: ✓. Torrent file %s has the same contents with client %s torrent.\n",
-			torrentFileName,
+			torrentFilename,
 			clientName,
 		)
 	} else if compareResult == 1 {
 		fmt.Printf(
 			"Result: ✓*. Torrent file %s has the same (partial) contents with client %s torrent.\n",
-			torrentFileName,
+			torrentFilename,
 			clientName,
 		)
 	} else if compareResult == -2 {
 		fmt.Printf(
 			"Result: X*. Torrent file %s has the DIFFERENT root folder, but same contents with client %s torrent.\n",
-			torrentFileName,
+			torrentFilename,
 			clientName,
 		)
 	} else {
 		fmt.Printf(
 			"Result: X. Torrent file %s does NOT has the same contents with client %s torrent.\n",
-			torrentFileName,
+			torrentFilename,
 			clientName,
 		)
 	}
@@ -87,7 +98,7 @@ func xseedcheck(cmd *cobra.Command, args []string) error {
 		}
 
 		fmt.Printf("\n")
-		fmt.Printf("Torrent file: %s\n", torrentFileName)
+		fmt.Printf("Torrent file: %s\n", torrentFilename)
 		torrentInfo.PrintFiles(true, true)
 	}
 	return nil
