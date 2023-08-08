@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
@@ -42,6 +43,10 @@ less or equal than (<=) chunk size. There may be more chunks than expected. If
 there is a single large file in torrent contents which is larger than (>) chunk
 size, the command will fail.
 
+With --append flag, ptool will only mark files of current (index) chunk as download,
+but will NOT mark files of other chunks as no-download (Leave their download / no-download
+marks unchanged).
+
 Use case of this command:
 You have a cloud VPS / Server with limited disk space, and you want to use this
 machine to download a large torrent. And then upload the downloaded torrent contents
@@ -57,12 +62,14 @@ var (
 	chunkIndex    = int64(0)
 	startIndex    = int64(0)
 	showAll       = false
+	appendMode    = false
 	strict        = false
 	originalOrder = false
 )
 
 func init() {
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show full chunks info and exit")
+	command.Flags().BoolVarP(&appendMode, "append", "", false, "Append mode. Mark files of current chunk as download but do NOT mark files of other chunks as no-download")
 	command.Flags().BoolVarP(&strict, "strict", "", false, "Set strict mode that the size of every chunk MUST be strictly <= chunk-size")
 	command.Flags().BoolVarP(&originalOrder, "original-order", "", false, "Split torrent files to chunks by their original order instead of path order")
 	command.Flags().Int64VarP(&chunkIndex, "chunk-index", "", 0, "Set the split chunk index (0-based) to download")
@@ -118,7 +125,7 @@ func partialdownload(cmd *cobra.Command, args []string) error {
 		}
 		allSize += file.Size
 		if strict && file.Size > chunkSize {
-			return fmt.Errorf("torrent can NOT be strictly splitted to %s chunks: file %s is too large: %s",
+			return fmt.Errorf("torrent can NOT be strictly splitted to %s chunks: file %s is too large (%s)",
 				utils.BytesSize(float64(chunkSize)), file.Path, utils.BytesSize(float64(file.Size)))
 		}
 		if currentChunkSize >= chunkSize || (strict && (currentChunkSize+file.Size) > chunkSize) {
@@ -155,12 +162,16 @@ func partialdownload(cmd *cobra.Command, args []string) error {
 	chunk := chunks[chunkIndex]
 	err = clientInstance.SetFilePriority(infoHash, downloadFileIndexes, 1)
 	if err != nil {
-		return fmt.Errorf("failed to set download files: %v", err)
+		return fmt.Errorf("failed to mark files as download: %v", err)
 	}
-	utils.Sleep(5)
-	err = clientInstance.SetFilePriority(infoHash, noDownloadFileIndexes, 0)
-	if err != nil {
-		return fmt.Errorf("failed to set no download files: %v", err)
+	log.Infof("Marked %d files as download.", len(downloadFileIndexes))
+	if !appendMode {
+		utils.Sleep(5)
+		err = clientInstance.SetFilePriority(infoHash, noDownloadFileIndexes, 0)
+		if err != nil {
+			return fmt.Errorf("failed to mark files as no-download: %v", err)
+		}
+		log.Infof("Marked %d files as no-download.", len(noDownloadFileIndexes))
 	}
 	fmt.Printf("Torrent Size: %s (%d) / Chunks: %d; Skipped files: %d; DownloadChunkIndex: %d; DownloadChunkSize: %s (%d)",
 		utils.BytesSize(float64(allSize)), len(torrentFiles), len(chunks), startIndex,

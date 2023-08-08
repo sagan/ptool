@@ -1,6 +1,7 @@
 package parsetorrent
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -24,11 +25,13 @@ var command = &cobra.Command{
 }
 
 var (
-	showAll = false
+	showAll  = false
+	showJson = false
 )
 
 func init() {
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all info")
+	command.Flags().BoolVarP(&showJson, "json", "", false, "Show output in json format")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -37,9 +40,6 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 	errorCnt := int64(0)
 
 	for i, torrentFilename := range torrentFilenames {
-		if showAll && i > 0 {
-			fmt.Printf("\n")
-		}
 		var torrentContent []byte
 		var err error
 		if torrentFilename == "-" {
@@ -54,13 +54,26 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 		}
 		torrentInfo, err := torrentutil.ParseTorrent(torrentContent, 99)
 		if err != nil {
-			log.Printf("Failed to parse %s: %v", torrentFilename, err)
+			log.Errorf("Failed to parse %s: %v", torrentFilename, err)
 			errorCnt++
+			continue
+		}
+		if showJson {
+			bytes, err := json.Marshal(torrentInfo)
+			if err != nil {
+				log.Errorf("Failed to marshal info json of %s: %v", torrentFilename, err)
+				errorCnt++
+				continue
+			}
+			fmt.Println(string(bytes))
 			continue
 		}
 		torrentInfo.Print(torrentFilename, showAll)
 		if showAll {
 			torrentInfo.PrintFiles(true, false)
+			if i < len(torrentFilenames)-1 {
+				fmt.Printf("\n")
+			}
 		}
 	}
 	if errorCnt > 0 {

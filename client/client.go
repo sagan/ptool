@@ -147,8 +147,7 @@ var (
 	Registry           = []*RegInfo{}
 	substituteTagRegex = regexp.MustCompile(`^(category|meta\..+):.+$`)
 	// all clientInstances created during this ptool program session
-	clients            = map[string](Client){}
-	resourcesWaitGroup sync.WaitGroup
+	clients = map[string](Client){}
 )
 
 func Register(regInfo *RegInfo) {
@@ -604,6 +603,7 @@ func init() {
 
 // called by main codes on program exit. clean resources
 func Exit() {
+	var resourcesWaitGroup sync.WaitGroup
 	for clientName, clientInstance := range clients {
 		resourcesWaitGroup.Add(1)
 		go func(clientName string, clientInstance Client) {

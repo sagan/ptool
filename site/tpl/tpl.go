@@ -101,6 +101,11 @@ var (
 			Url:     "https://discfan.net/",
 			Comment: "蝶粉",
 		},
+		"dragonhd": &config.SiteConfigStruct{
+			Type:    "nexusphp",
+			Url:     "https://www.dragonhd.xyz/",
+			Comment: "龍之家",
+		},
 		"eastgame": &config.SiteConfigStruct{
 			Type:    "nexusphp",
 			Aliases: []string{"tlfbits", "tlf"},
@@ -320,6 +325,7 @@ var (
 			Type:              "nexusphp",
 			Aliases:           []string{"mteam", "mt"},
 			Url:               "https://kp.m-team.cc/",
+			Domains:           []string{"m-team.io"},
 			TorrentsExtraUrls: []string{"adult.php", "music.php"},
 			Comment:           "馒头",
 		},

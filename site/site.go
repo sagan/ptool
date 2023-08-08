@@ -46,9 +46,9 @@ type Status struct {
 type Site interface {
 	GetName() string
 	GetSiteConfig() *config.SiteConfigStruct
-	// download torrent by original id (eg. 12345), sitename.id (eg. mteam.12345), or torrent download url
+	// download torrent by id (eg. 12345), sitename.id (eg. mteam.12345), or torrent download url (eg. https://kp.m-team.cc/download.php?id=12345)
 	DownloadTorrent(url string) (content []byte, filename string, err error)
-	// download torrent by torrent original id (eg. 12345)
+	// download torrent by torrent id (eg. 12345)
 	DownloadTorrentById(id string) (content []byte, filename string, err error)
 	GetLatestTorrents(full bool) ([]Torrent, error)
 	// sort: size|name|none(or "")
@@ -67,9 +67,8 @@ type RegInfo struct {
 type SiteCreator func(*RegInfo) (Site, error)
 
 var (
-	registryMap        = map[string](*RegInfo){}
-	sites              = map[string](Site){}
-	resourcesWaitGroup sync.WaitGroup
+	registryMap = map[string](*RegInfo){}
+	sites       = map[string](Site){}
 )
 
 func (torrent *Torrent) MatchFilter(filter string) bool {
@@ -258,6 +257,7 @@ func init() {
 
 // called by main codes on program exit. clean resources
 func Exit() {
+	var resourcesWaitGroup sync.WaitGroup
 	// for now, nothing to close
 	for siteName := range sites {
 		delete(sites, siteName)

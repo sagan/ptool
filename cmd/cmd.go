@@ -34,9 +34,8 @@ var RootCmd = &cobra.Command{
 }
 
 var (
-	shellCompletions   = map[string](func(document *prompt.Document) []prompt.Suggest){}
-	resourcesWaitGroup sync.WaitGroup
-	ShellHistory       *ShellHistoryStruct
+	shellCompletions = map[string](func(document *prompt.Document) []prompt.Suggest){}
+	ShellHistory     *ShellHistoryStruct
 )
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -110,6 +109,7 @@ func init() {
 // clean all resources created during this session and exit
 func Exit(code int) {
 	log.Tracef("Exit. Closing resources")
+	var resourcesWaitGroup sync.WaitGroup
 	resourcesWaitGroup.Add(2)
 	go func() {
 		defer resourcesWaitGroup.Done()
