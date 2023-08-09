@@ -103,7 +103,8 @@ func partialdownload(cmd *cobra.Command, args []string) error {
 			startIndex, len(torrentFiles)-2, len(torrentFiles))
 	}
 	if !originalOrder {
-		sort.Slice(torrentFiles, func(i, j int) bool {
+		// while not necessory to use stable sort, we want absolutely consistent results
+		sort.SliceStable(torrentFiles, func(i, j int) bool {
 			return torrentFiles[i].Path < torrentFiles[j].Path
 		})
 	}
@@ -147,12 +148,15 @@ func partialdownload(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Torrent Size: %s (%d) / Chunk Size: %s; Skipped files: %d; All %d Chunks:\n",
 			utils.BytesSize(float64(allSize)), len(torrentFiles),
 			utils.BytesSize(float64(chunkSize)), startIndex, len(chunks))
-		fmt.Printf("%-6s  %-5s  %s\n", "Index", "Files", "Size")
+		fmt.Printf("%-10s  %-15s  %-5s  %s\n", "ChunkIndex", "FileStartIndex", "Files", "Size")
+		fileStartIndex := int64(0)
 		if startIndex > 0 {
-			fmt.Printf("%-6s  %-5d  %s\n", "<skip>", startIndex, utils.BytesSize(float64(skippedSize)))
+			fmt.Printf("%-10s  %-15d  %-5d  %s\n", "<skip>", fileStartIndex, startIndex, utils.BytesSize(float64(skippedSize)))
+			fileStartIndex += startIndex
 		}
 		for _, chunk := range chunks {
-			fmt.Printf("%-6d  %-5d  %s\n", chunk.Index, chunk.FilesCnt, utils.BytesSize(float64(chunk.Size)))
+			fmt.Printf("%-10d  %-15d  %-5d  %s\n", chunk.Index, fileStartIndex, chunk.FilesCnt, utils.BytesSize(float64(chunk.Size)))
+			fileStartIndex += chunk.FilesCnt
 		}
 		return nil
 	}
