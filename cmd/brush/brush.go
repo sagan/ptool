@@ -121,6 +121,7 @@ func brush(cmd *cobra.Command, args []string) error {
 			AllowPaid:               siteInstance.GetSiteConfig().BrushAllowPaid,
 			AllowHr:                 siteInstance.GetSiteConfig().BrushAllowHr,
 			AllowZeroSeeders:        siteInstance.GetSiteConfig().BrushAllowZeroSeeders,
+			Excludes:                siteInstance.GetSiteConfig().BrushExcludes,
 			MinDiskSpace:            clientInstance.GetClientConfig().BrushMinDiskSpaceValue,
 			SlowUploadSpeedTier:     clientInstance.GetClientConfig().BrushSlowUploadSpeedTierValue,
 			MaxDownloadingTorrents:  clientInstance.GetClientConfig().BrushMaxDownloadingTorrents,

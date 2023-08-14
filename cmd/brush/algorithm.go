@@ -42,6 +42,7 @@ type BrushOptionStruct struct {
 	TorrentMinSizeLimit     int64
 	TorrentMaxSizeLimit     int64
 	Now                     int64
+	Excludes                []string
 }
 
 type AlgorithmAddTorrent struct {
@@ -162,7 +163,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	}
 
 	for _, siteTorrent := range siteTorrents {
-		score, predictionUploadSpeed := rateSiteTorrent(&siteTorrent, option)
+		score, predictionUploadSpeed, _ := rateSiteTorrent(&siteTorrent, option)
 		if score > 0 {
 			candidateTorrent := candidateTorrentStruct{
 				Name:                  siteTorrent.Name,
@@ -481,16 +482,17 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	return
 }
 
-func rateSiteTorrent(siteTorrent *site.Torrent, brushOption *BrushOptionStruct) (score float64, predictionUploadSpeed int64) {
+func rateSiteTorrent(siteTorrent *site.Torrent, brushOption *BrushOptionStruct) (score float64, predictionUploadSpeed int64, note string) {
 	if log.GetLevel() >= log.TraceLevel {
 		defer func() {
-			log.Tracef("rateSiteTorrent score=%0.0f name=%s, free=%t, rtime=%d, seeders=%d, leechers=%d",
+			log.Tracef("rateSiteTorrent score=%0.0f name=%s, free=%t, rtime=%d, seeders=%d, leechers=%d, note=%s",
 				score,
 				siteTorrent.Name,
 				siteTorrent.DownloadMultiplier == 0,
 				brushOption.Now-siteTorrent.Time,
 				siteTorrent.Seeders,
 				siteTorrent.Leechers,
+				note,
 			)
 		}()
 	}
@@ -504,6 +506,11 @@ func rateSiteTorrent(siteTorrent *site.Torrent, brushOption *BrushOptionStruct) 
 		(!brushOption.AllowZeroSeeders && siteTorrent.Seeders == 0) ||
 		siteTorrent.Leechers <= siteTorrent.Seeders {
 		score = 0
+		return
+	}
+	if siteTorrent.MatchFiltersOr(brushOption.Excludes) {
+		score = 0
+		note = "brush excludes matches"
 		return
 	}
 	// 部分站点定期将旧种重新置顶免费。这类种子仍然可以获得很好的上传速度。

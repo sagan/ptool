@@ -78,6 +78,13 @@ func (torrent *Torrent) MatchFilter(filter string) bool {
 	return false
 }
 
+// will match if any filter in list matches
+func (torrent *Torrent) MatchFiltersOr(filters []string) bool {
+	return slices.IndexFunc(filters, func(filter string) bool {
+		return torrent.MatchFilter(filter)
+	}) != -1
+}
+
 func Register(regInfo *RegInfo) {
 	registryMap[regInfo.Name] = regInfo
 	for _, alias := range regInfo.Aliases {

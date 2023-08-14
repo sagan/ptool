@@ -327,6 +327,7 @@ var (
 			Url:               "https://kp.m-team.cc/",
 			Domains:           []string{"m-team.io"},
 			TorrentsExtraUrls: []string{"adult.php", "music.php"},
+			BrushExcludes:     []string{"[原盤首發]"}, // 馒头原盘首发限速，刷流效果极差
 			Comment:           "馒头",
 		},
 		"monikadesign": &config.SiteConfigStruct{

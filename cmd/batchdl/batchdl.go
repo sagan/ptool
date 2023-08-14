@@ -294,10 +294,8 @@ mainloop:
 				log.Tracef("Skip torrent %s due to filter %s does NOT match", torrent.Name, filter)
 				continue
 			}
-			if index := slices.IndexFunc(excludesList, func(excludeStr string) bool {
-				return torrent.MatchFilter(excludeStr)
-			}); index != -1 {
-				log.Tracef("Skip torrent %s due to exclude string %s matchs", torrent.Name, excludesList[index])
+			if torrent.MatchFiltersOr(excludesList) {
+				log.Tracef("Skip torrent %s due to excludes matches", torrent.Name)
 				continue
 			}
 			if len(includesList) > 0 {

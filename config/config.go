@@ -81,6 +81,7 @@ type SiteConfigStruct struct {
 	BrushAllowPaid                 bool     `yaml:"brushAllowPaid"`
 	BrushAllowHr                   bool     `yaml:"brushAllowHr"`
 	BrushAllowZeroSeeders          bool     `yaml:"brushAllowZeroSeeders"`
+	BrushExcludes                  []string `yaml:"brushExcludes"`
 	SelectorTorrentsListHeader     string   `yaml:"selectorTorrentsListHeader"`
 	SelectorTorrentsList           string   `yaml:"selectorTorrentsList"`
 	SelectorTorrentBlock           string   `yaml:"selectorTorrentBlock"` // dom block of a torrent in list

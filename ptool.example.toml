@@ -47,4 +47,12 @@ cookie = "cookie_here"
 #brushAllowPaid = false # 是否允许使用"付费"种子刷流（付费种子：第一次下载或汇报时需要扣除积分）
 #brushAllowHr = false # 是否允许使用HR种子刷流。程序不会特意保证HR种子的做种时长，所以仅当你的账户无视HR(如VIP)时开启此选项
 #brushAllowZeroSeeders = false # 是否允许刷流任务添加当前0做种的种子到客户端
+#brushExcludes = [] # 排除种子关键字列表。标题或副标题包含列表中任意项的种子不会被刷流任务选择
 #timezone = "Asia/Shanghai" # 网站页面显示时间的时区
+
+# 站点分组功能
+# 定义分组后，大部分命令中 <site> 类型的参数可以使用分组名代替以指代多个站点，例如：
+# 在 acg 分组的所有站点中搜索 "clannad" 关键词的种子: ptool search acg clannad
+[[groups]]
+name = "acg"
+sites = ["u2", "kamept"]
