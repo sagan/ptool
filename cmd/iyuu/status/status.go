@@ -12,7 +12,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "status",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "iyuu.status"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "iyuu.status"},
 	Short:       "Show iyuu user status.",
 	Long:        `Show iyuu user status.`,
 	RunE:        status,

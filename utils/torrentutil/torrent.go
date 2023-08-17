@@ -129,7 +129,7 @@ func (meta *TorrentMeta) XseedCheckWithClientTorrent(clientTorrentContents []cli
 	}
 	torrentContents := meta.Files
 	clientRootDir := ""
-	clientFilesSizeMap := map[string](int64){}
+	clientFilesSizeMap := map[string]int64{}
 
 	for _, clientTorrentContent := range clientTorrentContents {
 		path := clientTorrentContent.Path

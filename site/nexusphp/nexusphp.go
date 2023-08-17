@@ -32,7 +32,7 @@ type Site struct {
 	torrentsParserOption *TorrentsParserOption
 }
 
-var sortFields = map[string](string){
+var sortFields = map[string]string{
 	"name":     "1",
 	"time":     "4",
 	"size":     "5",

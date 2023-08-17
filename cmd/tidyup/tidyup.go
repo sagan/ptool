@@ -14,7 +14,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "tidyup {client}",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "tidyup"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "tidyup"},
 	Short:       "Tidy up all torrents of client.",
 	Long: `Tidy up all torrents of client.
 Set appropriate tags to all torrents of a client. For example, it will set the "site:m-team" tag for all torrents downloaded from M-Team.
@@ -50,7 +50,7 @@ func tidyup(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get torrents: %v", err)
 	}
-	domainSiteMap := map[string](string){}
+	domainSiteMap := map[string]string{}
 	cntTorrents := int64(0)
 	cntSuccessTorrents := int64(0)
 

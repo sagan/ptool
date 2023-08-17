@@ -61,7 +61,7 @@ func (tnsite *Site) GetStatus() (*site.Status, error) {
 
 	var data = &apiMainInfoResponse{}
 	apiUrl := tnsite.SiteConfig.Url + "api/user/getMainInfo"
-	headers := map[string](string){
+	headers := map[string]string{
 		"x-csrf-token": tnsite.csrfToken,
 	}
 	err = utils.FetchJson(apiUrl, data, tnsite.HttpClient,

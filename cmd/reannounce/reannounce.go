@@ -11,7 +11,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "reannounce {client} [--category category] [--tag tag] [--filter filter] [infoHash]...",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "reannounce"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "reannounce"},
 	Short:       "Reannounce torrents of client.",
 	Long: `Reannounce torrents of client.
 [infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:

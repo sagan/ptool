@@ -11,7 +11,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "createcategory {client} {category} [--save-path path]",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "createcategory"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "createcategory"},
 	Short:       "Create or edit category in client.",
 	Long: `Create category in client. If category already exists, edit it.
 Use --save-path to set (or modify) the save path of the category.`,

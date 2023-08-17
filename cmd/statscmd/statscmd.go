@@ -13,7 +13,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "stats [clients]... [flags]",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "stats"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "stats"},
 	Short:       "Show client brushing traffic statistics.",
 	Long: `Show client brushing traffic statistics.
 Only torrents added by ptool (of this machine) will be counted.
@@ -50,7 +50,7 @@ func statscmd(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	doneFlag := map[string](bool){}
+	doneFlag := map[string]bool{}
 	for i, clientname := range clientnames {
 		if clientname == "_" || doneFlag[clientname] {
 			continue

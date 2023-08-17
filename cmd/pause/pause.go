@@ -11,7 +11,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "pause {client} [--category category] [--tag tag] [--filter filter] [infoHash]...",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "pause"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "pause"},
 	Aliases:     []string{"stop"},
 	Short:       "Pause torrents of client.",
 	Long: `Pause torrents of client.

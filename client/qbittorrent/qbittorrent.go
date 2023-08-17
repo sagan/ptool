@@ -108,7 +108,7 @@ func (qbclient *Client) GetClientConfig() *config.ClientConfigStruct {
 	return qbclient.ClientConfig
 }
 
-func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.TorrentOption, meta map[string](int64)) error {
+func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.TorrentOption, meta map[string]int64) error {
 	err := qbclient.login()
 	if err != nil {
 		return fmt.Errorf("login error: %v", err)
@@ -421,7 +421,7 @@ func (qbclient *Client) GetCategories() ([]client.TorrentCategory, error) {
 	if err != nil {
 		return nil, fmt.Errorf("login error: %v", err)
 	}
-	var categories map[string](client.TorrentCategory)
+	var categories map[string]client.TorrentCategory
 	err = qbclient.apiRequest("api/v2/torrents/categories", &categories)
 	if err != nil {
 		return nil, err
@@ -480,7 +480,7 @@ func (qbclient *Client) DeleteTorrents(infoHashes []string, deleteFiles bool) er
 }
 
 func (qbclient *Client) ModifyTorrent(infoHash string,
-	option *client.TorrentOption, meta map[string](int64)) error {
+	option *client.TorrentOption, meta map[string]int64) error {
 	if option == nil {
 		option = &client.TorrentOption{}
 	}
@@ -691,7 +691,7 @@ func (qbclient *Client) GetStatus() (*client.Status, error) {
 	return &status, nil
 }
 
-func (qbclient *Client) setPreferences(preferences map[string](any)) error {
+func (qbclient *Client) setPreferences(preferences map[string]any) error {
 	err := qbclient.login()
 	if err != nil {
 		return fmt.Errorf("login error: %v", err)

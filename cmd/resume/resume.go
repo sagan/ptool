@@ -11,7 +11,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "resume {client} [--category category] [--tag tag] [--filter filter] [infoHash]...",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "resume"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "resume"},
 	Aliases:     []string{"start"},
 	Short:       "Resume torrents of client.",
 	Long: `Resume torrents of client.

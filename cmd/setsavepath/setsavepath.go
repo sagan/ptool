@@ -11,7 +11,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "setsavepath {client} {savePath} [--category category] [--tag tag] [--filter filter] [infoHash]...",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "setsavepath"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "setsavepath"},
 	Short:       "Set the save path of torrents in client.",
 	Long: `Set the save path of torrents in client.
 [infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:

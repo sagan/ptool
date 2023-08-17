@@ -20,7 +20,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "xseed {client}...",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "iyuu.xseed"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "iyuu.xseed"},
 	Short:       "Cross seed using iyuu API.",
 	Long: `Cross seed using iyuu API.
 By default it will add xseed torrents from All sites unless --include-sites or --exclude-sites flag is set.`,
@@ -74,8 +74,8 @@ func xseed(cmd *cobra.Command, args []string) error {
 	}
 
 	includeSitesMode := false
-	includeSitesFlag := map[string](bool){}
-	excludeSitesFlag := map[string](bool){}
+	includeSitesFlag := map[string]bool{}
+	excludeSitesFlag := map[string]bool{}
 	if includeSites != "" && excludeSites != "" {
 		return fmt.Errorf("--include-sites and --exclude-sites flags can NOT be both set")
 	}
@@ -103,8 +103,8 @@ func xseed(cmd *cobra.Command, args []string) error {
 	}
 
 	clientNames := args
-	clientInstanceMap := map[string](client.Client){} // clientName => clientInstance
-	clientInfoHashesMap := map[string]([]string){}
+	clientInstanceMap := map[string]client.Client{} // clientName => clientInstance
+	clientInfoHashesMap := map[string][]string{}
 	reqInfoHashes := []string{}
 
 	cntCandidateTargetTorrents := int64(0)
@@ -201,7 +201,7 @@ func xseed(cmd *cobra.Command, args []string) error {
 
 	var sites []iyuu.Site
 	var clientTorrents []*iyuu.Torrent
-	var clientTorrentsMap = map[string]([]*iyuu.Torrent){} // targetInfoHash => iyuuTorrent
+	var clientTorrentsMap = map[string][]*iyuu.Torrent{} // targetInfoHash => iyuuTorrent
 	iyuu.Db().Find(&sites)
 	iyuu.Db().Where("target_info_hash in ?", reqInfoHashes).Find(&clientTorrents)
 	site2LocalMap := iyuu.GenerateIyuu2LocalSiteMap(sites, config.Get().Sites)
@@ -212,7 +212,7 @@ func xseed(cmd *cobra.Command, args []string) error {
 		clientTorrentsMap[torrent.TargetInfoHash] = list
 	}
 
-	siteInstancesMap := map[string](site.Site){}
+	siteInstancesMap := map[string]site.Site{}
 mainloop:
 	for i, clientName := range clientNames {
 		log.Printf("Start xseeding client (%d/%d) %s", i+1, len(clientName), clientName)

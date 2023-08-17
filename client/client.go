@@ -37,7 +37,7 @@ type Torrent struct {
 	SizeCompleted      int64
 	Seeders            int64
 	Leechers           int64
-	Meta               map[string](int64)
+	Meta               map[string]int64
 }
 
 type TorrentContentFile struct {
@@ -90,8 +90,8 @@ type Client interface {
 	GetTorrent(infoHash string) (*Torrent, error)
 	// stateFilter: _all|_active|_done|_undone, or any state value (possibly with a _ prefix)
 	GetTorrents(stateFilter string, category string, showAll bool) ([]Torrent, error)
-	AddTorrent(torrentContent []byte, option *TorrentOption, meta map[string](int64)) error
-	ModifyTorrent(infoHash string, option *TorrentOption, meta map[string](int64)) error
+	AddTorrent(torrentContent []byte, option *TorrentOption, meta map[string]int64) error
+	ModifyTorrent(infoHash string, option *TorrentOption, meta map[string]int64) error
 	DeleteTorrents(infoHashes []string, deleteFiles bool) error
 	PauseTorrents(infoHashes []string) error
 	ResumeTorrents(infoHashes []string) error
@@ -147,7 +147,7 @@ var (
 	Registry           = []*RegInfo{}
 	substituteTagRegex = regexp.MustCompile(`^(category|meta\..+):.+$`)
 	// all clientInstances created during this ptool program session
-	clients = map[string](Client){}
+	clients = map[string]Client{}
 )
 
 func Register(regInfo *RegInfo) {
@@ -187,7 +187,7 @@ func CreateClient(name string) (Client, error) {
 	return clientInstance, err
 }
 
-func GenerateNameWithMeta(name string, meta map[string](int64)) string {
+func GenerateNameWithMeta(name string, meta map[string]int64) string {
 	str := name
 	first := true
 	for key, value := range meta {
@@ -205,7 +205,7 @@ func GenerateNameWithMeta(name string, meta map[string](int64)) string {
 	return str
 }
 
-func ParseMetaFromName(fullname string) (name string, meta map[string](int64)) {
+func ParseMetaFromName(fullname string) (name string, meta map[string]int64) {
 	metaStrReg := regexp.MustCompile(`^(?P<name>.*?)__meta.(?P<meta>[._a-zA-Z0-9]+)$`)
 	metaStrMatch := metaStrReg.FindStringSubmatch(fullname)
 	if metaStrMatch != nil {
@@ -279,8 +279,8 @@ func (torrent *Torrent) GetMetaFromTag(meta string) string {
 	return ""
 }
 
-func (torrent *Torrent) GetMetadataFromTags() map[string](int64) {
-	metas := map[string](int64){}
+func (torrent *Torrent) GetMetadataFromTags() map[string]int64 {
+	metas := map[string]int64{}
 	metaTagRegex := regexp.MustCompile(`^meta\.(?P<name>.+):(?P<value>.+)$`)
 	for _, tag := range torrent.Tags {
 		metaStrMatch := metaTagRegex.FindStringSubmatch(tag)

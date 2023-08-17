@@ -13,7 +13,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "addtrackers {client} [--category category] [--tag tag] [--filter filter] [infoHash]...",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "addtrackers"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "addtrackers"},
 	Short:       "Add new trackers to torrents of client.",
 	Long: `Add new trackers to torrents of client.
 [infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:

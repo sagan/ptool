@@ -11,7 +11,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "recheck {client} [--category category] [--tag tag] [--filter filter] [infoHash]...",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "recheck"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "recheck"},
 	Short:       "Recheck torrents of client.",
 	Long: `Recheck torrents of client.
 [infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:

@@ -27,7 +27,7 @@ var cdCmd = &cobra.Command{
 	Short:       "(shell only) Change current working dir.",
 	Long:        `Change current working dir.`,
 	Args:        cobra.MatchAll(cobra.MaximumNArgs(1), cobra.OnlyValidArgs),
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "cd"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "cd"},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dir := ""
 		var err error
@@ -87,7 +87,7 @@ var lsCmd = &cobra.Command{
 	Aliases:     []string{"dir"},
 	Short:       "(shell only) List directory contents.",
 	Long:        `List directory contents.`,
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "ls"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "ls"},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dirs := []string{}
 		dirs = append(dirs, args...)
@@ -168,7 +168,7 @@ var historyCmd = &cobra.Command{
 
 var purgeCmd = &cobra.Command{
 	Use:         "purge [client | site]...",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "purge"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "purge"},
 	Short:       "(shell only) Purge client or site cache",
 	Long: `(shell only) Purge client or site cache
 If no args provided, the cache of ALL clients and sites will be purged`,

@@ -13,7 +13,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "removetrackers {client} [--category category] [--tag tag] [--filter filter] [infoHash]...",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "removetrackers"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "removetrackers"},
 	Short:       "Remove trackers from torrents of client.",
 	Long: `Remove trackers from torrents of client.
 [infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:

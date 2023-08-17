@@ -13,7 +13,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "getcategories {client}",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "getcategories"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "getcategories"},
 	Short:       "Get all categories of client.",
 	Long:        `Get all categories of client.`,
 	Args:        cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),

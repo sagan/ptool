@@ -11,7 +11,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "delete {client} {infoHash}...",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "delete"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "delete"},
 	Aliases:     []string{"rm"},
 	Short:       "Delete torrents from client.",
 	Long: `Delete torrents from client.

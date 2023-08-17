@@ -32,16 +32,16 @@ type IyuuApiRecommendSite struct {
 }
 
 type IyuuApiResponse struct {
-	Ret  int64            `json:"ret"`
-	Msg  string           `json:"msg"`
-	Data map[string](any) `json:"data"`
+	Ret  int64          `json:"ret"`
+	Msg  string         `json:"msg"`
+	Data map[string]any `json:"data"`
 }
 
 type IyuuApiGetUserResponse struct {
 	Ret  int64  `json:"ret"`
 	Msg  string `json:"msg"`
 	Data struct {
-		User map[string](any) `json:"user"`
+		User map[string]any `json:"user"`
 	} `json:"data"`
 }
 
@@ -79,7 +79,7 @@ type IyuuTorrentInfoHash struct {
 const IYUU_VERSION = "2.0.0"
 
 // https://api.iyuu.cn/docs.php?service=App.Api.Infohash&detail=1&type=fold
-func IyuuApiHash(token string, infoHashes []string) (map[string]([]IyuuTorrentInfoHash), error) {
+func IyuuApiHash(token string, infoHashes []string) (map[string][]IyuuTorrentInfoHash, error) {
 	infoHashes = utils.CopySlice(infoHashes)
 	for i, infoHash := range infoHashes {
 		infoHashes[i] = strings.ToLower(infoHash)
@@ -106,14 +106,14 @@ func IyuuApiHash(token string, infoHashes []string) (map[string]([]IyuuTorrentIn
 		return nil, fmt.Errorf("iyuu api error: ret=%d, msg=%s", resData.Ret, resData.Msg)
 	}
 
-	result := map[string]([]IyuuTorrentInfoHash){}
+	result := map[string][]IyuuTorrentInfoHash{}
 	for _, data := range resData.Data {
 		result[data.Hash] = data.Torrent
 	}
 	return result, nil
 }
 
-func IyuuApiGetUser(token string) (data map[string](any), err error) {
+func IyuuApiGetUser(token string) (data map[string]any, err error) {
 	err = utils.FetchJson("https://api.iyuu.cn/index.php?s=App.Api.GetUser&sign="+token,
 		&data, nil, "", "", nil)
 	return
@@ -133,7 +133,7 @@ func IyuuApiSites(token string) ([]IyuuApiSite, error) {
 	return resData.Data.Sites, nil
 }
 
-func IyuuApiBind(token string, site string, uid int64, passkey string) (map[string](any), error) {
+func IyuuApiBind(token string, site string, uid int64, passkey string) (map[string]any, error) {
 	apiUrl := "https://api.iyuu.cn/index.php?s=App.Api.Bind&token=" + token +
 		"&site=" + site + "&id=" + fmt.Sprint(uid) + "&passkey=" + utils.Sha1String(passkey)
 
@@ -187,7 +187,7 @@ func (iyuuApiSite IyuuApiSite) ToSite() Site {
 // return iyuuSid => localSiteName map
 func GenerateIyuu2LocalSiteMap(iyuuSites []Site,
 	localSites []*config.SiteConfigStruct) map[int64]string {
-	iyuu2LocalSiteMap := map[int64](string){} // iyuu sid => local site name
+	iyuu2LocalSiteMap := map[int64]string{} // iyuu sid => local site name
 	for _, iyuuSite := range iyuuSites {
 		localSite := utils.FindInSlice(localSites, func(siteConfig *config.SiteConfigStruct) bool {
 			if siteConfig.Disabled {

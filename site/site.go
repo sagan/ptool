@@ -67,8 +67,8 @@ type RegInfo struct {
 type SiteCreator func(*RegInfo) (Site, error)
 
 var (
-	registryMap = map[string](*RegInfo){}
-	sites       = map[string](Site){}
+	registryMap = map[string]*RegInfo{}
+	sites       = map[string]Site{}
 )
 
 func (torrent *Torrent) MatchFilter(filter string) bool {

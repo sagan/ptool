@@ -23,7 +23,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "batchdl {site} [--action add|download|...] [--base-url torrents_page_url]",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "batchdl"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "batchdl"},
 	Aliases:     []string{"ebookgod"},
 	Short:       "Batch download the smallest (or by any other order) torrents from a site.",
 	Long:        `Batch download the smallest (or by any other order) torrents from a site.`,

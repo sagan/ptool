@@ -12,7 +12,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "bind --site {iyuu_site_name} --uid {site_uid} --passkey {site_passkey}",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "iyuu.bind"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "iyuu.bind"},
 	Short:       "Bind (authenticate) iyuu service using PT site passkey.",
 	Long: `Bind (authenticate) iyuu service using PT site passkey.
 

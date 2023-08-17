@@ -14,7 +14,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "verifytorrent {file.torrent}... {--save-path dir | --content-path path} [--check]",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "verifytorrent"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "verifytorrent"},
 	Aliases:     []string{"verify"},
 	Short:       "Verify *.torrent file(s) are consistent with local disk files.",
 	Long: `Verify *.torrent file(s) are consistent with local disk files.

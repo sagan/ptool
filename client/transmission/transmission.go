@@ -27,7 +27,7 @@ type Client struct {
 	client                    *transmissionrpc.Client
 	datatime                  int64
 	datatimeMeta              int64
-	torrents                  map[string](*transmissionrpc.Torrent)
+	torrents                  map[string]*transmissionrpc.Torrent
 	sessionStats              *transmissionrpc.SessionStats
 	sessionArgs               *transmissionrpc.SessionArguments
 	freeSpace                 int64
@@ -98,7 +98,7 @@ func (trclient *Client) sync() error {
 	if err != nil {
 		return err
 	}
-	torrentsMap := map[string](*transmissionrpc.Torrent){}
+	torrentsMap := map[string]*transmissionrpc.Torrent{}
 	unfinishedSize := int64(0)
 	unfinishedDownloadingSize := int64(0)
 	for i := range torrents {
@@ -173,7 +173,7 @@ func (trclient *Client) GetTorrents(stateFilter string, category string, showAll
 	return torrents, nil
 }
 
-func (trclient *Client) AddTorrent(torrentContent []byte, option *client.TorrentOption, meta map[string](int64)) error {
+func (trclient *Client) AddTorrent(torrentContent []byte, option *client.TorrentOption, meta map[string]int64) error {
 	transmissionbt := trclient.client
 	torrentContentB64 := base64.StdEncoding.EncodeToString(torrentContent)
 	var downloadDir *string
@@ -238,7 +238,7 @@ func (trclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 	return nil
 }
 
-func (trclient *Client) ModifyTorrent(infoHash string, option *client.TorrentOption, meta map[string](int64)) error {
+func (trclient *Client) ModifyTorrent(infoHash string, option *client.TorrentOption, meta map[string]int64) error {
 	transmissionbt := trclient.client
 	trtorrent, err := trclient.getTorrent(infoHash, false)
 	if err != nil {
@@ -438,7 +438,7 @@ func (trclient *Client) GetTags() ([]string, error) {
 		return nil, err
 	}
 	tags := []string{}
-	tagsFlag := map[string](bool){}
+	tagsFlag := map[string]bool{}
 	for _, trtorrent := range trclient.torrents {
 		for _, label := range trtorrent.Labels {
 			if label != "" && !tagsFlag[label] && !client.IsSubstituteTag(label) {
@@ -471,7 +471,7 @@ func (trclient *Client) GetCategories() ([]client.TorrentCategory, error) {
 		return nil, err
 	}
 	cats := []client.TorrentCategory{}
-	catsFlag := map[string](bool){}
+	catsFlag := map[string]bool{}
 	for _, trtorrent := range trclient.torrents {
 		torrent := tr2Torrent(trtorrent)
 		cat := torrent.GetCategoryFromTag()

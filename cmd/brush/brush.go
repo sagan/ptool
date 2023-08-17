@@ -20,7 +20,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "brush {client} {site | group}...",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "brush"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "brush"},
 	Short:       "Brush sites using client.",
 	Long:        `Brush sites using client.`,
 	Args:        cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
@@ -61,7 +61,7 @@ func brush(cmd *cobra.Command, args []string) error {
 	cntSkipSite := int64(0)
 	cntAddTorrents := int64(0)
 	cntDeleteTorrents := int64(0)
-	doneSiteFlag := map[string](bool){}
+	doneSiteFlag := map[string]bool{}
 	tmpdir, _ := os.MkdirTemp(os.TempDir(), "ptool")
 	var statDb *stats.StatDb
 	if config.Get().BrushEnableStats {

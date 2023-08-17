@@ -22,7 +22,7 @@ const (
 	SLOW_TORRENTS_CHECK_TIMESPAN          = int64(15 * 60)
 	STALL_TORRENT_DELETEION_TIMESPAN      = int64(30 * 60) // stalled torrent will be deleted after this time passed
 	BANDWIDTH_FULL_PERCENT                = float64(0.8)
-	DELETE_TORRENT_IMMEDIATELY_STORE      = float64(99999)
+	DELETE_TORRENT_IMMEDIATELY_SCORE      = float64(99999)
 	RESUME_TORRENTS_FREE_DISK_SPACE_TIER  = int64(5 * 1024 * 1024 * 1024)  // 5GB
 	DELETE_TORRENTS_FREE_DISK_SPACE_TIER  = int64(10 * 1024 * 1024 * 1024) // 10GB
 )
@@ -48,14 +48,14 @@ type BrushOptionStruct struct {
 type AlgorithmAddTorrent struct {
 	DownloadUrl string
 	Name        string
-	Meta        map[string](int64)
+	Meta        map[string]int64
 	Msg         string
 }
 
 type AlgorithmModifyTorrent struct {
 	InfoHash string
 	Name     string
-	Meta     map[string](int64)
+	Meta     map[string]int64
 	Msg      string
 }
 
@@ -82,7 +82,7 @@ type candidateTorrentStruct struct {
 	Size                  int64
 	PredictionUploadSpeed int64
 	Score                 float64
-	Meta                  map[string](int64)
+	Meta                  map[string]int64
 }
 
 type candidateClientTorrentStruct struct {
@@ -145,8 +145,8 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	var stallTorrents []AlgorithmModifyTorrent
 	var resumeTorrents []AlgorithmOperationTorrent
 	var deleteCandidateTorrents []candidateClientTorrentStruct
-	clientTorrentsMap := map[string](*clientTorrentInfoStruct){}
-	siteTorrentsMap := map[string](*site.Torrent){}
+	clientTorrentsMap := map[string]*clientTorrentInfoStruct{}
+	siteTorrentsMap := map[string]*site.Torrent{}
 
 	targetUploadSpeed := clientStatus.UploadSpeedLimit
 	if targetUploadSpeed <= 0 {
@@ -214,7 +214,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 			len(candidateTorrents) > 0 {
 			deleteCandidateTorrents = append(deleteCandidateTorrents, candidateClientTorrentStruct{
 				InfoHash:    torrent.InfoHash,
-				Score:       DELETE_TORRENT_IMMEDIATELY_STORE,
+				Score:       DELETE_TORRENT_IMMEDIATELY_SCORE,
 				FutureValue: 0,
 				Msg:         "torrent in error state",
 			})
@@ -223,7 +223,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 			if option.Now-torrent.Atime > NO_PROCESS_TORRENT_DELETEION_TIMESPAN {
 				deleteCandidateTorrents = append(deleteCandidateTorrents, candidateClientTorrentStruct{
 					InfoHash:    torrent.InfoHash,
-					Score:       DELETE_TORRENT_IMMEDIATELY_STORE,
+					Score:       DELETE_TORRENT_IMMEDIATELY_SCORE,
 					FutureValue: 0,
 					Msg:         "torrent has no download proccess",
 				})
@@ -310,7 +310,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	for _, deleteTorrent := range deleteCandidateTorrents {
 		torrent := clientTorrentsMap[deleteTorrent.InfoHash].Torrent
 		shouldDelete := false
-		if deleteTorrent.Score >= DELETE_TORRENT_IMMEDIATELY_STORE ||
+		if deleteTorrent.Score >= DELETE_TORRENT_IMMEDIATELY_SCORE ||
 			(freespace >= 0 && freespace <= option.MinDiskSpace && freespace+freespaceChange <= freespaceTarget) {
 			shouldDelete = true
 		} else if torrent.Ctime <= 0 &&

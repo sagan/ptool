@@ -13,111 +13,111 @@ import (
 )
 
 var (
-	SITES = map[string](*config.SiteConfigStruct){
-		"0ff": &config.SiteConfigStruct{
+	SITES = map[string]*config.SiteConfigStruct{
+		"0ff": {
 			Type:    "nexusphp",
 			Aliases: []string{"pt0ffcc"},
 			Url:     "https://pt.0ff.cc/",
 			Comment: "自由农场",
 		},
-		"1ptba": &config.SiteConfigStruct{
+		"1ptba": {
 			Type:    "nexusphp",
 			Url:     "https://1ptba.com/",
 			Comment: "1PTA (壹PT吧)",
 		},
-		"2xfree": &config.SiteConfigStruct{
+		"2xfree": {
 			Type:    "nexusphp",
 			Aliases: []string{"pt2xfree"},
 			Url:     "https://pt.2xfree.org/",
 			Comment: "2xFree",
 		},
-		"3wmg": &config.SiteConfigStruct{
+		"3wmg": {
 			Type:    "nexusphp",
 			Url:     "https://www.3wmg.com/",
 			Comment: "芒果",
 		},
-		"52pt": &config.SiteConfigStruct{
+		"52pt": {
 			Type:      "nexusphp",
 			Url:       "https://52pt.site/",
 			GlobalHnR: true,
 			Comment:   "52PT",
 		},
-		"audiences": &config.SiteConfigStruct{
+		"audiences": {
 			Type:    "nexusphp",
 			Url:     "https://audiences.me/",
 			Domains: []string{"cinefiles.info"},
 			Comment: "观众",
 		},
-		"azusa": &config.SiteConfigStruct{
+		"azusa": {
 			Type:    "nexusphp",
 			Url:     "https://azusa.wiki/",
 			Comment: "梓喵",
 		},
-		"beitai": &config.SiteConfigStruct{
+		"beitai": {
 			Type:    "nexusphp",
 			Url:     "https://www.beitai.pt/",
 			Comment: "备胎",
 		},
-		"biho": &config.SiteConfigStruct{
+		"biho": {
 			Type:    "nexusphp",
 			Url:     "https://www.biho.xyz/",
 			Comment: "必火pt",
 		},
-		"btschool": &config.SiteConfigStruct{
+		"btschool": {
 			Type:      "nexusphp",
 			Url:       "https://pt.btschool.club/",
 			GlobalHnR: true,
 			Comment:   "学校",
 		},
-		"carpt": &config.SiteConfigStruct{
+		"carpt": {
 			Type:      "nexusphp",
 			Url:       "https://carpt.net/",
 			GlobalHnR: true,
 			Comment:   "CarPT (小车站)",
 		},
-		"cyanbug": &config.SiteConfigStruct{
+		"cyanbug": {
 			Type:    "nexusphp",
 			Url:     "https://cyanbug.net/",
 			Comment: "大青虫",
 		},
-		"dajiao": &config.SiteConfigStruct{
+		"dajiao": {
 			Type:    "nexusphp",
 			Url:     "https://dajiao.cyou/",
 			Comment: "打胶",
 		},
-		"dhtclub": &config.SiteConfigStruct{
+		"dhtclub": {
 			Type:    "nexusphp",
 			Url:     "https://pt.dhtclub.com/",
 			Comment: "DHTCLUB PT",
 		},
-		"dicmusic": &config.SiteConfigStruct{
+		"dicmusic": {
 			Type:    "gazelle",
 			Domains: []string{"dicmusic.com", "52dic.vip"},
 			Url:     "https://dicmusic.club/",
 			Comment: "海豚",
 		},
-		"discfan": &config.SiteConfigStruct{
+		"discfan": {
 			Type:    "nexusphp",
 			Url:     "https://discfan.net/",
 			Comment: "蝶粉",
 		},
-		"dragonhd": &config.SiteConfigStruct{
+		"dragonhd": {
 			Type:    "nexusphp",
 			Url:     "https://www.dragonhd.xyz/",
 			Comment: "龍之家",
 		},
-		"eastgame": &config.SiteConfigStruct{
+		"eastgame": {
 			Type:    "nexusphp",
 			Aliases: []string{"tlfbits", "tlf"},
 			Url:     "https://pt.eastgame.org/",
 			Comment: "吐鲁番",
 		},
-		"gainbound": &config.SiteConfigStruct{
+		"gainbound": {
 			Type:    "nexusphp",
 			Url:     "https://gainbound.net/",
 			Comment: "丐帮",
 		},
-		"gamegamept": &config.SiteConfigStruct{
+		"gamegamept": {
 			Type:              "nexusphp",
 			Aliases:           []string{"ggpt"},
 			GlobalHnR:         true,
@@ -125,24 +125,24 @@ var (
 			TorrentsExtraUrls: []string{"special.php"},
 			Comment:           "GGPT",
 		},
-		"gamerapt": &config.SiteConfigStruct{
+		"gamerapt": {
 			Type:    "nexusphp",
 			Url:     "https://gamerapt.link/",
 			Comment: "駕瞑羅",
 		},
-		"greatposterwall": &config.SiteConfigStruct{
+		"greatposterwall": {
 			Type:    "gazellepw",
 			Aliases: []string{"gpw"},
 			Url:     "https://greatposterwall.com/",
 			Comment: "海豹",
 		},
-		"gtk": &config.SiteConfigStruct{
+		"gtk": {
 			Type:    "nexusphp",
 			Aliases: []string{"ptgtk"},
 			Url:     "https://pt.gtk.pw/",
 			Comment: "PT GTK",
 		},
-		"haidan": &config.SiteConfigStruct{
+		"haidan": {
 			Type:                       "nexusphp",
 			Url:                        "https://www.haidan.video/",
 			SelectorTorrentsListHeader: `none`, // do NOT exists
@@ -155,7 +155,7 @@ var (
 			SelectorTorrentSnatched:    `.snatched_col`,
 			Comment:                    "海胆",
 		},
-		"hares": &config.SiteConfigStruct{
+		"hares": {
 			Type:                           "nexusphp",
 			Aliases:                        []string{"haresclub"},
 			Url:                            "https://club.hares.top/",
@@ -164,33 +164,33 @@ var (
 			SelectorTorrentDiscountEndTime: `.layui-free-color span, .layui-twoupfree-color span`,
 			Comment:                        "白兔俱乐部 (Hares Club)",
 		},
-		"hdarea": &config.SiteConfigStruct{
+		"hdarea": {
 			Type:    "nexusphp",
 			Url:     "https://www.hdarea.co/",
 			Domains: []string{"hdarea.club"},
 			Comment: "高清地带",
 		},
-		"hdatmos": &config.SiteConfigStruct{
+		"hdatmos": {
 			Type:    "nexusphp",
 			Url:     "https://hdatmos.club/",
 			Comment: "阿童木",
 		},
-		"hddolby": &config.SiteConfigStruct{
+		"hddolby": {
 			Type:    "nexusphp",
 			Url:     "https://www.hddolby.com/",
 			Comment: "杜比",
 		},
-		"hdfans": &config.SiteConfigStruct{
+		"hdfans": {
 			Type:    "nexusphp",
 			Url:     "https://hdfans.org/",
 			Comment: "红豆饭",
 		},
-		"hdhome": &config.SiteConfigStruct{
+		"hdhome": {
 			Type:    "nexusphp",
 			Url:     "https://hdhome.org/",
 			Comment: "家园",
 		},
-		"hdcity": &config.SiteConfigStruct{
+		"hdcity": {
 			Type:                       "nexusphp",
 			Url:                        "https://hdcity.city/",
 			SearchUrl:                  "https://hdcity.city/pt?iwannaseethis=%s",
@@ -208,74 +208,74 @@ var (
 			TorrentUrlIdRegexp:         `\bt-(?P<id>\d+)\b`,
 			Comment:                    "城市",
 		},
-		"hdmayi": &config.SiteConfigStruct{
+		"hdmayi": {
 			Type:    "nexusphp",
 			Url:     "http://hdmayi.com/",
 			Comment: "蚂蚁",
 		},
-		"hdpost": &config.SiteConfigStruct{
+		"hdpost": {
 			Type:    "unit3d",
 			Url:     "https://pt.hdpost.top/",
 			Comment: "普斯特",
 		},
-		"hdtime": &config.SiteConfigStruct{
+		"hdtime": {
 			Type:    "nexusphp",
 			Url:     "https://hdtime.org/",
 			Comment: "高清时光",
 		},
-		"hdupt": &config.SiteConfigStruct{
+		"hdupt": {
 			Type:    "nexusphp",
 			Aliases: []string{"upxin"},
 			Url:     "https://pt.hdupt.com/",
 			Comment: "好多油",
 		},
-		"hdvideo": &config.SiteConfigStruct{
+		"hdvideo": {
 			Type:    "nexusphp",
 			Url:     "https://hdvideo.one/",
 			Comment: "高清视频",
 		},
-		"hdzone": &config.SiteConfigStruct{
+		"hdzone": {
 			Type:    "nexusphp",
 			Domains: []string{"hdfun.me"},
 			Url:     "https://hdzone.me/",
 			Comment: "高清地带",
 		},
-		"hhanclub": &config.SiteConfigStruct{
+		"hhanclub": {
 			Type:    "nexusphp",
 			Aliases: []string{"hh", "hhan"},
 			Url:     "https://hhanclub.top/",
 			Domains: []string{"hhan.club"},
 			Comment: "憨憨",
 		},
-		"htpt": &config.SiteConfigStruct{
+		"htpt": {
 			Type:              "nexusphp",
 			Url:               "https://www.htpt.cc/",
 			TorrentsExtraUrls: []string{"live.php"},
 			Comment:           "海棠",
 		},
-		"icc2022": &config.SiteConfigStruct{
+		"icc2022": {
 			Type:      "nexusphp",
 			Aliases:   []string{"icc"},
 			Url:       "https://www.icc2022.com/",
 			GlobalHnR: true,
 			Comment:   "冰淇淋",
 		},
-		"ilolicon": &config.SiteConfigStruct{
+		"ilolicon": {
 			Type:    "nexusphp",
 			Url:     "https://share.ilolicon.com/",
 			Comment: "ilolicon PT",
 		},
-		"itzmx": &config.SiteConfigStruct{
+		"itzmx": {
 			Type:    "nexusphp",
 			Url:     "https://pt.itzmx.com/",
 			Comment: "PT分享站",
 		},
-		"joyhd": &config.SiteConfigStruct{
+		"joyhd": {
 			Type:    "nexusphp",
 			Url:     "https://www.joyhd.net/",
 			Comment: "JoyHD",
 		},
-		"jpopsuki": &config.SiteConfigStruct{
+		"jpopsuki": {
 			Type:                       "gazelle",
 			Url:                        "https://jpopsuki.eu/",
 			SelectorUserInfoUserName:   `#userinfo_username a.username`,
@@ -283,7 +283,7 @@ var (
 			SelectorUserInfoDownloaded: `#userinfo_stats li:nth-child(2)`,
 			Comment:                    "JPopsuki",
 		},
-		"jptvclub": &config.SiteConfigStruct{
+		"jptvclub": {
 			Type:                       "unit3d",
 			Aliases:                    []string{"jptv"}, // Though there's another JPTVTS, I'd prefer the club.
 			Url:                        "https://jptv.club/",
@@ -291,19 +291,19 @@ var (
 			SelectorUserInfoUploaded:   ".ratio-bar .badge-user:has(.fa-arrow-up)",
 			SelectorUserInfoDownloaded: ".ratio-bar .badge-user:has(.fa-arrow-down)",
 		},
-		"kamept": &config.SiteConfigStruct{
+		"kamept": {
 			Type:              "nexusphp",
 			Aliases:           []string{"kame"},
 			Url:               "https://kamept.com/",
 			TorrentsExtraUrls: []string{"special.php"}, // 龟龟的后花园
 			Comment:           "KamePT",
 		},
-		"kufei": &config.SiteConfigStruct{
+		"kufei": {
 			Type:    "nexusphp",
 			Url:     "https://kufei.org/",
 			Comment: "库非",
 		},
-		"leaves": &config.SiteConfigStruct{
+		"leaves": {
 			Type:                "nexusphp",
 			Aliases:             []string{"redleaves"},
 			Url:                 "https://leaves.red/",
@@ -312,7 +312,7 @@ var (
 			SelectorTorrentPaid: `span[title="收费种子"]`,
 			Comment:             "红叶",
 		},
-		"lemonhd": &config.SiteConfigStruct{
+		"lemonhd": {
 			Type:                "nexusphp",
 			Aliases:             []string{"leaguehd", "lemon"},
 			Url:                 "https://lemonhd.org/",
@@ -321,7 +321,7 @@ var (
 			SelectorTorrentFree: "div",
 			Comment:             "柠檬",
 		},
-		"m-team": &config.SiteConfigStruct{
+		"m-team": {
 			Type:              "nexusphp",
 			Aliases:           []string{"mteam", "mt"},
 			Url:               "https://kp.m-team.cc/",
@@ -330,63 +330,63 @@ var (
 			BrushExcludes:     []string{"[原盤首發]"}, // 馒头原盘首发限速，刷流效果极差
 			Comment:           "馒头",
 		},
-		"monikadesign": &config.SiteConfigStruct{
+		"monikadesign": {
 			Type:    "unit3d",
 			Aliases: []string{"monika"},
 			Url:     "https://monikadesign.uk/",
 			Comment: "莫妮卡",
 		},
-		"nicept": &config.SiteConfigStruct{
+		"nicept": {
 			Type:      "nexusphp",
 			Url:       "https://www.nicept.net/",
 			GlobalHnR: true,
 			Comment:   "老师",
 		},
-		"okpt": &config.SiteConfigStruct{
+		"okpt": {
 			Type:              "nexusphp",
 			Url:               "https://www.okpt.net/",
 			TorrentsExtraUrls: []string{"special.php"},
 			Comment:           "OKPT",
 		},
-		"oldtoons": &config.SiteConfigStruct{
+		"oldtoons": {
 			Type:    "nexusphp",
 			Aliases: []string{"oldtoonsworld"},
 			Url:     "https://oldtoons.world/",
 			Comment: "Old Toons World",
 		},
-		"oshen": &config.SiteConfigStruct{
+		"oshen": {
 			Type:    "nexusphp",
 			Url:     "https://www.oshen.win/",
 			Comment: "奥申，欧神",
 		},
-		"pandapt": &config.SiteConfigStruct{
+		"pandapt": {
 			Type:    "nexusphp",
 			Aliases: []string{"panda"},
 			Url:     "https://pandapt.net/",
 			Comment: "熊猫高清",
 		},
-		"piggo": &config.SiteConfigStruct{
+		"piggo": {
 			Type:              "nexusphp",
 			Url:               "https://piggo.me/",
 			TorrentsExtraUrls: []string{"special.php"},
 			Comment:           "猪猪",
 		},
-		"ptchina": &config.SiteConfigStruct{
+		"ptchina": {
 			Type:    "nexusphp",
 			Url:     "https://ptchina.org/",
 			Comment: "铂金学院",
 		},
-		"ptsbao": &config.SiteConfigStruct{
+		"ptsbao": {
 			Type:    "nexusphp",
 			Url:     "https://ptsbao.club/",
 			Comment: "烧包",
 		},
-		"pthome": &config.SiteConfigStruct{
+		"pthome": {
 			Type:    "nexusphp",
 			Url:     "https://pthome.net/",
 			Comment: "铂金家",
 		},
-		"pttime": &config.SiteConfigStruct{
+		"pttime": {
 			Type:                           "nexusphp",
 			Aliases:                        []string{"ptt"},
 			Url:                            "https://www.pttime.org/",
@@ -395,13 +395,13 @@ var (
 			SelectorTorrentDiscountEndTime: `.free + span`,
 			Comment:                        "PTT",
 		},
-		"rousi": &config.SiteConfigStruct{
+		"rousi": {
 			Type:              "nexusphp",
 			Url:               "https://rousi.zip/",
 			TorrentsExtraUrls: []string{"special.php"},
 			Comment:           "Rousi",
 		},
-		"sharkpt": &config.SiteConfigStruct{
+		"sharkpt": {
 			Type:                      "nexusphp",
 			Url:                       "https://sharkpt.net/",
 			SelectorTorrent:           ".torrent-action-bookmark",
@@ -410,25 +410,25 @@ var (
 			SelectorTorrentFree:       ".s-tag",
 			Comment:                   "鲨鱼",
 		},
-		"skyeysnow": &config.SiteConfigStruct{
+		"skyeysnow": {
 			Type:    "discuz",
 			Url:     "https://skyeysnow.com/",
 			Domains: []string{"skyey.win", "skyey2.com"},
 			Comment: "天雪",
 		},
-		"soulvoice": &config.SiteConfigStruct{
+		"soulvoice": {
 			Type:    "nexusphp",
 			Url:     "https://pt.soulvoice.club/",
 			Comment: "聆音",
 		},
-		"tu88": &config.SiteConfigStruct{
+		"tu88": {
 			Type:              "nexusphp",
 			Url:               "http://pt.tu88.men/",
 			TorrentsExtraUrls: []string{"special.php"},
 			GlobalHnR:         true,
 			Comment:           "TU88",
 		},
-		"u2": &config.SiteConfigStruct{
+		"u2": {
 			Type:    "nexusphp",
 			Aliases: []string{"dmhy"},
 			Url:     "https://u2.dmhy.org/",
@@ -437,45 +437,45 @@ var (
 			SelectorTorrentProcessBar: `.leechhlc_current,.snatchhlc_finish,.seedhlc_current,.seedhlc_ever_inenough`,
 			Comment:                   "U2 (动漫花园)",
 		},
-		"ubits": &config.SiteConfigStruct{
+		"ubits": {
 			Type:    "nexusphp",
 			Url:     "https://ubits.club/",
 			Comment: "你堡",
 		},
-		"ultrahd": &config.SiteConfigStruct{
+		"ultrahd": {
 			Type:    "nexusphp",
 			Url:     "https://ultrahd.net/",
 			Comment: "UltraHD",
 		},
-		"uploads": &config.SiteConfigStruct{
+		"uploads": {
 			Type:    "nexusphp",
 			Url:     "http://uploads.ltd/",
 			Comment: "Uploads 上传 | LTD 无限",
 		},
-		"wintersakura": &config.SiteConfigStruct{
+		"wintersakura": {
 			Type:    "nexusphp",
 			Url:     "https://wintersakura.net/",
 			Comment: "冬樱",
 		},
-		"wukongwendao": &config.SiteConfigStruct{
+		"wukongwendao": {
 			Type:    "nexusphp",
 			Aliases: []string{"wukong"},
 			Url:     "https://wukongwendao.top/",
 			Comment: "悟空问道",
 		},
-		"xingtan": &config.SiteConfigStruct{
+		"xingtan": {
 			Type:    "nexusphp",
 			Aliases: []string{"xinglin"},
 			Url:     "https://xingtan.one/",
 			Domains: []string{"xinglin.one"},
 			Comment: "杏坛 (原杏林)",
 		},
-		"zhuque": &config.SiteConfigStruct{
+		"zhuque": {
 			Type:    "tnode",
 			Url:     "https://zhuque.in/",
 			Comment: "朱雀",
 		},
-		"zmpt": &config.SiteConfigStruct{
+		"zmpt": {
 			Type:    "nexusphp",
 			Url:     "https://zmpt.cc/",
 			Comment: "织梦",

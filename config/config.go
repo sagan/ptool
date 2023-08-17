@@ -132,145 +132,138 @@ var (
 	ConfigType                     = "" // "toml"
 	LockFile                       = ""
 	Fork                           = false
-	configLoaded                   = false
 	configData       *ConfigStruct = &ConfigStruct{}
-	clientsConfigMap               = map[string](*ClientConfigStruct){}
-	sitesConfigMap                 = map[string](*SiteConfigStruct){}
-	groupsConfigMap                = map[string](*GroupConfigStruct){}
-	mu               sync.Mutex
+	clientsConfigMap               = map[string]*ClientConfigStruct{}
+	sitesConfigMap                 = map[string]*SiteConfigStruct{}
+	groupsConfigMap                = map[string]*GroupConfigStruct{}
+	once             sync.Once
 )
 
 func init() {
-
 }
 
 func Get() *ConfigStruct {
-	if !configLoaded {
-		mu.Lock()
-		defer mu.Unlock()
-		if !configLoaded {
-			log.Debugf("Read config file %s/%s", ConfigDir, ConfigFile)
-			viper.SetConfigName(ConfigName)
-			viper.SetConfigType(ConfigType)
-			viper.AddConfigPath(ConfigDir)
-			viper.SetDefault("ShellMaxSuggestions", DEFAULT_SHELL_MAX_SUGGESTIONS)
-			viper.SetDefault("ShellMaxHistory", DEFAULT_SHELL_MAX_HISTORY)
-			err := viper.ReadInConfig()
-			if err != nil {
-				log.Fatalf("Fail to read config file: %v", err)
-			}
-			err = viper.Unmarshal(&configData)
-			if err != nil {
-				log.Fatalf("Fail to parse config file: %v", err)
-			}
-
-			for _, client := range configData.Clients {
-				v, err := utils.RAMInBytes(client.BrushMinDiskSpace)
-				if err != nil || v < 0 {
-					v = DEFAULT_CLIENT_BRUSH_MIN_DISK_SPACE
-				}
-				client.BrushMinDiskSpaceValue = v
-
-				v, err = utils.RAMInBytes(client.BrushSlowUploadSpeedTier)
-				if err != nil || v <= 0 {
-					v = DEFAULT_CLIENT_BRUSH_SLOW_UPLOAD_SPEED_TIER
-				}
-				client.BrushSlowUploadSpeedTierValue = v
-
-				v, err = utils.RAMInBytes(client.BrushDefaultUploadSpeedLimit)
-				if err != nil || v <= 0 {
-					v = DEFAULT_CLIENT_BRUSH_DEFAULT_UPLOAD_SPEED_LIMIT
-				}
-				client.BrushDefaultUploadSpeedLimitValue = v
-
-				if client.Url != "" {
-					urlObj, err := url.Parse(client.Url)
-					if err != nil {
-						log.Fatalf("Failed to parse client %s url config: %v", client.Name, err)
-					}
-					client.Url = urlObj.String()
-				}
-
-				if client.BrushMaxDownloadingTorrents == 0 {
-					client.BrushMaxDownloadingTorrents = DEFAULT_CLIENT_BRUSH_MAX_DOWNLOADING_TORRENTS
-				}
-
-				if client.BrushMaxTorrents == 0 {
-					client.BrushMaxTorrents = DEFAULT_CLIENT_BRUSH_MAX_TORRENTS
-				}
-
-				if client.BrushMinRatio == 0 {
-					client.BrushMinRatio = DEFAULT_CLIENT_BRUSH_MIN_RATION
-				}
-
-				if client.Name == "" {
-					log.Fatalf("Invalid config file: client name can not be empty")
-				}
-
-				clientsConfigMap[client.Name] = client
-			}
-			for _, site := range configData.Sites {
-				v, err := utils.RAMInBytes(site.TorrentUploadSpeedLimit)
-				if err != nil || v <= 0 {
-					v = DEFAULT_SITE_TORRENT_UPLOAD_SPEED_LIMIT
-				}
-				site.TorrentUploadSpeedLimitValue = v
-
-				if site.Name == "" {
-					site.Name = site.Type
-				}
-
-				if site.UserAgent == "" {
-					site.UserAgent = configData.SiteUserAgent
-				}
-				if site.Proxy == "" {
-					site.Proxy = configData.SiteProxy
-				}
-				if site.Ja3 == "" {
-					site.Ja3 = configData.SiteJa3
-				}
-
-				if site.Url != "" {
-					urlObj, err := url.Parse(site.Url)
-					if err != nil {
-						log.Fatalf("Failed to parse site %s url config: %v", site.Name, err)
-					}
-					site.Url = urlObj.String()
-				}
-
-				if site.Timezone == "" {
-					site.Timezone = DEFAULT_SITE_TIMEZONE
-				}
-
-				v, err = utils.RAMInBytes(site.BrushTorrentMinSizeLimit)
-				if err != nil || v <= 0 {
-					v = DEFAULT_SITE_BRUSH_TORRENT_MIN_SIZE_LIMIT
-				}
-				site.BrushTorrentMinSizeLimitValue = v
-
-				v, err = utils.RAMInBytes(site.BrushTorrentMaxSizeLimit)
-				if err != nil || v <= 0 {
-					v = DEFAULT_SITE_BRUSH_TORRENT_MAX_SIZE_LIMIT
-				}
-				site.BrushTorrentMaxSizeLimitValue = v
-
-				sitesConfigMap[site.GetName()] = site
-			}
-			for _, group := range configData.Groups {
-				if group.Name == "" {
-					log.Fatalf("Invalid config file: group name can not be empty")
-				}
-				groupsConfigMap[group.Name] = group
-			}
-			configData.Clients = utils.Filter(configData.Clients, func(c *ClientConfigStruct) bool {
-				return !c.Disabled
-			})
-			configData.Sites = utils.Filter(configData.Sites, func(s *SiteConfigStruct) bool {
-				return !s.Disabled
-			})
-			configLoaded = true
+	once.Do(func() {
+		log.Debugf("Read config file %s/%s", ConfigDir, ConfigFile)
+		viper.SetConfigName(ConfigName)
+		viper.SetConfigType(ConfigType)
+		viper.AddConfigPath(ConfigDir)
+		viper.SetDefault("ShellMaxSuggestions", DEFAULT_SHELL_MAX_SUGGESTIONS)
+		viper.SetDefault("ShellMaxHistory", DEFAULT_SHELL_MAX_HISTORY)
+		err := viper.ReadInConfig()
+		if err != nil {
+			log.Fatalf("Fail to read config file: %v", err)
 		}
-	}
+		err = viper.Unmarshal(&configData)
+		if err != nil {
+			log.Fatalf("Fail to parse config file: %v", err)
+		}
+
+		for _, client := range configData.Clients {
+			v, err := utils.RAMInBytes(client.BrushMinDiskSpace)
+			if err != nil || v < 0 {
+				v = DEFAULT_CLIENT_BRUSH_MIN_DISK_SPACE
+			}
+			client.BrushMinDiskSpaceValue = v
+
+			v, err = utils.RAMInBytes(client.BrushSlowUploadSpeedTier)
+			if err != nil || v <= 0 {
+				v = DEFAULT_CLIENT_BRUSH_SLOW_UPLOAD_SPEED_TIER
+			}
+			client.BrushSlowUploadSpeedTierValue = v
+
+			v, err = utils.RAMInBytes(client.BrushDefaultUploadSpeedLimit)
+			if err != nil || v <= 0 {
+				v = DEFAULT_CLIENT_BRUSH_DEFAULT_UPLOAD_SPEED_LIMIT
+			}
+			client.BrushDefaultUploadSpeedLimitValue = v
+
+			if client.Url != "" {
+				urlObj, err := url.Parse(client.Url)
+				if err != nil {
+					log.Fatalf("Failed to parse client %s url config: %v", client.Name, err)
+				}
+				client.Url = urlObj.String()
+			}
+
+			if client.BrushMaxDownloadingTorrents == 0 {
+				client.BrushMaxDownloadingTorrents = DEFAULT_CLIENT_BRUSH_MAX_DOWNLOADING_TORRENTS
+			}
+
+			if client.BrushMaxTorrents == 0 {
+				client.BrushMaxTorrents = DEFAULT_CLIENT_BRUSH_MAX_TORRENTS
+			}
+
+			if client.BrushMinRatio == 0 {
+				client.BrushMinRatio = DEFAULT_CLIENT_BRUSH_MIN_RATION
+			}
+
+			if client.Name == "" {
+				log.Fatalf("Invalid config file: client name can not be empty")
+			}
+
+			clientsConfigMap[client.Name] = client
+		}
+		for _, site := range configData.Sites {
+			v, err := utils.RAMInBytes(site.TorrentUploadSpeedLimit)
+			if err != nil || v <= 0 {
+				v = DEFAULT_SITE_TORRENT_UPLOAD_SPEED_LIMIT
+			}
+			site.TorrentUploadSpeedLimitValue = v
+
+			if site.Name == "" {
+				site.Name = site.Type
+			}
+
+			if site.UserAgent == "" {
+				site.UserAgent = configData.SiteUserAgent
+			}
+			if site.Proxy == "" {
+				site.Proxy = configData.SiteProxy
+			}
+			if site.Ja3 == "" {
+				site.Ja3 = configData.SiteJa3
+			}
+
+			if site.Url != "" {
+				urlObj, err := url.Parse(site.Url)
+				if err != nil {
+					log.Fatalf("Failed to parse site %s url config: %v", site.Name, err)
+				}
+				site.Url = urlObj.String()
+			}
+
+			if site.Timezone == "" {
+				site.Timezone = DEFAULT_SITE_TIMEZONE
+			}
+
+			v, err = utils.RAMInBytes(site.BrushTorrentMinSizeLimit)
+			if err != nil || v <= 0 {
+				v = DEFAULT_SITE_BRUSH_TORRENT_MIN_SIZE_LIMIT
+			}
+			site.BrushTorrentMinSizeLimitValue = v
+
+			v, err = utils.RAMInBytes(site.BrushTorrentMaxSizeLimit)
+			if err != nil || v <= 0 {
+				v = DEFAULT_SITE_BRUSH_TORRENT_MAX_SIZE_LIMIT
+			}
+			site.BrushTorrentMaxSizeLimitValue = v
+
+			sitesConfigMap[site.GetName()] = site
+		}
+		for _, group := range configData.Groups {
+			if group.Name == "" {
+				log.Fatalf("Invalid config file: group name can not be empty")
+			}
+			groupsConfigMap[group.Name] = group
+		}
+		configData.Clients = utils.Filter(configData.Clients, func(c *ClientConfigStruct) bool {
+			return !c.Disabled
+		})
+		configData.Sites = utils.Filter(configData.Sites, func(s *SiteConfigStruct) bool {
+			return !s.Disabled
+		})
+	})
 	return configData
 }
 

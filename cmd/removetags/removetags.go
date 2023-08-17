@@ -12,7 +12,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "removetags {client} {tags} [--category category] [--tag tag] [--filter filter] [infoHash]...",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "removetags"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "removetags"},
 	Short:       "Remove tags from torrents in client.",
 	Long: `Remove tags from torrents in client.
 {tags} : comma-seperated tags list.

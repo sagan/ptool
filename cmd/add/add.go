@@ -17,7 +17,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "add {client} {torrentId | torrentUrl}...",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "add"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "add"},
 	Short:       "Add site torrents to client.",
 	Long:        `Add site torrents to client.`,
 	Args:        cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
@@ -52,8 +52,8 @@ func add(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create client: %v", err)
 	}
-	domainSiteMap := map[string](string){}
-	siteInstanceMap := map[string](site.Site){}
+	domainSiteMap := map[string]string{}
+	siteInstanceMap := map[string]site.Site{}
 	errorCnt := int64(0)
 	option := &client.TorrentOption{
 		Pause:        addPaused,

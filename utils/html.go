@@ -34,11 +34,9 @@ func DomSanitizedText(el *goquery.Selection) string {
 	return SanitizeText(el.Text())
 }
 
-/*
- * DIY 了几个选择器语法（附加在标准CSS选择器字符串末尾）
- * @text 用于选择某个 Element 里的第一个 TEXT_NODE
- * @after 用于选择某个 Element 后面的 TEXT_NODE
- */
+// DIY 了几个选择器语法（附加在标准CSS选择器字符串末尾）.
+// @text 用于选择某个 Element 里的第一个 TEXT_NODE.
+// @after 用于选择某个 Element 后面的 TEXT_NODE.
 func DomSelectorText(el *goquery.Selection, selector string) (text string) {
 	isTextNode := int64(0)
 	if strings.HasSuffix(selector, "@text") {
@@ -91,7 +89,7 @@ func DomTime(s *goquery.Selection, location *time.Location) int64 {
 }
 
 func GetUrlDoc(url string, client *http.Client,
-	cookie string, ua string, otherHeaders map[string](string)) (*goquery.Document, *http.Response, error) {
+	cookie string, ua string, otherHeaders map[string]string) (*goquery.Document, *http.Response, error) {
 	res, _, err := FetchUrl(url, client, cookie, ua, otherHeaders)
 	if err != nil {
 		return nil, nil, fmt.Errorf("can not fetch site data %v", err)

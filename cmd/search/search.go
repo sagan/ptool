@@ -23,7 +23,7 @@ type SearchResult struct {
 
 var command = &cobra.Command{
 	Use:         "search {siteOrGroups} {keyword}...",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "search"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "search"},
 	Short:       "Search torrents by keyword in a site.",
 	Long: `Search torrents by keyword in a site.
 {siteOrGroups}: A comma-separated name list of sites or groups. Can use "_all" to search all sites.
@@ -54,7 +54,7 @@ func init() {
 func search(cmd *cobra.Command, args []string) error {
 	sitenames := config.ParseGroupAndOtherNames(strings.Split(args[0], ",")...)
 	keyword := strings.Join(args[1:], " ")
-	siteInstancesMap := map[string](site.Site){}
+	siteInstancesMap := map[string]site.Site{}
 	for _, sitename := range sitenames {
 		siteInstance, err := site.CreateSite(sitename)
 		if err != nil {
@@ -112,7 +112,7 @@ func search(cmd *cobra.Command, args []string) error {
 		torrents = torrents[:maxResults]
 	}
 	if showJson {
-		data := map[string](any){
+		data := map[string]any{
 			"successSites":  cntSuccessSites,
 			"noResultSites": cntNoResultSites,
 			"errorSites":    cntErrorSites,

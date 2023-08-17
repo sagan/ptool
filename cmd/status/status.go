@@ -29,7 +29,7 @@ var (
 var command = &cobra.Command{
 	Use: "status [client | site | group]... [-a]",
 	// Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "status"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "status"},
 	Short:       "Show clients or sites status.",
 	Long: `Show clients or sites status.
 [client | site | group]: name of a client, site or group, or "_all" which means all sites.
@@ -79,7 +79,7 @@ func status(cmd *cobra.Command, args []string) error {
 	}
 	now := utils.Now()
 	errorCnt := int64(0)
-	doneFlag := map[string](bool){}
+	doneFlag := map[string]bool{}
 	cnt := int64(0)
 	ch := make(chan *StatusResponse, len(names))
 	for _, name := range names {

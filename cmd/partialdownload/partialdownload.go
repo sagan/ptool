@@ -20,7 +20,7 @@ type Chunk struct {
 
 var command = &cobra.Command{
 	Use:         "partialdownload {client} {infoHash} --chunk-size {size_str} {-a | --chunk-index index}",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "partialdownload"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "partialdownload"},
 	Short:       "Partially download a (large) torrent in client.",
 	Long: `Partially download a (large) torrent in client.
 Before running this command, you should add the target torrent to client in paused

@@ -15,7 +15,7 @@ var (
 	// must generate it without the "TLS Session has been resurected" warning
 	CHROME_JA3 = "772,4865-4866-4867-49195-49199-49196-49200-52393-52392-49171-49172-156-157-47-53,65281-5-11-17513-0-27-13-43-45-51-35-18-16-23-10,29-23-24,0"
 	// 最新稳定版 Chrome (en-US) 在 Windows 11 x64 环境下访问网页的默认请求 headers
-	CHROME_HTTP_REQUEST_HEADERS = map[string](string){
+	CHROME_HTTP_REQUEST_HEADERS = map[string]string{
 		"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
 		// "Accept-Encoding":           "gzip, deflate, br",
 		"Accept-Language":           "en-US,en;q=0.9",
@@ -34,7 +34,7 @@ var (
 )
 
 func FetchJson(url string, v any, client *http.Client,
-	cookie string, ua string, otherHeaders map[string](string)) error {
+	cookie string, ua string, otherHeaders map[string]string) error {
 	res, _, err := FetchUrl(url, client, cookie, ua, otherHeaders)
 	if err != nil {
 		return err
@@ -53,7 +53,7 @@ func FetchJson(url string, v any, client *http.Client,
 }
 
 func FetchUrl(url string, client *http.Client,
-	cookie string, ua string, otherHeaders map[string](string)) (*http.Response, http.Header, error) {
+	cookie string, ua string, otherHeaders map[string]string) (*http.Response, http.Header, error) {
 	log.Tracef("FetchUrl url=%s hasCookie=%t", url, cookie != "")
 	if client == nil {
 		client = http.DefaultClient

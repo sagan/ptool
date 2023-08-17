@@ -16,7 +16,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "parsetorrent {file.torrent}...",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "parsetorrent"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "parsetorrent"},
 	Aliases:     []string{"parse"},
 	Short:       "Parse torrent files and show their content.",
 	Long:        `Parse torrent files and show their content.`,

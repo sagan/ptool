@@ -11,7 +11,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "setcategory {client} {category} [--category category] [--tag tag] [--filter filter] [infoHash]...",
-	Annotations: map[string](string){"cobra-prompt-dynamic-suggestions": "setcategory"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "setcategory"},
 	Short:       "Set category of torrents in client.",
 	Long: `Set category of torrents in client.
 [infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
