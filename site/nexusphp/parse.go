@@ -20,6 +20,10 @@ const (
 	SELECTOR_DOWNLOAD_LINK         = `a[href^="download.php?"],a[href^="download?"]`
 	SELECTOR_DETAILS_LINK          = `a[href^="details.php?"],a[href^="details_"]`
 	SELECTOR_TORRENTS_LIST_DEFAULT = `table.torrents > tbody`
+	// xiaomlove/nexusphp paid torrent feature.
+	// see https://github.com/xiaomlove/nexusphp/blob/php8/app/Repositories/TorrentRepository.php .
+	// function getPaidIcon.
+	SELECTOR_TORRENT_PAID = `span[title="收费种子"],span[title="收費種子"],span[title="Paid torrent"]`
 )
 
 type TorrentsParserOption struct {
@@ -54,6 +58,9 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 	}
 	if option.selectorTorrentDetailsLink == "" {
 		option.selectorTorrentDetailsLink = SELECTOR_DETAILS_LINK
+	}
+	if option.selectorTorrentPaid == "" {
+		option.selectorTorrentPaid = SELECTOR_TORRENT_PAID
 	}
 
 	globalDiscountEndTime := int64(0)

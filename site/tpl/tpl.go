@@ -193,7 +193,7 @@ var (
 		"hdcity": {
 			Type:                       "nexusphp",
 			Url:                        "https://hdcity.city/",
-			SearchUrl:                  "https://hdcity.city/pt?iwannaseethis=%s",
+			SearchUrl:                  "pt?iwannaseethis=%s",
 			Domains:                    []string{"leniter.org"},
 			SelectorTorrentDetailsLink: `a[href^="t-"]`,
 			SelectorTorrentTime:        `.trtop > div:nth-last-child(2)@text`,
@@ -304,13 +304,12 @@ var (
 			Comment: "库非",
 		},
 		"leaves": {
-			Type:                "nexusphp",
-			Aliases:             []string{"redleaves"},
-			Url:                 "https://leaves.red/",
-			TorrentsExtraUrls:   []string{"special.php", "games.php"},
-			SearchUrl:           `https://leaves.red/search.php?search=%s&search_area=0`,
-			SelectorTorrentPaid: `span[title="收费种子"]`,
-			Comment:             "红叶",
+			Type:              "nexusphp",
+			Aliases:           []string{"redleaves"},
+			Url:               "https://leaves.red/",
+			TorrentsExtraUrls: []string{"special.php", "games.php"},
+			SearchUrl:         `search.php?search=%s&search_area=0`,
+			Comment:           "红叶",
 		},
 		"lemonhd": {
 			Type:                "nexusphp",
@@ -369,7 +368,13 @@ var (
 			Type:              "nexusphp",
 			Url:               "https://piggo.me/",
 			TorrentsExtraUrls: []string{"special.php"},
+			SearchUrl:         `search.php?search=%s&search_area=0`,
 			Comment:           "猪猪",
+		},
+		"ptcafe": {
+			Type:    "nexusphp",
+			Url:     "https://ptcafe.club/",
+			Comment: "咖啡",
 		},
 		"ptchina": {
 			Type:    "nexusphp",
