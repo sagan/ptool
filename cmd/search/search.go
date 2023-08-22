@@ -12,7 +12,7 @@ import (
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 type SearchResult struct {
@@ -26,8 +26,7 @@ var command = &cobra.Command{
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "search"},
 	Short:       "Search torrents by keyword in a site.",
 	Long: `Search torrents by keyword in a site.
-{siteOrGroups}: A comma-separated name list of sites or groups. Can use "_all" to search all sites.
-`,
+{siteOrGroups}: A comma-separated name list of sites or groups. Can use "_all" to search all sites.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	RunE: search,
 }
@@ -62,7 +61,7 @@ func search(cmd *cobra.Command, args []string) error {
 		}
 		siteInstancesMap[sitename] = siteInstance
 	}
-	now := utils.Now()
+	now := util.Now()
 	ch := make(chan SearchResult, len(sitenames))
 	for _, sitename := range sitenames {
 		go func(sitename string) {

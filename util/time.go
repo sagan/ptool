@@ -1,4 +1,4 @@
-package utils
+package util
 
 // from https://gist.github.com/xhit/79c9e137e1cfe332076cdda9f5e24699
 

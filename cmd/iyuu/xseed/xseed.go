@@ -14,8 +14,8 @@ import (
 	"github.com/sagan/ptool/cmd/iyuu"
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
-	"github.com/sagan/ptool/utils"
-	"github.com/sagan/ptool/utils/torrentutil"
+	"github.com/sagan/ptool/util"
+	"github.com/sagan/ptool/util/torrentutil"
 )
 
 var command = &cobra.Command{
@@ -91,8 +91,8 @@ func xseed(cmd *cobra.Command, args []string) error {
 			excludeSitesFlag[site] = true
 		}
 	}
-	minTorrentSize, _ := utils.RAMInBytes(minTorrentSizeStr)
-	maxTorrentSize, _ := utils.RAMInBytes(maxTorrentSizeStr)
+	minTorrentSize, _ := util.RAMInBytes(minTorrentSizeStr)
+	maxTorrentSize, _ := util.RAMInBytes(maxTorrentSizeStr)
 	if iyuuRequestServer != "auto" && iyuuRequestServer != "yes" && iyuuRequestServer != "no" {
 		return fmt.Errorf("invalid --request-server flag value %s", iyuuRequestServer)
 	}
@@ -126,7 +126,7 @@ func xseed(cmd *cobra.Command, args []string) error {
 		} else {
 			log.Tracef("client %s has %d torrents", clientName, len(torrents))
 		}
-		torrents = utils.Filter(torrents, func(torrent client.Torrent) bool {
+		torrents = util.Filter(torrents, func(torrent client.Torrent) bool {
 			return torrent.IsFull() && torrent.Category != config.XSEED_TAG && !torrent.HasTag(config.XSEED_TAG)
 		})
 		sort.Slice(torrents, func(i, j int) bool {
@@ -179,7 +179,7 @@ func xseed(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	reqInfoHashes = utils.UniqueSlice(reqInfoHashes)
+	reqInfoHashes = util.UniqueSlice(reqInfoHashes)
 	if len(reqInfoHashes) > int(iyuuRequestMaxTorrents) {
 		reqInfoHashes = reqInfoHashes[:iyuuRequestMaxTorrents]
 	}
@@ -187,7 +187,7 @@ func xseed(cmd *cobra.Command, args []string) error {
 	if iyuuRequestServer == "auto" {
 		var lastUpdateTime iyuu.Meta
 		iyuu.Db().Where("key = ?", "lastUpdateTime").First(&lastUpdateTime)
-		if lastUpdateTime.Value == "" || utils.Now()-utils.ParseInt(lastUpdateTime.Value) >= 7200 {
+		if lastUpdateTime.Value == "" || util.Now()-util.ParseInt(lastUpdateTime.Value) >= 7200 {
 			doRequestServer = true
 		} else {
 			log.Tracef("Fetched iyuu xseed data recently. Do not fetch this time")
@@ -220,7 +220,7 @@ mainloop:
 		cnt := len(clientInfoHashesMap[clientName])
 		for i, infoHash := range clientInfoHashesMap[clientName] {
 			if slowMode {
-				utils.Sleep(3)
+				util.Sleep(3)
 			}
 			xseedTorrents := clientTorrentsMap[infoHash]
 			if len(xseedTorrents) == 0 {
@@ -345,7 +345,7 @@ mainloop:
 				if maxXseedTorrents > 0 && cntXseedTorrents >= maxXseedTorrents {
 					break mainloop
 				}
-				utils.Sleep(2)
+				util.Sleep(2)
 			}
 		}
 	}
@@ -365,7 +365,7 @@ func updateIyuuDatabase(token string, infoHashes []string) error {
 		log.Errorf("failed to get iyuu sites: %v", err)
 	} else {
 		iyuu.Db().Where("1 = 1").Delete(&iyuu.Site{})
-		iyuuSiteRecords := utils.Map(iyuuSites, func(iyuuSite iyuu.IyuuApiSite) iyuu.Site {
+		iyuuSiteRecords := util.Map(iyuuSites, func(iyuuSite iyuu.IyuuApiSite) iyuu.Site {
 			return iyuu.Site{
 				Sid:          iyuuSite.Id,
 				Name:         iyuuSite.Site,
@@ -385,11 +385,11 @@ func updateIyuuDatabase(token string, infoHashes []string) error {
 		log.Debugf("iyuu data len(data)=%d\n", len(data))
 		for targetInfoHash, iyuuRecords := range data {
 			iyuu.Db().Where("target_info_hash = ?", targetInfoHash).Delete(&iyuu.Torrent{})
-			infoHashes := utils.Map(iyuuRecords, func(record iyuu.IyuuTorrentInfoHash) string {
+			infoHashes := util.Map(iyuuRecords, func(record iyuu.IyuuTorrentInfoHash) string {
 				return record.Info_hash
 			})
 			iyuu.Db().Where("info_hash in ?", infoHashes).Delete(&iyuu.Torrent{})
-			iyuuTorrents := utils.Map(iyuuRecords, func(iyuuRecord iyuu.IyuuTorrentInfoHash) iyuu.Torrent {
+			iyuuTorrents := util.Map(iyuuRecords, func(iyuuRecord iyuu.IyuuTorrentInfoHash) iyuu.Torrent {
 				return iyuu.Torrent{
 					InfoHash:       iyuuRecord.Info_hash,
 					Sid:            iyuuRecord.Sid,
@@ -405,7 +405,7 @@ func updateIyuuDatabase(token string, infoHashes []string) error {
 			DoUpdates: clause.AssignmentColumns([]string{"value"}),
 		}).Create(&iyuu.Meta{
 			Key:   "lastUpdateTime",
-			Value: fmt.Sprint(utils.Now()),
+			Value: fmt.Sprint(util.Now()),
 		})
 	}
 

@@ -1,4 +1,4 @@
-package utils
+package util
 
 // from https://github.com/docker/go-units/blob/master/size.go
 

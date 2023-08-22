@@ -8,7 +8,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 var command = &cobra.Command{
@@ -57,7 +57,7 @@ func addtrackers(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("at least an --tracker MUST be provided")
 	}
 	for _, tracker := range trackers {
-		if !utils.IsUrl(tracker) {
+		if !util.IsUrl(tracker) {
 			return fmt.Errorf("the provided tracker %s is not a valid URL", tracker)
 		}
 	}
@@ -78,7 +78,7 @@ func addtrackers(cmd *cobra.Command, args []string) error {
 		log.Warnf("Found %d torrents, will add %d trackers to them in 3 seconds. Press Ctrl+C to stop",
 			len(torrents), len(trackers))
 	}
-	utils.Sleep(3)
+	util.Sleep(3)
 	errorCnt := int64(0)
 	for _, torrent := range torrents {
 		fmt.Printf("Add trackers to torrent %s (%s)\n", torrent.InfoHash, torrent.Name)

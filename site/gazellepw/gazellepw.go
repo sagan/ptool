@@ -14,7 +14,7 @@ import (
 
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 type Site struct {
@@ -37,7 +37,7 @@ func (gpwsite *Site) GetSiteConfig() *config.SiteConfigStruct {
 }
 
 func (gpwsite *Site) GetStatus() (*site.Status, error) {
-	doc, _, err := utils.GetUrlDoc(gpwsite.SiteConfig.Url+"torrents.php", gpwsite.HttpClient,
+	doc, _, err := util.GetUrlDoc(gpwsite.SiteConfig.Url+"torrents.php", gpwsite.HttpClient,
 		gpwsite.GetSiteConfig().Cookie, gpwsite.SiteConfig.UserAgent, nil)
 	if err != nil {
 		return nil, err
@@ -48,8 +48,8 @@ func (gpwsite *Site) GetStatus() (*site.Status, error) {
 
 	return &site.Status{
 		UserName:       usernameEl.AttrOr("data-value", ""),
-		UserUploaded:   utils.ParseInt(uploadedEl.AttrOr("data-value", "")),
-		UserDownloaded: utils.ParseInt(downloadedEl.AttrOr("data-value", "")),
+		UserUploaded:   util.ParseInt(uploadedEl.AttrOr("data-value", "")),
+		UserDownloaded: util.ParseInt(downloadedEl.AttrOr("data-value", "")),
 	}, nil
 }
 
@@ -67,7 +67,7 @@ func (gpwsite *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Torr
 }
 
 func (gpwsite *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error) {
-	if !utils.IsUrl(torrentUrl) {
+	if !util.IsUrl(torrentUrl) {
 		id := strings.TrimPrefix(torrentUrl, gpwsite.GetName()+".")
 		return gpwsite.DownloadTorrentById(id)
 	}

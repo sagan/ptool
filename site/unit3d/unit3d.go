@@ -13,7 +13,7 @@ import (
 
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 type Site struct {
@@ -42,7 +42,7 @@ func (usite *Site) GetSiteConfig() *config.SiteConfigStruct {
 }
 
 func (usite *Site) GetStatus() (*site.Status, error) {
-	doc, _, err := utils.GetUrlDoc(usite.SiteConfig.Url+"torrents", usite.HttpClient,
+	doc, _, err := util.GetUrlDoc(usite.SiteConfig.Url+"torrents", usite.HttpClient,
 		usite.GetSiteConfig().Cookie, usite.SiteConfig.UserAgent, nil)
 	if err != nil {
 		return nil, err
@@ -62,10 +62,10 @@ func (usite *Site) GetStatus() (*site.Status, error) {
 	usernameEl := doc.Find(userNameSelector)
 	uploadedEl := doc.Find(userUploadedSelector)
 	downloadedEl := doc.Find(userDownloadedSelector)
-	userUploaded, _ := utils.ExtractSizeStr(utils.DomSanitizedText(uploadedEl))
-	userDownloaded, _ := utils.ExtractSizeStr(utils.DomSanitizedText(downloadedEl))
+	userUploaded, _ := util.ExtractSizeStr(util.DomSanitizedText(uploadedEl))
+	userDownloaded, _ := util.ExtractSizeStr(util.DomSanitizedText(downloadedEl))
 	return &site.Status{
-		UserName:       utils.DomSanitizedText(usernameEl),
+		UserName:       util.DomSanitizedText(usernameEl),
 		UserUploaded:   userUploaded,
 		UserDownloaded: userDownloaded,
 	}, nil
@@ -85,7 +85,7 @@ func (usite *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Torren
 }
 
 func (usite *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error) {
-	if !utils.IsUrl(torrentUrl) {
+	if !util.IsUrl(torrentUrl) {
 		id := strings.TrimPrefix(torrentUrl, usite.GetName()+".")
 		return usite.DownloadTorrentById(id)
 	}

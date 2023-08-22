@@ -9,7 +9,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/site"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 const (
@@ -137,7 +137,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	cntDownloadingTorrents := int64(0)
 	freespace := clientStatus.FreeSpaceOnDisk
 	freespaceChange := int64(0)
-	freespaceTarget := utils.Min(option.MinDiskSpace*2, option.MinDiskSpace+DELETE_TORRENTS_FREE_DISK_SPACE_TIER)
+	freespaceTarget := util.Min(option.MinDiskSpace*2, option.MinDiskSpace+DELETE_TORRENTS_FREE_DISK_SPACE_TIER)
 	estimateUploadSpeed := clientStatus.UploadSpeed
 
 	var candidateTorrents []candidateTorrentStruct
@@ -192,7 +192,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 		// mark torrents that discount time ends as stall
 		if torrent.Meta["dcet"] > 0 && torrent.Meta["dcet"]-option.Now <= 3600 && torrent.Ctime <= 0 {
 			if canStallTorrent(&torrent) {
-				meta := utils.CopyMap(torrent.Meta)
+				meta := util.CopyMap(torrent.Meta)
 				meta["stt"] = option.Now
 				stallTorrents = append(stallTorrents, AlgorithmModifyTorrent{
 					InfoHash: torrent.InfoHash,
@@ -238,7 +238,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 							torrent.DownloadSpeed >= RATIO_CHECK_MIN_DOWNLOAD_SPEED &&
 							float64(torrent.UploadSpeed)/float64(torrent.DownloadSpeed) < option.MinRatio &&
 							option.Now-torrent.Atime >= NEW_TORRENTS_STALL_EXEMPTION_TIMESPAN {
-							meta := utils.CopyMap(torrent.Meta)
+							meta := util.CopyMap(torrent.Meta)
 							meta["stt"] = option.Now
 							stallTorrents = append(stallTorrents, AlgorithmModifyTorrent{
 								InfoHash: torrent.InfoHash,
@@ -264,7 +264,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 						})
 						clientTorrentsMap[torrent.InfoHash].DeleteCandidateFlag = true
 					} else {
-						meta := utils.CopyMap(torrent.Meta)
+						meta := util.CopyMap(torrent.Meta)
 						meta["sct"] = option.Now
 						meta["sctu"] = torrent.Uploaded
 						modifyTorrents = append(modifyTorrents, AlgorithmModifyTorrent{
@@ -277,7 +277,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 					}
 				}
 			} else { // first encounter on slow torrent
-				meta := utils.CopyMap(torrent.Meta)
+				meta := util.CopyMap(torrent.Meta)
 				meta["sct"] = option.Now
 				meta["sctu"] = torrent.Uploaded
 				modifyTorrents = append(modifyTorrents, AlgorithmModifyTorrent{
@@ -289,7 +289,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 				clientTorrentsMap[torrent.InfoHash].ModifyFlag = true
 			}
 		} else if torrent.Meta["sct"] > 0 { // remove mark on no-longer slow torrents
-			meta := utils.CopyMap(torrent.Meta)
+			meta := util.CopyMap(torrent.Meta)
 			delete(meta, "sct")
 			delete(meta, "sctu")
 			modifyTorrents = append(modifyTorrents, AlgorithmModifyTorrent{
@@ -393,7 +393,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 				continue
 			}
 			if canStallTorrent(&torrent) {
-				meta := utils.CopyMap(torrent.Meta)
+				meta := util.CopyMap(torrent.Meta)
 				meta["stt"] = option.Now
 				stallTorrents = append(stallTorrents, AlgorithmModifyTorrent{
 					InfoHash: torrent.InfoHash,
@@ -407,7 +407,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	}
 
 	// mark torrents as resume
-	if freespace+freespaceChange >= utils.Max(option.MinDiskSpace, RESUME_TORRENTS_FREE_DISK_SPACE_TIER) {
+	if freespace+freespaceChange >= util.Max(option.MinDiskSpace, RESUME_TORRENTS_FREE_DISK_SPACE_TIER) {
 		for _, torrent := range clientTorrents {
 			if torrent.State != "error" || torrent.UploadSpeed < option.SlowUploadSpeedTier*4 ||
 				isTorrentStalled(&torrent) || clientTorrentsMap[torrent.InfoHash].ResumeFlag {

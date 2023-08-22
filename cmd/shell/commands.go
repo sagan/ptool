@@ -13,7 +13,7 @@ import (
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/cmd/shell/suggest"
 	"github.com/sagan/ptool/site"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 var (
@@ -111,7 +111,7 @@ var lsCmd = &cobra.Command{
 					if i > 0 {
 						fmt.Printf("  ")
 					}
-					fmt.Printf("%s", utils.QuoteFilename(file.Name()))
+					fmt.Printf("%s", util.QuoteFilename(file.Name()))
 				}
 				fmt.Printf("\n")
 			} else {
@@ -128,9 +128,9 @@ var lsCmd = &cobra.Command{
 					} else {
 						fmt.Printf("%-1s  %10s  %19s  %-s\n",
 							flag,
-							utils.BytesSize(float64(info.Size())),
-							utils.FormatTime(info.ModTime().Unix()),
-							utils.QuoteFilename(file.Name()))
+							util.BytesSize(float64(info.Size())),
+							util.FormatTime(info.ModTime().Unix()),
+							util.QuoteFilename(file.Name()))
 					}
 				}
 			}

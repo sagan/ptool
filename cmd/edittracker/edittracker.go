@@ -8,7 +8,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 var command = &cobra.Command{
@@ -57,7 +57,7 @@ func init() {
 func edittracker(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
 	args = args[1:]
-	if !replaceHost && (!utils.IsUrl(oldTracker) || !utils.IsUrl(newTracker)) {
+	if !replaceHost && (!util.IsUrl(oldTracker) || !util.IsUrl(newTracker)) {
 		return fmt.Errorf("both --old-tracker and --new-tracker MUST be valid URL ( 'http(s)://...' )")
 	}
 	if category == "" && tag == "" && filter == "" && len(args) == 0 {
@@ -80,7 +80,7 @@ func edittracker(cmd *cobra.Command, args []string) error {
 		log.Warnf("Found %d torrents, will edit their trackers (%s => %s, replaceHost=%t) in few seconds. Press Ctrl+C to stop",
 			len(torrents), oldTracker, newTracker, replaceHost)
 	}
-	utils.Sleep(3)
+	util.Sleep(3)
 	errorCnt := int64(0)
 	for _, torrent := range torrents {
 		fmt.Printf("Edit torrent %s (%s) tracker\n", torrent.InfoHash, torrent.Name)

@@ -1,5 +1,5 @@
-//go:build linux && !arm64
-// +build linux,!arm64
+//go:build linux && arm64
+// +build linux,arm64
 
 package osutil
 
@@ -8,9 +8,8 @@ import (
 	"os/exec"
 	"syscall"
 
+	"github.com/sagan/ptool/util"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/sagan/ptool/utils"
 )
 
 // Run ptool in the background (detached mode)
@@ -28,7 +27,7 @@ func Fork(removeArg string) {
 		if err != nil {
 			log.Fatalln("Failed to lookup binary:", err)
 		}
-		args := utils.Filter(os.Args, func(arg string) bool {
+		args := util.Filter(os.Args, func(arg string) bool {
 			return removeArg == "" || arg != removeArg
 		})
 		_, err = os.StartProcess(binary, args, &os.ProcAttr{Dir: "", Env: nil,
@@ -47,9 +46,9 @@ func Fork(removeArg string) {
 		if err != nil {
 			log.Fatalln("Failed to open /dev/null:", err)
 		}
-		syscall.Dup2(int(file.Fd()), int(os.Stdin.Fd()))
-		syscall.Dup2(int(file.Fd()), int(os.Stdout.Fd()))
-		syscall.Dup2(int(file.Fd()), int(os.Stderr.Fd()))
+		syscall.Dup3(int(file.Fd()), int(os.Stdin.Fd()), 0)
+		syscall.Dup3(int(file.Fd()), int(os.Stdout.Fd()), 0)
+		syscall.Dup3(int(file.Fd()), int(os.Stderr.Fd()), 0)
 		file.Close()
 	}
 }

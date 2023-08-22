@@ -13,7 +13,7 @@ import (
 
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 type Site struct {
@@ -71,7 +71,7 @@ func (npclient *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Tor
 	}
 	searchUrl = strings.Replace(searchUrl, "%s", url.PathEscape(keyword), 1)
 
-	doc, res, err := utils.GetUrlDoc(searchUrl, npclient.HttpClient,
+	doc, res, err := util.GetUrlDoc(searchUrl, npclient.HttpClient,
 		npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse site page dom: %v", err)
@@ -79,11 +79,11 @@ func (npclient *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Tor
 	if res.Request.URL.Path == "/login.php" {
 		return nil, fmt.Errorf("not logined (cookie may has expired)")
 	}
-	return npclient.parseTorrentsFromDoc(doc, utils.Now())
+	return npclient.parseTorrentsFromDoc(doc, util.Now())
 }
 
 func (npclient *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error) {
-	if !utils.IsUrl(torrentUrl) {
+	if !util.IsUrl(torrentUrl) {
 		id := strings.TrimPrefix(torrentUrl, npclient.GetName()+".")
 		return npclient.DownloadTorrentById(id)
 	}
@@ -99,7 +99,7 @@ func (npclient *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error)
 		id = urlObj.Query().Get("id")
 	}
 	// skip NP download notice. see https://github.com/xiaomlove/nexusphp/blob/php8/public/download.php
-	torrentUrl = utils.AppendUrlQueryString(torrentUrl, "letdown=1")
+	torrentUrl = util.AppendUrlQueryString(torrentUrl, "letdown=1")
 	return site.DownloadTorrentByUrl(npclient, npclient.HttpClient, torrentUrl, id)
 }
 
@@ -111,7 +111,7 @@ func (npclient *Site) DownloadTorrentById(id string) ([]byte, string, error) {
 			npclient.sync()
 		}
 		if npclient.cuhash != "" {
-			torrentUrl = utils.AppendUrlQueryString(torrentUrl, "cuhash="+npclient.cuhash)
+			torrentUrl = util.AppendUrlQueryString(torrentUrl, "cuhash="+npclient.cuhash)
 		} else {
 			log.Warnf("Failed to get site cuhash. torrent download may fail")
 		}
@@ -157,7 +157,7 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 	}
 	page := int64(0)
 	if pageMarker != "" {
-		page = utils.ParseInt(pageMarker)
+		page = util.ParseInt(pageMarker)
 	}
 	if baseUrl == "" {
 		baseUrl = "torrents.php"
@@ -168,8 +168,8 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 		queryString += "sort=" + sortFields[sort] + "&type=" + sortOrder + "&"
 	}
 	pageStr := "page=" + fmt.Sprint(page)
-	now := utils.Now()
-	doc, res, error := utils.GetUrlDoc(pageUrl+queryString+pageStr, npclient.HttpClient,
+	now := util.Now()
+	doc, res, error := util.GetUrlDoc(pageUrl+queryString+pageStr, npclient.HttpClient,
 		npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, nil)
 	if error != nil {
 		err = fmt.Errorf("failed to fetch torrents page dom: %v", error)
@@ -186,7 +186,7 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 		paginationEls.Each(func(i int, s *goquery.Selection) {
 			m := pageRegexp.FindStringSubmatch(s.AttrOr("href", ""))
 			if m != nil {
-				page := utils.ParseInt(m[pageRegexp.SubexpIndex("page")])
+				page := util.ParseInt(m[pageRegexp.SubexpIndex("page")])
 				if page > lastPage {
 					lastPage = page
 				}
@@ -195,8 +195,8 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 		if lastPage > 0 {
 			page = lastPage
 			pageStr = "page=" + fmt.Sprint(page)
-			now = utils.Now()
-			doc, res, error = utils.GetUrlDoc(pageUrl+queryString+pageStr, npclient.HttpClient,
+			now = util.Now()
+			doc, res, error = util.GetUrlDoc(pageUrl+queryString+pageStr, npclient.HttpClient,
 				npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, nil)
 			if error != nil {
 				err = fmt.Errorf("failed to fetch torrents page dom: %v", error)
@@ -246,7 +246,7 @@ func (npclient *Site) sync() error {
 	if url == "" {
 		url = npclient.SiteConfig.Url + "torrents.php"
 	}
-	doc, res, err := utils.GetUrlDoc(url, npclient.HttpClient,
+	doc, res, err := util.GetUrlDoc(url, npclient.HttpClient,
 		npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, nil)
 	if err != nil {
 		return fmt.Errorf("failed to get site page dom: %v", err)
@@ -255,7 +255,7 @@ func (npclient *Site) sync() error {
 		return fmt.Errorf("not logined (cookie may has expired)")
 	}
 	html := doc.Find("html")
-	npclient.datatime = utils.Now()
+	npclient.datatime = util.Now()
 
 	siteStatus := &site.Status{}
 	selectorUserInfo := npclient.SiteConfig.SelectorUserInfo
@@ -274,7 +274,7 @@ func (npclient *Site) sync() error {
 
 	sstr = ""
 	if npclient.SiteConfig.SelectorUserInfoUploaded != "" {
-		sstr = utils.DomSelectorText(html, npclient.SiteConfig.SelectorUserInfoUploaded)
+		sstr = util.DomSelectorText(html, npclient.SiteConfig.SelectorUserInfoUploaded)
 	} else {
 		re := regexp.MustCompile(`(?i)(上傳量|上傳|上传量|上传|Uploaded|Up)[：:\s]+(?P<s>[.\s0-9KMGTEPBkmgtepib]+)`)
 		m := re.FindStringSubmatch(infoTxt)
@@ -283,13 +283,13 @@ func (npclient *Site) sync() error {
 		}
 	}
 	if sstr != "" {
-		s, _ := utils.RAMInBytes(sstr)
+		s, _ := util.RAMInBytes(sstr)
 		siteStatus.UserUploaded = s
 	}
 
 	sstr = ""
 	if npclient.SiteConfig.SelectorUserInfoDownloaded != "" {
-		sstr = utils.DomSelectorText(html, npclient.SiteConfig.SelectorUserInfoDownloaded)
+		sstr = util.DomSelectorText(html, npclient.SiteConfig.SelectorUserInfoDownloaded)
 	} else {
 		re := regexp.MustCompile(`(?i)(下載量|下載|下载量|下载|Downloaded|Down)[：:\s]+(?P<s>[.\s0-9KMGTEPBkmgtepib]+)`)
 		m := re.FindStringSubmatch(infoTxt)
@@ -298,12 +298,12 @@ func (npclient *Site) sync() error {
 		}
 	}
 	if sstr != "" {
-		s, _ := utils.RAMInBytes(sstr)
+		s, _ := util.RAMInBytes(sstr)
 		siteStatus.UserDownloaded = s
 	}
 
 	if npclient.SiteConfig.SelectorUserInfoUserName != "" {
-		siteStatus.UserName = utils.DomSelectorText(html, npclient.SiteConfig.SelectorUserInfoUserName)
+		siteStatus.UserName = util.DomSelectorText(html, npclient.SiteConfig.SelectorUserInfoUserName)
 	} else {
 		siteStatus.UserName = doc.Find(`*[href*="userdetails.php?"]`).First().Text()
 	}
@@ -331,7 +331,7 @@ func (npclient *Site) syncExtra() error {
 	}
 	extraTorrents := []site.Torrent{}
 	for _, extraUrl := range npclient.SiteConfig.TorrentsExtraUrls {
-		doc, res, err := utils.GetUrlDoc(npclient.SiteConfig.ParseSiteUrl(extraUrl, false), npclient.HttpClient,
+		doc, res, err := util.GetUrlDoc(npclient.SiteConfig.ParseSiteUrl(extraUrl, false), npclient.HttpClient,
 			npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, nil)
 		if err != nil {
 			log.Errorf("failed to parse site page dom: %v", err)
@@ -340,7 +340,7 @@ func (npclient *Site) syncExtra() error {
 		if res.Request.URL.Path == "/login.php" {
 			return fmt.Errorf("not logined (cookie may has expired)")
 		}
-		torrents, err := npclient.parseTorrentsFromDoc(doc, utils.Now())
+		torrents, err := npclient.parseTorrentsFromDoc(doc, util.Now())
 		if err != nil {
 			log.Errorf("failed to parse site page torrents: %v", err)
 			continue
@@ -348,7 +348,7 @@ func (npclient *Site) syncExtra() error {
 		extraTorrents = append(npclient.extraTorrents, torrents...)
 	}
 	npclient.extraTorrents = extraTorrents
-	npclient.datetimeExtra = utils.Now()
+	npclient.datetimeExtra = util.Now()
 	return nil
 }
 

@@ -21,7 +21,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/config"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 type Client struct {
@@ -620,7 +620,7 @@ func (qbclient *Client) sync() error {
 	if err != nil {
 		return err
 	}
-	qbclient.datatime = utils.Now()
+	qbclient.datatime = util.Now()
 	// make hash available in torrent itself as well as map key
 	unfinishedSize := int64(0)
 	unfinishedDownloadingSize := int64(0)
@@ -729,7 +729,7 @@ func (qbclient *Client) GetConfig(variable string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		value := reflect.Indirect(reflect.ValueOf(preferences)).FieldByName(utils.Capitalize(variable[3:])).Interface()
+		value := reflect.Indirect(reflect.ValueOf(preferences)).FieldByName(util.Capitalize(variable[3:])).Interface()
 		return fmt.Sprint(value), nil
 	}
 
@@ -778,7 +778,7 @@ func (qbclient *Client) SetConfig(variable string, value string) error {
 	}
 	if strings.HasPrefix(variable, "qb_") && len(variable) > 3 {
 		data := map[string]any{}
-		data[variable[3:]], _ = utils.String2Any(value)
+		data[variable[3:]], _ = util.String2Any(value)
 		return qbclient.setPreferences(data)
 	}
 	switch variable {
@@ -839,7 +839,7 @@ func (qbclient *Client) GetTorrentContents(infoHash string) ([]client.TorrentCon
 	}
 	apiUrl := qbclient.ClientConfig.Url + "api/v2/torrents/files?hash=" + infoHash
 	qbTorrentContents := []apiTorrentContent{}
-	err = utils.FetchJson(apiUrl, &qbTorrentContents, qbclient.HttpClient, "", "", nil)
+	err = util.FetchJson(apiUrl, &qbTorrentContents, qbclient.HttpClient, "", "", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -867,15 +867,15 @@ func (qbclient *Client) GetTorrentTrackers(infoHash string) (client.TorrentTrack
 	}
 	apiUrl := qbclient.ClientConfig.Url + "api/v2/torrents/trackers?hash=" + infoHash
 	qbTorrentTrackers := []apiTorrentTracker{}
-	err = utils.FetchJson(apiUrl, &qbTorrentTrackers, qbclient.HttpClient, "", "", nil)
+	err = util.FetchJson(apiUrl, &qbTorrentTrackers, qbclient.HttpClient, "", "", nil)
 	if err != nil {
 		return nil, err
 	}
-	qbTorrentTrackers = utils.Filter(qbTorrentTrackers, func(tracker apiTorrentTracker) bool {
+	qbTorrentTrackers = util.Filter(qbTorrentTrackers, func(tracker apiTorrentTracker) bool {
 		// exclude qb  "** [DHT] **", "** [PeX] **", "** [LSD] **" trackers
 		return !strings.HasPrefix(tracker.Url, "**")
 	})
-	trackers := utils.Map(qbTorrentTrackers, func(qbtracker apiTorrentTracker) client.TorrentTracker {
+	trackers := util.Map(qbTorrentTrackers, func(qbtracker apiTorrentTracker) client.TorrentTracker {
 		status := ""
 		switch qbtracker.Status {
 		case 0:
@@ -915,7 +915,7 @@ func (qbclient *Client) EditTorrentTracker(infoHash string, oldTracker string, n
 		}
 		oldTrackerUrl := ""
 		newTrackerUrl := ""
-		directNewUrlMode := utils.IsUrl(newTracker)
+		directNewUrlMode := util.IsUrl(newTracker)
 		index := trackers.FindIndex(oldTracker)
 		if index != -1 {
 			oldTrackerUrl = trackers[index].Url
@@ -962,7 +962,7 @@ func (qbclient *Client) AddTorrentTrackers(infoHash string, trackers []string, o
 		if index == -1 {
 			return nil
 		}
-		trackers = utils.Filter(trackers, func(tracker string) bool {
+		trackers = util.Filter(trackers, func(tracker string) bool {
 			return torrentTrackers.FindIndex(tracker) == -1
 		})
 	}

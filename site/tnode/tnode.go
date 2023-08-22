@@ -13,7 +13,7 @@ import (
 
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 type Site struct {
@@ -29,7 +29,7 @@ func (tnsite *Site) syncCsrfToken() error {
 	if tnsite.csrfToken != "" {
 		return nil
 	}
-	doc, _, err := utils.GetUrlDoc(tnsite.SiteConfig.Url, tnsite.HttpClient,
+	doc, _, err := util.GetUrlDoc(tnsite.SiteConfig.Url, tnsite.HttpClient,
 		tnsite.GetSiteConfig().Cookie, tnsite.SiteConfig.UserAgent, nil)
 	if err != nil {
 		return err
@@ -64,7 +64,7 @@ func (tnsite *Site) GetStatus() (*site.Status, error) {
 	headers := map[string]string{
 		"x-csrf-token": tnsite.csrfToken,
 	}
-	err = utils.FetchJson(apiUrl, data, tnsite.HttpClient,
+	err = util.FetchJson(apiUrl, data, tnsite.HttpClient,
 		tnsite.SiteConfig.Cookie, tnsite.SiteConfig.UserAgent, headers)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get use status: %v", err)
@@ -90,7 +90,7 @@ func (tnsite *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Torre
 }
 
 func (tnsite *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error) {
-	if !utils.IsUrl(torrentUrl) {
+	if !util.IsUrl(torrentUrl) {
 		id := strings.TrimPrefix(torrentUrl, tnsite.GetName()+".")
 		return tnsite.DownloadTorrentById(id)
 	}

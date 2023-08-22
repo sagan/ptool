@@ -9,7 +9,7 @@ import (
 
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 var (
@@ -511,8 +511,8 @@ func init() {
 
 func create(name string, siteConfig *config.SiteConfigStruct, globalConfig *config.ConfigStruct) (
 	site.Site, error) {
-	sc := *SITES[siteConfig.Type]           // copy
-	utils.Assign(&sc, siteConfig, []int{0}) // field 0: type
+	sc := *SITES[siteConfig.Type]          // copy
+	util.Assign(&sc, siteConfig, []int{0}) // field 0: type
 	return site.CreateSiteInternal(name, &sc, globalConfig)
 }
 
@@ -525,7 +525,7 @@ func FindSiteTypesByDomain(domain string) []string {
 		if !config.MatchSite(domain, site) {
 			continue
 		}
-		types := utils.CopySlice(site.Aliases)
+		types := util.CopySlice(site.Aliases)
 		types = append(types, sitename)
 		return types
 	}
@@ -552,7 +552,7 @@ func GuessSiteByDomain(domain string, defaultSite string) string {
 
 func GuessSiteByTrackers(trackers []string, defaultSite string) string {
 	for _, tracker := range trackers {
-		domain := utils.GetUrlDomain(tracker)
+		domain := util.GetUrlDomain(tracker)
 		if domain == "" {
 			continue
 		}

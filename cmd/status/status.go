@@ -12,7 +12,7 @@ import (
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 var (
@@ -45,7 +45,7 @@ func init() {
 	command.Flags().BoolVarP(&showAllClients, "clients", "c", false, "Show all clients")
 	command.Flags().BoolVarP(&showAllSites, "sites", "s", false, "Show all sites")
 	command.Flags().BoolVarP(&showTorrents, "torrents", "t", false, "Show torrents (active torrents for client / latest torrents for site)")
-	command.Flags().BoolVarP(&showFull, "full", "", false, "Show full info of each client or site")
+	command.Flags().BoolVarP(&showFull, "full", "f", false, "Show full info of each client or site")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -77,7 +77,7 @@ func status(cmd *cobra.Command, args []string) error {
 	if len(names) == 0 {
 		return fmt.Errorf("no sites or clients provided")
 	}
-	now := utils.Now()
+	now := util.Now()
 	errorCnt := int64(0)
 	doneFlag := map[string]bool{}
 	cnt := int64(0)
@@ -136,14 +136,14 @@ func status(cmd *cobra.Command, args []string) error {
 				fmt.Printf("%-6s  %-13s  %-25s  %-25s  %-25s",
 					"Client",
 					response.Name,
-					fmt.Sprintf("↑Spd/Lmt: %s / %s/s", utils.BytesSize(float64(response.ClientStatus.UploadSpeed)),
-						utils.BytesSize(float64(response.ClientStatus.UploadSpeedLimit))),
-					fmt.Sprintf("↓Spd/Lmt: %s / %s/s", utils.BytesSize(float64(response.ClientStatus.DownloadSpeed)),
-						utils.BytesSize(float64(response.ClientStatus.DownloadSpeedLimit))),
+					fmt.Sprintf("↑Spd/Lmt: %s / %s/s", util.BytesSize(float64(response.ClientStatus.UploadSpeed)),
+						util.BytesSize(float64(response.ClientStatus.UploadSpeedLimit))),
+					fmt.Sprintf("↓Spd/Lmt: %s / %s/s", util.BytesSize(float64(response.ClientStatus.DownloadSpeed)),
+						util.BytesSize(float64(response.ClientStatus.DownloadSpeedLimit))),
 					fmt.Sprintf("FreeSpace: %s; Unfinished(All/DL): %s/%s",
-						utils.BytesSize(float64(response.ClientStatus.FreeSpaceOnDisk)),
-						utils.BytesSize(float64(response.ClientStatus.UnfinishedSize)),
-						utils.BytesSize(float64(response.ClientStatus.UnfinishedDownloadingSize)),
+						util.BytesSize(float64(response.ClientStatus.FreeSpaceOnDisk)),
+						util.BytesSize(float64(response.ClientStatus.UnfinishedSize)),
+						util.BytesSize(float64(response.ClientStatus.UnfinishedDownloadingSize)),
 					),
 				)
 				if len(response.ClientTorrents) > 0 {
@@ -175,8 +175,8 @@ func status(cmd *cobra.Command, args []string) error {
 				fmt.Printf("%-6s  %-13s  %-25s  %-25s  %-25s",
 					"Site",
 					response.Name,
-					fmt.Sprintf("↑: %s", utils.BytesSize(float64(response.SiteStatus.UserUploaded))),
-					fmt.Sprintf("↓: %s", utils.BytesSize(float64(response.SiteStatus.UserDownloaded))),
+					fmt.Sprintf("↑: %s", util.BytesSize(float64(response.SiteStatus.UserUploaded))),
+					fmt.Sprintf("↓: %s", util.BytesSize(float64(response.SiteStatus.UserDownloaded))),
 					fmt.Sprintf("UserName: %s", response.SiteStatus.UserName),
 				)
 				if len(response.SiteTorrents) > 0 {

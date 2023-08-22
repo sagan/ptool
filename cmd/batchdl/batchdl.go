@@ -12,13 +12,12 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"golang.org/x/exp/slices"
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/cmd/common"
 	"github.com/sagan/ptool/site"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 var command = &cobra.Command{
@@ -42,6 +41,8 @@ var (
 	nohr               = false
 	allowBreak         = false
 	addCategoryAuto    = false
+	largestFlag        = false
+	newestFlag         = false
 	maxTorrents        = int64(0)
 	minSeeders         = int64(0)
 	maxSeeders         = int64(0)
@@ -72,6 +73,8 @@ func init() {
 	command.Flags().BoolVarP(&dense, "dense", "", false, "Dense mode: show full torrent title & subtitle")
 	command.Flags().BoolVarP(&freeOnly, "free", "", false, "Skip none-free torrent")
 	command.Flags().BoolVarP(&noPaid, "no-paid", "", false, "Skip paid (use bonus points) torrent")
+	command.Flags().BoolVarP(&largestFlag, "largest", "l", false, `Sort site torrents by size in desc order. Equivalent with "--sort size --order desc"`)
+	command.Flags().BoolVarP(&newestFlag, "newest", "n", false, `Download newest torrents of site. Equivalent with "--sort time --order desc --one-page --start-page 0"`)
 	command.Flags().BoolVarP(&addRespectNoadd, "add-respect-noadd", "", false, "Used with '--action add'. Check and respect _noadd flag in client")
 	command.Flags().BoolVarP(&nohr, "no-hr", "", false, "Skip torrent that has any type of HnR (Hit and Run) restriction")
 	command.Flags().BoolVarP(&allowBreak, "break", "", false, "Break (stop finding more torrents) if all torrents of current page do not meet criterion")
@@ -108,6 +111,18 @@ func batchdl(command *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	if largestFlag && newestFlag {
+		return fmt.Errorf("--largest and --newest flags are NOT compatible")
+	}
+	if largestFlag {
+		sortFlag = "size"
+		orderFlag = "desc"
+	} else if newestFlag {
+		sortFlag = "time"
+		orderFlag = "desc"
+		onePage = true
+		startPage = "0"
+	}
 	var includesList [][]string
 	var excludesList []string
 	for _, include := range includes {
@@ -116,18 +131,18 @@ func batchdl(command *cobra.Command, args []string) error {
 	if excludes != "" {
 		excludesList = strings.Split(excludes, ",")
 	}
-	minTorrentSize, _ := utils.RAMInBytes(minTorrentSizeStr)
-	maxTorrentSize, _ := utils.RAMInBytes(maxTorrentSizeStr)
-	maxTotalSize, _ := utils.RAMInBytes(maxTotalSizeStr)
-	addReserveSpace, _ := utils.RAMInBytes(addReserveSpaceStr)
-	addReserveSpaceGap := utils.Min(addReserveSpace/10, 10*1024*1024*1024)
+	minTorrentSize, _ := util.RAMInBytes(minTorrentSizeStr)
+	maxTorrentSize, _ := util.RAMInBytes(maxTorrentSizeStr)
+	maxTotalSize, _ := util.RAMInBytes(maxTotalSizeStr)
+	addReserveSpace, _ := util.RAMInBytes(addReserveSpaceStr)
+	addReserveSpaceGap := util.Min(addReserveSpace/10, 10*1024*1024*1024)
 	desc := false
 	if orderFlag == "desc" {
 		desc = true
 	}
 	freeTimeAtLeast := int64(0)
 	if freeTimeAtLeastStr != "" {
-		t, err := utils.ParseTimeDuration(freeTimeAtLeastStr)
+		t, err := util.ParseTimeDuration(freeTimeAtLeastStr)
 		if err != nil {
 			return fmt.Errorf("invalid --free-time value %s: %v", freeTimeAtLeastStr, err)
 		}
@@ -200,7 +215,7 @@ func batchdl(command *cobra.Command, args []string) error {
 			csvWriter.Write([]string{"name", "size", "time", "id"})
 		}
 	}
-	maxTotalSizeGap := utils.Max(maxTotalSize/100, addReserveSpaceGap/2)
+	maxTotalSizeGap := util.Max(maxTotalSize/100, addReserveSpaceGap/2)
 
 	cntTorrents := int64(0)
 	cntAllTorrents := int64(0)
@@ -212,9 +227,9 @@ func batchdl(command *cobra.Command, args []string) error {
 	var lastMarker = ""
 	doneHandle := func() {
 		fmt.Printf("\nDone. Torrents(Size/Cnt) | AllTorrents(Size/Cnt) | LastPage: %s/%d | %s/%d | \"%s\"; ErrorCnt: %d\n",
-			utils.BytesSize(float64(totalSize)),
+			util.BytesSize(float64(totalSize)),
 			cntTorrents,
-			utils.BytesSize(float64(totalAllSize)),
+			util.BytesSize(float64(totalAllSize)),
 			cntAllTorrents,
 			lastMarker,
 			errorCnt,
@@ -237,7 +252,7 @@ func batchdl(command *cobra.Command, args []string) error {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 mainloop:
 	for {
-		now := utils.Now()
+		now := util.Now()
 		lastMarker = marker
 		log.Printf("Get torrents with page parker '%s'", marker)
 		torrents, marker, err = siteInstance.GetAllTorrents(sortFlag, desc, marker, baseUrl)
@@ -301,9 +316,7 @@ mainloop:
 			if len(includesList) > 0 {
 				matched := true
 				for _, includes := range includesList {
-					if slices.IndexFunc(includes, func(includeStr string) bool {
-						return torrent.MatchFilter(includeStr)
-					}) == -1 {
+					if !torrent.MatchFiltersOr(includes) {
 						matched = false
 						break
 					}
@@ -365,7 +378,7 @@ mainloop:
 						if err != nil {
 							fmt.Printf("torrent %s: failed to write to %s/file %s: %v\n", torrent.Id, downloadDir, filename, err)
 						} else {
-							fmt.Printf("torrent %s - %s (%s): downloaded to %s/%s\n", torrent.Id, torrent.Name, utils.BytesSize(float64(torrent.Size)), downloadDir, filename)
+							fmt.Printf("torrent %s - %s (%s): downloaded to %s/%s\n", torrent.Id, torrent.Name, util.BytesSize(float64(torrent.Size)), downloadDir, filename)
 						}
 					} else if action == "add" {
 						tags := []string{}
@@ -383,7 +396,7 @@ mainloop:
 						if err != nil {
 							fmt.Printf("torrent %s (%s): failed to add to client: %v\n", torrent.Id, torrent.Name, err)
 						} else {
-							fmt.Printf("torrent %s - %s (%s) (seeders=%d, time=%s): added to client\n", torrent.Id, torrent.Name, utils.BytesSize(float64(torrent.Size)), torrent.Seeders, utils.FormatDuration(now-torrent.Time))
+							fmt.Printf("torrent %s - %s (%s) (seeders=%d, time=%s): added to client\n", torrent.Id, torrent.Name, util.BytesSize(float64(torrent.Size)), torrent.Seeders, util.FormatDuration(now-torrent.Time))
 						}
 					}
 				}
@@ -409,8 +422,8 @@ mainloop:
 			}
 		}
 		log.Warnf("Finish handling page %s. Torrents(Size/Cnt) | AllTorrents(Size/Cnt) till now: %s/%d | %s/%d. Will process next page %s in few seconds. Press Ctrl + C to stop",
-			lastMarker, utils.BytesSize(float64(totalSize)), cntTorrents, utils.BytesSize(float64(totalAllSize)), cntAllTorrents, marker)
-		utils.Sleep(3)
+			lastMarker, util.BytesSize(float64(totalSize)), cntTorrents, util.BytesSize(float64(totalAllSize)), cntAllTorrents, marker)
+		util.Sleep(3)
 	}
 	doneHandle()
 	return nil

@@ -14,7 +14,7 @@ import (
 	mmap "github.com/edsrzf/mmap-go"
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/site/tpl"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -87,11 +87,11 @@ func ParseTorrent(torrentdata []byte, fields int64) (*TorrentMeta, error) {
 func (meta *TorrentMeta) Print(name string, showAll bool) {
 	trackerHostname := ""
 	if len(meta.Trackers) > 0 {
-		trackerHostname = utils.ParseUrlHostname(meta.Trackers[0])
+		trackerHostname = util.ParseUrlHostname(meta.Trackers[0])
 	}
 	sitename := tpl.GuessSiteByTrackers(meta.Trackers, "")
 	fmt.Printf("Torrent %s: infohash = %s ; size = %s (%d) ; tracker = %s (site: %s) // %s\n",
-		name, meta.InfoHash, utils.BytesSize(float64(meta.Size)), len(meta.Files),
+		name, meta.InfoHash, util.BytesSize(float64(meta.Size)), len(meta.Files),
 		trackerHostname, sitename, meta.MetaInfo.Comment)
 	if showAll {
 		if meta.SingleFileTorrent {
@@ -114,7 +114,7 @@ func (meta *TorrentMeta) PrintFiles(addRootDirPrefix bool, useRawSize bool) {
 		if useRawSize {
 			fmt.Printf("%-5d  %-15d  %s\n", i+1, file.Size, path)
 		} else {
-			fmt.Printf("%-5d  %-10s  %s\n", i+1, utils.BytesSize(float64(file.Size)), path)
+			fmt.Printf("%-5d  %-10s  %s\n", i+1, util.BytesSize(float64(file.Size)), path)
 		}
 	}
 }

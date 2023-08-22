@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/sagan/ptool/client"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 type apiTorrentTracker struct {
@@ -320,7 +320,7 @@ func (qbtorrent *apiTorrentInfo) ToTorrent() *client.Torrent {
 	torrent := &client.Torrent{
 		InfoHash:           qbtorrent.Hash,
 		Name:               qbtorrent.Name,
-		TrackerDomain:      utils.ParseUrlHostname(qbtorrent.Tracker),
+		TrackerDomain:      util.ParseUrlHostname(qbtorrent.Tracker),
 		Tracker:            qbtorrent.Tracker,
 		State:              qbtorrent.ToTorrentState(),
 		LowLevelState:      qbtorrent.State,

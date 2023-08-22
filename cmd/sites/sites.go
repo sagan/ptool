@@ -8,7 +8,7 @@ import (
 
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/site/tpl"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 var command = &cobra.Command{
@@ -33,8 +33,8 @@ func sites(cmd *cobra.Command, args []string) error {
 	fmt.Printf("%-15s  %-15s  %-30s  %10s  %s\n", "Type", "Aliases", "Url", "Schema", "Comment")
 	for _, name := range tpl.SITENAMES {
 		siteInfo := tpl.SITES[name]
-		if filter != "" && (!utils.ContainsI(siteInfo.Name, filter) &&
-			!utils.ContainsI(siteInfo.Url, filter) && !utils.ContainsI(siteInfo.Comment, filter)) {
+		if filter != "" && (!util.ContainsI(siteInfo.Name, filter) &&
+			!util.ContainsI(siteInfo.Url, filter) && !util.ContainsI(siteInfo.Comment, filter)) {
 			continue
 		}
 		fmt.Printf("%-15s  %-15s  %-30s  %10s  %s\n", name, strings.Join(siteInfo.Aliases, ","), siteInfo.Url, siteInfo.Type, siteInfo.Comment)

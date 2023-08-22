@@ -12,7 +12,7 @@ import (
 
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 type IyuuApiSite struct {
@@ -80,7 +80,7 @@ const IYUU_VERSION = "2.0.0"
 
 // https://api.iyuu.cn/docs.php?service=App.Api.Infohash&detail=1&type=fold
 func IyuuApiHash(token string, infoHashes []string) (map[string][]IyuuTorrentInfoHash, error) {
-	infoHashes = utils.CopySlice(infoHashes)
+	infoHashes = util.CopySlice(infoHashes)
 	for i, infoHash := range infoHashes {
 		infoHashes[i] = strings.ToLower(infoHash)
 	}
@@ -91,13 +91,13 @@ func IyuuApiHash(token string, infoHashes []string) (map[string][]IyuuTorrentInf
 	apiUrl := "https://api.iyuu.cn/index.php?s=App.Api.Hash"
 	data := url.Values{
 		"sign":      {token},
-		"timestamp": {fmt.Sprint(utils.Now())},
+		"timestamp": {fmt.Sprint(util.Now())},
 		"version":   {IYUU_VERSION},
 		"hash":      {string(hash)},
-		"sha1":      {utils.Sha1(hash)},
+		"sha1":      {util.Sha1(hash)},
 	}
 	resData := &IyuuApiHashResponse{}
-	err := utils.PostUrlForJson(apiUrl, data, &resData, nil)
+	err := util.PostUrlForJson(apiUrl, data, &resData, nil)
 	log.Tracef("ApiInfoHash response err=%v", err)
 	if err != nil {
 		return nil, err
@@ -114,14 +114,14 @@ func IyuuApiHash(token string, infoHashes []string) (map[string][]IyuuTorrentInf
 }
 
 func IyuuApiGetUser(token string) (data map[string]any, err error) {
-	err = utils.FetchJson("https://api.iyuu.cn/index.php?s=App.Api.GetUser&sign="+token,
+	err = util.FetchJson("https://api.iyuu.cn/index.php?s=App.Api.GetUser&sign="+token,
 		&data, nil, "", "", nil)
 	return
 }
 
 func IyuuApiSites(token string) ([]IyuuApiSite, error) {
 	resData := &IyuuApiSitesResponse{}
-	err := utils.FetchJson("https://api.iyuu.cn/index.php?s=App.Api.Sites&version="+
+	err := util.FetchJson("https://api.iyuu.cn/index.php?s=App.Api.Sites&version="+
 		IYUU_VERSION+"&sign="+token,
 		resData, nil, "", "", nil)
 	if err != nil {
@@ -135,10 +135,10 @@ func IyuuApiSites(token string) ([]IyuuApiSite, error) {
 
 func IyuuApiBind(token string, site string, uid int64, passkey string) (map[string]any, error) {
 	apiUrl := "https://api.iyuu.cn/index.php?s=App.Api.Bind&token=" + token +
-		"&site=" + site + "&id=" + fmt.Sprint(uid) + "&passkey=" + utils.Sha1String(passkey)
+		"&site=" + site + "&id=" + fmt.Sprint(uid) + "&passkey=" + util.Sha1String(passkey)
 
 	resData := &IyuuApiResponse{}
-	err := utils.FetchJson(apiUrl, &resData, nil, "", "", nil)
+	err := util.FetchJson(apiUrl, &resData, nil, "", "", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +152,7 @@ func IyuuApiGetRecommendSites() ([]IyuuApiRecommendSite, error) {
 	apiUrl := "https://api.iyuu.cn/index.php?s=App.Api.GetRecommendSites"
 
 	var resData *IyuuGetRecommendSitesResponse
-	err := utils.FetchJson(apiUrl, &resData, nil, "", "", nil)
+	err := util.FetchJson(apiUrl, &resData, nil, "", "", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +189,7 @@ func GenerateIyuu2LocalSiteMap(iyuuSites []Site,
 	localSites []*config.SiteConfigStruct) map[int64]string {
 	iyuu2LocalSiteMap := map[int64]string{} // iyuu sid => local site name
 	for _, iyuuSite := range iyuuSites {
-		localSite := utils.FindInSlice(localSites, func(siteConfig *config.SiteConfigStruct) bool {
+		localSite := util.FindInSlice(localSites, func(siteConfig *config.SiteConfigStruct) bool {
 			if siteConfig.Disabled {
 				return false
 			}

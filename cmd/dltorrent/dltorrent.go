@@ -11,7 +11,7 @@ import (
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/site/tpl"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 var command = &cobra.Command{
@@ -42,14 +42,14 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 
 	for _, torrentId := range torrentIds {
 		siteName := defaultSite
-		if !utils.IsUrl(torrentId) {
+		if !util.IsUrl(torrentId) {
 			i := strings.Index(torrentId, ".")
 			if i != -1 && i < len(torrentId)-1 {
 				siteName = torrentId[:i]
 				torrentId = torrentId[i+1:]
 			}
 		} else {
-			domain := utils.GetUrlDomain(torrentId)
+			domain := util.GetUrlDomain(torrentId)
 			if domain == "" {
 				fmt.Printf("torrent %s: failed to parse domain", torrentId)
 				continue

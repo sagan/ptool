@@ -9,7 +9,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 type Chunk struct {
@@ -80,7 +80,7 @@ func init() {
 }
 
 func partialdownload(cmd *cobra.Command, args []string) error {
-	chunkSize, _ := utils.RAMInBytes(chunkSizeStr)
+	chunkSize, _ := util.RAMInBytes(chunkSizeStr)
 	clientName := args[0]
 	infoHash := args[1]
 	if chunkSize <= 0 {
@@ -127,7 +127,7 @@ func partialdownload(cmd *cobra.Command, args []string) error {
 		allSize += file.Size
 		if strict && file.Size > chunkSize {
 			return fmt.Errorf("torrent can NOT be strictly splitted to %s chunks: file %s is too large (%s)",
-				utils.BytesSize(float64(chunkSize)), file.Path, utils.BytesSize(float64(file.Size)))
+				util.BytesSize(float64(chunkSize)), file.Path, util.BytesSize(float64(file.Size)))
 		}
 		if currentChunkSize >= chunkSize || (strict && (currentChunkSize+file.Size) > chunkSize) {
 			chunks = append(chunks, &Chunk{currentChunkIndex, currentChunkFilesCnt, currentChunkSize})
@@ -146,16 +146,16 @@ func partialdownload(cmd *cobra.Command, args []string) error {
 	chunks = append(chunks, &Chunk{currentChunkIndex, currentChunkFilesCnt, currentChunkSize}) // last chunk
 	if showAll {
 		fmt.Printf("Torrent Size: %s (%d) / Chunk Size: %s; Skipped files: %d; All %d Chunks:\n",
-			utils.BytesSize(float64(allSize)), len(torrentFiles),
-			utils.BytesSize(float64(chunkSize)), startIndex, len(chunks))
+			util.BytesSize(float64(allSize)), len(torrentFiles),
+			util.BytesSize(float64(chunkSize)), startIndex, len(chunks))
 		fmt.Printf("%-10s  %-15s  %-5s  %s\n", "ChunkIndex", "FileStartIndex", "Files", "Size")
 		fileStartIndex := int64(0)
 		if startIndex > 0 {
-			fmt.Printf("%-10s  %-15d  %-5d  %s\n", "<skip>", fileStartIndex, startIndex, utils.BytesSize(float64(skippedSize)))
+			fmt.Printf("%-10s  %-15d  %-5d  %s\n", "<skip>", fileStartIndex, startIndex, util.BytesSize(float64(skippedSize)))
 			fileStartIndex += startIndex
 		}
 		for _, chunk := range chunks {
-			fmt.Printf("%-10d  %-15d  %-5d  %s\n", chunk.Index, fileStartIndex, chunk.FilesCnt, utils.BytesSize(float64(chunk.Size)))
+			fmt.Printf("%-10d  %-15d  %-5d  %s\n", chunk.Index, fileStartIndex, chunk.FilesCnt, util.BytesSize(float64(chunk.Size)))
 			fileStartIndex += chunk.FilesCnt
 		}
 		return nil
@@ -170,7 +170,7 @@ func partialdownload(cmd *cobra.Command, args []string) error {
 	}
 	log.Infof("Marked %d files as download.", len(downloadFileIndexes))
 	if !appendMode {
-		utils.Sleep(5)
+		util.Sleep(5)
 		err = clientInstance.SetFilePriority(infoHash, noDownloadFileIndexes, 0)
 		if err != nil {
 			return fmt.Errorf("failed to mark files as no-download: %v", err)
@@ -178,8 +178,8 @@ func partialdownload(cmd *cobra.Command, args []string) error {
 		log.Infof("Marked %d files as no-download.", len(noDownloadFileIndexes))
 	}
 	fmt.Printf("Torrent Size: %s (%d) / Chunks: %d; Skipped files: %d; DownloadChunkIndex: %d; DownloadChunkSize: %s (%d)",
-		utils.BytesSize(float64(allSize)), len(torrentFiles), len(chunks), startIndex,
-		chunkIndex, utils.BytesSize(float64(chunk.Size)), chunk.FilesCnt,
+		util.BytesSize(float64(allSize)), len(torrentFiles), len(chunks), startIndex,
+		chunkIndex, util.BytesSize(float64(chunk.Size)), chunk.FilesCnt,
 	)
 	return nil
 }

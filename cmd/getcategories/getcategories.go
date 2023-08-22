@@ -8,7 +8,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 var command = &cobra.Command{
@@ -41,7 +41,7 @@ func getcategories(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to get categories: %v", err)
 	}
 	if showNamesOnly {
-		fmt.Printf("%s\n", strings.Join(utils.Map(cats, func(cat client.TorrentCategory) string {
+		fmt.Printf("%s\n", strings.Join(util.Map(cats, func(cat client.TorrentCategory) string {
 			return cat.Name
 		}), ", "))
 	} else {

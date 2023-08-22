@@ -9,7 +9,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
-	"github.com/sagan/ptool/utils/torrentutil"
+	"github.com/sagan/ptool/util/torrentutil"
 )
 
 var command = &cobra.Command{

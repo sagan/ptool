@@ -12,7 +12,7 @@ import (
 
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/config"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 // gorm "torrents" table
@@ -79,8 +79,8 @@ func Db() *gorm.DB {
 
 func (iyuuSite *Site) MatchFilter(filter string) bool {
 	return filter == "" ||
-		utils.ContainsI(iyuuSite.Name, filter) ||
-		utils.ContainsI(iyuuSite.Nickname, filter) ||
-		utils.ContainsI(iyuuSite.Url, filter) ||
+		util.ContainsI(iyuuSite.Name, filter) ||
+		util.ContainsI(iyuuSite.Nickname, filter) ||
+		util.ContainsI(iyuuSite.Url, filter) ||
 		fmt.Sprint(iyuuSite.Sid) == filter
 }

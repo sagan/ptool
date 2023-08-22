@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 type TorrentTraffic struct {
@@ -65,11 +65,11 @@ func (db *StatDb) AddTorrentStat(ts int64, event int64, torrentStat *TorrentStat
 }
 
 func (db *StatDb) ShowTrafficStats(client string) {
-	now := utils.Now()
-	today := utils.FormatDate(now)
-	yesterday := utils.FormatDate(now - 86400)
-	yesterdayMinus7day := utils.FormatDate(now - 86400*8)
-	yesterdayMinus30day := utils.FormatDate(now - 86400*31)
+	now := util.Now()
+	today := util.FormatDate(now)
+	yesterday := util.FormatDate(now - 86400)
+	yesterdayMinus7day := util.FormatDate(now - 86400*8)
+	yesterdayMinus30day := util.FormatDate(now - 86400*31)
 	timespans := []struct {
 		name     string
 		startday string
@@ -93,7 +93,7 @@ func (db *StatDb) ShowTrafficStats(client string) {
 	if len(clientObjs) > 3 {
 		clientObjs = clientObjs[:3]
 	}
-	clients := utils.Map(clientObjs, func(c TorrentTraffic) string {
+	clients := util.Map(clientObjs, func(c TorrentTraffic) string {
 		return c.Client
 	})
 
@@ -128,9 +128,9 @@ func (db *StatDb) ShowTrafficStats(client string) {
 			}
 			fmt.Printf("%-15s  ", timespan.name)
 			for _, client := range clients {
-				fmt.Printf("%20s  /  ", "↓"+utils.BytesSize(float64(clientsDownloaded[client]))+", ↑"+utils.BytesSize(float64(clientsUploaded[client])))
+				fmt.Printf("%20s  /  ", "↓"+util.BytesSize(float64(clientsDownloaded[client]))+", ↑"+util.BytesSize(float64(clientsUploaded[client])))
 			}
-			fmt.Printf("%20s\n", "↓"+utils.BytesSize(float64(allDownloaded))+", ↑"+utils.BytesSize(float64(allUploaded)))
+			fmt.Printf("%20s\n", "↓"+util.BytesSize(float64(allDownloaded))+", ↑"+util.BytesSize(float64(allUploaded)))
 		}
 		return
 	}
@@ -146,7 +146,7 @@ func (db *StatDb) ShowTrafficStats(client string) {
 		}
 		return siteObjs[i].Downloaded+siteObjs[i].Uploaded > siteObjs[j].Downloaded+siteObjs[j].Uploaded
 	})
-	sites := utils.Map(siteObjs, func(c TorrentTraffic) string {
+	sites := util.Map(siteObjs, func(c TorrentTraffic) string {
 		return c.Site
 	})
 
@@ -183,9 +183,9 @@ func (db *StatDb) ShowTrafficStats(client string) {
 		}
 		fmt.Printf("%-15s  ", timespan.name)
 		for _, site := range sites {
-			fmt.Printf("%20s  /  ", "↓"+utils.BytesSize(float64(sitesDownloaded[site]))+", ↑"+utils.BytesSize(float64(siteUploaded[site])))
+			fmt.Printf("%20s  /  ", "↓"+util.BytesSize(float64(sitesDownloaded[site]))+", ↑"+util.BytesSize(float64(siteUploaded[site])))
 		}
-		fmt.Printf("%20s\n", "↓"+utils.BytesSize(float64(allDownloaded))+", ↑"+utils.BytesSize(float64(allUploaded)))
+		fmt.Printf("%20s\n", "↓"+util.BytesSize(float64(allDownloaded))+", ↑"+util.BytesSize(float64(allUploaded)))
 	}
 }
 
@@ -234,8 +234,8 @@ func NewDb(statFilename string) (*StatDb, error) {
 		dailyUploaded := 86400 * aUploadSpeed
 
 		time := statRecord.Data.Atime
-		day := utils.FormatDate(time)
-		nexydayTime, _ := utils.ParseLocalDateTime(day)
+		day := util.FormatDate(time)
+		nexydayTime, _ := util.ParseLocalDateTime(day)
 		nexydayTime += 86400
 		for statRecord.Ts > time {
 			isFullDay := true
@@ -271,7 +271,7 @@ func NewDb(statFilename string) (*StatDb, error) {
 				Uploaded:   uploaded,
 			})
 			time = nexydayTime
-			day = utils.FormatDate(time)
+			day = util.FormatDate(time)
 			nexydayTime += 86400
 		}
 	}

@@ -10,7 +10,7 @@ import (
 
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/ja3transport"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 	"golang.org/x/exp/slices"
 )
 
@@ -72,7 +72,7 @@ var (
 )
 
 func (torrent *Torrent) MatchFilter(filter string) bool {
-	if filter == "" || utils.ContainsI(torrent.Name, filter) || utils.ContainsI(torrent.Description, filter) {
+	if filter == "" || util.ContainsI(torrent.Name, filter) || util.ContainsI(torrent.Description, filter) {
 		return true
 	}
 	return false
@@ -151,7 +151,7 @@ func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool, 
 			freeStr += "✕"
 		}
 		if torrent.DiscountEndTime > 0 {
-			freeStr += fmt.Sprintf("(%s)", utils.FormatDuration(torrent.DiscountEndTime-now))
+			freeStr += fmt.Sprintf("(%s)", util.FormatDuration(torrent.DiscountEndTime-now))
 		}
 		if torrent.UploadMultiplier > 1 {
 			freeStr = fmt.Sprintf("%1.1f", torrent.UploadMultiplier) + freeStr
@@ -164,11 +164,11 @@ func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool, 
 		if dense {
 			fmt.Printf("// %s  %s\n", torrent.Name, torrent.Description)
 		}
-		utils.PrintStringInWidth(name, 40, true)
+		util.PrintStringInWidth(name, 40, true)
 		fmt.Printf("  %8s  %-13s  %-19s  %4s  %4s  %4s  %20s  %2s\n",
-			utils.BytesSize(float64(torrent.Size)),
+			util.BytesSize(float64(torrent.Size)),
 			freeStr,
-			utils.FormatTime(torrent.Time),
+			util.FormatTime(torrent.Time),
 			fmt.Sprint(torrent.Seeders),
 			fmt.Sprint(torrent.Leechers),
 			fmt.Sprint(torrent.Snatched),
@@ -227,7 +227,7 @@ func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, config *config.Co
 
 // general download torrent func
 func DownloadTorrentByUrl(siteInstance Site, httpClient *http.Client, torrentUrl string, torrentId string) ([]byte, string, error) {
-	res, header, err := utils.FetchUrl(torrentUrl, httpClient,
+	res, header, err := util.FetchUrl(torrentUrl, httpClient,
 		siteInstance.GetSiteConfig().Cookie, siteInstance.GetSiteConfig().UserAgent, nil)
 	if err != nil {
 		return nil, "", fmt.Errorf("can not fetch torrents from site: %v", err)

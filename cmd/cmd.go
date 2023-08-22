@@ -14,14 +14,15 @@ import (
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
-	"github.com/sagan/ptool/utils/osutil"
+	"github.com/sagan/ptool/util/osutil"
 )
 
 // Root represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "ptool",
-	Short: "ptool is a command-line program which facilitate the use of private tracker sites.",
-	Long:  `ptool is a command-line program which facilitate the use of private tracker sites.`,
+	Short: "ptool is a command-line program which facilitate the use of private tracker sites and BitTorrent clients.",
+	Long: `ptool is a command-line program which facilitate the use of private tracker sites and BitTorrent clients.
+It's a free and open-source software, visit https://github.com/sagan/ptool for more infomation.`,
 	// Run: func(cmd *cobra.Command, args []string) { },
 	// SilenceErrors: true,
 	SilenceUsage: true,
@@ -64,9 +65,20 @@ func Execute() {
 		log.Infof("config file: %s/%s", config.ConfigDir, config.ConfigFile)
 		if config.LockFile != "" {
 			log.Debugf("Locking file: %s", config.LockFile)
-			err := flock.New(config.LockFile).Lock()
-			if err != nil {
-				log.Fatalf("Unable to lock file %s: %v", config.LockFile, err)
+			lock := flock.New(config.LockFile)
+			if config.LockOrExit {
+				ok, err := lock.TryLock()
+				if err != nil {
+					log.Fatalf("Unable to lock file %s: %v", config.LockFile, err)
+				}
+				if !ok {
+					log.Fatalf("Unable to lock file %s: %v", config.LockFile, "acquired by other process")
+				}
+			} else {
+				err := lock.Lock()
+				if err != nil {
+					log.Fatalf("Unable to lock file %s: %v", config.LockFile, err)
+				}
 			}
 			log.Infof("Lock acquired")
 		}
@@ -101,6 +113,7 @@ func init() {
 
 	// global flags
 	RootCmd.PersistentFlags().BoolVarP(&config.Fork, "fork", "", false, "Enables a daemon mode that runs the ptool process in the background (detached from current terminal). The current stdout / stderr will still be used so you may want to redirect them to files using pipe. It only works on Linux platform")
+	RootCmd.PersistentFlags().BoolVarP(&config.LockOrExit, "lock-or-exit", "", false, "Used with --lock flag. If failed to acquire lock, exit 1 immediately instead of waiting")
 	RootCmd.PersistentFlags().StringVarP(&config.ConfigFile, "config", "", configFile, "Config file ([ptool.toml])")
 	RootCmd.PersistentFlags().StringVarP(&config.LockFile, "lock", "", "", "Lock filename. If set, ptool will acquire the lock on the file before executing command. It is intended to be used to prevent multiple invocations of ptool process at the same time. If the lock file does not exist, it will be created automatically. However, it will NOT be deleted after ptool process exits")
 	RootCmd.PersistentFlags().CountVarP(&config.VerboseLevel, "verbose", "v", "verbose (-v, -vv, -vvv)")

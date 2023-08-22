@@ -10,7 +10,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 type Option struct {
@@ -139,7 +139,7 @@ func clientctl(cmd *cobra.Command, args []string) error {
 			}
 			value = s[1]
 			if option.Type > 0 {
-				v, _ := utils.RAMInBytes(value)
+				v, _ := util.RAMInBytes(value)
 				err = clientInstance.SetConfig(name, fmt.Sprint(v))
 			} else {
 				err = clientInstance.SetConfig(name, value)
@@ -164,12 +164,12 @@ func clientctl(cmd *cobra.Command, args []string) error {
 
 func printOption(name string, value string, option Option, showRaw bool) {
 	if value != "" && option.Type > 0 {
-		ff, _ := utils.RAMInBytes(value)
+		ff, _ := util.RAMInBytes(value)
 		if !showRaw {
 			if option.Type == 1 {
-				fmt.Printf("%s=%s/s\n", name, utils.BytesSize(float64(ff)))
+				fmt.Printf("%s=%s/s\n", name, util.BytesSize(float64(ff)))
 			} else {
-				fmt.Printf("%s=%s\n", name, utils.BytesSize(float64(ff)))
+				fmt.Printf("%s=%s\n", name, util.BytesSize(float64(ff)))
 			}
 		} else {
 			fmt.Printf("%s=%d\n", name, ff)

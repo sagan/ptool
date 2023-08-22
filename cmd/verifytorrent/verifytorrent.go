@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/cmd"
-	"github.com/sagan/ptool/utils"
-	"github.com/sagan/ptool/utils/torrentutil"
+	"github.com/sagan/ptool/util"
+	"github.com/sagan/ptool/util/torrentutil"
 )
 
 var command = &cobra.Command{
@@ -54,7 +54,7 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 	if savePath == "" && contentPath == "" || (savePath != "" && contentPath != "") {
 		return fmt.Errorf("exact one of the --save-path or --content-path (but not both) flag must be set")
 	}
-	torrentFilenames := utils.ParseFilenameArgs(args...)
+	torrentFilenames := util.ParseFilenameArgs(args...)
 	if len(torrentFilenames) > 1 && contentPath != "" {
 		return fmt.Errorf("you must use --save-path flag (instead of --content-path) when verifying multiple torrents")
 	}

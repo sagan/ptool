@@ -15,7 +15,7 @@ import (
 	transmissionrpc "github.com/hekmon/transmissionrpc/v2"
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/config"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
 )
@@ -89,7 +89,7 @@ func (trclient *Client) sync() error {
 		return nil
 	}
 	transmissionbt := trclient.client
-	now := utils.Now()
+	now := util.Now()
 	torrents, err := transmissionbt.TorrentGet(context.TODO(), []string{
 		"addedDate", "doneDate", "downloadDir", "downloadedEver", "downloadLimit", "downloadLimited",
 		"hashString", "id", "labels", "name", "peersGettingFromUs", "peersSendingToUs", "percentDone", "rateDownload", "rateUpload",
@@ -121,7 +121,7 @@ func (trclient *Client) syncMeta() error {
 		return nil
 	}
 	transmissionbt := trclient.client
-	now := utils.Now()
+	now := util.Now()
 	sessionStats, err := transmissionbt.SessionStats(context.TODO())
 	if err != nil {
 		return err
@@ -197,7 +197,7 @@ func (trclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 		log.Tracef("rename tr torrent name=%s err=%v", name, err)
 	}
 
-	labels := utils.CopySlice(option.Tags)
+	labels := util.CopySlice(option.Tags)
 	if option.Category != "" {
 		// use label to simulate category
 		labels = append(labels, client.GenerateTorrentTagFromCategory(option.Category))
@@ -587,17 +587,17 @@ func (trclient *Client) SetConfig(variable string, value string) error {
 		trvariable := strcase.ToKebab(variable[3:])
 		key := strcase.ToPascal(trvariable)
 		args := transmissionrpc.SessionArguments{}
-		argValue, kind := utils.String2Any(value)
+		argValue, kind := util.String2Any(value)
 		// it's ugly for now
 		if kind == reflect.Int64 {
 			value := argValue.(int64)
-			utils.SetStructFieldValue(&args, key, &value)
+			util.SetStructFieldValue(&args, key, &value)
 		} else if kind == reflect.Bool {
 			value := argValue.(bool)
-			utils.SetStructFieldValue(&args, key, &value)
+			util.SetStructFieldValue(&args, key, &value)
 		} else if kind == reflect.String {
 			value := argValue.(string)
-			utils.SetStructFieldValue(&args, key, &value)
+			util.SetStructFieldValue(&args, key, &value)
 		} else {
 			return fmt.Errorf("invalid value type: %v", kind)
 		}
@@ -605,7 +605,7 @@ func (trclient *Client) SetConfig(variable string, value string) error {
 	}
 	switch variable {
 	case "global_download_speed_limit":
-		limit := utils.ParseInt(value)
+		limit := util.ParseInt(value)
 		limited := false
 		if limit > 0 {
 			limited = true
@@ -619,7 +619,7 @@ func (trclient *Client) SetConfig(variable string, value string) error {
 			SpeedLimitDown:        &limit,
 		})
 	case "global_upload_speed_limit":
-		limit := utils.ParseInt(value)
+		limit := util.ParseInt(value)
 		limited := false
 		if limit > 0 {
 			limited = true
@@ -652,7 +652,7 @@ func (trclient *Client) GetConfig(variable string) (string, error) {
 		trvariable := strcase.ToKebab(variable[3:])
 		key := strcase.ToPascal(trvariable)
 		defaultValue := ""
-		value := utils.ResolvePointerValue(utils.GetStructFieldValue(trclient.sessionArgs, key, &defaultValue))
+		value := util.ResolvePointerValue(util.GetStructFieldValue(trclient.sessionArgs, key, &defaultValue))
 		return fmt.Sprint(value), nil
 	}
 	switch variable {
@@ -724,7 +724,7 @@ func (trclient *Client) EditTorrentTracker(infoHash string, oldTracker string, n
 	oldTrackerId := int64(-1)
 	oldTrackerUrl := ""
 	newTrackerUrl := newTracker
-	directNewUrlMode := utils.IsUrl(newTracker)
+	directNewUrlMode := util.IsUrl(newTracker)
 	for _, tracker := range trtorrent.Trackers {
 		if replaceHost {
 			oldTrackerUrlObj, err := url.Parse(tracker.Announce)
@@ -769,13 +769,13 @@ func (trclient *Client) AddTorrentTrackers(infoHash string, trackers []string, o
 	}
 	if oldTracker != "" {
 		index := slices.IndexFunc(trtorrent.Trackers, func(trtracker *transmissionrpc.Tracker) bool {
-			return utils.MatchUrlWithHostOrUrl(trtracker.Announce, oldTracker)
+			return util.MatchUrlWithHostOrUrl(trtracker.Announce, oldTracker)
 		})
 		if index == -1 {
 			return nil
 		}
 	}
-	trackers = utils.Filter(trackers, func(tracker string) bool {
+	trackers = util.Filter(trackers, func(tracker string) bool {
 		return slices.IndexFunc(trtorrent.Trackers, func(trtracker *transmissionrpc.Tracker) bool {
 			return trtracker.Announce == tracker
 		}) == -1
@@ -829,7 +829,7 @@ func NewClient(name string, clientConfig *config.ClientConfigStruct, config *con
 	port := int64(80)
 	isHttps := schema == "https"
 	if portStr != "" {
-		port = utils.ParseInt(portStr)
+		port = util.ParseInt(portStr)
 	} else {
 		if isHttps {
 			port = 443
@@ -908,7 +908,7 @@ func tr2Torrent(trtorrent *transmissionrpc.Torrent) *client.Torrent {
 	torrent := &client.Torrent{
 		InfoHash:           *trtorrent.HashString,
 		Name:               *trtorrent.Name,
-		TrackerDomain:      utils.ParseUrlHostname(tracker),
+		TrackerDomain:      util.ParseUrlHostname(tracker),
 		Tracker:            tracker,
 		State:              tr2State(trtorrent),
 		LowLevelState:      fmt.Sprint(trtorrent.Status),

@@ -9,7 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 const (
@@ -131,6 +131,7 @@ var (
 	ConfigName                     = "" // "ptool"
 	ConfigType                     = "" // "toml"
 	LockFile                       = ""
+	LockOrExit                     = false
 	Fork                           = false
 	configData       *ConfigStruct = &ConfigStruct{}
 	clientsConfigMap               = map[string]*ClientConfigStruct{}
@@ -160,19 +161,19 @@ func Get() *ConfigStruct {
 		}
 
 		for _, client := range configData.Clients {
-			v, err := utils.RAMInBytes(client.BrushMinDiskSpace)
+			v, err := util.RAMInBytes(client.BrushMinDiskSpace)
 			if err != nil || v < 0 {
 				v = DEFAULT_CLIENT_BRUSH_MIN_DISK_SPACE
 			}
 			client.BrushMinDiskSpaceValue = v
 
-			v, err = utils.RAMInBytes(client.BrushSlowUploadSpeedTier)
+			v, err = util.RAMInBytes(client.BrushSlowUploadSpeedTier)
 			if err != nil || v <= 0 {
 				v = DEFAULT_CLIENT_BRUSH_SLOW_UPLOAD_SPEED_TIER
 			}
 			client.BrushSlowUploadSpeedTierValue = v
 
-			v, err = utils.RAMInBytes(client.BrushDefaultUploadSpeedLimit)
+			v, err = util.RAMInBytes(client.BrushDefaultUploadSpeedLimit)
 			if err != nil || v <= 0 {
 				v = DEFAULT_CLIENT_BRUSH_DEFAULT_UPLOAD_SPEED_LIMIT
 			}
@@ -205,7 +206,7 @@ func Get() *ConfigStruct {
 			clientsConfigMap[client.Name] = client
 		}
 		for _, site := range configData.Sites {
-			v, err := utils.RAMInBytes(site.TorrentUploadSpeedLimit)
+			v, err := util.RAMInBytes(site.TorrentUploadSpeedLimit)
 			if err != nil || v <= 0 {
 				v = DEFAULT_SITE_TORRENT_UPLOAD_SPEED_LIMIT
 			}
@@ -237,13 +238,13 @@ func Get() *ConfigStruct {
 				site.Timezone = DEFAULT_SITE_TIMEZONE
 			}
 
-			v, err = utils.RAMInBytes(site.BrushTorrentMinSizeLimit)
+			v, err = util.RAMInBytes(site.BrushTorrentMinSizeLimit)
 			if err != nil || v <= 0 {
 				v = DEFAULT_SITE_BRUSH_TORRENT_MIN_SIZE_LIMIT
 			}
 			site.BrushTorrentMinSizeLimitValue = v
 
-			v, err = utils.RAMInBytes(site.BrushTorrentMaxSizeLimit)
+			v, err = util.RAMInBytes(site.BrushTorrentMaxSizeLimit)
 			if err != nil || v <= 0 {
 				v = DEFAULT_SITE_BRUSH_TORRENT_MAX_SIZE_LIMIT
 			}
@@ -257,10 +258,10 @@ func Get() *ConfigStruct {
 			}
 			groupsConfigMap[group.Name] = group
 		}
-		configData.Clients = utils.Filter(configData.Clients, func(c *ClientConfigStruct) bool {
+		configData.Clients = util.Filter(configData.Clients, func(c *ClientConfigStruct) bool {
 			return !c.Disabled
 		})
-		configData.Sites = utils.Filter(configData.Sites, func(s *SiteConfigStruct) bool {
+		configData.Sites = util.Filter(configData.Sites, func(s *SiteConfigStruct) bool {
 			return !s.Disabled
 		})
 	})
@@ -326,7 +327,7 @@ func ParseGroupAndOtherNamesWithoutDeduplicate(names ...string) []string {
 // parse an slice of groupOrOther names, expand group name to site names, return the final slice of names
 func ParseGroupAndOtherNames(names ...string) []string {
 	names = ParseGroupAndOtherNamesWithoutDeduplicate(names...)
-	return utils.UniqueSlice(names)
+	return util.UniqueSlice(names)
 }
 
 func (siteConfig *SiteConfigStruct) GetName() string {
@@ -341,7 +342,7 @@ func (siteConfig *SiteConfigStruct) GetName() string {
 func (siteConfig *SiteConfigStruct) ParseSiteUrl(siteUrl string, appendQueryStringDelimiter bool) string {
 	pageUrl := ""
 	if siteUrl != "" {
-		if utils.IsUrl(siteUrl) {
+		if util.IsUrl(siteUrl) {
 			pageUrl = siteUrl
 		} else {
 			siteUrl = strings.TrimPrefix(siteUrl, "/")
@@ -350,7 +351,7 @@ func (siteConfig *SiteConfigStruct) ParseSiteUrl(siteUrl string, appendQueryStri
 	}
 
 	if appendQueryStringDelimiter {
-		pageUrl = utils.AppendUrlQueryStringDelimiter(pageUrl)
+		pageUrl = util.AppendUrlQueryStringDelimiter(pageUrl)
 	}
 	return pageUrl
 }

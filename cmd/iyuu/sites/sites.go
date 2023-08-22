@@ -8,7 +8,7 @@ import (
 
 	"github.com/sagan/ptool/cmd/iyuu"
 	"github.com/sagan/ptool/config"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 var command = &cobra.Command{
@@ -40,7 +40,7 @@ func sites(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Printf("%-20s  %7s  %20s\n", "SiteName", "SiteId", "BindParams")
 		for _, site := range bindableSites {
-			if filter != "" && (!utils.ContainsI(site.Site, filter) && fmt.Sprint(site.Id) != filter) {
+			if filter != "" && (!util.ContainsI(site.Site, filter) && fmt.Sprint(site.Id) != filter) {
 				continue
 			}
 			fmt.Printf("%-20s  %7d  %20s\n", site.Site, site.Id, site.Bind_check)
@@ -57,7 +57,7 @@ func sites(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get iyuu sites: %v", err)
 	}
-	iyuuSites := utils.Map(iyuuApiSites, func(site iyuu.IyuuApiSite) iyuu.Site {
+	iyuuSites := util.Map(iyuuApiSites, func(site iyuu.IyuuApiSite) iyuu.Site {
 		return site.ToSite()
 	})
 	log.Printf("Iyuu sites: len(sites)=%v\n", len(iyuuSites))
@@ -76,7 +76,7 @@ func sites(cmd *cobra.Command, args []string) error {
 		if filter != "" && !iyuuSite.MatchFilter(filter) {
 			continue
 		}
-		utils.PrintStringInWidth(iyuuSite.Nickname, 10, true)
+		util.PrintStringInWidth(iyuuSite.Nickname, 10, true)
 		fmt.Printf("  %-15s  %-6d  %-13s  %-30s  %-25s\n", iyuuSite.Name, iyuuSite.Sid,
 			iyuu2LocalSiteMap[iyuuSite.Sid], iyuuSite.Url, iyuuSite.DownloadPage)
 	}
@@ -89,7 +89,7 @@ func sites(cmd *cobra.Command, args []string) error {
 			if filter != "" && !iyuuSite.MatchFilter(filter) {
 				continue
 			}
-			utils.PrintStringInWidth(iyuuSite.Nickname, 10, true)
+			util.PrintStringInWidth(iyuuSite.Nickname, 10, true)
 			fmt.Printf("  %-15s  %-6d  %-13s  %-30s  %-25s\n", iyuuSite.Name, iyuuSite.Sid,
 				"X (None)", iyuuSite.Url, iyuuSite.DownloadPage)
 		}

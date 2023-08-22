@@ -9,7 +9,7 @@ import (
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/site/tpl"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 var command = &cobra.Command{
@@ -57,7 +57,7 @@ func tidyup(cmd *cobra.Command, args []string) error {
 	for i, torrent := range torrents {
 		addTags := []string{}
 		remopveTags := []string{}
-		domain := utils.GetUrlDomain(torrent.Tracker)
+		domain := util.GetUrlDomain(torrent.Tracker)
 		log.Tracef("torrent %s - %s: domain=%s", torrent.InfoHash, torrent.Name, domain)
 		if domain != "" {
 			sitename := ""

@@ -13,8 +13,8 @@ import (
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site/tpl"
-	"github.com/sagan/ptool/utils"
-	"github.com/sagan/ptool/utils/torrentutil"
+	"github.com/sagan/ptool/util"
+	"github.com/sagan/ptool/util/torrentutil"
 )
 
 var command = &cobra.Command{
@@ -66,7 +66,7 @@ func addlocal(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to create client: %v", err)
 	}
 	errorCnt := int64(0)
-	torrentFilenames := utils.ParseFilenameArgs(args...)
+	torrentFilenames := util.ParseFilenameArgs(args...)
 	if rename != "" && len(torrentFilenames) > 1 {
 		return fmt.Errorf("--rename flag can only be used with exact one torrent file arg")
 	}
@@ -149,7 +149,7 @@ func addlocal(cmd *cobra.Command, args []string) error {
 		sizeAdded += tinfo.Size
 		fmt.Printf("✓torrent (%d/%d) %s: added to client\n", i+1, cntAll, torrentFilename)
 	}
-	fmt.Printf("\nDone. Added torrent (Size/Cnt): %s / %d; ErrorCnt: %d\n", utils.BytesSize(float64(sizeAdded)), cntAdded, errorCnt)
+	fmt.Printf("\nDone. Added torrent (Size/Cnt): %s / %d; ErrorCnt: %d\n", util.BytesSize(float64(sizeAdded)), cntAdded, errorCnt)
 	if errorCnt > 0 {
 		return fmt.Errorf("%d errors", errorCnt)
 	}

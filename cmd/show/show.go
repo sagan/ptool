@@ -12,7 +12,7 @@ import (
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/cmd/common"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 var command = &cobra.Command{
@@ -22,8 +22,7 @@ var command = &cobra.Command{
 	Long: `Show torrents of client.
 [infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
 _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.
-If no flags or args are provided, it will display current active torrents.
-`,
+If no flags or args are provided, it will display current active torrents.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: show,
 }
@@ -188,11 +187,11 @@ func show(cmd *cobra.Command, args []string) error {
 		} else {
 			fmt.Printf("Client %s | %s | %s | %s | Showing %d torrents\n\n",
 				clientInstance.GetName(),
-				fmt.Sprintf("↑Spd/Lmt: %s / %s/s", utils.BytesSize(float64(clientStatus.UploadSpeed)),
-					utils.BytesSize(float64(clientStatus.UploadSpeedLimit))),
-				fmt.Sprintf("↓Spd/Lmt: %s / %s/s", utils.BytesSize(float64(clientStatus.DownloadSpeed)),
-					utils.BytesSize(float64(clientStatus.DownloadSpeedLimit))),
-				fmt.Sprintf("FreeSpace: %s", utils.BytesSize(float64(clientStatus.FreeSpaceOnDisk))),
+				fmt.Sprintf("↑Spd/Lmt: %s / %s/s", util.BytesSize(float64(clientStatus.UploadSpeed)),
+					util.BytesSize(float64(clientStatus.UploadSpeedLimit))),
+				fmt.Sprintf("↓Spd/Lmt: %s / %s/s", util.BytesSize(float64(clientStatus.DownloadSpeed)),
+					util.BytesSize(float64(clientStatus.DownloadSpeedLimit))),
+				fmt.Sprintf("FreeSpace: %s", util.BytesSize(float64(clientStatus.FreeSpaceOnDisk))),
 				len(torrents),
 			)
 		}

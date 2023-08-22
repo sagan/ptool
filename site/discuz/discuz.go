@@ -16,7 +16,7 @@ import (
 
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
-	"github.com/sagan/ptool/utils"
+	"github.com/sagan/ptool/util"
 )
 
 type Site struct {
@@ -39,15 +39,15 @@ func (dzsite *Site) GetSiteConfig() *config.SiteConfigStruct {
 }
 
 func (dzsite *Site) GetStatus() (*site.Status, error) {
-	doc, _, err := utils.GetUrlDoc(dzsite.SiteConfig.Url+"forum.php?mod=torrents", dzsite.HttpClient,
+	doc, _, err := util.GetUrlDoc(dzsite.SiteConfig.Url+"forum.php?mod=torrents", dzsite.HttpClient,
 		dzsite.GetSiteConfig().Cookie, dzsite.SiteConfig.UserAgent, nil)
 	if err != nil {
 		return nil, err
 	}
 	usernameEl := doc.Find(`a[href^="home.php?mod=space&uid="]`).First()
-	username := utils.DomSanitizedText(usernameEl)
+	username := util.DomSanitizedText(usernameEl)
 	ratioEl := doc.Find(`#ratio_menu`)
-	userUploaded, _ := utils.ExtractSizeStr(utils.DomSanitizedText(ratioEl))
+	userUploaded, _ := util.ExtractSizeStr(util.DomSanitizedText(ratioEl))
 
 	return &site.Status{
 		UserName:       username,
@@ -70,13 +70,13 @@ func (dzsite *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Torre
 }
 
 func (dzsite *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error) {
-	if !utils.IsUrl(torrentUrl) {
+	if !util.IsUrl(torrentUrl) {
 		id := strings.TrimPrefix(torrentUrl, dzsite.GetName()+".")
 		return dzsite.DownloadTorrentById(id)
 	}
 	threadUrl := regexp.MustCompile(`mod=viewthread&tid=(?P<id>\d+)\b`)
 	if threadUrl.MatchString(torrentUrl) {
-		doc, _, err := utils.GetUrlDoc(torrentUrl, dzsite.HttpClient,
+		doc, _, err := util.GetUrlDoc(torrentUrl, dzsite.HttpClient,
 			dzsite.GetSiteConfig().Cookie, dzsite.SiteConfig.UserAgent, nil)
 		if err != nil {
 			return nil, "", fmt.Errorf("failed to get thread doc: %v", err)
