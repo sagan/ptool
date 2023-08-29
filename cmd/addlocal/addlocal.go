@@ -53,6 +53,8 @@ func init() {
 	command.Flags().StringVarP(&rename, "rename", "", "", "Rename added torrent (for dev/test only)")
 	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Set tags of added torrent (comma-separated)")
 	cmd.RootCmd.AddCommand(command)
+	command2.Flags().AddFlagSet(command.Flags())
+	cmd.RootCmd.AddCommand(command2)
 }
 
 func addlocal(cmd *cobra.Command, args []string) error {
@@ -154,4 +156,15 @@ func addlocal(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("%d errors", errorCnt)
 	}
 	return nil
+}
+
+var command2 = &cobra.Command{
+	Use:   "addlocal2 {client}",
+	Short: `Alias of "addlocal --add-category-auto --delete-added {client} *.torrent"`,
+	Args:  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		addCategoryAuto = true
+		args = append(args, "*.torrent")
+		return command.RunE(cmd, args)
+	},
 }

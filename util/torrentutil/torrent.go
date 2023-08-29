@@ -240,13 +240,13 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash b
 		if err == nil {
 			if meta.SingleFileTorrent {
 				if fileStats.Name() != meta.Files[0].Path {
-					log.Warnf("This is single-file torrent. The torrent file on disk \"%s\" has same content with torrent info, "+
+					log.Warnf(`This is single-file torrent. The torrent file on disk "%s" has same content with torrent info, `+
 						"but they have DIFFERENT file name. Be careful if you would add this torrent to local client to xseed.",
 						contentPath)
 				}
 			} else {
 				if fileStats.Name() != meta.RootDir {
-					log.Warnf("This is multiple-file torrent. The torrent content folder on disk \"%s\" has same contents with torrent info, "+
+					log.Warnf(`This is multiple-file torrent. The torrent content folder on disk "%s" has same contents with torrent info, `+
 						"but they have DIFFERENT root folder name. Be careful if you would add this torrent to local client to xseed.",
 						contentPath)
 				}
