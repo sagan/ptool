@@ -24,6 +24,8 @@ var (
 	showAll        = false
 	showAllClients = false
 	showAllSites   = false
+	largestFlag    = false
+	newestFlag     = false
 )
 
 var command = &cobra.Command{
@@ -46,11 +48,16 @@ func init() {
 	command.Flags().BoolVarP(&showAllSites, "sites", "s", false, "Show all sites")
 	command.Flags().BoolVarP(&showTorrents, "torrents", "t", false, "Show torrents (active torrents for client / latest torrents for site)")
 	command.Flags().BoolVarP(&showFull, "full", "f", false, "Show full info of each client or site")
+	command.Flags().BoolVarP(&largestFlag, "largest", "l", false, `Sort site torrents by size in desc order"`)
+	command.Flags().BoolVarP(&newestFlag, "newest", "n", false, `Sort site torrents by time in desc order (newest first)"`)
 	cmd.RootCmd.AddCommand(command)
 }
 
 func status(cmd *cobra.Command, args []string) error {
 	names := args
+	if largestFlag && newestFlag {
+		return fmt.Errorf("--largest and --newest flags are NOT compatible")
+	}
 	if showAll || showAllClients || showAllSites {
 		if len(args) > 0 {
 			return fmt.Errorf("--all, --clients, --sites flags cann't be used with site or client names")
@@ -194,6 +201,15 @@ func status(cmd *cobra.Command, args []string) error {
 			}
 			if response.SiteTorrents != nil {
 				fmt.Printf("\n")
+				if largestFlag {
+					sort.Slice(response.SiteTorrents, func(i, j int) bool {
+						return response.SiteTorrents[i].Size > response.SiteTorrents[j].Size
+					})
+				} else if newestFlag {
+					sort.Slice(response.SiteTorrents, func(i, j int) bool {
+						return response.SiteTorrents[i].Time > response.SiteTorrents[j].Time
+					})
+				}
 				site.PrintTorrents(response.SiteTorrents, filter, now, false, dense)
 				if i != len(responses)-1 {
 					fmt.Printf("\n")

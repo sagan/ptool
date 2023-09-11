@@ -74,7 +74,7 @@ func init() {
 	command.Flags().BoolVarP(&freeOnly, "free", "", false, "Skip none-free torrent")
 	command.Flags().BoolVarP(&noPaid, "no-paid", "", false, "Skip paid (use bonus points) torrent")
 	command.Flags().BoolVarP(&largestFlag, "largest", "l", false, `Sort site torrents by size in desc order. Equivalent with "--sort size --order desc"`)
-	command.Flags().BoolVarP(&newestFlag, "newest", "n", false, `Download newest torrents of site. Equivalent with "--sort time --order desc --one-page --start-page 0"`)
+	command.Flags().BoolVarP(&newestFlag, "newest", "n", false, `Download newest torrents of site. Equivalent with "--sort time --order desc --one-page"`)
 	command.Flags().BoolVarP(&addRespectNoadd, "add-respect-noadd", "", false, "Used with '--action add'. Check and respect _noadd flag in client")
 	command.Flags().BoolVarP(&nohr, "no-hr", "", false, "Skip torrent that has any type of HnR (Hit and Run) restriction")
 	command.Flags().BoolVarP(&allowBreak, "break", "", false, "Break (stop finding more torrents) if all torrents of current page do not meet criterion")
