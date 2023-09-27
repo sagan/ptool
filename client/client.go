@@ -466,7 +466,7 @@ func QueryTorrents(clientInstance Client, category string, tag string, filter st
 	isAll := len(hashOrStateFilters) == 0
 	for _, arg := range hashOrStateFilters {
 		if !IsValidInfoHashOrStateFilter(arg) {
-			return nil, fmt.Errorf("%s is not a valid infoHash or stateFilter", arg)
+			return nil, fmt.Errorf("%s is not a valid infoHash nor stateFilter", arg)
 		}
 		if arg == "_all" {
 			isAll = true
@@ -517,7 +517,7 @@ func SelectTorrents(clientInstance Client, category string, tag string, filter s
 	isAll := len(hashOrStateFilters) == 0
 	for _, arg := range hashOrStateFilters {
 		if !IsValidInfoHashOrStateFilter(arg) {
-			return nil, fmt.Errorf("%s is not a valid infoHash or stateFilter", arg)
+			return nil, fmt.Errorf("%s is not a valid infoHash nor stateFilter", arg)
 		}
 		if arg == "_all" {
 			isAll = true

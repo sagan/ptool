@@ -151,6 +151,16 @@ var exitCmd = &cobra.Command{
 	},
 }
 
+var exitfCmd = &cobra.Command{
+	Use:   "exitf",
+	Short: `(shell only) Alias of "exit -f". Exit shell immediately & forcely`,
+	Args:  cobra.MatchAll(cobra.ExactArgs(0), cobra.OnlyValidArgs),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		force = true
+		return exitCmd.RunE(cmd, args)
+	},
+}
+
 var historyCmd = &cobra.Command{
 	Use:   "history",
 	Short: "(shell only) List history of executed commands in shell",
@@ -184,7 +194,7 @@ If no args provided, the cache of ALL clients and sites will be purged`,
 				} else if site.SiteExists(name) {
 					site.Purge(name)
 				} else {
-					log.Errorf("%s is not a client or site", name)
+					log.Errorf("%s is not a client nor site", name)
 					errorCnt++
 				}
 			}
@@ -229,7 +239,7 @@ func purgeCmdSuggestion(document *prompt.Document) []prompt.Suggest {
 	return suggest.ClientArg(info.MatchingPrefix)
 }
 
-var shellCommands = []*cobra.Command{pwdCwd, cdCmd, lsCmd, historyCmd, exitCmd, purgeCmd, execCmd}
+var shellCommands = []*cobra.Command{pwdCwd, cdCmd, lsCmd, historyCmd, exitCmd, exitfCmd, purgeCmd, execCmd}
 
 var shellCommandSuggestions = map[string](func(document *prompt.Document) []prompt.Suggest){
 	"cd":    cdCmdSuggestion,
