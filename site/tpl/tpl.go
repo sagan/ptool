@@ -69,6 +69,12 @@ var (
 			GlobalHnR: true,
 			Comment:   "学校",
 		},
+		"byr": {
+			Type:                "nexusphp",
+			Url:                 "https://byr.pt/",
+			SelectorTorrentFree: `.pro_free, .pro_free2up`,
+			Comment:             "北邮人",
+		},
 		"carpt": {
 			Type:      "nexusphp",
 			Url:       "https://carpt.net/",
@@ -312,13 +318,13 @@ var (
 			Comment:           "红叶",
 		},
 		"lemonhd": {
-			Type:                "nexusphp",
-			Aliases:             []string{"leaguehd", "lemon"},
-			Url:                 "https://lemonhd.org/",
-			Domains:             []string{"leaguehd.com"},
-			TorrentsUrl:         "https://lemonhd.org/torrents_new.php",
-			SelectorTorrentFree: "div",
-			Comment:             "柠檬",
+			Type:        "nexusphp",
+			Aliases:     []string{"leaguehd", "lemon"},
+			Url:         "https://lemonhd.org/",
+			Domains:     []string{"leaguehd.com"},
+			TorrentsUrl: "https://lemonhd.org/torrents_new.php",
+			// SelectorTorrentFree: "div",
+			Comment: "柠檬",
 		},
 		"m-team": {
 			Type:              "nexusphp",
@@ -412,8 +418,8 @@ var (
 			SelectorTorrent:           ".torrent-action-bookmark",
 			SelectorTorrentProcessBar: ".torrent-progress",
 			SelectorUserInfo:          ".m_nav",
-			SelectorTorrentFree:       ".s-tag",
-			Comment:                   "鲨鱼",
+			// SelectorTorrentFree:       ".s-tag",
+			Comment: "鲨鱼",
 		},
 		"skyeysnow": {
 			Type:    "discuz",
@@ -440,6 +446,7 @@ var (
 			Domains: []string{"dmhy.best"},
 			// 下载中,下载完成过,做种中,当前未做种
 			SelectorTorrentProcessBar: `.leechhlc_current,.snatchhlc_finish,.seedhlc_current,.seedhlc_ever_inenough`,
+			SelectorTorrentFree:       `*[alt="下載比率"] + b:contains("0.00X")`,
 			Comment:                   "U2 (动漫花园)",
 		},
 		"ubits": {

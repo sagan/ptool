@@ -156,8 +156,8 @@ var exitfCmd = &cobra.Command{
 	Short: `(shell only) Alias of "exit -f". Exit shell immediately & forcely`,
 	Args:  cobra.MatchAll(cobra.ExactArgs(0), cobra.OnlyValidArgs),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		force = true
-		return exitCmd.RunE(cmd, args)
+		os.Exit(0)
+		return nil
 	},
 }
 
