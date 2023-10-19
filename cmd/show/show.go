@@ -28,20 +28,23 @@ If no flags or args are provided, it will display current active torrents.`,
 }
 
 var (
-	largestFlag      bool
-	showTrackers     bool
-	showFiles        bool
-	showInfoHashOnly bool
-	maxTorrents      = int64(0)
-	filter           = ""
-	category         = ""
-	tag              = ""
-	showAll          = false
-	showRaw          = false
-	showJson         = false
-	showSum          = false
-	sortFlag         string
-	orderFlag        string
+	largestFlag       bool
+	showTrackers      bool
+	showFiles         bool
+	showInfoHashOnly  bool
+	maxTorrents       = int64(0)
+	filter            = ""
+	category          = ""
+	tag               = ""
+	tracker           = ""
+	minTorrentSizeStr = ""
+	maxTorrentSizeStr = ""
+	showAll           = false
+	showRaw           = false
+	showJson          = false
+	showSum           = false
+	sortFlag          string
+	orderFlag         string
 )
 
 func init() {
@@ -57,6 +60,9 @@ func init() {
 	command.Flags().StringVarP(&filter, "filter", "", "", "Filter torrents by name")
 	command.Flags().StringVarP(&category, "category", "", "", "Filter torrents by category")
 	command.Flags().StringVarP(&tag, "tag", "", "", "Filter torrents by tag. Comma-separated string list. Torrent which tags contain any one in the list will match")
+	command.Flags().StringVarP(&tracker, "tracker", "", "", "Filter torrents by tracker domain")
+	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1", "Skip torrent with size smaller than (<) this value. Default (-1) == no limit")
+	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1", "Skip torrent with size large than (>) this value. Default (-1) == no limit")
 	cmd.AddEnumFlagP(command, &sortFlag, "sort", "", common.ClientTorrentSortFlag)
 	cmd.AddEnumFlagP(command, &orderFlag, "order", "", common.OrderFlag)
 	cmd.RootCmd.AddCommand(command)
@@ -64,7 +70,7 @@ func init() {
 
 func show(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
-	args = args[1:]
+	infoHashes := args[1:]
 	if showJson && showInfoHashOnly {
 		return fmt.Errorf("--json and --info-hash flags are NOT compatible")
 	}
@@ -83,24 +89,26 @@ func show(cmd *cobra.Command, args []string) error {
 	if orderFlag == "desc" {
 		desc = true
 	}
+	minTorrentSize, _ := util.RAMInBytes(minTorrentSizeStr)
+	maxTorrentSize, _ := util.RAMInBytes(maxTorrentSizeStr)
 
 	var torrents []client.Torrent
 	if showAll {
 		torrents, err = client.QueryTorrents(clientInstance, "", "", "")
-	} else if category == "" && tag == "" && filter == "" && len(args) == 0 {
+	} else if category == "" && tag == "" && filter == "" && len(infoHashes) == 0 {
 		torrents, err = client.QueryTorrents(clientInstance, "", "", "", "_active")
 	} else if category == "" && tag == "" && filter == "" &&
-		len(args) == 1 && !strings.HasPrefix(args[0], "_") {
+		len(infoHashes) == 1 && !strings.HasPrefix(infoHashes[0], "_") {
 		// display single torrent details
-		if !client.IsValidInfoHash(args[0]) {
-			return fmt.Errorf("%s is not a valid infoHash", args[0])
+		if !client.IsValidInfoHash(infoHashes[0]) {
+			return fmt.Errorf("%s is not a valid infoHash", infoHashes[0])
 		}
-		torrent, err := clientInstance.GetTorrent(args[0])
+		torrent, err := clientInstance.GetTorrent(infoHashes[0])
 		if err != nil {
-			return fmt.Errorf("failed to get torrent %s details: %v", args[0], err)
+			return fmt.Errorf("failed to get torrent %s details: %v", infoHashes[0], err)
 		}
 		if torrent == nil {
-			return fmt.Errorf("torrent %s not found", args[0])
+			return fmt.Errorf("torrent %s not found", infoHashes[0])
 		}
 		if showJson {
 			bytes, err := json.Marshal(torrent)
@@ -113,7 +121,7 @@ func show(cmd *cobra.Command, args []string) error {
 		client.PrintTorrent(torrent)
 		if showTrackers {
 			fmt.Printf("\n")
-			trackers, err := clientInstance.GetTorrentTrackers(args[0])
+			trackers, err := clientInstance.GetTorrentTrackers(infoHashes[0])
 			if err != nil {
 				log.Errorf("Failed to get torrent trackers: %v", err)
 			} else {
@@ -122,7 +130,7 @@ func show(cmd *cobra.Command, args []string) error {
 		}
 		if showFiles {
 			fmt.Printf("\n")
-			files, err := clientInstance.GetTorrentContents(args[0])
+			files, err := clientInstance.GetTorrentContents(infoHashes[0])
 			if err != nil {
 				log.Errorf("Failed to get torrent contents: %v", err)
 			} else {
@@ -131,10 +139,20 @@ func show(cmd *cobra.Command, args []string) error {
 		}
 		return nil
 	} else {
-		torrents, err = client.QueryTorrents(clientInstance, category, tag, filter, args...)
+		torrents, err = client.QueryTorrents(clientInstance, category, tag, filter, infoHashes...)
 	}
 	if err != nil {
 		return fmt.Errorf("failed to fetch client torrents: %v", err)
+	}
+	if tracker != "" || minTorrentSize >= 0 || maxTorrentSize >= 0 {
+		torrents = util.Filter(torrents, func(t client.Torrent) bool {
+			if tracker != "" && t.TrackerDomain != tracker ||
+				minTorrentSize >= 0 && t.Size < minTorrentSize ||
+				maxTorrentSize >= 0 && t.Size > maxTorrentSize {
+				return false
+			}
+			return true
+		})
 	}
 	if sortFlag != "" && sortFlag != "none" {
 		sort.Slice(torrents, func(i, j int) bool {

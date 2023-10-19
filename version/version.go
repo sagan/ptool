@@ -1,8 +1,8 @@
 package version
 
 var (
-	VersionSuffix = "" // eg. DEV
-	VersionTag    = "v0.1.7"
+	VersionSuffix = "DEV" // eg. DEV
+	VersionTag    = "v0.1.8"
 	Version       = ""
 )
 
