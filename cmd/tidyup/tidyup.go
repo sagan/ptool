@@ -36,7 +36,7 @@ func init() {
 	command.Flags().StringVarP(&category, "category", "", "", "Filter torrents by category")
 	command.Flags().StringVarP(&tag, "tag", "", "", "Filter torrents by tag. Comma-separated string list. Torrent which tags contain any one in the list will match")
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do NOT actually modify torrents to client")
-	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "", 0, "Number limit of modified torrents. Default (0) == unlimited")
+	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "", -1, "Number limit of modified torrents. -1 == no limit")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -79,7 +79,7 @@ func tidyup(cmd *cobra.Command, args []string) error {
 		}
 		if len(addTags) > 0 || len(remopveTags) > 0 {
 			cntTorrents++
-			if maxTorrents > 0 && cntTorrents > maxTorrents {
+			if maxTorrents >= 0 && cntTorrents > maxTorrents {
 				break
 			}
 			fmt.Printf("Modify (%d/%d) torrent %s - %s: addTags=%v; removeTags=%v\n", i+1, len(torrents),

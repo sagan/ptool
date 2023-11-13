@@ -48,7 +48,6 @@ var (
 	maxSeeders         = int64(0)
 	addCategory        = ""
 	addClient          = ""
-	addReserveSpaceStr = ""
 	addTags            = ""
 	filter             = ""
 	includes           = []string{}
@@ -80,12 +79,12 @@ func init() {
 	command.Flags().BoolVarP(&allowBreak, "break", "", false, "Break (stop finding more torrents) if all torrents of current page do not meet criterion")
 	command.Flags().BoolVarP(&includeDownloaded, "include-downloaded", "", false, "Do NOT skip torrent that has been downloaded before")
 	command.Flags().BoolVarP(&addCategoryAuto, "add-category-auto", "", false, "Automatically set category of added torrent to corresponding sitename")
-	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "", 0, "Number limit of torrents handled. Default (0) == unlimited (Press Ctrl+C to stop at any time)")
-	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "0", "Skip torrent with size smaller than (<) this value")
-	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "0", "Skip torrent with size large than (>) this value. Default (0) == unlimited")
-	command.Flags().StringVarP(&maxTotalSizeStr, "max-total-size", "", "0", "Will at most download torrents with total contents size of this value. Default (0) == unlimited")
-	command.Flags().Int64VarP(&minSeeders, "min-seeders", "", 1, "Skip torrent with seeders less than (<) this value")
-	command.Flags().Int64VarP(&maxSeeders, "max-seeders", "", -1, "Skip torrent with seeders large than (>) this value. Default (-1) == no limit")
+	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "", -1, "Number limit of torrents handled. -1 == no limit (Press Ctrl+C to stop)")
+	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1", "Skip torrent with size smaller than (<) this value. -1 == no limit")
+	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1", "Skip torrent with size larger than (>) this value. -1 == no limit")
+	command.Flags().StringVarP(&maxTotalSizeStr, "max-total-size", "", "-1", "Will at most download torrents with total contents size of this value. -1 == no limit")
+	command.Flags().Int64VarP(&minSeeders, "min-seeders", "", -1, "Skip torrent with seeders less than (<) this value. -1 == no limit")
+	command.Flags().Int64VarP(&maxSeeders, "max-seeders", "", -1, "Skip torrent with seeders more than (>) this value. -1 == no limit")
 	command.Flags().StringVarP(&freeTimeAtLeastStr, "free-time", "", "", "Used with --free. Set the allowed minimal remaining torrent free time. eg. 12h, 1d")
 	command.Flags().StringVarP(&filter, "filter", "", "", "If set, skip torrent which name does NOT contains this string")
 	command.Flags().StringArrayVarP(&includes, "includes", "", nil, "A comma-separated string list. If set, ONLY torrent which name contains any one in the list will be downloaded. Can be provided multiple times, in which case every list MUST be matched")
@@ -94,11 +93,10 @@ func init() {
 	command.Flags().StringVarP(&downloadDir, "download-dir", "", ".", "Used with '--action download'. Set the local dir of downloaded torrents. Default == current dir")
 	command.Flags().StringVarP(&addClient, "add-client", "", "", "Used with '--action add'. Set the client. Required in this action")
 	command.Flags().StringVarP(&addCategory, "add-category", "", "", "Used with '--action add'. Set the category when adding torrent to client")
-	command.Flags().StringVarP(&addReserveSpaceStr, "add-reserve-space", "", "0", "Used with '--action add'. Reserve client free disk space of at least this value. Will stop adding torrents if it would make client into state of insufficient space. eg. 10GiB. Default (0) == no limit")
 	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Used with '--action add'. Set the tags when adding torrent to client (comma-separated)")
 	command.Flags().StringVarP(&savePath, "add-save-path", "", "", "Set contents save path of added torrents")
 	command.Flags().StringVarP(&exportFile, "export-file", "", "", "Used with '--action export|printid'. Set the output file. (If not set, will use stdout)")
-	command.Flags().StringVarP(&baseUrl, "base-url", "", "", `Manually set the base url of torrents list page. eg. "adult.php", "adult.php", "torrents.php?cat=100"`)
+	command.Flags().StringVarP(&baseUrl, "base-url", "", "", `Manually set the base url of torrents list page. eg. "special.php", "adult.php", "torrents.php?cat=100"`)
 	cmd.AddEnumFlagP(command, &action, "action", "", ActionEnumFlag)
 	cmd.AddEnumFlagP(command, &sortFlag, "sort", "", common.SiteTorrentSortFlag)
 	cmd.AddEnumFlagP(command, &orderFlag, "order", "", common.OrderFlag)
@@ -135,8 +133,6 @@ func batchdl(command *cobra.Command, args []string) error {
 	minTorrentSize, _ := util.RAMInBytes(minTorrentSizeStr)
 	maxTorrentSize, _ := util.RAMInBytes(maxTorrentSizeStr)
 	maxTotalSize, _ := util.RAMInBytes(maxTotalSizeStr)
-	addReserveSpace, _ := util.RAMInBytes(addReserveSpaceStr)
-	addReserveSpaceGap := util.Min(addReserveSpace/10, 10*1024*1024*1024)
 	desc := false
 	if orderFlag == "desc" {
 		desc = true
@@ -176,26 +172,6 @@ func batchdl(command *cobra.Command, args []string) error {
 			log.Warnf("Client has _noadd flag and --add-respect-noadd flag is set. Abort task")
 			return nil
 		}
-		if addReserveSpace > 0 {
-			if status.FreeSpaceOnDisk < 0 {
-				log.Warnf("Warning: client free space unknown")
-			} else {
-				freeSpace := int64(0)
-				if addPaused {
-					freeSpace = status.FreeSpaceOnDisk - status.UnfinishedSize
-				} else {
-					freeSpace = status.FreeSpaceOnDisk - status.UnfinishedDownloadingSize
-				}
-				addRemainSpace := freeSpace - addReserveSpace
-				if addRemainSpace < addReserveSpaceGap {
-					log.Warnf("Client free space insufficient. Abort task")
-					return nil
-				}
-				if maxTotalSize <= 0 || maxTotalSize > addRemainSpace {
-					maxTotalSize = addRemainSpace
-				}
-			}
-		}
 		clientAddTorrentOption = &client.TorrentOption{
 			Pause:    addPaused,
 			SavePath: savePath,
@@ -216,7 +192,6 @@ func batchdl(command *cobra.Command, args []string) error {
 			csvWriter.Write([]string{"name", "size", "time", "id"})
 		}
 	}
-	maxTotalSizeGap := util.Max(maxTotalSize/100, addReserveSpaceGap/2)
 
 	cntTorrents := int64(0)
 	cntAllTorrents := int64(0)
@@ -270,7 +245,7 @@ mainloop:
 		cntAllTorrents += int64(len(torrents))
 		for _, torrent := range torrents {
 			totalAllSize += torrent.Size
-			if torrent.Size < minTorrentSize {
+			if minTorrentSize >= 0 && torrent.Size < minTorrentSize {
 				log.Tracef("Skip torrent %s due to size %d < minTorrentSize", torrent.Name, torrent.Size)
 				if sortFlag == "size" && desc {
 					break mainloop
@@ -278,7 +253,7 @@ mainloop:
 					continue
 				}
 			}
-			if maxTorrentSize > 0 && torrent.Size > maxTorrentSize {
+			if maxTorrentSize >= 0 && torrent.Size > maxTorrentSize {
 				log.Tracef("Skip torrent %s due to size %d > maxTorrentSize", torrent.Name, torrent.Size)
 				if sortFlag == "size" && !desc {
 					break mainloop
@@ -345,7 +320,7 @@ mainloop:
 				log.Tracef("Skip paid torrent %s", torrent.Name)
 				continue
 			}
-			if maxTotalSize > 0 && totalSize+torrent.Size > maxTotalSize {
+			if maxTotalSize >= 0 && totalSize+torrent.Size > maxTotalSize {
 				log.Tracef("Skip torrent %s which would break max total size limit", torrent.Name)
 				if sortFlag == "size" && !desc {
 					break mainloop
@@ -405,10 +380,10 @@ mainloop:
 			if err != nil {
 				errorCnt++
 			}
-			if maxTorrents > 0 && cntTorrents >= maxTorrents {
+			if maxTorrents >= 0 && cntTorrents >= maxTorrents {
 				break mainloop
 			}
-			if maxTotalSize > 0 && maxTotalSize-totalSize <= maxTotalSizeGap {
+			if maxTotalSize >= 0 && maxTotalSize-totalSize <= maxTotalSize/100 {
 				break mainloop
 			}
 		}

@@ -48,7 +48,7 @@ var (
 )
 
 func init() {
-	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "", 0, "Show at most this number of torrents. Default (0) == unlimited")
+	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "", -1, "Show at most this number of torrents. -1 == no limit")
 	command.Flags().BoolVarP(&largestFlag, "largest", "l", false, "Show largest torrents first. Equavalent with '--sort size --order desc'")
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all torrents. Equavalent with pass a '_all' arg")
 	command.Flags().BoolVarP(&showRaw, "raw", "", false, "Show torrent size in raw format")
@@ -61,8 +61,8 @@ func init() {
 	command.Flags().StringVarP(&category, "category", "", "", "Filter torrents by category")
 	command.Flags().StringVarP(&tag, "tag", "", "", "Filter torrents by tag. Comma-separated string list. Torrent which tags contain any one in the list will match")
 	command.Flags().StringVarP(&tracker, "tracker", "", "", "Filter torrents by tracker domain")
-	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1", "Skip torrent with size smaller than (<) this value. Default (-1) == no limit")
-	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1", "Skip torrent with size large than (>) this value. Default (-1) == no limit")
+	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1", "Skip torrent with size smaller than (<) this value. -1 == no limit")
+	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1", "Skip torrent with size larger than (>) this value. -1 == no limit")
 	cmd.AddEnumFlagP(command, &sortFlag, "sort", "", common.ClientTorrentSortFlag)
 	cmd.AddEnumFlagP(command, &orderFlag, "order", "", common.OrderFlag)
 	cmd.RootCmd.AddCommand(command)
@@ -185,7 +185,7 @@ func show(cmd *cobra.Command, args []string) error {
 			}
 		}
 	}
-	if maxTorrents > 0 && len(torrents) > int(maxTorrents) {
+	if maxTorrents >= 0 && len(torrents) > int(maxTorrents) {
 		torrents = torrents[:maxTorrents]
 	}
 

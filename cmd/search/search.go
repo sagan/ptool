@@ -36,7 +36,7 @@ var (
 	largestFlag       = false
 	showJson          = false
 	maxResults        = int64(0)
-	perSiteMaxREsults = int64(0)
+	perSiteMaxResults = int64(0)
 	baseUrl           = ""
 )
 
@@ -44,8 +44,8 @@ func init() {
 	command.Flags().BoolVarP(&dense, "dense", "", false, "Dense mode: show full torrent title & subtitle")
 	command.Flags().BoolVarP(&largestFlag, "largest", "l", false, "Sort search result by torrent size in desc order")
 	command.Flags().BoolVarP(&showJson, "json", "", false, "Show output in json format")
-	command.Flags().Int64VarP(&maxResults, "max-results", "", 100, "Number limit of search result of all sites combined. 0 == unlimited")
-	command.Flags().Int64VarP(&perSiteMaxREsults, "per-site-max-results", "", 0, "Number limit of search result of any single site. Default (0) == unlimited")
+	command.Flags().Int64VarP(&maxResults, "max-results", "", 100, "Number limit of search result of all sites combined. -1 == no limit")
+	command.Flags().Int64VarP(&perSiteMaxResults, "per-site-max-results", "", -1, "Number limit of search result of any single site. -1 == no limit")
 	command.Flags().StringVarP(&baseUrl, "base-url", "", "", "Manually set the base url of search page. eg. adult.php or https://kp.m-team.cc/adult.php for M-Team site")
 	cmd.RootCmd.AddCommand(command)
 }
@@ -93,8 +93,8 @@ func search(cmd *cobra.Command, args []string) error {
 					return siteTorrents[i].Seeders > siteTorrents[j].Seeders
 				})
 			}
-			if perSiteMaxREsults > 0 && len(siteTorrents) > int(perSiteMaxREsults) {
-				siteTorrents = siteTorrents[:perSiteMaxREsults]
+			if perSiteMaxResults >= 0 && len(siteTorrents) > int(perSiteMaxResults) {
+				siteTorrents = siteTorrents[:perSiteMaxResults]
 			}
 			torrents = append(torrents, siteTorrents...)
 		}
@@ -107,7 +107,7 @@ func search(cmd *cobra.Command, args []string) error {
 			return torrents[i].Seeders > torrents[j].Seeders
 		})
 	}
-	if maxResults > 0 && len(torrents) > int(maxResults) {
+	if maxResults >= 0 && len(torrents) > int(maxResults) {
 		torrents = torrents[:maxResults]
 	}
 	if showJson {

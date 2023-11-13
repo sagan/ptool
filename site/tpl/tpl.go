@@ -1,6 +1,7 @@
 package tpl
 
-// 站点模板
+// 站点模板。
+// CSS选择器使用 goquery 解析，支持 jQuery 的扩展语法(例如 :contains("txt") )。
 
 import (
 	"sort"
@@ -318,13 +319,13 @@ var (
 			Comment:           "红叶",
 		},
 		"lemonhd": {
-			Type:        "nexusphp",
-			Aliases:     []string{"leaguehd", "lemon"},
-			Url:         "https://lemonhd.org/",
-			Domains:     []string{"leaguehd.com"},
-			TorrentsUrl: "https://lemonhd.org/torrents_new.php",
-			// SelectorTorrentFree: "div",
-			Comment: "柠檬",
+			Type:                "nexusphp",
+			Aliases:             []string{"leaguehd", "lemon"},
+			Url:                 "https://lemonhd.org/",
+			Domains:             []string{"leaguehd.com"},
+			TorrentsUrl:         "https://lemonhd.org/torrents_new.php",
+			SelectorTorrentFree: `div:contains("免費")`,
+			Comment:             "柠檬",
 		},
 		"m-team": {
 			Type:              "nexusphp",
@@ -418,8 +419,8 @@ var (
 			SelectorTorrent:           ".torrent-action-bookmark",
 			SelectorTorrentProcessBar: ".torrent-progress",
 			SelectorUserInfo:          ".m_nav",
-			// SelectorTorrentFree:       ".s-tag",
-			Comment: "鲨鱼",
+			SelectorTorrentFree:       `.s-tag:contains("免费")`,
+			Comment:                   "鲨鱼",
 		},
 		"skyeysnow": {
 			Type:    "discuz",
@@ -446,7 +447,7 @@ var (
 			Domains: []string{"dmhy.best"},
 			// 下载中,下载完成过,做种中,当前未做种
 			SelectorTorrentProcessBar: `.leechhlc_current,.snatchhlc_finish,.seedhlc_current,.seedhlc_ever_inenough`,
-			SelectorTorrentFree:       `*[alt="下載比率"] + b:contains("0.00X")`,
+			SelectorTorrentFree:       `img.arrowdown + b:contains("0.00X")`,
 			Comment:                   "U2 (动漫花园)",
 		},
 		"ubits": {

@@ -22,7 +22,7 @@ var (
 		"Cache-Control":             "no-cache",
 		"Connection":                "keep-alive",
 		"Pragma":                    "no-cache",
-		"Sec-Ch-Ua":                 `"Chromium";v="118", "Google Chrome";v="118", "Not=A?Brand";v="99"`,
+		"Sec-Ch-Ua":                 `"Google Chrome";v="119", "Chromium";v="119", "Not?A_Brand";v="24"`,
 		"Sec-Ch-Ua-Mobile":          `?0`,
 		"Sec-Ch-Ua-Platform":        `"Windows"`,
 		"Sec-Fetch-Dest":            `document`,
@@ -30,7 +30,7 @@ var (
 		"Sec-Fetch-Site":            `same-origin`,
 		"Sec-Fetch-User":            `?1`,
 		"Upgrade-Insecure-Requests": "1",
-		"User-Agent":                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36",
+		"User-Agent":                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
 	}
 )
 

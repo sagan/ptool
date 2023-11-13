@@ -229,10 +229,10 @@ ptool clientctl local global_upload_speed_limit=10M
 命令格式均为：
 
 ```
-ptool <command> <infoHash>...
+ptool <command> [client] [flags] [<infoHash>...]
 ```
 
-```<infoHash>``` 参数为指定的 BT 客户端里需要操作的种子的 infoHash 列表。也可以使用以下特殊值参数操作多个种子（delete 命令除外，为避免误操作只能使用 infoHash 删除种子）：
+```<infoHash>``` 参数为指定的 BT 客户端里需要操作的种子的 infoHash 列表。也可以使用以下特殊值参数操作多个种子（delete 命令根据除 infoHash 以外的条件删除种子时需要二次确认）：
 
 * _all : 所有种子
 * _done : 所有已下载完成的种子（无论是否正在做种）(_seeding | _completed)
@@ -240,6 +240,12 @@ ptool <command> <infoHash>...
 * _active : 当前正在活动（上传或下载）的种子
 * _error : 状态为“出错”的种子
 * _downloading / _seeding / _paused / _completed : 状态为正在下载 / 做种 / 暂停下载 / 下载完成(但未做种)的种子
+
+也可以使用以下条件 flags 筛选种子：
+
+* ```--category string``` : 指定分类的种子
+* ```--tag string``` : 含有指定标签的种子（可以用逗号分隔多个标签，种子含有其中任意标签均视为符合条件）
+* ```--filter string``` : 种子名称中包含指定文字的种子
 
 示例：
 
@@ -249,6 +255,9 @@ ptool reannounce local _all
 
 # 恢复下载/做种所有种子
 ptool resume local _all
+
+# 暂停 abc 分类下的所有正在下载种子
+ptool pause local --category abc _downloading
 
 # 从客户端删除指定种子（默认同时删除文件）
 ptool delete local 31a615d5984cb63c6f999f72bb3961dce49c194a
@@ -400,12 +409,12 @@ ptool batchdl <site> --action add --add-client local
 
 此命令提供非常多的配置参数。部分常用参数：
 
-* -m int : 最多下载多少个种子。默认 0 (无限制，一直运行除非手动 Ctrl + C 停止)。
+* --max-torrents int : 最多下载多少个种子。默认 -1 (无限制，一直运行除非手动 Ctrl + C 停止)。
 * --sort string : 站点种子排序方式：size|time|name|seeders|leechers|snatched|none (default size)
 * --order string : 排序顺序：asc|desc。默认 asc。
-* --min-torrent-size string : 种子大小的最小值限制 (eg. "100MiB", "1GiB")。默认为 "0"。
-* --max-torrent-size string : 种子大小的最大值限制。默认为 "0"（无限制）。
-* --max-total-size string : 下载种子内容总体积最大值限制 (eg. "512GiB", "1TiB")。默认为 "0"（无限制）。
+* --min-torrent-size string : 种子大小的最小值限制 (eg. "100MiB", "1GiB")。默认为 "-1"（无限制）。
+* --max-torrent-size string : 种子大小的最大值限制。默认为 "-1"（无限制）。
+* --max-total-size string : 下载种子内容总体积最大值限制 (eg. "512GiB", "1TiB")。默认为 "-1"（无限制）。
 * --free : 只下载免费种子。
 * --no-hr : 跳过存在 HR 的种子。
 * --no-paid : 跳过"付费"的种子。(部分站点存在"付费"种子，第一次下载或汇报时扣除积分)

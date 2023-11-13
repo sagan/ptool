@@ -40,7 +40,7 @@ func init() {
 	command.Flags().BoolVarP(&addPaused, "add-paused", "", false, "Add torrents to client in paused state")
 	command.Flags().BoolVarP(&ordered, "ordered", "", false, "Brush sites provided in order")
 	command.Flags().BoolVarP(&force, "force", "", false, "Force mode. Ignore _noadd flag in client")
-	command.Flags().Int64VarP(&maxSites, "max-sites", "", 0, "Allowed max succcess sites number, Default (0) == unlimited")
+	command.Flags().Int64VarP(&maxSites, "max-sites", "", -1, "Allowed max succcess sites number, -1 == no limit")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -295,7 +295,7 @@ func brush(cmd *cobra.Command, args []string) error {
 			cntSkipSite += int64(len(sitenames) - 1 - i)
 			break
 		}
-		if maxSites > 0 && cntSuccessSite >= maxSites {
+		if maxSites >= 0 && cntSuccessSite >= maxSites {
 			log.Printf("MaxSites reached. Stop brushing.")
 			cntSkipSite += int64(len(sitenames) - 1 - i)
 			break

@@ -392,6 +392,9 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		} else if s.Find(`*[title="免费"],*[title="免費"],*[alt="Free"],*[alt="FREE"]`).Length() > 0 ||
 			domCheckTextTagExisting(s, "free") {
 			downloadMultiplier = 0
+		} else if domCheckTextTagExisting(s, "2xfree") {
+			downloadMultiplier = 0
+			uploadMultiplier = 2
 		} else if option.selectorTorrentFree != "" && s.Find(option.selectorTorrentFree).Length() > 0 {
 			downloadMultiplier = 0
 		}

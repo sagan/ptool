@@ -52,7 +52,7 @@ func init() {
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do NOT actually add xseed torrents to client")
 	command.Flags().BoolVarP(&addPaused, "add-paused", "", false, "Add xseed torrents to client in paused state")
 	command.Flags().BoolVarP(&check, "check", "", false, "Let client do hash checking when add xseed torrents")
-	command.Flags().Int64VarP(&maxXseedTorrents, "max-torrents", "", 0, "Number limit of xseed torrents added. Default (0) == unlimited")
+	command.Flags().Int64VarP(&maxXseedTorrents, "max-torrents", "", -1, "Number limit of xseed torrents added. -1 == no limit")
 	command.Flags().Int64VarP(&iyuuRequestMaxTorrents, "max-request-torrents", "", 2000, "Number limit of target torrents sent to iyuu server at once")
 	command.Flags().StringVarP(&includeSites, "include-sites", "", "", "Only add xseed torrents from these sites or groups (comma-separated)")
 	command.Flags().StringVarP(&excludeSites, "exclude-sites", "", "", "Do NOT add xseed torrents from these sites or groups (comma-separated)")
@@ -61,8 +61,8 @@ func init() {
 	command.Flags().StringVarP(&filter, "filter", "", "", "Only xseed torrents which name contains this")
 	command.Flags().StringVarP(&addCategory, "add-category", "", "", "Manually set category of added xseed torrent. By Default it uses the original torrent's")
 	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Set tags of added xseed torrent (comma-separated)")
-	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "1GiB", "Torrents with size smaller than (<) this value will NOT be xseeded")
-	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "1PiB", "Torrents with size larger than (>) this value will NOT be xseeded")
+	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "1GiB", "Torrents with size smaller than (<) this value will NOT be xseeded. -1 == no limit")
+	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1", "Torrents with size larger than (>) this value will NOT be xseeded. -1 == no limit")
 	command.Flags().StringVarP(&iyuuRequestServer, "request-server", "", "auto", "Whether send request to iyuu server to update local xseed db. Possible values: auto|yes|no")
 	iyuu.Command.AddCommand(command)
 }
@@ -162,7 +162,8 @@ func xseed(cmd *cobra.Command, args []string) error {
 				continue
 			}
 			if torrent.State != "seeding" || !torrent.IsFullComplete() ||
-				torrent.Size < minTorrentSize || torrent.Size > maxTorrentSize {
+				(minTorrentSize >= 0 && torrent.Size < minTorrentSize) ||
+				(maxTorrentSize >= 0 && torrent.Size > maxTorrentSize) {
 				continue
 			}
 			if filter != "" && !strings.Contains(torrent.Name, filter) {
@@ -342,7 +343,7 @@ mainloop:
 				if err == nil {
 					cntSucccessXseedTorrents++
 				}
-				if maxXseedTorrents > 0 && cntXseedTorrents >= maxXseedTorrents {
+				if maxXseedTorrents >= 0 && cntXseedTorrents >= maxXseedTorrents {
 					break mainloop
 				}
 				util.Sleep(2)
