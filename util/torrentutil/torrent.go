@@ -85,21 +85,23 @@ func ParseTorrent(torrentdata []byte, fields int64) (*TorrentMeta, error) {
 }
 
 func (meta *TorrentMeta) Print(name string, showAll bool) {
-	trackerHostname := ""
+	trackerUrl := ""
 	if len(meta.Trackers) > 0 {
-		trackerHostname = util.ParseUrlHostname(meta.Trackers[0])
+		trackerUrl = meta.Trackers[0]
 	}
-	sitename := tpl.GuessSiteByTrackers(meta.Trackers, "")
-	fmt.Printf("Torrent %s: infohash = %s ; size = %s (%d) ; tracker = %s (site: %s) // %s\n",
-		name, meta.InfoHash, util.BytesSize(float64(meta.Size)), len(meta.Files),
-		trackerHostname, sitename, meta.MetaInfo.Comment)
+	sitenameStr := tpl.GuessSiteByTrackers(meta.Trackers, "")
+	if sitenameStr != "" {
+		sitenameStr = fmt.Sprintf(" (site: %s)", sitenameStr)
+	}
+	fmt.Printf("%s: infohash = %s ; size = %s (%d) ; tracker = %s%s\n",
+		name, meta.InfoHash, util.BytesSize(float64(meta.Size)), len(meta.Files), trackerUrl, sitenameStr)
 	if showAll {
 		if meta.SingleFileTorrent {
-			fmt.Printf("-- RawSize = %d ; SingleFile = %s ; FullTrackerUrls: %s\n",
-				meta.Size, meta.Files[0].Path, strings.Join(meta.Trackers, " | "))
+			fmt.Printf("-- RawSize = %d ; SingleFile = %s ; AllTrackers: %s ; // %s\n",
+				meta.Size, meta.Files[0].Path, strings.Join(meta.Trackers, " | "), meta.MetaInfo.Comment)
 		} else {
-			fmt.Printf("-- RawSize = %d ; RootDir = %s ; FullTrackerUrls: %s\n",
-				meta.Size, meta.RootDir, strings.Join(meta.Trackers, " | "))
+			fmt.Printf("-- RawSize = %d ; RootDir = %s ; AllTrackers: %s ; // %s\n",
+				meta.Size, meta.RootDir, strings.Join(meta.Trackers, " | "), meta.MetaInfo.Comment)
 		}
 	}
 }

@@ -33,6 +33,7 @@ func init() {
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all info")
 	command.Flags().BoolVarP(&showJson, "json", "", false, "Show output in json format")
 	cmd.RootCmd.AddCommand(command)
+	cmd.RootCmd.AddCommand(command2)
 }
 
 func parsetorrent(cmd *cobra.Command, args []string) error {
@@ -80,4 +81,14 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("%d errors", errorCnt)
 	}
 	return nil
+}
+
+var command2 = &cobra.Command{
+	Use:   "parsetorrent2",
+	Short: `Alias of "parsetorrent *.torrent"`,
+	Args:  cobra.MatchAll(cobra.ExactArgs(0), cobra.OnlyValidArgs),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		args = append(args, "*.torrent")
+		return command.RunE(cmd, args)
+	},
 }

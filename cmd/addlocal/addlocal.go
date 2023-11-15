@@ -164,6 +164,7 @@ var command2 = &cobra.Command{
 	Args:  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		addCategoryAuto = true
+		deleteAdded = true
 		args = append(args, "*.torrent")
 		return command.RunE(cmd, args)
 	},
