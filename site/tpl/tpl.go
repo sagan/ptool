@@ -328,13 +328,14 @@ var (
 			Comment:             "柠檬",
 		},
 		"m-team": {
-			Type:              "nexusphp",
-			Aliases:           []string{"mteam", "mt"},
-			Url:               "https://kp.m-team.cc/",
-			Domains:           []string{"m-team.io"},
-			TorrentsExtraUrls: []string{"adult.php", "music.php"},
-			BrushExcludes:     []string{"[原盤首發]"}, // 馒头原盘首发限速，刷流效果极差
-			Comment:           "馒头",
+			Type:                "nexusphp",
+			Aliases:             []string{"mteam", "mt"},
+			Url:                 "https://kp.m-team.cc/",
+			Domains:             []string{"m-team.io"},
+			TorrentsExtraUrls:   []string{"adult.php", "music.php"},
+			BrushExcludes:       []string{"[原盤首發]"}, // 馒头原盘首发限速，刷流效果极差
+			FlowControlInterval: 30,                 // 馒头流控极为严格。很容易出“休息120秒”页面
+			Comment:             "馒头",
 		},
 		"monikadesign": {
 			Type:    "unit3d",
@@ -364,6 +365,12 @@ var (
 			Type:    "nexusphp",
 			Url:     "https://www.oshen.win/",
 			Comment: "奥申，欧神",
+		},
+		"ourbits": {
+			Type:    "nexusphp",
+			Aliases: []string{"ob"},
+			Url:     "https://ourbits.club/",
+			Comment: "我堡",
 		},
 		"pandapt": {
 			Type:    "nexusphp",

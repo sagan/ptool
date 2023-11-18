@@ -58,7 +58,7 @@ func delete(cmd *cobra.Command, args []string) error {
 	minTorrentSize, _ := util.RAMInBytes(minTorrentSizeStr)
 	maxTorrentSize, _ := util.RAMInBytes(maxTorrentSizeStr)
 	quickMode := true
-	if category != "" || tag != "" || filter != "" || minTorrentSize >= 0 || maxTorrentSize >= 0 {
+	if category != "" || tag != "" || filter != "" || tracker != "" || minTorrentSize >= 0 || maxTorrentSize >= 0 {
 		quickMode = false
 	} else {
 		for _, infoHash := range infoHashes {

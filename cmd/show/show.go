@@ -92,13 +92,13 @@ func show(cmd *cobra.Command, args []string) error {
 	minTorrentSize, _ := util.RAMInBytes(minTorrentSizeStr)
 	maxTorrentSize, _ := util.RAMInBytes(maxTorrentSizeStr)
 
+	noConditionFlags := category == "" && tag == "" && filter == "" && tracker == "" && minTorrentSize < 0 && maxTorrentSize < 0
 	var torrents []client.Torrent
 	if showAll {
 		torrents, err = client.QueryTorrents(clientInstance, "", "", "")
-	} else if category == "" && tag == "" && filter == "" && len(infoHashes) == 0 {
+	} else if noConditionFlags && len(infoHashes) == 0 {
 		torrents, err = client.QueryTorrents(clientInstance, "", "", "", "_active")
-	} else if category == "" && tag == "" && filter == "" &&
-		len(infoHashes) == 1 && !strings.HasPrefix(infoHashes[0], "_") {
+	} else if noConditionFlags && len(infoHashes) == 1 && !strings.HasPrefix(infoHashes[0], "_") {
 		// display single torrent details
 		if !client.IsValidInfoHash(infoHashes[0]) {
 			return fmt.Errorf("%s is not a valid infoHash", infoHashes[0])

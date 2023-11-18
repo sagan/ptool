@@ -925,9 +925,9 @@ func tr2Torrent(trtorrent *transmissionrpc.Torrent) *client.Torrent {
 		ContentPath:        *trtorrent.DownloadDir + "/" + *trtorrent.Name,
 		Tags:               trtorrent.Labels,
 		Seeders:            *trtorrent.PeersSendingToUs, // it's meaning is inconsistent with qb for now
-		Size:               int64(*trtorrent.SizeWhenDone),
-		SizeCompleted:      int64(float64(*trtorrent.SizeWhenDone) * *trtorrent.PercentDone),
-		SizeTotal:          int64(*trtorrent.TotalSize),
+		Size:               int64(*trtorrent.SizeWhenDone / 8),
+		SizeCompleted:      int64(float64(*trtorrent.SizeWhenDone) * *trtorrent.PercentDone / 8),
+		SizeTotal:          int64(*trtorrent.TotalSize / 8),
 		Leechers:           *trtorrent.PeersGettingFromUs, // it's meaning is inconsistent with qb for now
 		Meta:               nil,
 	}

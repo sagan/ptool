@@ -16,6 +16,7 @@ import (
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/cmd/common"
+	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/util"
 )
@@ -191,6 +192,10 @@ func batchdl(command *cobra.Command, args []string) error {
 			csvWriter = csv.NewWriter(outputFileFd)
 			csvWriter.Write([]string{"name", "size", "time", "id"})
 		}
+	}
+	flowControlInterval := config.DEFAULT_SITE_FLOW_CONTROL_INTERVAL
+	if siteInstance.GetSiteConfig().FlowControlInterval > 0 {
+		flowControlInterval = siteInstance.GetSiteConfig().FlowControlInterval
 	}
 
 	cntTorrents := int64(0)
@@ -397,9 +402,9 @@ mainloop:
 				log.Warnf("Warning, current page %s has no required torrents.", lastMarker)
 			}
 		}
-		log.Warnf("Finish handling page %s. Torrents(Size/Cnt) | AllTorrents(Size/Cnt) till now: %s/%d | %s/%d. Will process next page %s in few seconds. Press Ctrl + C to stop",
-			lastMarker, util.BytesSize(float64(totalSize)), cntTorrents, util.BytesSize(float64(totalAllSize)), cntAllTorrents, marker)
-		util.Sleep(3)
+		log.Warnf("Finish handling page %s. Torrents(Size/Cnt) | AllTorrents(Size/Cnt) till now: %s/%d | %s/%d. Will process next page %s in %d seconds. Press Ctrl + C to stop",
+			lastMarker, util.BytesSize(float64(totalSize)), cntTorrents, util.BytesSize(float64(totalAllSize)), cntAllTorrents, marker, flowControlInterval)
+		util.Sleep(flowControlInterval)
 	}
 	doneHandle()
 	return nil
