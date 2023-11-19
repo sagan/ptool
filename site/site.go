@@ -1,6 +1,7 @@
 package site
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io"
 	"mime"
@@ -220,6 +221,9 @@ func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, config *config.Co
 			return nil, fmt.Errorf("failed to parse siteProxy %s: %v", siteConfig.Proxy, err)
 		}
 		transport.Proxy = http.ProxyURL(proxyUrl)
+	}
+	if siteConfig.Insecure {
+		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 	httpClient.Transport = transport
 	return httpClient, nil

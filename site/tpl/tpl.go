@@ -260,6 +260,15 @@ var (
 			TorrentsExtraUrls: []string{"live.php"},
 			Comment:           "海棠",
 		},
+		"hudbt": {
+			Type:                       "nexusphp",
+			Url:                        "https://hudbt.hust.edu.cn/",
+			Insecure:                   true, // 该站点的 TLS 证书有问题 (2023-11 测试)
+			SelectorTorrent:            `a[href*="/download.php?id="]`,
+			SelectorTorrentDetailsLink: `a[href*="/details.php?id="]`,
+			SelectorTorrentFree:        `img.free, img.twoupfree`,
+			Comment:                    "蝴蝶",
+		},
 		"icc2022": {
 			Type:      "nexusphp",
 			Aliases:   []string{"icc"},

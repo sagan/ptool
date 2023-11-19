@@ -73,6 +73,7 @@ type SiteConfigStruct struct {
 	UserAgent                      string   `yaml:"userAgent"`
 	Ja3                            string   `yaml:"ja3"`
 	Proxy                          string   `yaml:"proxy"`
+	Insecure                       bool     `yaml:"insecure"` // 访问站点时跳过TLS证书安全校验
 	TorrentUploadSpeedLimit        string   `yaml:"torrentUploadSpeedLimit"`
 	GlobalHnR                      bool     `yaml:"globalHnR"`
 	Timezone                       string   `yaml:"timezone"`

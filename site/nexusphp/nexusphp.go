@@ -179,9 +179,9 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 		return nil, "", fmt.Errorf("not logined (cookie may has expired)")
 	}
 
+	lastPage := int64(0)
 	if pageMarker == "" {
 		paginationEls := doc.Find(`*[href*="&page="]`)
-		lastPage := int64(0)
 		pageRegexp := regexp.MustCompile(`&page=(?P<page>\d+)`)
 		paginationEls.Each(func(i int, s *goquery.Selection) {
 			m := pageRegexp.FindStringSubmatch(s.AttrOr("href", ""))
@@ -192,20 +192,21 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 				}
 			}
 		})
-		if lastPage > 0 {
-			page = lastPage
-			pageStr = "page=" + fmt.Sprint(page)
-			now = util.Now()
-			doc, res, error = util.GetUrlDoc(pageUrl+queryString+pageStr, npclient.HttpClient,
-				npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, nil)
-			if error != nil {
-				err = fmt.Errorf("failed to fetch torrents page dom: %v", error)
-				return
-			}
-			if res.Request.URL.Path == "/login.php" {
-				err = fmt.Errorf("not logined (cookie may has expired)")
-				return
-			}
+	}
+labelLastPage:
+	if pageMarker == "" && lastPage > 0 {
+		page = lastPage
+		pageStr = "page=" + fmt.Sprint(page)
+		now = util.Now()
+		doc, res, error = util.GetUrlDoc(pageUrl+queryString+pageStr, npclient.HttpClient,
+			npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, nil)
+		if error != nil {
+			err = fmt.Errorf("failed to fetch torrents page dom: %v", error)
+			return
+		}
+		if res.Request.URL.Path == "/login.php" {
+			err = fmt.Errorf("not logined (cookie may has expired)")
+			return
 		}
 	}
 
@@ -213,6 +214,12 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 	if err != nil {
 		log.Tracef("Failed to get torrents from doc: %v", err)
 		return
+	}
+	// 部分站点（如蝴蝶）有 bug，分页栏的最后一页内容有时是空的
+	if pageMarker == "" && lastPage > 1 && len(torrents) == 0 {
+		lastPage--
+		log.Warnf("Last torrents page is empty, access second last page instead")
+		goto labelLastPage
 	}
 	if page > 0 {
 		nextPageMarker = fmt.Sprint(page - 1)

@@ -84,7 +84,7 @@ func init() {
 	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1", "Skip torrent with size smaller than (<) this value. -1 == no limit")
 	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1", "Skip torrent with size larger than (>) this value. -1 == no limit")
 	command.Flags().StringVarP(&maxTotalSizeStr, "max-total-size", "", "-1", "Will at most download torrents with total contents size of this value. -1 == no limit")
-	command.Flags().Int64VarP(&minSeeders, "min-seeders", "", -1, "Skip torrent with seeders less than (<) this value. -1 == no limit")
+	command.Flags().Int64VarP(&minSeeders, "min-seeders", "", 1, "Skip torrent with seeders less than (<) this value. -1 == no limit")
 	command.Flags().Int64VarP(&maxSeeders, "max-seeders", "", -1, "Skip torrent with seeders more than (>) this value. -1 == no limit")
 	command.Flags().StringVarP(&freeTimeAtLeastStr, "free-time", "", "", "Used with --free. Set the allowed minimal remaining torrent free time. eg. 12h, 1d")
 	command.Flags().StringVarP(&filter, "filter", "", "", "If set, skip torrent which name does NOT contains this string")
