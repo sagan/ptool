@@ -314,6 +314,12 @@ var (
 			TorrentsExtraUrls: []string{"special.php"}, // 龟龟的后花园
 			Comment:           "KamePT",
 		},
+		"keepfrds": {
+			Type:    "nexusphp",
+			Aliases: []string{"frds"},
+			Url:     "https://pt.keepfrds.com/",
+			Comment: "朋友、月月",
+		},
 		"kufei": {
 			Type:    "nexusphp",
 			Url:     "https://kufei.org/",
