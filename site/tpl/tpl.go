@@ -315,11 +315,12 @@ var (
 			Comment:           "KamePT",
 		},
 		"keepfrds": {
-			Type:                   "nexusphp",
-			Aliases:                []string{"frds"},
-			Url:                    "https://pt.keepfrds.com/",
-			SelectorTorrentNeutral: `img.pro_nl`,
-			Comment:                "朋友、月月",
+			Type:                      "nexusphp",
+			Aliases:                   []string{"frds"},
+			Url:                       "https://pt.keepfrds.com/",
+			SelectorTorrentProcessBar: `div[style="width: 400px; height:16px;"] > div[style="margin-top: 2px; float: left;"]`,
+			SelectorTorrentNeutral:    `img.pro_nl`,
+			Comment:                   "朋友、月月",
 		},
 		"kufei": {
 			Type:    "nexusphp",
