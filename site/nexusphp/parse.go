@@ -43,6 +43,8 @@ type TorrentsParserOption struct {
 	selectorTorrentSize            string
 	selectorTorrentProcessBar      string
 	selectorTorrentFree            string
+	selectorTorrentNoTraffic       string
+	selectorTorrentNeutral         string
 	selectorTorrentPaid            string
 	selectorTorrentDiscountEndTime string
 }
@@ -257,6 +259,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		discountEndTime := int64(-1)
 		isActive := false
 		paid := false
+		neutral := false
 		processValueRegexp := regexp.MustCompile(`\d+(\.\d+)?%`)
 		idRegexp := regexp.MustCompile(`[?&]id=(?P<id>\d+)`)
 		text := util.DomSanitizedText(s)
@@ -401,6 +404,14 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		if option.selectorTorrentPaid != "" && s.Find(option.selectorTorrentPaid).Length() > 0 {
 			paid = true
 		}
+		if option.selectorTorrentNeutral != "" && s.Find(option.selectorTorrentNeutral).Length() > 0 {
+			downloadMultiplier = 0
+			uploadMultiplier = 0
+			neutral = true
+		} else if option.selectorTorrentNoTraffic != "" && s.Find(option.selectorTorrentNoTraffic).Length() > 0 {
+			downloadMultiplier = 0
+			uploadMultiplier = 0
+		}
 		if s.Find(`*[title^="seeding"],*[title^="leeching"],*[title^="downloading"],*[title^="uploading"],*[title^="inactivity"]`).Length() > 0 {
 			isActive = true
 		} else if option.selectorTorrentProcessBar != "" && s.Find(option.selectorTorrentProcessBar).Length() > 0 {
@@ -441,6 +452,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 				DiscountEndTime:    discountEndTime,
 				IsActive:           isActive,
 				Paid:               paid,
+				Neutral:            neutral,
 			})
 		}
 	})

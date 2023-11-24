@@ -39,6 +39,7 @@ var (
 	includeDownloaded  = false
 	freeOnly           = false
 	noPaid             = false
+	noNeutral          = false
 	nohr               = false
 	allowBreak         = false
 	addCategoryAuto    = false
@@ -73,6 +74,7 @@ func init() {
 	command.Flags().BoolVarP(&dense, "dense", "", false, "Dense mode: show full torrent title & subtitle")
 	command.Flags().BoolVarP(&freeOnly, "free", "", false, "Skip none-free torrent")
 	command.Flags().BoolVarP(&noPaid, "no-paid", "", false, "Skip paid (use bonus points) torrent")
+	command.Flags().BoolVarP(&noNeutral, "no-neutral", "", false, "Skip neutral (do not count uploading & downloading & seeding bonus) torrent")
 	command.Flags().BoolVarP(&largestFlag, "largest", "l", false, `Sort site torrents by size in desc order. Equivalent with "--sort size --order desc"`)
 	command.Flags().BoolVarP(&newestFlag, "newest", "n", false, `Download newest torrents of site. Equivalent with "--sort time --order desc --one-page"`)
 	command.Flags().BoolVarP(&addRespectNoadd, "add-respect-noadd", "", false, "Used with '--action add'. Check and respect _noadd flag in client")
@@ -323,6 +325,10 @@ mainloop:
 			}
 			if noPaid && torrent.Paid && !torrent.Bought {
 				log.Tracef("Skip paid torrent %s", torrent.Name)
+				continue
+			}
+			if noNeutral && torrent.Neutral {
+				log.Tracef("Skip neutral torrent %s", torrent.Name)
 				continue
 			}
 			if maxTotalSize >= 0 && totalSize+torrent.Size > maxTotalSize {

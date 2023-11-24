@@ -34,6 +34,7 @@ type Torrent struct {
 	IsActive           bool // true if torrent is as already downloading / seeding
 	Paid               bool // "付费"种子: (第一次)下载或汇报种子时扣除魔力/积分
 	Bought             bool // 适用于付费种子：已购买
+	Neutral            bool // 中性种子：不计算上传、下载、做种魔力
 }
 
 type Status struct {
@@ -156,6 +157,11 @@ func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool, 
 		}
 		if torrent.UploadMultiplier > 1 {
 			freeStr = fmt.Sprintf("%1.1f", torrent.UploadMultiplier) + freeStr
+		}
+		if torrent.Neutral {
+			freeStr += "N"
+		} else if torrent.DownloadMultiplier == 0 && torrent.UploadMultiplier == 0 {
+			freeStr += "Z"
 		}
 		name := torrent.Name
 		process := "-"

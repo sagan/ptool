@@ -783,11 +783,21 @@ func (qbclient *Client) SetConfig(variable string, value string) error {
 	}
 	switch variable {
 	case "global_download_speed_limit":
-		err = qbclient.apiRequest("api/v2/transfer/setDownloadLimit?limit="+value, nil)
-		return err
+		{
+			data := url.Values{
+				"limit": {value},
+			}
+			err = qbclient.apiPost("api/v2/transfer/setDownloadLimit", data)
+			return err
+		}
 	case "global_upload_speed_limit":
-		err = qbclient.apiRequest("api/v2/transfer/setUploadLimit?limit="+value, nil)
-		return err
+		{
+			data := url.Values{
+				"limit": {value},
+			}
+			err = qbclient.apiPost("api/v2/transfer/setUploadLimit", data)
+			return err
+		}
 	case "free_disk_space", "global_download_speed", "global_upload_speed":
 		return fmt.Errorf("%s is read-only", variable)
 	case "save_path":

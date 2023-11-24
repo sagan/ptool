@@ -315,10 +315,11 @@ var (
 			Comment:           "KamePT",
 		},
 		"keepfrds": {
-			Type:    "nexusphp",
-			Aliases: []string{"frds"},
-			Url:     "https://pt.keepfrds.com/",
-			Comment: "朋友、月月",
+			Type:                   "nexusphp",
+			Aliases:                []string{"frds"},
+			Url:                    "https://pt.keepfrds.com/",
+			SelectorTorrentNeutral: `img.pro_nl`,
+			Comment:                "朋友、月月",
 		},
 		"kufei": {
 			Type:    "nexusphp",
@@ -426,6 +427,7 @@ var (
 			Url:                            "https://www.pttime.org/",
 			TorrentsExtraUrls:              []string{"adults.php"},
 			SelectorTorrentFree:            `.free`,
+			SelectorTorrentNoTraffic:       `.zeroupzerodown`,
 			SelectorTorrentDiscountEndTime: `.free + span`,
 			Comment:                        "PTT",
 		},
@@ -441,7 +443,8 @@ var (
 			SelectorTorrent:           ".torrent-action-bookmark",
 			SelectorTorrentProcessBar: ".torrent-progress",
 			SelectorUserInfo:          ".m_nav",
-			SelectorTorrentFree:       `.s-tag:contains("免费")`,
+			SelectorTorrentFree:       `.s-tag:contains("FREE")`,
+			SelectorTorrentNeutral:    `.s-tag-neutral`,
 			Comment:                   "鲨鱼",
 		},
 		"skyeysnow": {

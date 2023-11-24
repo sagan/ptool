@@ -496,7 +496,7 @@ func rateSiteTorrent(siteTorrent *site.Torrent, brushOption *BrushOptionStruct) 
 			)
 		}()
 	}
-	if siteTorrent.IsActive ||
+	if siteTorrent.IsActive || siteTorrent.UploadMultiplier == 0 ||
 		(!brushOption.AllowHr && siteTorrent.HasHnR) ||
 		(!brushOption.AllowNoneFree && siteTorrent.DownloadMultiplier != 0) ||
 		(!brushOption.AllowPaid && siteTorrent.Paid && !siteTorrent.Bought) ||

@@ -394,6 +394,8 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 			selectorTorrentSize:            siteConfig.SelectorTorrentSize,
 			selectorTorrentProcessBar:      siteConfig.SelectorTorrentProcessBar,
 			selectorTorrentFree:            siteConfig.SelectorTorrentFree,
+			selectorTorrentNeutral:         siteConfig.SelectorTorrentNeutral,
+			selectorTorrentNoTraffic:       siteConfig.SelectorTorrentNoTraffic,
 			selectorTorrentPaid:            siteConfig.SelectorTorrentPaid,
 			selectorTorrentDiscountEndTime: siteConfig.SelectorTorrentDiscountEndTime,
 		},
