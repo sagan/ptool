@@ -43,6 +43,7 @@ type TorrentsParserOption struct {
 	selectorTorrentSize            string
 	selectorTorrentProcessBar      string
 	selectorTorrentFree            string
+	selectorTorrentHnR             string
 	selectorTorrentNoTraffic       string
 	selectorTorrentNeutral         string
 	selectorTorrentPaid            string
@@ -285,7 +286,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 				case "leechers":
 					leechers = util.ParseInt(text)
 				case "snatched":
-					snatched = util.ParseInt(text)
+					snatched = parseCountString(text)
 				case "time":
 					time = util.DomTime(s, option.location)
 				case "name":
@@ -351,7 +352,11 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		}
 		downloadEl := s.Find(option.selectorTorrentDownloadLink)
 		if downloadEl.Length() > 0 {
-			downloadUrl = option.siteurl + downloadEl.AttrOr("href", "")
+			downloadUrl = downloadEl.AttrOr("href", "")
+			// @todo : add support for relative URL
+			if !util.IsUrl(downloadUrl) {
+				downloadUrl = option.siteurl + strings.TrimPrefix(downloadUrl, "/")
+			}
 			m := idRegexp.FindStringSubmatch(downloadUrl)
 			if m != nil {
 				id = m[idRegexp.SubexpIndex("id")]
@@ -366,33 +371,30 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 				time, _ = util.ExtractTime(text, option.location)
 			}
 		}
-		if fieldColumIndex["seeders"] == -1 {
-			if option.selectorTorrentSeeders != "" {
-				seeders = util.ParseInt(util.DomSelectorText(s, option.selectorTorrentSeeders))
-			}
+		zeroSeederLeechers := seeders == 0 && leechers == 0
+		if (fieldColumIndex["seeders"] == -1 || zeroSeederLeechers) && option.selectorTorrentSeeders != "" {
+			seeders = util.ParseInt(util.DomSelectorText(s, option.selectorTorrentSeeders))
 		}
-		if fieldColumIndex["leechers"] == -1 {
-			if option.selectorTorrentLeechers != "" {
-				leechers = util.ParseInt(util.DomSelectorText(s, option.selectorTorrentLeechers))
-			}
+		if (fieldColumIndex["leechers"] == -1 || zeroSeederLeechers) && option.selectorTorrentLeechers != "" {
+			leechers = util.ParseInt(util.DomSelectorText(s, option.selectorTorrentLeechers))
 		}
-		if fieldColumIndex["snatched"] == -1 {
-			if option.selectorTorrentSnatched != "" {
-				snatched = util.ParseInt(util.DomSelectorText(s, option.selectorTorrentSnatched))
-			}
+		if fieldColumIndex["snatched"] == -1 && option.selectorTorrentSnatched != "" {
+			snatched = util.ParseInt(util.DomSelectorText(s, option.selectorTorrentSnatched))
 		}
 		if fieldColumIndex["size"] == -1 {
 			if option.selectorTorrentSize != "" {
 				size, _ = util.RAMInBytes(util.DomSelectorText(s, option.selectorTorrentSize))
 			}
 		}
-		if s.Find(`*[title="H&R"],*[alt="H&R"]`).Length() > 0 {
+		if s.Find(`*[title="H&R"],*[alt="H&R"],*[title="Hit and Run"]`).Length() > 0 {
+			hnr = true
+		} else if option.selectorTorrentHnR != "" && s.Find(option.selectorTorrentHnR).Length() > 0 {
 			hnr = true
 		}
 		if s.Find(`*[alt="2X Free"]`).Length() > 0 {
 			downloadMultiplier = 0
 			uploadMultiplier = 2
-		} else if s.Find(`*[title="免费"],*[title="免費"],*[alt="Free"],*[alt="FREE"]`).Length() > 0 ||
+		} else if s.Find(`*[title="免费"],*[title="免費"],*[alt="Free"],*[alt="FREE"],*[alt="free"]`).Length() > 0 ||
 			domCheckTextTagExisting(s, "free") {
 			downloadMultiplier = 0
 		} else if domCheckTextTagExisting(s, "2xfree") {
@@ -420,7 +422,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		if option.selectorTorrentDiscountEndTime != "" {
 			discountEndTime, _ = util.ParseFutureTime(util.DomRemovedSpecialCharsText(s.Find(option.selectorTorrentDiscountEndTime)))
 		} else {
-			re := regexp.MustCompile(`(?i)(?P<free>(^|\s)(免费|免費|FREE)\s*)?(剩余|剩餘|限时|限時)(时间|時間)?\s*(?P<time>[YMDHMSymdhms年月周天小时時分种鐘秒\d]+)`)
+			re := regexp.MustCompile(`(?i)(?P<free>(^|\s)(免费|免費|FREE)\s*)?(剩余|剩餘|限时|限時)(时间|時間)?\s*(?P<time>\d[\sYMDHMSymdhms年月周天小时時分种鐘秒\d]+[YMDHMSymdhms年月周天小时時分种鐘秒])`)
 			m := re.FindStringSubmatch(util.DomRemovedSpecialCharsText(s))
 			if m != nil {
 				if m[re.SubexpIndex("free")] != "" {
@@ -484,4 +486,8 @@ func domCheckTextTagExisting(node *goquery.Selection, str string) (existing bool
 		return true
 	})
 	return
+}
+
+func parseCountString(str string) int64 {
+	return util.ParseInt(strings.TrimSuffix(str, "次"))
 }

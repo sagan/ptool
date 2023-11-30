@@ -29,12 +29,17 @@ func IsUrl(str string) bool {
 	return strings.HasPrefix(str, "http://") || strings.HasPrefix(str, "https://")
 }
 
+func IsHexString(str string, minLength int) bool {
+	reg := regexp.MustCompile(fmt.Sprintf(`^[a-fA-F0-9]{%d,}$`, minLength))
+	return reg.MatchString(str)
+}
+
 func IsIntString(str string) bool {
 	return regexp.MustCompile(`^\d+$`).MatchString(str)
 }
 
 func ParseInt(str string) int64 {
-	str = strings.ReplaceAll(str, ",", "")
+	str = strings.TrimSpace(strings.ReplaceAll(str, ",", ""))
 	v, _ := strconv.ParseInt(str, 10, 0)
 	return v
 }

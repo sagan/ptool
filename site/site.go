@@ -48,7 +48,7 @@ type Status struct {
 type Site interface {
 	GetName() string
 	GetSiteConfig() *config.SiteConfigStruct
-	// download torrent by id (eg. 12345), sitename.id (eg. mteam.12345), or torrent download url (eg. https://kp.m-team.cc/download.php?id=12345)
+	// download torrent by id (eg. 12345), sitename.id (eg. mteam.12345), or absolute download url (eg. https://kp.m-team.cc/download.php?id=12345)
 	DownloadTorrent(url string) (content []byte, filename string, err error)
 	// download torrent by torrent id (eg. 12345)
 	DownloadTorrentById(id string) (content []byte, filename string, err error)

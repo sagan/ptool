@@ -123,6 +123,15 @@ func ParseTime(str string, location *time.Location) (int64, error) {
 }
 
 func ParseTimeDuration(str string) (int64, error) {
+	// remove inside spaces like the one in "9 小时"
+	var re = regexp.MustCompile(`^(.*?)\s*(\D+)\s*(.*?)$`)
+	for {
+		str1 := re.ReplaceAllString(str, `$1$2$3`)
+		if str1 == str {
+			break
+		}
+		str = str1
+	}
 	str = strings.ReplaceAll(str, "年", "y")
 	str = strings.ReplaceAll(str, "月", "M")
 	str = strings.ReplaceAll(str, "周", "w")

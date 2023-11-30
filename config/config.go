@@ -64,6 +64,7 @@ type SiteConfigStruct struct {
 	Aliases                        []string // for internal use only
 	Comment                        string   `yaml:"comment"`
 	Disabled                       bool     `yaml:"disabled"`
+	Hidden                         bool     `yaml:"hidden"` // exclude from default groups (like "_all")
 	Url                            string   `yaml:"url"`
 	Domains                        []string `yaml:"domains"` // other site domains (do not include subdomain part)
 	TorrentsUrl                    string   `yaml:"torrentsUrl"`
@@ -99,15 +100,21 @@ type SiteConfigStruct struct {
 	SelectorTorrentFree            string   `yaml:"SelectorTorrentFree"`
 	SelectorTorrentNoTraffic       string   `yaml:"selectorTorrentNoTraffic"`
 	SelectorTorrentNeutral         string   `yaml:"selectorTorrentNeutral"`
+	SelectorTorrentHnR             string   `yaml:"selectorTorrentHnR"`
 	SelectorTorrentPaid            string   `yaml:"selectorTorrentPaid"`
 	SelectorTorrentDiscountEndTime string   `yaml:"selectorTorrentDiscountEndTime"`
 	SelectorUserInfo               string   `yaml:"selectorUserInfo"`
 	SelectorUserInfoUserName       string   `yaml:"selectorUserInfoUserName"`
 	SelectorUserInfoUploaded       string   `yaml:"selectorUserInfoUploaded"`
 	SelectorUserInfoDownloaded     string   `yaml:"selectorUserInfoDownloaded"`
-	UseCuhash                      bool     `yaml:"useCuhash"` // hdcity 使用机制。种子下载地址里必须有cuhash参数。
+	TorrentDownloadUrl             string   `yaml:"torrentDownloadUrl"` // use {id} placeholders in url
+	TorrentDownloadUrlPrefix       string   `yaml:"torrentDownloadUrlPrefix"`
+	Passkey                        string   `yaml:"passkey"`
+	UseCuhash                      bool     `yaml:"useCuhash"`    // hdcity 使用机制。种子下载地址里必须有cuhash参数。
+	UseDigitHash                   bool     `yaml:"useDigitHash"` // ttg 使用机制。种子下载地址末段必须有4位数字校验码或Passkey参数(即使有 Cookie)。
 	TorrentUrlIdRegexp             string   `yaml:"torrentUrlIdRegexp"`
 	FlowControlInterval            int64    `yaml:"flowControlInterval"` // 暂定名。两次请求种子列表页间隔时间(秒)
+	NexusphpNoLetDown              bool     `yaml:"nexusphpNoLetDown"`
 	TorrentUploadSpeedLimitValue   int64
 	BrushTorrentMinSizeLimitValue  int64
 	BrushTorrentMaxSizeLimitValue  int64
@@ -302,7 +309,7 @@ func GetGroupSites(name string) []string {
 	if name == "_all" { // special group of all sites
 		sitenames := []string{}
 		for _, siteConfig := range Get().Sites {
-			if siteConfig.Disabled {
+			if siteConfig.Disabled || siteConfig.Hidden {
 				continue
 			}
 			sitenames = append(sitenames, siteConfig.GetName())

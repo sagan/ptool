@@ -28,9 +28,15 @@ type Site struct {
 	datatime             int64
 	datetimeExtra        int64
 	cuhash               string
+	digitHashPasskey     string
+	digitHashErr         error
 	idRegexp             *regexp.Regexp
 	torrentsParserOption *TorrentsParserOption
 }
+
+const (
+	DEFAULT_TORRENTS_URL = "torrents.php"
+)
 
 var sortFields = map[string]string{
 	"name":     "1",
@@ -62,7 +68,7 @@ func (npclient *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Tor
 		if npclient.SiteConfig.SearchUrl != "" {
 			baseUrl = npclient.SiteConfig.SearchUrl
 		} else {
-			baseUrl = "torrents.php"
+			baseUrl = DEFAULT_TORRENTS_URL
 		}
 	}
 	searchUrl := npclient.SiteConfig.ParseSiteUrl(baseUrl, true)
@@ -87,24 +93,42 @@ func (npclient *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error)
 		id := strings.TrimPrefix(torrentUrl, npclient.GetName()+".")
 		return npclient.DownloadTorrentById(id)
 	}
-	if !strings.Contains(torrentUrl, "/download") {
+	urlObj, err := url.Parse(torrentUrl)
+	if err != nil {
+		return nil, "", fmt.Errorf("invalid torrent url: %v", err)
+	}
+	id := ""
+	if npclient.idRegexp != nil {
 		m := npclient.idRegexp.FindStringSubmatch(torrentUrl)
 		if m != nil {
-			return npclient.DownloadTorrentById(m[npclient.idRegexp.SubexpIndex("id")])
+			id = m[npclient.idRegexp.SubexpIndex("id")]
 		}
 	}
-	urlObj, err := url.Parse(torrentUrl)
-	id := ""
-	if err == nil {
+	if id == "" {
 		id = urlObj.Query().Get("id")
 	}
+	downloadUrlPrefix := strings.TrimPrefix(npclient.SiteConfig.TorrentDownloadUrlPrefix, "/")
+	if downloadUrlPrefix == "" {
+		downloadUrlPrefix = "download"
+	}
+	if !strings.HasPrefix(urlObj.Path, "/"+downloadUrlPrefix) && id != "" {
+		return npclient.DownloadTorrentById(id)
+	}
 	// skip NP download notice. see https://github.com/xiaomlove/nexusphp/blob/php8/public/download.php
-	torrentUrl = util.AppendUrlQueryString(torrentUrl, "letdown=1")
+	if !npclient.SiteConfig.NexusphpNoLetDown {
+		torrentUrl = util.AppendUrlQueryString(torrentUrl, "letdown=1")
+	}
 	return site.DownloadTorrentByUrl(npclient, npclient.HttpClient, torrentUrl, id)
 }
 
 func (npclient *Site) DownloadTorrentById(id string) ([]byte, string, error) {
-	torrentUrl := npclient.SiteConfig.Url + "download.php?https=1&letdown=1&id=" + id
+	torrentUrl := ""
+	if npclient.SiteConfig.TorrentDownloadUrl != "" {
+		torrentUrl = strings.ReplaceAll(npclient.SiteConfig.TorrentDownloadUrl, "{id}", id)
+	} else {
+		torrentUrl = "download.php?https=1&letdown=1&id=" + id
+	}
+	torrentUrl = npclient.SiteConfig.ParseSiteUrl(torrentUrl, false)
 	if npclient.SiteConfig.UseCuhash {
 		if npclient.cuhash == "" {
 			// update cuhash by side effect of sync (fetching latest torrents)
@@ -115,8 +139,57 @@ func (npclient *Site) DownloadTorrentById(id string) ([]byte, string, error) {
 		} else {
 			log.Warnf("Failed to get site cuhash. torrent download may fail")
 		}
+	} else if npclient.SiteConfig.UseDigitHash {
+		passkey := ""
+		if npclient.SiteConfig.Passkey != "" {
+			passkey = npclient.SiteConfig.Passkey
+		} else if npclient.digitHashPasskey != "" {
+			passkey = npclient.digitHashPasskey
+		} else if npclient.digitHashErr == nil { // only try to fetch passkey once
+			npclient.digitHashPasskey, npclient.digitHashErr = npclient.getDigithash(id)
+			if npclient.digitHashErr != nil {
+				log.Warnf("Failed to get site passkey. torrent download may fail")
+			} else {
+				passkey = npclient.digitHashPasskey
+				log.Infof(`Found site passkey. Add the passkey = "%s" line to site config block of ptool.toml to speed up the next visit`, passkey)
+			}
+		}
+		if passkey != "" {
+			torrentUrl = strings.TrimSuffix(torrentUrl, "/")
+			torrentUrl += "/" + passkey
+		}
 	}
 	return site.DownloadTorrentByUrl(npclient, npclient.HttpClient, torrentUrl, id)
+}
+
+func (npclient *Site) getDigithash(id string) (string, error) {
+	detailsUrl := npclient.SiteConfig.ParseSiteUrl(fmt.Sprintf("t/%s/", id), false)
+	doc, _, err := util.GetUrlDoc(detailsUrl, npclient.HttpClient, npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to get torrent detail page: %v", err)
+	}
+	downloadUrlPrefix := strings.TrimPrefix(npclient.SiteConfig.TorrentDownloadUrlPrefix, "/")
+	if downloadUrlPrefix == "" {
+		downloadUrlPrefix = "download"
+	}
+	torrentDownloadLinks := doc.Find(fmt.Sprintf(`a[href^="/%s"],a[href^="%s"],a[href^="%s%s"]`,
+		downloadUrlPrefix, downloadUrlPrefix, npclient.SiteConfig.Url, downloadUrlPrefix))
+	passkey := ""
+	torrentDownloadLinks.EachWithBreak(func(i int, el *goquery.Selection) bool {
+		urlPathes := strings.Split(el.AttrOr("href", ""), "/")
+		if len(urlPathes) > 2 {
+			key := urlPathes[len(urlPathes)-1]
+			if util.IsHexString(key, 32) {
+				passkey = key
+				return false
+			}
+		}
+		return true
+	})
+	if passkey == "" {
+		return "", fmt.Errorf("no passkey found in torrent detail page")
+	}
+	return passkey, nil
 }
 
 func (npclient *Site) GetStatus() (*site.Status, error) {
@@ -160,7 +233,11 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 		page = util.ParseInt(pageMarker)
 	}
 	if baseUrl == "" {
-		baseUrl = "torrents.php"
+		if npclient.SiteConfig.TorrentsUrl != "" {
+			baseUrl = npclient.SiteConfig.TorrentsUrl
+		} else {
+			baseUrl = DEFAULT_TORRENTS_URL
+		}
 	}
 	pageUrl := npclient.SiteConfig.ParseSiteUrl(baseUrl, true)
 	queryString := ""
@@ -251,8 +328,9 @@ func (npclient *Site) sync() error {
 	}
 	url := npclient.SiteConfig.TorrentsUrl
 	if url == "" {
-		url = npclient.SiteConfig.Url + "torrents.php"
+		url = DEFAULT_TORRENTS_URL
 	}
+	url = npclient.SiteConfig.ParseSiteUrl(url, false)
 	doc, res, err := util.GetUrlDoc(url, npclient.HttpClient,
 		npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, nil)
 	if err != nil {
@@ -394,6 +472,7 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 			selectorTorrentSize:            siteConfig.SelectorTorrentSize,
 			selectorTorrentProcessBar:      siteConfig.SelectorTorrentProcessBar,
 			selectorTorrentFree:            siteConfig.SelectorTorrentFree,
+			selectorTorrentHnR:             siteConfig.SelectorTorrentHnR,
 			selectorTorrentNeutral:         siteConfig.SelectorTorrentNeutral,
 			selectorTorrentNoTraffic:       siteConfig.SelectorTorrentNoTraffic,
 			selectorTorrentPaid:            siteConfig.SelectorTorrentPaid,
@@ -402,8 +481,6 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 	}
 	if siteConfig.TorrentUrlIdRegexp != "" {
 		site.idRegexp = regexp.MustCompile(siteConfig.TorrentUrlIdRegexp)
-	} else {
-		site.idRegexp = regexp.MustCompile(`\bid=(?P<id>\d+)\b`)
 	}
 	return site, nil
 }

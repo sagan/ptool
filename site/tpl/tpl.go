@@ -2,6 +2,7 @@ package tpl
 
 // 站点模板。
 // CSS选择器使用 goquery 解析，支持 jQuery 的扩展语法(例如 :contains("txt") )。
+// 除 Url 以外的所有 ***Url (例如 TorrentsUrl) 均应当使用相对路径
 
 import (
 	"sort"
@@ -212,6 +213,7 @@ var (
 			SelectorUserInfoUploaded:   `#bottomnav a[href="userdetails"] i[title="上传量："]@after`,
 			SelectorUserInfoDownloaded: `#bottomnav a[href="userdetails"] i[title="下载量："]@after`,
 			UseCuhash:                  true,
+			TorrentDownloadUrl:         `download?id={id}`,
 			TorrentUrlIdRegexp:         `\bt-(?P<id>\d+)\b`,
 			Comment:                    "城市",
 		},
@@ -340,7 +342,7 @@ var (
 			Aliases:             []string{"leaguehd", "lemon"},
 			Url:                 "https://lemonhd.org/",
 			Domains:             []string{"leaguehd.com"},
-			TorrentsUrl:         "https://lemonhd.org/torrents_new.php",
+			TorrentsUrl:         "torrents_new.php",
 			SelectorTorrentFree: `div:contains("免費")`,
 			Comment:             "柠檬",
 		},
@@ -458,6 +460,26 @@ var (
 			Type:    "nexusphp",
 			Url:     "https://pt.soulvoice.club/",
 			Comment: "聆音",
+		},
+		"totheglory": {
+			Type:                        "nexusphp",
+			Aliases:                     []string{"ttg"},
+			Url:                         "https://totheglory.im/",
+			TorrentsUrl:                 "browse.php?c=M",
+			TorrentsExtraUrls:           []string{"browse.php?c=G"},
+			SelectorTorrent:             `a.dl_a[href^="/dl/"]`,
+			SelectorTorrentDownloadLink: `a.dl_a[href^="/dl/"]`,
+			SelectorTorrentDetailsLink:  `.name_left a[href^="/t/"]`,
+			SelectorTorrentSeeders:      `a[href$="&toseeders=1"]`,
+			SelectorTorrentLeechers:     `a[href$="&todlers=1"]`,
+			SelectorTorrentSnatched:     `td:nth-child(8)@text`, // it's ugly
+			SelectorTorrentProcessBar:   `.process`,
+			TorrentDownloadUrl:          `dl/{id}`,
+			TorrentDownloadUrlPrefix:    `dl/`,
+			TorrentUrlIdRegexp:          `\b(t|dl)/(?P<id>\d+)\b`,
+			UseDigitHash:                true,
+			NexusphpNoLetDown:           true,
+			Comment:                     "听听歌、套",
 		},
 		"tu88": {
 			Type:              "nexusphp",
