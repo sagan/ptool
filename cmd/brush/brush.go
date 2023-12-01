@@ -11,6 +11,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/cmd/brush/strategy"
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/stats"
@@ -89,8 +90,8 @@ func brush(cmd *cobra.Command, args []string) error {
 		}
 		noadd := !force && status.NoAdd
 		var siteTorrents []site.Torrent
-		if status.UploadSpeedLimit > 0 && (status.UploadSpeedLimit < SLOW_UPLOAD_SPEED ||
-			(float64(status.UploadSpeed)/float64(status.UploadSpeedLimit)) >= BANDWIDTH_FULL_PERCENT) {
+		if status.UploadSpeedLimit > 0 && (status.UploadSpeedLimit < strategy.SLOW_UPLOAD_SPEED ||
+			(float64(status.UploadSpeed)/float64(status.UploadSpeedLimit)) >= strategy.BANDWIDTH_FULL_PERCENT) {
 			log.Printf(
 				"Client %s upload bandwidth is already full (Upload speed/limit: %s/s/%s/s). Do not fetch site new torrents\n",
 				clientInstance.GetName(),
@@ -113,34 +114,19 @@ func brush(cmd *cobra.Command, args []string) error {
 			log.Printf("Failed to get client %s torrents: %v ", clientInstance.GetName(), err)
 			continue
 		}
-		brushOption := &BrushOptionStruct{
-			TorrentMinSizeLimit:     siteInstance.GetSiteConfig().BrushTorrentMinSizeLimitValue,
-			TorrentMaxSizeLimit:     siteInstance.GetSiteConfig().BrushTorrentMaxSizeLimitValue,
-			TorrentUploadSpeedLimit: siteInstance.GetSiteConfig().TorrentUploadSpeedLimitValue,
-			AllowNoneFree:           siteInstance.GetSiteConfig().BrushAllowNoneFree,
-			AllowPaid:               siteInstance.GetSiteConfig().BrushAllowPaid,
-			AllowHr:                 siteInstance.GetSiteConfig().BrushAllowHr,
-			AllowZeroSeeders:        siteInstance.GetSiteConfig().BrushAllowZeroSeeders,
-			Excludes:                siteInstance.GetSiteConfig().BrushExcludes,
-			MinDiskSpace:            clientInstance.GetClientConfig().BrushMinDiskSpaceValue,
-			SlowUploadSpeedTier:     clientInstance.GetClientConfig().BrushSlowUploadSpeedTierValue,
-			MaxDownloadingTorrents:  clientInstance.GetClientConfig().BrushMaxDownloadingTorrents,
-			MaxTorrents:             clientInstance.GetClientConfig().BrushMaxTorrents,
-			MinRatio:                clientInstance.GetClientConfig().BrushMinRatio,
-			DefaultUploadSpeedLimit: clientInstance.GetClientConfig().BrushDefaultUploadSpeedLimitValue,
-			Now:                     util.Now(),
-		}
+		brushSiteOption := strategy.GetBrushSiteOptions(siteInstance, util.Now())
+		brushClientOption := strategy.GetBrushClientOptions(clientInstance)
 		log.Printf(
 			"Brush Options: minDiskSpace=%v, slowUploadSpeedTier=%v, torrentUploadSpeedLimit=%v/s,"+
 				" maxDownloadingTorrents=%d, maxTorrents=%d, minRatio=%f",
-			util.BytesSize(float64(brushOption.MinDiskSpace)),
-			util.BytesSize(float64(brushOption.SlowUploadSpeedTier)),
-			util.BytesSize(float64(brushOption.TorrentUploadSpeedLimit)),
-			brushOption.MaxDownloadingTorrents,
-			brushOption.MaxTorrents,
-			brushOption.MinRatio,
+			util.BytesSize(float64(brushClientOption.MinDiskSpace)),
+			util.BytesSize(float64(brushClientOption.SlowUploadSpeedTier)),
+			util.BytesSize(float64(brushSiteOption.TorrentUploadSpeedLimit)),
+			brushClientOption.MaxDownloadingTorrents,
+			brushClientOption.MaxTorrents,
+			brushClientOption.MinRatio,
 		)
-		result := Decide(status, clientTorrents, siteTorrents, brushOption)
+		result := strategy.Decide(status, clientTorrents, siteTorrents, brushSiteOption, brushClientOption)
 		log.Printf(
 			"Current client %s torrents: %d; Download speed / limit: %s/s / %s/s; Upload speed / limit: %s/s / %s/s;Free disk space: %s;",
 			clientInstance.GetName(),
@@ -172,7 +158,7 @@ func brush(cmd *cobra.Command, args []string) error {
 				log.Warnf("Invalid torrent deletion target: %s", torrent.InfoHash)
 				continue
 			}
-			duration := brushOption.Now - clientTorrent.Atime
+			duration := brushSiteOption.Now - clientTorrent.Atime
 			log.Printf("Delete client %s torrent: %v / %v / %v.", clientInstance.GetName(), torrent.Name, torrent.InfoHash, torrent.Msg)
 			log.Printf("Torrent total downloads / uploads: %s / %s; Lifespan: %s; Average download / upload speed of lifespan: %s/s / %s/s",
 				util.BytesSize(float64(clientTorrent.Downloaded)),
@@ -189,7 +175,7 @@ func brush(cmd *cobra.Command, args []string) error {
 			if err == nil {
 				cntDeleteTorrents++
 				if statDb != nil {
-					statDb.AddTorrentStat(brushOption.Now, 1, &stats.TorrentStat{
+					statDb.AddTorrentStat(brushSiteOption.Now, 1, &stats.TorrentStat{
 						Client:     clientInstance.GetName(),
 						Site:       clientTorrent.GetSiteFromTag(),
 						InfoHash:   clientTorrent.InfoHash,
@@ -212,7 +198,7 @@ func brush(cmd *cobra.Command, args []string) error {
 				continue
 			}
 			err := clientInstance.ModifyTorrent(torrent.InfoHash, &client.TorrentOption{
-				DownloadSpeedLimit: STALL_DOWNLOAD_SPEED,
+				DownloadSpeedLimit: strategy.STALL_DOWNLOAD_SPEED,
 			}, torrent.Meta)
 			log.Printf("Stall torrent result: error=%v", err)
 		}
@@ -223,7 +209,7 @@ func brush(cmd *cobra.Command, args []string) error {
 				log.Printf("Resume client %s torrent: %v / %v / %v", clientInstance.GetName(), torrent.Name, torrent.InfoHash, torrent.Msg)
 			}
 			if !dryRun {
-				err := clientInstance.ResumeTorrents(util.Map(result.ResumeTorrents, func(t AlgorithmOperationTorrent) string {
+				err := clientInstance.ResumeTorrents(util.Map(result.ResumeTorrents, func(t strategy.AlgorithmOperationTorrent) string {
 					return t.InfoHash
 				}))
 				log.Printf("Resume torrents result: error=%v", err)

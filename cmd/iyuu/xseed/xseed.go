@@ -127,7 +127,8 @@ func xseed(cmd *cobra.Command, args []string) error {
 			log.Tracef("client %s has %d torrents", clientName, len(torrents))
 		}
 		torrents = util.Filter(torrents, func(torrent client.Torrent) bool {
-			return torrent.IsFull() && torrent.Category != config.XSEED_TAG && !torrent.HasTag(config.XSEED_TAG)
+			return torrent.IsFull() && torrent.Category != config.XSEED_TAG &&
+				!torrent.HasTag(config.XSEED_TAG) && !torrent.HasTag(config.NOXSEED_TAG)
 		})
 		sort.Slice(torrents, func(i, j int) bool {
 			if torrents[i].Size != torrents[j].Size {

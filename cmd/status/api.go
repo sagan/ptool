@@ -4,17 +4,20 @@ import (
 	"fmt"
 
 	"github.com/sagan/ptool/client"
+	"github.com/sagan/ptool/cmd/brush/strategy"
 	"github.com/sagan/ptool/site"
+	"github.com/sagan/ptool/util"
 )
 
 type StatusResponse struct {
-	Name           string
-	Kind           int64
-	ClientStatus   *client.Status
-	ClientTorrents []client.Torrent
-	SiteStatus     *site.Status
-	SiteTorrents   []site.Torrent // latest site torrents
-	Error          error
+	Name              string
+	Kind              int64
+	ClientStatus      *client.Status
+	ClientTorrents    []client.Torrent
+	SiteStatus        *site.Status
+	SiteTorrents      []site.Torrent // latest site torrents
+	SiteTorrentScores map[string]float64
+	Error             error
 }
 
 // side effect for now: close clientInstance before return
@@ -40,7 +43,7 @@ func fetchClientStatus(clientInstance client.Client, showTorrents bool, showAllT
 	ch <- response
 }
 
-func fetchSiteStatus(siteInstance site.Site, showTorrents bool, full bool, ch chan *StatusResponse) {
+func fetchSiteStatus(siteInstance site.Site, showTorrents bool, full bool, showScore bool, ch chan *StatusResponse) {
 	response := &StatusResponse{Name: siteInstance.GetName(), Kind: 2}
 
 	SiteStatus, err := siteInstance.GetStatus()
@@ -53,9 +56,18 @@ func fetchSiteStatus(siteInstance site.Site, showTorrents bool, full bool, ch ch
 
 	if showTorrents {
 		siteTorrents, err := siteInstance.GetLatestTorrents(full)
-		response.SiteTorrents = siteTorrents
 		if err != nil {
 			response.Error = fmt.Errorf("cann't get site %s torrents: %v", siteInstance.GetName(), err)
+		} else {
+			if showScore {
+				brushSiteOption := strategy.GetBrushSiteOptions(siteInstance, util.Now())
+				scores := map[string]float64{}
+				for _, torrent := range siteTorrents {
+					scores[torrent.Id], _, _ = strategy.RateSiteTorrent(&torrent, brushSiteOption)
+				}
+				response.SiteTorrentScores = scores
+			}
+			response.SiteTorrents = siteTorrents
 		}
 	}
 

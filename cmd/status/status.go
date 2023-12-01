@@ -24,6 +24,7 @@ var (
 	showAll        = false
 	showAllClients = false
 	showAllSites   = false
+	showScore      = false
 	largestFlag    = false
 	newestFlag     = false
 )
@@ -48,6 +49,7 @@ func init() {
 	command.Flags().BoolVarP(&showAllSites, "sites", "s", false, "Show all sites")
 	command.Flags().BoolVarP(&showTorrents, "torrents", "t", false, "Show torrents (active torrents for client / latest torrents for site)")
 	command.Flags().BoolVarP(&showFull, "full", "f", false, "Show full info of each client or site")
+	command.Flags().BoolVarP(&showScore, "score", "", false, "Show brush score of site torrents")
 	command.Flags().BoolVarP(&largestFlag, "largest", "l", false, `Sort site torrents by size in desc order"`)
 	command.Flags().BoolVarP(&newestFlag, "newest", "n", false, `Sort site torrents by time in desc order (newest first)"`)
 	cmd.RootCmd.AddCommand(command)
@@ -110,7 +112,7 @@ func status(cmd *cobra.Command, args []string) error {
 				errorCnt++
 				continue
 			}
-			go fetchSiteStatus(siteInstance, showTorrents, showFull, ch)
+			go fetchSiteStatus(siteInstance, showTorrents, showFull, showScore, ch)
 			cnt++
 		} else {
 			log.Errorf("Error: %s is not a client or site\n", name)
@@ -210,7 +212,7 @@ func status(cmd *cobra.Command, args []string) error {
 						return response.SiteTorrents[i].Time > response.SiteTorrents[j].Time
 					})
 				}
-				site.PrintTorrents(response.SiteTorrents, filter, now, false, dense)
+				site.PrintTorrents(response.SiteTorrents, filter, now, false, dense, response.SiteTorrentScores)
 				if i != len(responses)-1 {
 					fmt.Printf("\n")
 				}

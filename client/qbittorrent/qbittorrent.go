@@ -685,7 +685,7 @@ func (qbclient *Client) GetStatus() (*client.Status, error) {
 			status.FreeSpaceOnDisk = -1
 		}
 	}
-	if slices.Index(qbclient.data.Tags, "_noadd") != -1 {
+	if slices.Index(qbclient.data.Tags, config.NOADD_TAG) != -1 {
 		status.NoAdd = true
 	}
 	return &status, nil

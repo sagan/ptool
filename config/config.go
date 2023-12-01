@@ -15,6 +15,8 @@ import (
 const (
 	BRUSH_CAT        = "_brush"
 	XSEED_TAG        = "_xseed"
+	NOADD_TAG        = "_noadd"
+	NOXSEED_TAG      = "noxseed" // BT 客户端里含有此 tag 的种子不会被辅种
 	STATS_FILENAME   = "ptool_stats.txt"
 	HISTORY_FILENAME = "ptool_history"
 

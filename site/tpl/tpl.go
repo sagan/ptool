@@ -46,6 +46,7 @@ var (
 		},
 		"audiences": {
 			Type:    "nexusphp",
+			Aliases: []string{"ad"},
 			Url:     "https://audiences.me/",
 			Domains: []string{"cinefiles.info"},
 			Comment: "观众",
@@ -100,6 +101,7 @@ var (
 		},
 		"dicmusic": {
 			Type:    "gazelle",
+			Aliases: []string{"dic"},
 			Domains: []string{"dicmusic.com", "52dic.vip"},
 			Url:     "https://dicmusic.club/",
 			Comment: "海豚",
@@ -515,6 +517,7 @@ var (
 		},
 		"wintersakura": {
 			Type:    "nexusphp",
+			Aliases: []string{"wtsakura"},
 			Url:     "https://wintersakura.net/",
 			Comment: "冬樱",
 		},

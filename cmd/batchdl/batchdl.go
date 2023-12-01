@@ -344,7 +344,7 @@ mainloop:
 			totalSize += torrent.Size
 			var err error
 			if action == "show" {
-				site.PrintTorrents([]site.Torrent{torrent}, "", now, cntTorrents != 1, dense)
+				site.PrintTorrents([]site.Torrent{torrent}, "", now, cntTorrents != 1, dense, nil)
 			} else if action == "export" {
 				csvWriter.Write([]string{torrent.Name, fmt.Sprint(torrent.Size), fmt.Sprint(torrent.Time), torrent.Id})
 			} else if action == "printid" {

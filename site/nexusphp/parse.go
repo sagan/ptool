@@ -2,6 +2,7 @@ package nexusphp
 
 import (
 	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -24,11 +25,16 @@ const (
 	// see https://github.com/xiaomlove/nexusphp/blob/php8/app/Repositories/TorrentRepository.php .
 	// function getPaidIcon.
 	SELECTOR_TORRENT_PAID = `span[title="收费种子"],span[title="收費種子"],span[title="Paid torrent"]`
+	// skip NP download notice. see https://github.com/xiaomlove/nexusphp/blob/php8/public/download.php
+	LETDOWN_QUERYSTRING = "letdown=1"
 )
 
 type TorrentsParserOption struct {
 	location                       *time.Location
+	idRegexp                       *regexp.Regexp
+	npletdown                      bool
 	globalHr                       bool
+	torrentDownloadUrl             string
 	siteurl                        string
 	selectorTorrentsListHeader     string
 	selectorTorrentsList           string
@@ -262,7 +268,6 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		paid := false
 		neutral := false
 		processValueRegexp := regexp.MustCompile(`\d+(\.\d+)?%`)
-		idRegexp := regexp.MustCompile(`[?&]id=(?P<id>\d+)`)
 		text := util.DomSanitizedText(s)
 		var titleEl *goquery.Selection
 
@@ -323,10 +328,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 			}
 			// CloudFlare email obfuscation sometimes confuses with 0day torrent names such as "***-DIY@Audies"
 			name = strings.ReplaceAll(name, "[email protected]", "")
-			m := idRegexp.FindStringSubmatch(titleEl.AttrOr("href", ""))
-			if m != nil {
-				id = m[idRegexp.SubexpIndex("id")]
-			}
+			id = parseTorrentIdFromUrl(titleEl.AttrOr("href", ""), option.idRegexp)
 			// try to find np torrent subtitle that is after title and <br />
 			foundBr := false
 			foundSelf := false
@@ -357,12 +359,14 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 			if !util.IsUrl(downloadUrl) {
 				downloadUrl = option.siteurl + strings.TrimPrefix(downloadUrl, "/")
 			}
-			m := idRegexp.FindStringSubmatch(downloadUrl)
-			if m != nil {
-				id = m[idRegexp.SubexpIndex("id")]
+			if option.npletdown {
+				downloadUrl = util.AppendUrlQueryString(downloadUrl, LETDOWN_QUERYSTRING)
+			}
+			if id == "" {
+				id = parseTorrentIdFromUrl(downloadUrl, option.idRegexp)
 			}
 		} else if id != "" {
-			downloadUrl = option.siteurl + "download.php?id=" + fmt.Sprint(id)
+			downloadUrl = option.siteurl + generateTorrentDownloadUrl(id, option.torrentDownloadUrl, option.npletdown)
 		}
 		if fieldColumIndex["time"] == -1 {
 			if option.selectorTorrentTime != "" {
@@ -490,4 +494,36 @@ func domCheckTextTagExisting(node *goquery.Selection, str string) (existing bool
 
 func parseCountString(str string) int64 {
 	return util.ParseInt(strings.TrimSuffix(str, "次"))
+}
+
+func parseTorrentIdFromUrl(torrentUrl string, idRegexp *regexp.Regexp) string {
+	id := ""
+	if idRegexp != nil {
+		m := idRegexp.FindStringSubmatch(torrentUrl)
+		if m != nil {
+			id = m[idRegexp.SubexpIndex("id")]
+		}
+	}
+	if id == "" {
+		urlObj, err := url.Parse(torrentUrl)
+		if err == nil {
+			id = urlObj.Query().Get("id")
+		}
+	}
+	return id
+}
+
+// return absolute or relative (without leading "/"") torrent download url
+func generateTorrentDownloadUrl(id string, torrentDownloadUrl string, letdown bool) string {
+	downloadUrl := ""
+	if torrentDownloadUrl != "" {
+		downloadUrl = strings.ReplaceAll(torrentDownloadUrl, "{id}", id)
+		downloadUrl = strings.TrimPrefix(downloadUrl, "/")
+	} else {
+		downloadUrl = "download.php?https=1&&id=" + id
+		if letdown {
+			downloadUrl += "&" + LETDOWN_QUERYSTRING
+		}
+	}
+	return downloadUrl
 }

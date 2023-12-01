@@ -30,7 +30,6 @@ type Site struct {
 	cuhash               string
 	digitHashPasskey     string
 	digitHashErr         error
-	idRegexp             *regexp.Regexp
 	torrentsParserOption *TorrentsParserOption
 }
 
@@ -88,6 +87,8 @@ func (npclient *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Tor
 	return npclient.parseTorrentsFromDoc(doc, util.Now())
 }
 
+// If torrentUrl is (seems) a torrent download url, direct use it.
+// Otherwise try to parse torrent id from it and download torrent from id
 func (npclient *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error) {
 	if !util.IsUrl(torrentUrl) {
 		id := strings.TrimPrefix(torrentUrl, npclient.GetName()+".")
@@ -97,16 +98,7 @@ func (npclient *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error)
 	if err != nil {
 		return nil, "", fmt.Errorf("invalid torrent url: %v", err)
 	}
-	id := ""
-	if npclient.idRegexp != nil {
-		m := npclient.idRegexp.FindStringSubmatch(torrentUrl)
-		if m != nil {
-			id = m[npclient.idRegexp.SubexpIndex("id")]
-		}
-	}
-	if id == "" {
-		id = urlObj.Query().Get("id")
-	}
+	id := parseTorrentIdFromUrl(torrentUrl, npclient.torrentsParserOption.idRegexp)
 	downloadUrlPrefix := strings.TrimPrefix(npclient.SiteConfig.TorrentDownloadUrlPrefix, "/")
 	if downloadUrlPrefix == "" {
 		downloadUrlPrefix = "download"
@@ -114,20 +106,12 @@ func (npclient *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error)
 	if !strings.HasPrefix(urlObj.Path, "/"+downloadUrlPrefix) && id != "" {
 		return npclient.DownloadTorrentById(id)
 	}
-	// skip NP download notice. see https://github.com/xiaomlove/nexusphp/blob/php8/public/download.php
-	if !npclient.SiteConfig.NexusphpNoLetDown {
-		torrentUrl = util.AppendUrlQueryString(torrentUrl, "letdown=1")
-	}
 	return site.DownloadTorrentByUrl(npclient, npclient.HttpClient, torrentUrl, id)
 }
 
 func (npclient *Site) DownloadTorrentById(id string) ([]byte, string, error) {
-	torrentUrl := ""
-	if npclient.SiteConfig.TorrentDownloadUrl != "" {
-		torrentUrl = strings.ReplaceAll(npclient.SiteConfig.TorrentDownloadUrl, "{id}", id)
-	} else {
-		torrentUrl = "download.php?https=1&letdown=1&id=" + id
-	}
+	torrentUrl := generateTorrentDownloadUrl(id, npclient.torrentsParserOption.torrentDownloadUrl,
+		npclient.torrentsParserOption.npletdown)
 	torrentUrl = npclient.SiteConfig.ParseSiteUrl(torrentUrl, false)
 	if npclient.SiteConfig.UseCuhash {
 		if npclient.cuhash == "" {
@@ -459,6 +443,8 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 			location:                       location,
 			siteurl:                        siteConfig.Url,
 			globalHr:                       siteConfig.GlobalHnR,
+			npletdown:                      !siteConfig.NexusphpNoLetDown,
+			torrentDownloadUrl:             siteConfig.TorrentDownloadUrl,
 			selectorTorrentsListHeader:     siteConfig.SelectorTorrentsListHeader,
 			selectorTorrentsList:           siteConfig.SelectorTorrentsList,
 			selectorTorrentBlock:           siteConfig.SelectorTorrentBlock,
@@ -480,7 +466,7 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 		},
 	}
 	if siteConfig.TorrentUrlIdRegexp != "" {
-		site.idRegexp = regexp.MustCompile(siteConfig.TorrentUrlIdRegexp)
+		site.torrentsParserOption.idRegexp = regexp.MustCompile(siteConfig.TorrentUrlIdRegexp)
 	}
 	return site, nil
 }

@@ -132,9 +132,13 @@ func CreateSite(name string) (Site, error) {
 	return siteInstance, err
 }
 
-func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool, dense bool) {
+func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool, dense bool, scores map[string]float64) {
 	if !noHeader {
-		fmt.Printf("%-40s  %8s  %-13s  %-19s  %4s  %4s  %4s  %20s  %2s\n", "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "P")
+		if scores == nil {
+			fmt.Printf("%-40s  %8s  %-11s  %-19s  %4s  %4s  %4s  %-15s  %2s\n", "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "P")
+		} else {
+			fmt.Printf("%-40s  %8s  %-11s  %-19s  %4s  %4s  %4s  %-15s  %5s  %2s\n", "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "Score", "P")
+		}
 	}
 	for _, torrent := range torrents {
 		if filter != "" && !torrent.MatchFilter(filter) {
@@ -172,16 +176,30 @@ func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool, 
 			fmt.Printf("// %s  %s\n", torrent.Name, torrent.Description)
 		}
 		util.PrintStringInWidth(name, 40, true)
-		fmt.Printf("  %8s  %-13s  %-19s  %4s  %4s  %4s  %20s  %2s\n",
-			util.BytesSize(float64(torrent.Size)),
-			freeStr,
-			util.FormatTime(torrent.Time),
-			fmt.Sprint(torrent.Seeders),
-			fmt.Sprint(torrent.Leechers),
-			fmt.Sprint(torrent.Snatched),
-			torrent.Id,
-			process,
-		)
+		if scores == nil {
+			fmt.Printf("  %8s  %-11s  %-19s  %4s  %4s  %4s  %-15s  %2s\n",
+				util.BytesSize(float64(torrent.Size)),
+				freeStr,
+				util.FormatTime(torrent.Time),
+				fmt.Sprint(torrent.Seeders),
+				fmt.Sprint(torrent.Leechers),
+				fmt.Sprint(torrent.Snatched),
+				torrent.Id,
+				process,
+			)
+		} else {
+			fmt.Printf("  %8s  %-11s  %-19s  %4s  %4s  %4s  %-15s  %5.0f  %2s\n",
+				util.BytesSize(float64(torrent.Size)),
+				freeStr,
+				util.FormatTime(torrent.Time),
+				fmt.Sprint(torrent.Seeders),
+				fmt.Sprint(torrent.Leechers),
+				fmt.Sprint(torrent.Snatched),
+				torrent.Id,
+				scores[torrent.Id],
+				process,
+			)
+		}
 	}
 }
 
