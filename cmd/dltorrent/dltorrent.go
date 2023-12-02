@@ -39,6 +39,7 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 	torrentIds := args
 	siteInstanceMap := map[string]site.Site{}
 	domainSiteMap := map[string]string{}
+	var err error
 
 	for _, torrentId := range torrentIds {
 		siteName := defaultSite
@@ -57,11 +58,14 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 			sitename := ""
 			ok := false
 			if sitename, ok = domainSiteMap[domain]; !ok {
-				domainSiteMap[domain] = tpl.GuessSiteByDomain(domain, defaultSite)
+				domainSiteMap[domain], err = tpl.GuessSiteByDomain(domain, defaultSite)
+				if err != nil {
+					log.Warnf("Failed to find match site for %s: %v", domain, err)
+				}
 				sitename = domainSiteMap[domain]
 			}
 			if sitename == "" {
-				log.Warnf("torrent %s: url does not match any site. will use provided default site", torrentId)
+				log.Warnf("Torrent %s: url does not match any site. will use provided default site", torrentId)
 			} else {
 				siteName = sitename
 			}

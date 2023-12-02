@@ -40,7 +40,7 @@ func (dzsite *Site) GetSiteConfig() *config.SiteConfigStruct {
 
 func (dzsite *Site) GetStatus() (*site.Status, error) {
 	doc, _, err := util.GetUrlDoc(dzsite.SiteConfig.Url+"forum.php?mod=torrents", dzsite.HttpClient,
-		dzsite.GetSiteConfig().Cookie, dzsite.SiteConfig.UserAgent, nil)
+		dzsite.GetSiteConfig().Cookie, dzsite.SiteConfig.UserAgent, site.GetHttpHeaders(dzsite))
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (dzsite *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error) {
 	threadUrl := regexp.MustCompile(`mod=viewthread&tid=(?P<id>\d+)\b`)
 	if threadUrl.MatchString(torrentUrl) {
 		doc, _, err := util.GetUrlDoc(torrentUrl, dzsite.HttpClient,
-			dzsite.GetSiteConfig().Cookie, dzsite.SiteConfig.UserAgent, nil)
+			dzsite.GetSiteConfig().Cookie, dzsite.SiteConfig.UserAgent, site.GetHttpHeaders(dzsite))
 		if err != nil {
 			return nil, "", fmt.Errorf("failed to get thread doc: %v", err)
 		}

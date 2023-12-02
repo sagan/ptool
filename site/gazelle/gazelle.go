@@ -44,7 +44,7 @@ func (gzsite *Site) GetSiteConfig() *config.SiteConfigStruct {
 
 func (gzsite *Site) GetStatus() (*site.Status, error) {
 	doc, _, err := util.GetUrlDoc(gzsite.SiteConfig.Url+"torrents.php", gzsite.HttpClient,
-		gzsite.GetSiteConfig().Cookie, gzsite.SiteConfig.UserAgent, nil)
+		gzsite.GetSiteConfig().Cookie, gzsite.SiteConfig.UserAgent, site.GetHttpHeaders(gzsite))
 	if err != nil {
 		return nil, err
 	}

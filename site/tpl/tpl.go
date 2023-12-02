@@ -591,34 +591,34 @@ func FindSiteTypesByDomain(domain string) []string {
 	return nil
 }
 
-func GuessSiteByDomain(domain string, defaultSite string) string {
+func GuessSiteByDomain(domain string, defaultSite string) (string, error) {
 	// prefer defaultSite
 	defaultSiteConfig := config.GetSiteConfig(defaultSite)
 	if defaultSiteConfig != nil && config.MatchSite(domain, defaultSiteConfig) {
-		return defaultSiteConfig.Name
+		return defaultSiteConfig.Name, nil
 	}
-	sitename := site.GetConfigSiteNameByDomain(domain)
-	if sitename != "" {
-		return sitename
+	sitename, err := site.GetConfigSiteNameByDomain(domain)
+	if sitename != "" || err != nil {
+		return sitename, err
 	}
 
 	siteTypes := FindSiteTypesByDomain(domain)
 	if defaultSiteConfig != nil && slices.Index(siteTypes, defaultSiteConfig.Type) != -1 {
-		return defaultSite
+		return defaultSite, nil
 	}
 	return site.GetConfigSiteNameByTypes(siteTypes...)
 }
 
-func GuessSiteByTrackers(trackers []string, defaultSite string) string {
+func GuessSiteByTrackers(trackers []string, defaultSite string) (string, error) {
 	for _, tracker := range trackers {
 		domain := util.GetUrlDomain(tracker)
 		if domain == "" {
 			continue
 		}
-		sitename := GuessSiteByDomain(domain, defaultSite)
-		if sitename != "" {
-			return sitename
+		sitename, err := GuessSiteByDomain(domain, defaultSite)
+		if sitename != "" || err != nil {
+			return sitename, err
 		}
 	}
-	return ""
+	return "", nil
 }

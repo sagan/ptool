@@ -104,6 +104,24 @@ func Assign(dst any, src any, excludeFieldIndexes []int) {
 	}
 }
 
+// similar to JavaScript's Object.assign(args[0], args[1], args[2]...), update and return args[0].
+// However, if args[0] is nil, create and return a new map instead; if any other arg is nil, ignore it
+func AssignMap[T1 comparable, T2 any](args ...map[T1]T2) map[T1]T2 {
+	if len(args) == 0 {
+		return nil
+	}
+	result := args[0]
+	for i := 1; i < len(args); i++ {
+		if result == nil && len(args[i]) > 0 {
+			result = map[T1]T2{}
+		}
+		for key, value := range args[i] {
+			result[key] = value
+		}
+	}
+	return result
+}
+
 func Max[T constraints.Ordered](args ...T) T {
 	max := args[0]
 	for _, x := range args {

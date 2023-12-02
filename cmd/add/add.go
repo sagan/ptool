@@ -78,23 +78,27 @@ func add(cmd *cobra.Command, args []string) error {
 		} else {
 			domain := util.GetUrlDomain(torrentId)
 			if domain == "" {
-				fmt.Printf("torrent %s: failed to parse domain", torrentId)
+				fmt.Printf("✕torrent %s: failed to parse domain", torrentId)
+				errorCnt++
 				continue
 			}
 			sitename := ""
 			ok := false
 			if sitename, ok = domainSiteMap[domain]; !ok {
-				domainSiteMap[domain] = tpl.GuessSiteByDomain(domain, defaultSite)
+				domainSiteMap[domain], err = tpl.GuessSiteByDomain(domain, defaultSite)
+				if err != nil {
+					log.Warnf("Failed to find match site for %s: %v", domain, err)
+				}
 				sitename = domainSiteMap[domain]
 			}
 			if sitename == "" {
-				log.Warnf("torrent %s: url does not match any site. will use provided default site", torrentId)
+				log.Warnf("Torrent %s: url does not match any site. will use provided default site", torrentId)
 			} else {
 				siteName = sitename
 			}
 		}
 		if siteName == "" {
-			fmt.Printf("torrent %s: no site found or provided\n", torrentId)
+			fmt.Printf("✕torrent %s: no site found or provided\n", torrentId)
 			errorCnt++
 			continue
 		}
@@ -108,13 +112,13 @@ func add(cmd *cobra.Command, args []string) error {
 		siteInstance := siteInstanceMap[siteName]
 		torrentContent, _, err := siteInstance.DownloadTorrent(torrentId)
 		if err != nil {
-			fmt.Printf("add site %s torrent %s error: failed to get site torrent: %v\n", siteInstance.GetName(), torrentId, err)
+			fmt.Printf("✕add site %s torrent %s error: failed to get site torrent: %v\n", siteInstance.GetName(), torrentId, err)
 			errorCnt++
 			continue
 		}
-		tinfo, err := torrentutil.ParseTorrent(torrentContent, 0)
+		tinfo, err := torrentutil.ParseTorrent(torrentContent, 99)
 		if err != nil {
-			fmt.Printf("add site %s torrent %s error: failed to parse torrent: %v\n", siteInstance.GetName(), torrentId, err)
+			fmt.Printf("✕add site %s torrent %s error: failed to parse torrent: %v\n", siteInstance.GetName(), torrentId, err)
 			errorCnt++
 			continue
 		}
@@ -136,11 +140,11 @@ func add(cmd *cobra.Command, args []string) error {
 		}
 		err = clientInstance.AddTorrent(torrentContent, option, nil)
 		if err != nil {
-			fmt.Printf("add site %s torrent %s error: failed to add torrent to client: %v\n", siteInstance.GetName(), torrentId, err)
+			fmt.Printf("✕add site %s torrent %s error: failed to add torrent to client: %v // %s\n", siteInstance.GetName(), torrentId, err, tinfo.ContentPath)
 			errorCnt++
 			continue
 		}
-		fmt.Printf("add site %s torrent %s success. infoHash=%s\n", siteInstance.GetName(), torrentId, tinfo.InfoHash)
+		fmt.Printf("✓add site %s torrent %s success. infoHash=%s // %s\n", siteInstance.GetName(), torrentId, tinfo.InfoHash, tinfo.ContentPath)
 	}
 	if errorCnt > 0 {
 		return fmt.Errorf("%d errors", errorCnt)

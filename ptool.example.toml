@@ -6,7 +6,11 @@ iyuuToken = "" # iyuu token。用于自动辅种功能
 #hushshell = false # 如果设为 true, 启动 ptool shell 时将不显示欢迎信息 
 #shellMaxSuggestions = 5 # ptool shell 自动补全显示建议数量。设为 0 禁用
 #shellMaxHistory = 500 # ptool shell 命令历史记录保存数量。设为 0 禁用
+#siteNoDefaultHttpHeaders = false # 如果设为 true, 访问站点时禁用默认设置的模仿 Chrome 的 http 请求头
 
+# 自定义访问站点时设置的 http 请求头。如果值设为空，删除对应header
+#[siteHttpHeaders]
+#"Cache-Control" = "no-cache"
 
 # 完整支持 qBittorrent  v4.1+ (推荐使用 qb v4.4+)
 [[clients]]

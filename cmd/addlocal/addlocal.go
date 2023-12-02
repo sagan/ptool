@@ -109,7 +109,10 @@ func addlocal(cmd *cobra.Command, args []string) error {
 			errorCnt++
 			continue
 		}
-		sitename := tpl.GuessSiteByTrackers(tinfo.Trackers, defaultSite)
+		sitename, err := tpl.GuessSiteByTrackers(tinfo.Trackers, defaultSite)
+		if err != nil {
+			log.Warnf("Failed to find match site for %s by trackers: %v", torrentFilename, err)
+		}
 		if addCategoryAuto {
 			if sitename != "" {
 				option.Category = sitename
@@ -132,24 +135,24 @@ func addlocal(cmd *cobra.Command, args []string) error {
 		option.Tags = append(option.Tags, fixedTags...)
 		err = clientInstance.AddTorrent(torrentContent, option, nil)
 		if err != nil {
-			fmt.Printf("✕torrent (%d/%d) %s: failed to add to client (%v)\n", i+1, cntAll, torrentFilename, err)
+			fmt.Printf("✕torrent (%d/%d) %s: failed to add to client (%v) // %s\n", i+1, cntAll, torrentFilename, err, tinfo.ContentPath)
 			errorCnt++
 			continue
 		}
 		if renameAdded {
 			err := os.Rename(torrentFilename, torrentFilename+".added")
 			if err != nil {
-				log.Debugf("Failed to rename successfully added torrent %s to .added extension: %v", torrentFilename, err)
+				log.Debugf("Failed to rename successfully added torrent %s to .added extension: %v // %s", torrentFilename, err, tinfo.ContentPath)
 			}
 		} else if deleteAdded {
 			err := os.Remove(torrentFilename)
 			if err != nil {
-				log.Debugf("Failed to delete successfully added torrent %s: %v", torrentFilename, err)
+				log.Debugf("Failed to delete successfully added torrent %s: %v // %s", torrentFilename, err, tinfo.ContentPath)
 			}
 		}
 		cntAdded++
 		sizeAdded += tinfo.Size
-		fmt.Printf("✓torrent (%d/%d) %s: added to client\n", i+1, cntAll, torrentFilename)
+		fmt.Printf("✓torrent (%d/%d) %s: added to client // %s\n", i+1, cntAll, torrentFilename, tinfo.ContentPath)
 	}
 	fmt.Printf("\nDone. Added torrent (Size/Cnt): %s / %d; ErrorCnt: %d\n", util.BytesSize(float64(sizeAdded)), cntAdded, errorCnt)
 	if errorCnt > 0 {

@@ -32,7 +32,14 @@ var (
 		"Upgrade-Insecure-Requests": "1",
 		"User-Agent":                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
 	}
+	CHROME_HTTP_REQUEST_HEADERS_EMPTY = map[string]string{}
 )
+
+func init() {
+	for key := range CHROME_HTTP_REQUEST_HEADERS {
+		CHROME_HTTP_REQUEST_HEADERS_EMPTY[key] = ""
+	}
+}
 
 func FetchJson(url string, v any, client *http.Client,
 	cookie string, ua string, otherHeaders map[string]string) error {
@@ -68,7 +75,11 @@ func FetchUrl(url string, client *http.Client,
 		req.Header.Set("Cookie", cookie)
 	}
 	for header, value := range otherHeaders {
-		req.Header.Set(header, value)
+		if value != "" {
+			req.Header.Set(header, value)
+		} else {
+			req.Header.Del(header)
+		}
 	}
 	if client == nil {
 		client = http.DefaultClient

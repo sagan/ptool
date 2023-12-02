@@ -58,12 +58,15 @@ func tidyup(cmd *cobra.Command, args []string) error {
 		addTags := []string{}
 		remopveTags := []string{}
 		domain := util.GetUrlDomain(torrent.Tracker)
-		log.Tracef("torrent %s - %s: domain=%s", torrent.InfoHash, torrent.Name, domain)
+		log.Tracef("Torrent %s - %s: domain=%s", torrent.InfoHash, torrent.Name, domain)
 		if domain != "" {
 			sitename := ""
 			ok := false
 			if sitename, ok = domainSiteMap[domain]; !ok {
-				domainSiteMap[domain] = tpl.GuessSiteByDomain(domain, "")
+				domainSiteMap[domain], err = tpl.GuessSiteByDomain(domain, "")
+				if err != nil {
+					log.Warnf("Failed to find match site for %s: %v", domain, err)
+				}
 				sitename = domainSiteMap[domain]
 			}
 			if sitename != "" {

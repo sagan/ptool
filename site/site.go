@@ -203,22 +203,52 @@ func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool, 
 	}
 }
 
-func GetConfigSiteNameByDomain(domain string) string {
+func GetConfigSiteNameByDomain(domain string) (string, error) {
+	var firstMatchSite, lastMatchSite *config.SiteConfigStruct
 	for _, siteConfig := range config.Get().Sites {
 		if config.MatchSite(domain, siteConfig) {
-			return siteConfig.Name
+			firstMatchSite = siteConfig
+			break
 		}
 	}
-	return ""
+	for i := len(config.Get().Sites) - 1; i >= 0; i-- {
+		if config.MatchSite(domain, config.Get().Sites[i]) {
+			lastMatchSite = config.Get().Sites[i]
+			break
+		}
+	}
+	if firstMatchSite != nil {
+		if firstMatchSite == lastMatchSite {
+			return firstMatchSite.GetName(), nil
+		} else {
+			return "", fmt.Errorf("ambiguous result - multiple sites in config match: names of first and last match: %s, %s", firstMatchSite.GetName(), lastMatchSite.GetName())
+		}
+	}
+	return "", nil
 }
 
-func GetConfigSiteNameByTypes(types ...string) string {
+func GetConfigSiteNameByTypes(types ...string) (string, error) {
+	var firstMatchSite, lastMatchSite *config.SiteConfigStruct
 	for _, siteConfig := range config.Get().Sites {
 		if slices.Index(types, siteConfig.Type) != -1 {
-			return siteConfig.GetName()
+			firstMatchSite = siteConfig
+			break
 		}
 	}
-	return ""
+	for i := len(config.Get().Sites) - 1; i >= 0; i-- {
+		if slices.Index(types, config.Get().Sites[i].Type) != -1 {
+			lastMatchSite = config.Get().Sites[i]
+			break
+		}
+	}
+	if firstMatchSite != nil {
+		if firstMatchSite == lastMatchSite {
+			return firstMatchSite.GetName(), nil
+		} else {
+			return "", fmt.Errorf("ambiguous result - multiple sites in config match: names of first and last match: %s, %s", firstMatchSite.GetName(), lastMatchSite.GetName())
+		}
+	}
+	return "", nil
 }
 
 func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, config *config.ConfigStruct) (*http.Client, error) {
@@ -251,6 +281,13 @@ func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, config *config.Co
 	}
 	httpClient.Transport = transport
 	return httpClient, nil
+}
+
+func GetHttpHeaders(siteInstance Site) map[string]string {
+	if config.Get().SiteNoDefaultHttpHeaders || siteInstance.GetSiteConfig().NoDefaultHttpHeaders {
+		return util.AssignMap(nil, util.CHROME_HTTP_REQUEST_HEADERS_EMPTY, config.Get().SiteHttpHeaders, siteInstance.GetSiteConfig().HttpHeaders)
+	}
+	return util.AssignMap(nil, config.Get().SiteHttpHeaders, siteInstance.GetSiteConfig().HttpHeaders)
 }
 
 // general download torrent func

@@ -30,7 +30,7 @@ func (tnsite *Site) syncCsrfToken() error {
 		return nil
 	}
 	doc, _, err := util.GetUrlDoc(tnsite.SiteConfig.Url, tnsite.HttpClient,
-		tnsite.GetSiteConfig().Cookie, tnsite.SiteConfig.UserAgent, nil)
+		tnsite.GetSiteConfig().Cookie, tnsite.SiteConfig.UserAgent, site.GetHttpHeaders(tnsite))
 	if err != nil {
 		return err
 	}

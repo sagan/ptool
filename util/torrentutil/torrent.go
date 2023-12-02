@@ -89,7 +89,10 @@ func (meta *TorrentMeta) Print(name string, showAll bool) {
 	if len(meta.Trackers) > 0 {
 		trackerUrl = meta.Trackers[0]
 	}
-	sitenameStr := tpl.GuessSiteByTrackers(meta.Trackers, "")
+	sitenameStr, err := tpl.GuessSiteByTrackers(meta.Trackers, "")
+	if err != nil {
+		log.Warnf("Failed to find match site for %s by trackers: %v", name, err)
+	}
 	if sitenameStr != "" {
 		sitenameStr = fmt.Sprintf(" (site: %s)", sitenameStr)
 	}
@@ -223,7 +226,8 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash b
 		span.Append(mm)
 	}
 	if checkHash {
-		for i := range iter.N(meta.Info.NumPieces()) {
+		piecesCnt := meta.Info.NumPieces()
+		for i := range iter.N(piecesCnt) {
 			p := meta.Info.Piece(i)
 			hash := sha1.New()
 			_, err := io.Copy(hash, io.NewSectionReader(span, p.Offset(), p.Length()))
@@ -232,9 +236,9 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash b
 			}
 			good := bytes.Equal(hash.Sum(nil), p.Hash().Bytes())
 			if !good {
-				return fmt.Errorf("hash mismatch at piece %d", i)
+				return fmt.Errorf("hash mismatch at piece %d/%d", i, piecesCnt)
 			}
-			log.Tracef("verify-hash %d: %x: %v\n", i, p.Hash(), good)
+			log.Tracef("verify-hash %d/%d: %x: %v\n", i, piecesCnt, p.Hash(), good)
 		}
 	}
 	if contentPath != "" {
