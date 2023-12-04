@@ -9,6 +9,7 @@ import (
 	_ "github.com/sagan/ptool/cmd/batchdl"
 	_ "github.com/sagan/ptool/cmd/brush"
 	_ "github.com/sagan/ptool/cmd/clientctl"
+	_ "github.com/sagan/ptool/cmd/cookiecloud/all"
 	_ "github.com/sagan/ptool/cmd/createcategory"
 	_ "github.com/sagan/ptool/cmd/createtags"
 	_ "github.com/sagan/ptool/cmd/delete"

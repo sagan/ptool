@@ -1,6 +1,8 @@
 package util
 
 import (
+	"reflect"
+
 	"golang.org/x/exp/constraints"
 	"golang.org/x/exp/slices"
 )
@@ -93,4 +95,72 @@ func UniqueSliceFn[TS any, TK comparable](slice []TS, keyFunc func(TS) TK) []TS 
 		}
 	}
 	return list
+}
+
+func MapKeys[T constraints.Ordered, TV any](input map[T]TV) []T {
+	keys := make([]T, 0, len(input))
+	for key := range input {
+		keys = append(keys, key)
+	}
+	slices.Sort(keys)
+	return keys
+}
+
+// from https://stackoverflow.com/questions/23589564/function-for-converting-a-struct-to-map-in-golang .
+func StructToMap(val interface{}, ignoreNoTagFields bool, ignoreEmptyFields bool) map[string]interface{} {
+	//The name of the tag you will use for fields of struct
+	const tagTitle = "yaml"
+
+	var data map[string]interface{} = make(map[string]interface{})
+	varType := reflect.TypeOf(val)
+	if varType.Kind() != reflect.Struct {
+		// Provided value is not an interface, do what you will with that here
+		panic("Not a struct")
+	}
+
+	value := reflect.ValueOf(val)
+	for i := 0; i < varType.NumField(); i++ {
+		if !value.Field(i).CanInterface() {
+			//Skip unexported fields
+			continue
+		}
+		tag, ok := varType.Field(i).Tag.Lookup(tagTitle)
+		var fieldName string
+		if ok && len(tag) > 0 {
+			fieldName = tag
+		} else if ignoreNoTagFields {
+			continue
+		} else {
+			fieldName = varType.Field(i).Name
+		}
+		fieldKind := varType.Field(i).Type.Kind()
+		fieldValue := value.Field(i)
+		if fieldKind != reflect.Struct {
+			if ignoreEmptyFields {
+				if fieldKind == reflect.String && fieldValue.String() == "" {
+					continue
+				}
+				if fieldKind == reflect.Int64 && fieldValue.Int() == 0 {
+					continue
+				}
+				if fieldKind == reflect.Float64 && fieldValue.Float() == 0 {
+					continue
+				}
+				if fieldKind == reflect.Bool && !fieldValue.Bool() {
+					continue
+				}
+				if fieldKind == reflect.Slice && fieldValue.Pointer() == 0 {
+					continue
+				}
+				if fieldKind == reflect.Pointer && fieldValue.Pointer() == 0 {
+					continue
+				}
+			}
+			data[fieldName] = fieldValue.Interface()
+		} else {
+			data[fieldName] = StructToMap(fieldValue.Interface(), ignoreNoTagFields, ignoreEmptyFields)
+		}
+	}
+
+	return data
 }

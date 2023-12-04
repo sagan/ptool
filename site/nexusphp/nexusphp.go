@@ -77,7 +77,7 @@ func (npclient *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Tor
 	searchUrl = strings.Replace(searchUrl, "%s", url.PathEscape(keyword), 1)
 
 	doc, res, err := util.GetUrlDoc(searchUrl, npclient.HttpClient,
-		npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, site.GetHttpHeaders(npclient))
+		npclient.SiteConfig.Cookie, site.GetUa(npclient), site.GetHttpHeaders(npclient))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse site page dom: %v", err)
 	}
@@ -148,7 +148,8 @@ func (npclient *Site) DownloadTorrentById(id string) ([]byte, string, error) {
 
 func (npclient *Site) getDigithash(id string) (string, error) {
 	detailsUrl := npclient.SiteConfig.ParseSiteUrl(fmt.Sprintf("t/%s/", id), false)
-	doc, _, err := util.GetUrlDoc(detailsUrl, npclient.HttpClient, npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, site.GetHttpHeaders(npclient))
+	doc, _, err := util.GetUrlDoc(detailsUrl, npclient.HttpClient,
+		npclient.SiteConfig.Cookie, site.GetUa(npclient), site.GetHttpHeaders(npclient))
 	if err != nil {
 		return "", fmt.Errorf("failed to get torrent detail page: %v", err)
 	}
@@ -231,7 +232,7 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 	pageStr := "page=" + fmt.Sprint(page)
 	now := util.Now()
 	doc, res, error := util.GetUrlDoc(pageUrl+queryString+pageStr, npclient.HttpClient,
-		npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, site.GetHttpHeaders(npclient))
+		npclient.SiteConfig.Cookie, site.GetUa(npclient), site.GetHttpHeaders(npclient))
 	if error != nil {
 		err = fmt.Errorf("failed to fetch torrents page dom: %v", error)
 		return
@@ -260,7 +261,7 @@ labelLastPage:
 		pageStr = "page=" + fmt.Sprint(page)
 		now = util.Now()
 		doc, res, error = util.GetUrlDoc(pageUrl+queryString+pageStr, npclient.HttpClient,
-			npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, site.GetHttpHeaders(npclient))
+			npclient.SiteConfig.Cookie, site.GetUa(npclient), site.GetHttpHeaders(npclient))
 		if error != nil {
 			err = fmt.Errorf("failed to fetch torrents page dom: %v", error)
 			return
@@ -316,7 +317,7 @@ func (npclient *Site) sync() error {
 	}
 	url = npclient.SiteConfig.ParseSiteUrl(url, false)
 	doc, res, err := util.GetUrlDoc(url, npclient.HttpClient,
-		npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, site.GetHttpHeaders(npclient))
+		npclient.SiteConfig.Cookie, site.GetUa(npclient), site.GetHttpHeaders(npclient))
 	if err != nil {
 		return fmt.Errorf("failed to get site page dom: %v", err)
 	}
@@ -401,7 +402,7 @@ func (npclient *Site) syncExtra() error {
 	extraTorrents := []site.Torrent{}
 	for _, extraUrl := range npclient.SiteConfig.TorrentsExtraUrls {
 		doc, res, err := util.GetUrlDoc(npclient.SiteConfig.ParseSiteUrl(extraUrl, false), npclient.HttpClient,
-			npclient.SiteConfig.Cookie, npclient.SiteConfig.UserAgent, site.GetHttpHeaders(npclient))
+			npclient.SiteConfig.Cookie, site.GetUa(npclient), site.GetHttpHeaders(npclient))
 		if err != nil {
 			log.Errorf("failed to parse site page dom: %v", err)
 			continue
@@ -425,9 +426,9 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 	if siteConfig.Cookie == "" {
 		return nil, fmt.Errorf("no cookie provided")
 	}
-	location, err := time.LoadLocation(siteConfig.Timezone)
+	location, err := time.LoadLocation(siteConfig.GetTimezone())
 	if err != nil {
-		return nil, fmt.Errorf("invalid site timezone %s: %v", siteConfig.Timezone, err)
+		return nil, fmt.Errorf("invalid site timezone %s: %v", siteConfig.GetTimezone(), err)
 	}
 	httpClient, err := site.CreateSiteHttpClient(siteConfig, config)
 	if err != nil {

@@ -30,7 +30,7 @@ func (tnsite *Site) syncCsrfToken() error {
 		return nil
 	}
 	doc, _, err := util.GetUrlDoc(tnsite.SiteConfig.Url, tnsite.HttpClient,
-		tnsite.GetSiteConfig().Cookie, tnsite.SiteConfig.UserAgent, site.GetHttpHeaders(tnsite))
+		tnsite.GetSiteConfig().Cookie, site.GetUa(tnsite), site.GetHttpHeaders(tnsite))
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (tnsite *Site) GetStatus() (*site.Status, error) {
 		"x-csrf-token": tnsite.csrfToken,
 	}
 	err = util.FetchJson(apiUrl, data, tnsite.HttpClient,
-		tnsite.SiteConfig.Cookie, tnsite.SiteConfig.UserAgent, headers)
+		tnsite.SiteConfig.Cookie, site.GetUa(tnsite), headers)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get use status: %v", err)
 	}
@@ -119,9 +119,9 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 	if siteConfig.Cookie == "" {
 		return nil, fmt.Errorf("cann't create site: no cookie provided")
 	}
-	location, err := time.LoadLocation(siteConfig.Timezone)
+	location, err := time.LoadLocation(siteConfig.GetTimezone())
 	if err != nil {
-		return nil, fmt.Errorf("invalid site timezone %s: %v", siteConfig.Timezone, err)
+		return nil, fmt.Errorf("invalid site timezone %s: %v", siteConfig.GetTimezone(), err)
 	}
 	httpClient, err := site.CreateSiteHttpClient(siteConfig, config)
 	if err != nil {

@@ -257,6 +257,8 @@ func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, config *config.Co
 	// ja3 = utils.CHROME_JA3 // there are still some SERIOUS problems unsolved for now.
 	if siteConfig.Ja3 != "" {
 		ja3 = siteConfig.Ja3
+	} else if config.SiteJa3 != "" {
+		ja3 = config.SiteJa3
 	}
 	var transport *http.Transport
 	var err error
@@ -269,10 +271,14 @@ func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, config *config.Co
 	} else {
 		transport = &http.Transport{}
 	}
-	if siteConfig.Proxy != "" && siteConfig.Proxy != "none" {
-		proxyUrl, err := url.Parse(siteConfig.Proxy)
+	proxy := config.SiteProxy
+	if siteConfig.Proxy != "" {
+		proxy = siteConfig.Proxy
+	}
+	if proxy != "" && proxy != "none" {
+		proxyUrl, err := url.Parse(proxy)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse siteProxy %s: %v", siteConfig.Proxy, err)
+			return nil, fmt.Errorf("failed to parse siteProxy %s: %v", proxy, err)
 		}
 		transport.Proxy = http.ProxyURL(proxyUrl)
 	}
@@ -283,17 +289,33 @@ func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, config *config.Co
 	return httpClient, nil
 }
 
-func GetHttpHeaders(siteInstance Site) map[string]string {
-	if config.Get().SiteNoDefaultHttpHeaders || siteInstance.GetSiteConfig().NoDefaultHttpHeaders {
-		return util.AssignMap(nil, util.CHROME_HTTP_REQUEST_HEADERS_EMPTY, config.Get().SiteHttpHeaders, siteInstance.GetSiteConfig().HttpHeaders)
+// return site ua from siteConfig and globalConfig
+func GetUa(siteInstance Site) string {
+	ua := siteInstance.GetSiteConfig().UserAgent
+	if ua == "" {
+		ua = config.Get().SiteUserAgent
 	}
-	return util.AssignMap(nil, config.Get().SiteHttpHeaders, siteInstance.GetSiteConfig().HttpHeaders)
+	return ua
+}
+
+func GetHttpHeaders(siteInstance Site) map[string]string {
+	var globalHttpHeaders, siteHttpHeaders map[string]string
+	if config.Get().SiteHttpHeaders != nil {
+		globalHttpHeaders = *config.Get().SiteHttpHeaders
+	}
+	if siteInstance.GetSiteConfig().HttpHeaders != nil {
+		siteHttpHeaders = *siteInstance.GetSiteConfig().HttpHeaders
+	}
+	if config.Get().SiteNoDefaultHttpHeaders || siteInstance.GetSiteConfig().NoDefaultHttpHeaders {
+		return util.AssignMap(nil, util.CHROME_HTTP_REQUEST_HEADERS_EMPTY, globalHttpHeaders, siteHttpHeaders)
+	}
+	return util.AssignMap(nil, globalHttpHeaders, siteHttpHeaders)
 }
 
 // general download torrent func
 func DownloadTorrentByUrl(siteInstance Site, httpClient *http.Client, torrentUrl string, torrentId string) ([]byte, string, error) {
 	res, header, err := util.FetchUrl(torrentUrl, httpClient,
-		siteInstance.GetSiteConfig().Cookie, siteInstance.GetSiteConfig().UserAgent, nil)
+		siteInstance.GetSiteConfig().Cookie, GetUa(siteInstance), nil)
 	if err != nil {
 		return nil, "", fmt.Errorf("can not fetch torrents from site: %v", err)
 	}

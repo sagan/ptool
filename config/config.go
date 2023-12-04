@@ -35,6 +35,15 @@ const (
 	DEFAULT_SITE_FLOW_CONTROL_INTERVAL              = int64(3)
 )
 
+type CookiecloudConfigStruct struct {
+	Name     string   `yaml:"name"`
+	Disabled bool     `yaml:"disabled"`
+	Server   string   `yaml:"server"` // CookieCloud API Server Url (with API_ROOT, if exists)
+	Uuid     string   `yaml:"uuid"`
+	Password string   `yaml:"password"`
+	Sites    []string `yaml:"sites"`
+}
+
 type GroupConfigStruct struct {
 	Name  string   `yaml:"name"`
 	Sites []string `yaml:"sites"`
@@ -61,104 +70,116 @@ type ClientConfigStruct struct {
 }
 
 type SiteConfigStruct struct {
-	Type                           string            `yaml:"type"`
-	Name                           string            `yaml:"name"`
-	Aliases                        []string          // for internal use only
-	Comment                        string            `yaml:"comment"`
-	Disabled                       bool              `yaml:"disabled"`
-	Hidden                         bool              `yaml:"hidden"` // exclude from default groups (like "_all")
-	Url                            string            `yaml:"url"`
-	Domains                        []string          `yaml:"domains"` // other site domains (do not include subdomain part)
-	TorrentsUrl                    string            `yaml:"torrentsUrl"`
-	SearchUrl                      string            `yaml:"searchUrl"`
-	TorrentsExtraUrls              []string          `yaml:"torrentsExtraUrls"`
-	Cookie                         string            `yaml:"cookie"`
-	UserAgent                      string            `yaml:"userAgent"`
-	HttpHeaders                    map[string]string `yaml:"httpHeaders"`
-	NoDefaultHttpHeaders           bool              `yaml:"noDefaultHttpHeaders"`
-	Ja3                            string            `yaml:"ja3"`
-	Proxy                          string            `yaml:"proxy"`
-	Insecure                       bool              `yaml:"insecure"` // 访问站点时跳过TLS证书安全校验
-	TorrentUploadSpeedLimit        string            `yaml:"torrentUploadSpeedLimit"`
-	GlobalHnR                      bool              `yaml:"globalHnR"`
-	Timezone                       string            `yaml:"timezone"`
-	BrushTorrentMinSizeLimit       string            `yaml:"brushTorrentMinSizeLimit"`
-	BrushTorrentMaxSizeLimit       string            `yaml:"brushTorrentMaxSizeLimit"`
-	BrushAllowNoneFree             bool              `yaml:"brushAllowNoneFree"`
-	BrushAllowPaid                 bool              `yaml:"brushAllowPaid"`
-	BrushAllowHr                   bool              `yaml:"brushAllowHr"`
-	BrushAllowZeroSeeders          bool              `yaml:"brushAllowZeroSeeders"`
-	BrushExcludes                  []string          `yaml:"brushExcludes"`
-	SelectorTorrentsListHeader     string            `yaml:"selectorTorrentsListHeader"`
-	SelectorTorrentsList           string            `yaml:"selectorTorrentsList"`
-	SelectorTorrentBlock           string            `yaml:"selectorTorrentBlock"` // dom block of a torrent in list
-	SelectorTorrent                string            `yaml:"selectorTorrent"`
-	SelectorTorrentDownloadLink    string            `yaml:"selectorTorrentDownloadLink"`
-	SelectorTorrentDetailsLink     string            `yaml:"selectorTorrentDetailsLink"`
-	SelectorTorrentTime            string            `yaml:"selectorTorrentTime"`
-	SelectorTorrentSeeders         string            `yaml:"selectorTorrentSeeders"`
-	SelectorTorrentLeechers        string            `yaml:"selectorTorrentLeechers"`
-	SelectorTorrentSnatched        string            `yaml:"selectorTorrentSnatched"`
-	SelectorTorrentSize            string            `yaml:"selectorTorrentSize"`
-	SelectorTorrentProcessBar      string            `yaml:"selectorTorrentProcessBar"`
-	SelectorTorrentFree            string            `yaml:"SelectorTorrentFree"`
-	SelectorTorrentNoTraffic       string            `yaml:"selectorTorrentNoTraffic"`
-	SelectorTorrentNeutral         string            `yaml:"selectorTorrentNeutral"`
-	SelectorTorrentHnR             string            `yaml:"selectorTorrentHnR"`
-	SelectorTorrentPaid            string            `yaml:"selectorTorrentPaid"`
-	SelectorTorrentDiscountEndTime string            `yaml:"selectorTorrentDiscountEndTime"`
-	SelectorUserInfo               string            `yaml:"selectorUserInfo"`
-	SelectorUserInfoUserName       string            `yaml:"selectorUserInfoUserName"`
-	SelectorUserInfoUploaded       string            `yaml:"selectorUserInfoUploaded"`
-	SelectorUserInfoDownloaded     string            `yaml:"selectorUserInfoDownloaded"`
-	TorrentDownloadUrl             string            `yaml:"torrentDownloadUrl"` // use {id} placeholders in url
-	TorrentDownloadUrlPrefix       string            `yaml:"torrentDownloadUrlPrefix"`
-	Passkey                        string            `yaml:"passkey"`
-	UseCuhash                      bool              `yaml:"useCuhash"`    // hdcity 使用机制。种子下载地址里必须有cuhash参数。
-	UseDigitHash                   bool              `yaml:"useDigitHash"` // ttg 使用机制。种子下载地址末段必须有4位数字校验码或Passkey参数(即使有 Cookie)。
-	TorrentUrlIdRegexp             string            `yaml:"torrentUrlIdRegexp"`
-	FlowControlInterval            int64             `yaml:"flowControlInterval"` // 暂定名。两次请求种子列表页间隔时间(秒)
-	NexusphpNoLetDown              bool              `yaml:"nexusphpNoLetDown"`
+	Type                           string             `yaml:"type"`
+	Name                           string             `yaml:"name"`
+	Aliases                        []string           // for internal use only
+	Comment                        string             `yaml:"comment"`
+	Disabled                       bool               `yaml:"disabled"`
+	Hidden                         bool               `yaml:"hidden"` // exclude from default groups (like "_all")
+	Url                            string             `yaml:"url"`
+	Domains                        []string           `yaml:"domains"` // other site domains (do not include subdomain part)
+	TorrentsUrl                    string             `yaml:"torrentsUrl"`
+	SearchUrl                      string             `yaml:"searchUrl"`
+	TorrentsExtraUrls              []string           `yaml:"torrentsExtraUrls"`
+	Cookie                         string             `yaml:"cookie"`
+	UserAgent                      string             `yaml:"userAgent"`
+	HttpHeaders                    *map[string]string `yaml:"httpHeaders"`
+	NoDefaultHttpHeaders           bool               `yaml:"noDefaultHttpHeaders"`
+	Ja3                            string             `yaml:"ja3"`
+	Proxy                          string             `yaml:"proxy"`
+	Insecure                       bool               `yaml:"insecure"` // 访问站点时跳过TLS证书安全校验
+	TorrentUploadSpeedLimit        string             `yaml:"torrentUploadSpeedLimit"`
+	GlobalHnR                      bool               `yaml:"globalHnR"`
+	Timezone                       string             `yaml:"timezone"`
+	BrushTorrentMinSizeLimit       string             `yaml:"brushTorrentMinSizeLimit"`
+	BrushTorrentMaxSizeLimit       string             `yaml:"brushTorrentMaxSizeLimit"`
+	BrushAllowNoneFree             bool               `yaml:"brushAllowNoneFree"`
+	BrushAllowPaid                 bool               `yaml:"brushAllowPaid"`
+	BrushAllowHr                   bool               `yaml:"brushAllowHr"`
+	BrushAllowZeroSeeders          bool               `yaml:"brushAllowZeroSeeders"`
+	BrushExcludes                  []string           `yaml:"brushExcludes"`
+	SelectorTorrentsListHeader     string             `yaml:"selectorTorrentsListHeader"`
+	SelectorTorrentsList           string             `yaml:"selectorTorrentsList"`
+	SelectorTorrentBlock           string             `yaml:"selectorTorrentBlock"` // dom block of a torrent in list
+	SelectorTorrent                string             `yaml:"selectorTorrent"`
+	SelectorTorrentDownloadLink    string             `yaml:"selectorTorrentDownloadLink"`
+	SelectorTorrentDetailsLink     string             `yaml:"selectorTorrentDetailsLink"`
+	SelectorTorrentTime            string             `yaml:"selectorTorrentTime"`
+	SelectorTorrentSeeders         string             `yaml:"selectorTorrentSeeders"`
+	SelectorTorrentLeechers        string             `yaml:"selectorTorrentLeechers"`
+	SelectorTorrentSnatched        string             `yaml:"selectorTorrentSnatched"`
+	SelectorTorrentSize            string             `yaml:"selectorTorrentSize"`
+	SelectorTorrentProcessBar      string             `yaml:"selectorTorrentProcessBar"`
+	SelectorTorrentFree            string             `yaml:"SelectorTorrentFree"`
+	SelectorTorrentNoTraffic       string             `yaml:"selectorTorrentNoTraffic"`
+	SelectorTorrentNeutral         string             `yaml:"selectorTorrentNeutral"`
+	SelectorTorrentHnR             string             `yaml:"selectorTorrentHnR"`
+	SelectorTorrentPaid            string             `yaml:"selectorTorrentPaid"`
+	SelectorTorrentDiscountEndTime string             `yaml:"selectorTorrentDiscountEndTime"`
+	SelectorUserInfo               string             `yaml:"selectorUserInfo"`
+	SelectorUserInfoUserName       string             `yaml:"selectorUserInfoUserName"`
+	SelectorUserInfoUploaded       string             `yaml:"selectorUserInfoUploaded"`
+	SelectorUserInfoDownloaded     string             `yaml:"selectorUserInfoDownloaded"`
+	TorrentDownloadUrl             string             `yaml:"torrentDownloadUrl"` // use {id} placeholders in url
+	TorrentDownloadUrlPrefix       string             `yaml:"torrentDownloadUrlPrefix"`
+	Passkey                        string             `yaml:"passkey"`
+	UseCuhash                      bool               `yaml:"useCuhash"`    // hdcity 使用机制。种子下载地址里必须有cuhash参数。
+	UseDigitHash                   bool               `yaml:"useDigitHash"` // ttg 使用机制。种子下载地址末段必须有4位数字校验码或Passkey参数(即使有 Cookie)。
+	TorrentUrlIdRegexp             string             `yaml:"torrentUrlIdRegexp"`
+	FlowControlInterval            int64              `yaml:"flowControlInterval"` // 暂定名。两次请求种子列表页间隔时间(秒)
+	NexusphpNoLetDown              bool               `yaml:"nexusphpNoLetDown"`
 	TorrentUploadSpeedLimitValue   int64
 	BrushTorrentMinSizeLimitValue  int64
 	BrushTorrentMaxSizeLimitValue  int64
 }
 
 type ConfigStruct struct {
-	Hushshell                bool                  `yaml:"hushshell"`
-	ShellMaxSuggestions      int64                 `yaml:"shellMaxSuggestions"`
-	ShellMaxHistory          int64                 `yaml:"shellMaxHistory"`
-	IyuuToken                string                `yaml:"iyuuToken"`
-	SiteProxy                string                `yaml:"siteProxy"`
-	SiteUserAgent            string                `yaml:"siteUserAgent"`
-	SiteNoDefaultHttpHeaders bool                  `yaml:"siteNoDefaultHttpHeaders"`
-	SiteHttpHeaders          map[string]string     `yaml:"siteHttpHeaders"`
-	SiteJa3                  string                `yaml:"siteJa3"`
-	BrushEnableStats         bool                  `yaml:"brushEnableStats"`
-	Clients                  []*ClientConfigStruct `yaml:"clients"`
-	Sites                    []*SiteConfigStruct   `yaml:"sites"`
-	Groups                   []*GroupConfigStruct  `yaml:"groups"`
+	Hushshell                bool                       `yaml:"hushshell"`
+	ShellMaxSuggestions      int64                      `yaml:"shellMaxSuggestions"`
+	ShellMaxHistory          int64                      `yaml:"shellMaxHistory"`
+	IyuuToken                string                     `yaml:"iyuuToken"`
+	SiteProxy                string                     `yaml:"siteProxy"`
+	SiteUserAgent            string                     `yaml:"siteUserAgent"`
+	SiteNoDefaultHttpHeaders bool                       `yaml:"siteNoDefaultHttpHeaders"`
+	SiteHttpHeaders          *map[string]string         `yaml:"siteHttpHeaders"`
+	SiteJa3                  string                     `yaml:"siteJa3"`
+	BrushEnableStats         bool                       `yaml:"brushEnableStats"`
+	Clients                  []*ClientConfigStruct      `yaml:"clients"`
+	Sites                    []*SiteConfigStruct        `yaml:"sites"`
+	Groups                   []*GroupConfigStruct       `yaml:"groups"`
+	Cookieclouds             []*CookiecloudConfigStruct `yaml:"cookieclouds"`
 }
 
 var (
-	VerboseLevel                   = 0
-	InShell                        = false
-	Initialized                    = false
-	ConfigDir                      = "" // "/root/.config/ptool"
-	ConfigFile                     = "" // "ptool.toml"
-	ConfigName                     = "" // "ptool"
-	ConfigType                     = "" // "toml"
-	LockFile                       = ""
-	LockOrExit                     = false
-	Fork                           = false
-	configData       *ConfigStruct = &ConfigStruct{}
-	clientsConfigMap               = map[string]*ClientConfigStruct{}
-	sitesConfigMap                 = map[string]*SiteConfigStruct{}
-	groupsConfigMap                = map[string]*GroupConfigStruct{}
-	once             sync.Once
+	VerboseLevel                        = 0
+	InShell                             = false
+	Initialized                         = false
+	ConfigDir                           = "" // "/root/.config/ptool"
+	ConfigFile                          = "" // "ptool.toml"
+	ConfigName                          = "" // "ptool"
+	ConfigType                          = "" // "toml"
+	LockFile                            = ""
+	LockOrExit                          = false
+	Fork                                = false
+	configData            *ConfigStruct = &ConfigStruct{}
+	clientsConfigMap                    = map[string]*ClientConfigStruct{}
+	sitesConfigMap                      = map[string]*SiteConfigStruct{}
+	groupsConfigMap                     = map[string]*GroupConfigStruct{}
+	cookiecloudsConfigMap               = map[string]*CookiecloudConfigStruct{}
+	once                  sync.Once
 )
 
 func init() {
+}
+
+func SetSites(sites []*SiteConfigStruct) {
+	newsites := []map[string]any{}
+	for i := range sites {
+		newsite := util.StructToMap(*sites[i], true, true)
+		newsites = append(newsites, newsite)
+	}
+	viper.Set("sites", newsites)
+	viper.WriteConfig()
 }
 
 func Get() *ConfigStruct {
@@ -230,30 +251,12 @@ func Get() *ConfigStruct {
 			}
 			site.TorrentUploadSpeedLimitValue = v
 
-			if site.Name == "" {
-				site.Name = site.Type
-			}
-
-			if site.UserAgent == "" {
-				site.UserAgent = configData.SiteUserAgent
-			}
-			if site.Proxy == "" {
-				site.Proxy = configData.SiteProxy
-			}
-			if site.Ja3 == "" {
-				site.Ja3 = configData.SiteJa3
-			}
-
 			if site.Url != "" {
 				urlObj, err := url.Parse(site.Url)
 				if err != nil {
-					log.Fatalf("Failed to parse site %s url config: %v", site.Name, err)
+					log.Fatalf("Failed to parse site %s url config: %v", site.GetName(), err)
 				}
 				site.Url = urlObj.String()
-			}
-
-			if site.Timezone == "" {
-				site.Timezone = DEFAULT_SITE_TIMEZONE
 			}
 
 			v, err = util.RAMInBytes(site.BrushTorrentMinSizeLimit)
@@ -275,6 +278,11 @@ func Get() *ConfigStruct {
 				log.Fatalf("Invalid config file: group name can not be empty")
 			}
 			groupsConfigMap[group.Name] = group
+		}
+		for _, cookiecloud := range configData.Cookieclouds {
+			if cookiecloud.Name != "" {
+				cookiecloudsConfigMap[cookiecloud.Name] = cookiecloud
+			}
 		}
 		configData.Clients = util.Filter(configData.Clients, func(c *ClientConfigStruct) bool {
 			return !c.Disabled
@@ -308,6 +316,14 @@ func GetGroupConfig(name string) *GroupConfigStruct {
 		return nil
 	}
 	return groupsConfigMap[name]
+}
+
+func GetCookiecloudConfig(name string) *CookiecloudConfigStruct {
+	Get()
+	if name == "" {
+		return nil
+	}
+	return cookiecloudsConfigMap[name]
 }
 
 // if name is a group, return it's sites, otherwise return nil
@@ -354,6 +370,14 @@ func (siteConfig *SiteConfigStruct) GetName() string {
 		id = siteConfig.Type
 	}
 	return id
+}
+
+func (siteConfig *SiteConfigStruct) GetTimezone() string {
+	tz := siteConfig.Timezone
+	if tz == "" {
+		tz = DEFAULT_SITE_TIMEZONE
+	}
+	return tz
 }
 
 // parse a site internal url (eg. special.php), return absolute url

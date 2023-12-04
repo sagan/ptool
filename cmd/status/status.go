@@ -77,7 +77,7 @@ func status(cmd *cobra.Command, args []string) error {
 				if site.Disabled || site.Hidden {
 					continue
 				}
-				names = append(names, site.Name)
+				names = append(names, site.GetName())
 			}
 		}
 	}

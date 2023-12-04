@@ -595,7 +595,7 @@ func GuessSiteByDomain(domain string, defaultSite string) (string, error) {
 	// prefer defaultSite
 	defaultSiteConfig := config.GetSiteConfig(defaultSite)
 	if defaultSiteConfig != nil && config.MatchSite(domain, defaultSiteConfig) {
-		return defaultSiteConfig.Name, nil
+		return defaultSiteConfig.GetName(), nil
 	}
 	sitename, err := site.GetConfigSiteNameByDomain(domain)
 	if sitename != "" || err != nil {

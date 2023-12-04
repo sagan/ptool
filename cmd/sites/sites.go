@@ -33,7 +33,7 @@ func sites(cmd *cobra.Command, args []string) error {
 	fmt.Printf("%-15s  %-15s  %-30s  %10s  %s\n", "Type", "Aliases", "Url", "Schema", "Comment")
 	for _, name := range tpl.SITENAMES {
 		siteInfo := tpl.SITES[name]
-		if filter != "" && (!util.ContainsI(siteInfo.Name, filter) &&
+		if filter != "" && (!util.ContainsI(siteInfo.GetName(), filter) &&
 			!util.ContainsI(siteInfo.Url, filter) && !util.ContainsI(siteInfo.Comment, filter)) {
 			continue
 		}

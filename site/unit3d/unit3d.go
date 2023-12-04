@@ -43,7 +43,7 @@ func (usite *Site) GetSiteConfig() *config.SiteConfigStruct {
 
 func (usite *Site) GetStatus() (*site.Status, error) {
 	doc, _, err := util.GetUrlDoc(usite.SiteConfig.Url+"torrents", usite.HttpClient,
-		usite.GetSiteConfig().Cookie, usite.SiteConfig.UserAgent, site.GetHttpHeaders(usite))
+		usite.GetSiteConfig().Cookie, site.GetUa(usite), site.GetHttpHeaders(usite))
 	if err != nil {
 		return nil, err
 	}
@@ -115,9 +115,9 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 	if siteConfig.Cookie == "" {
 		return nil, fmt.Errorf("cann't create site: no cookie provided")
 	}
-	location, err := time.LoadLocation(siteConfig.Timezone)
+	location, err := time.LoadLocation(siteConfig.GetTimezone())
 	if err != nil {
-		return nil, fmt.Errorf("invalid site timezone %s: %v", siteConfig.Timezone, err)
+		return nil, fmt.Errorf("invalid site timezone %s: %v", siteConfig.GetTimezone(), err)
 	}
 	httpClient, err := site.CreateSiteHttpClient(siteConfig, config)
 	if err != nil {
