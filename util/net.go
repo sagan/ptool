@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 
@@ -84,9 +85,12 @@ func FetchUrl(url string, client *http.Client,
 	if client == nil {
 		client = http.DefaultClient
 	}
-	res, error := client.Do(req)
-	if error != nil {
-		return nil, nil, fmt.Errorf("failed to fetch url: %v", error)
+	res, err := client.Do(req)
+	if err != nil {
+		if _, ok := err.(net.Error); ok {
+			return nil, nil, fmt.Errorf("failed to fetch url: <network error>: %v", err)
+		}
+		return nil, nil, fmt.Errorf("failed to fetch url: %v", err)
 	}
 	log.Tracef("FetchUrl response status=%d", res.StatusCode)
 	if res.StatusCode != 200 {

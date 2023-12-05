@@ -39,6 +39,17 @@ username = "admin"
 password = "123456"
 
 
+# 配置 CookieCloud ( https://github.com/easychen/CookieCloud ) 后，可以从服务器同步站点 cookies 或导入站点
+# 可以配置任意多个 CookieCloud 服务器信息
+# 如果想要让某个 CookieCloud 服务器信息仅用于同步特定站点 cookies，加上 sites = ["sitename"] 这行配置
+# 请参考 "cookiecloud" 命令帮助。同步站点 cookies 或导入站点会更新 ptool.toml 配置文件（已有的注释信息会丢失）
+[[cookieclouds]]
+#name = "" # 名称可选
+server = "https://cookiecloud.example.com"
+uuid = "uuid"
+password = "password"
+
+
 [[sites]]
 type = "mteam"
 cookie = "cookie_here"

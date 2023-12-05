@@ -1,10 +1,14 @@
 package config
 
 import (
+	"fmt"
 	"net/url"
+	"path"
+	"slices"
 	"strings"
 	"sync"
 
+	"github.com/gofrs/flock"
 	"github.com/jpillora/go-tld"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -41,6 +45,7 @@ type CookiecloudConfigStruct struct {
 	Server   string   `yaml:"server"` // CookieCloud API Server Url (with API_ROOT, if exists)
 	Uuid     string   `yaml:"uuid"`
 	Password string   `yaml:"password"`
+	Proxy    string   `yaml:"proxy"`
 	Sites    []string `yaml:"sites"`
 }
 
@@ -172,14 +177,43 @@ var (
 func init() {
 }
 
-func SetSites(sites []*SiteConfigStruct) {
+// Update configed sites in place, merge the provided (updated) sites with existing config.
+func UpdateSites(updatesites []*SiteConfigStruct) {
+	if len(updatesites) == 0 {
+		return
+	}
+	allsites := Get().Sites
+	for _, updatesite := range updatesites {
+		index := slices.IndexFunc(allsites, func(scs *SiteConfigStruct) bool {
+			return scs.GetName() == updatesite.GetName()
+		})
+		if index != -1 {
+			util.Assign(allsites[index], updatesite, nil)
+		} else {
+			allsites = append(allsites, updatesite)
+		}
+	}
+	configData.Sites = allsites
+}
+
+// Re-write the whole config file using memory data.
+// Currently, only sites will be overrided.
+// Due to technical limitations, all existing comments will be LOST.
+// For now, new config data will NOT take effect for current ptool process.
+func Set() error {
+	lock := flock.New(path.Join(ConfigDir, "ptool.lock"))
+	if ok, err := lock.TryLock(); err != nil || !ok {
+		return fmt.Errorf("unable to lock config file: err=%v", err)
+	}
+	defer lock.Unlock()
+	sites := Get().Sites
 	newsites := []map[string]any{}
 	for i := range sites {
 		newsite := util.StructToMap(*sites[i], true, true)
 		newsites = append(newsites, newsite)
 	}
 	viper.Set("sites", newsites)
-	viper.WriteConfig()
+	return viper.WriteConfig()
 }
 
 func Get() *ConfigStruct {

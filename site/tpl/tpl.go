@@ -102,8 +102,8 @@ var (
 		"dicmusic": {
 			Type:    "gazelle",
 			Aliases: []string{"dic"},
-			Domains: []string{"dicmusic.com", "52dic.vip"},
-			Url:     "https://dicmusic.club/",
+			Domains: []string{"dicmusic.club", "52dic.vip"},
+			Url:     "https://dicmusic.com/",
 			Comment: "海豚",
 		},
 		"discfan": {
