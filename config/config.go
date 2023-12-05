@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/url"
 	"path"
-	"slices"
 	"strings"
 	"sync"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/jpillora/go-tld"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"golang.org/x/exp/slices"
 
 	"github.com/sagan/ptool/util"
 )
