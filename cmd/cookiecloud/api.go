@@ -73,11 +73,11 @@ func GetCookiecloudData(server string, uuid string, password string, proxy strin
 	return cookiecloudData, nil
 }
 
-func (cookiecloudData *CookiecloudData) GetEffectiveCookie(urlOrHost string) (string, error) {
-	hostname := ""
+func (cookiecloudData *CookiecloudData) GetEffectiveCookie(urlOrDomain string) (string, error) {
+	hostname := urlOrDomain
 	path := "/"
-	if util.IsUrl(urlOrHost) {
-		urlObj, err := url.Parse(urlOrHost)
+	if util.IsUrl(urlOrDomain) {
+		urlObj, err := url.Parse(urlOrDomain)
 		if err != nil {
 			return "", fmt.Errorf("arg is not a valid url: %v", err)
 		}
