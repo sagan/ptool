@@ -131,7 +131,8 @@ func isTorrentStalled(torrent *client.Torrent) bool {
  *   * Simply limiting downloading speed (to a very low tier) will also drop uploading speed to the same level
  *   * Consider removing this behavior
  * Add new torrents to client when server uploading and downloading bandwidth is somewhat idle AND there is SOME free disk space
- *
+ * Also：
+ *   * Use the current seeders / leechers info of torrent when make decisions
  */
 func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTorrents []site.Torrent,
 	siteOption *BrushSiteOptionStruct, clientOption *BrushClientOptionStruct) (result *AlgorithmResult) {

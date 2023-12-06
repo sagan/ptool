@@ -39,7 +39,7 @@ func status(cmd *cobra.Command, args []string) error {
 				util.ParseUrlHostname(profile.Server), profile.Uuid, err)
 			cntError++
 		} else {
-			fmt.Printf("✓cookiecloud server %s (uuid %s) test ok: %d site cookies found\n",
+			fmt.Printf("✓cookiecloud server %s (uuid %s) test ok: cookies of %d domains found\n",
 				util.ParseUrlHostname(profile.Server), profile.Uuid, len(data.Cookie_data))
 		}
 	}

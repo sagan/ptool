@@ -93,10 +93,7 @@ func delete(cmd *cobra.Command, args []string) error {
 	if !force {
 		client.PrintTorrents(torrents, "", 1)
 		fmt.Printf("\n")
-		fmt.Printf("Above %d torrents will be deteled, are you sure? (yes/no): ", len(torrents))
-		input := ""
-		fmt.Scanf("%s", &input)
-		if input != "yes" {
+		if !util.AskYesNoConfirm(fmt.Sprintf("Above %d torrents will be deteled", len(torrents))) {
 			return fmt.Errorf("abort")
 		}
 	}

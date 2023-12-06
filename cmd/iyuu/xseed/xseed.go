@@ -11,6 +11,8 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/sagan/ptool/client"
+	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/cmd/common"
 	"github.com/sagan/ptool/cmd/iyuu"
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
@@ -63,7 +65,7 @@ func init() {
 	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Set tags of added xseed torrent (comma-separated)")
 	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "1GiB", "Torrents with size smaller than (<) this value will NOT be xseeded. -1 == no limit")
 	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1", "Torrents with size larger than (>) this value will NOT be xseeded. -1 == no limit")
-	command.Flags().StringVarP(&iyuuRequestServer, "request-server", "", "auto", "Whether send request to iyuu server to update local xseed db. Possible values: auto|yes|no")
+	cmd.AddEnumFlagP(command, &iyuuRequestServer, "request-server", "", common.YesNoAutoFlag("Whether or not send request to iyuu server to update local xseed db"))
 	iyuu.Command.AddCommand(command)
 }
 
@@ -93,9 +95,6 @@ func xseed(cmd *cobra.Command, args []string) error {
 	}
 	minTorrentSize, _ := util.RAMInBytes(minTorrentSizeStr)
 	maxTorrentSize, _ := util.RAMInBytes(maxTorrentSizeStr)
-	if iyuuRequestServer != "auto" && iyuuRequestServer != "yes" && iyuuRequestServer != "no" {
-		return fmt.Errorf("invalid --request-server flag value %s", iyuuRequestServer)
-	}
 	filter = strings.ToLower(filter)
 	var fixedTags []string
 	if addTags != "" {

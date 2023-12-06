@@ -11,6 +11,11 @@ import (
 	runewidth "github.com/mattn/go-runewidth"
 )
 
+var (
+	// It's far from strict for now
+	hostnameRegex = regexp.MustCompile(`^([a-zA-Z0-9][-a-zA-Z0-9]*\.)+([a-zA-Z0-9][-a-zA-Z0-9]*)$`)
+)
+
 func Capitalize(str string) string {
 	if len(str) == 0 {
 		return str
@@ -27,6 +32,10 @@ func ContainsI(str string, substr string) bool {
 
 func IsUrl(str string) bool {
 	return strings.HasPrefix(str, "http://") || strings.HasPrefix(str, "https://")
+}
+
+func IsHostname(str string) bool {
+	return hostnameRegex.MatchString(str)
 }
 
 func IsHexString(str string, minLength int) bool {

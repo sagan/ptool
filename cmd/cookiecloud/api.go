@@ -13,10 +13,9 @@ import (
 )
 
 type Ccdata_struct struct {
-	Domain string
-	Uuid   string
-	Sites  []string
-	Data   *CookiecloudData
+	Label string
+	Sites []string
+	Data  *CookiecloudData
 }
 
 type Cookie struct {
@@ -73,7 +72,11 @@ func GetCookiecloudData(server string, uuid string, password string, proxy strin
 	return cookiecloudData, nil
 }
 
-func (cookiecloudData *CookiecloudData) GetEffectiveCookie(urlOrDomain string) (string, error) {
+// If all is false, only return cookies which is valid for both the hostname and path part of the urlOrDomain,
+// in the case of urlOrDomain being a domain, it's path is assumed to be "/".
+// If all is true, path check is skipped and all cookies which domain match will be included.
+// format: "http" - http request "Cookie" header; "js" - JavaScript document.cookie="" code snippet
+func (cookiecloudData *CookiecloudData) GetEffectiveCookie(urlOrDomain string, all bool, format string) (string, error) {
 	hostname := urlOrDomain
 	path := "/"
 	if util.IsUrl(urlOrDomain) {
@@ -106,7 +109,7 @@ func (cookiecloudData *CookiecloudData) GetEffectiveCookie(urlOrDomain string) (
 			if cookiePath == "" {
 				cookiePath = "/"
 			}
-			if !strings.HasPrefix(path, cookiePath) {
+			if !all && !strings.HasPrefix(path, cookiePath) {
 				continue
 			}
 			// cookiecloud 导出的 cookies 里的 expirationDate 为 float 类型。意义不明确，暂不使用。
@@ -127,26 +130,38 @@ func (cookiecloudData *CookiecloudData) GetEffectiveCookie(urlOrDomain string) (
 	if len(effectiveCookies) == 0 {
 		return "", nil
 	}
-	sort.SliceStable(effectiveCookies, func(i, j int) bool {
-		a := effectiveCookies[i]
-		b := effectiveCookies[j]
-		if a.Domain != b.Domain {
+	if !all {
+		sort.SliceStable(effectiveCookies, func(i, j int) bool {
+			a := effectiveCookies[i]
+			b := effectiveCookies[j]
+			if a.Domain != b.Domain {
+				return false
+			}
+			// longest path first
+			if len(a.Path) != len(b.Path) {
+				return len(a.Path) > len(b.Path)
+			}
 			return false
-		}
-		// longest path first
-		if len(a.Path) != len(b.Path) {
-			return len(a.Path) > len(b.Path)
-		}
-		return false
-	})
-	effectiveCookies = util.UniqueSliceFn(effectiveCookies, func(cookie *Cookie) string {
-		return cookie.Name
-	})
+		})
+		effectiveCookies = util.UniqueSliceFn(effectiveCookies, func(cookie *Cookie) string {
+			return cookie.Name
+		})
+	}
 	cookieStr := ""
-	sep := ""
-	for _, cookie := range effectiveCookies {
-		cookieStr += sep + cookie.Name + "=" + cookie.Value
-		sep = "; "
+	if format == "http" {
+		sep := ""
+		for _, cookie := range effectiveCookies {
+			cookieStr += sep + cookie.Name + "=" + cookie.Value
+			sep = "; "
+		}
+	} else if format == "js" {
+		for _, cookie := range effectiveCookies {
+			// max-age (seconds): 100 years. While Chrome will cap it to max 400 days
+			cookieStr += `document.cookie='` + cookie.Name + "=" + cookie.Value +
+				"; path=" + cookie.Path + `; max-age=3153600000` + `';`
+		}
+	} else {
+		return "", fmt.Errorf("invalid format %s", format)
 	}
 	return cookieStr, nil
 }

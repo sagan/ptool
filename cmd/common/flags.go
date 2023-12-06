@@ -42,6 +42,17 @@ var OrderFlag = &cmd.EnumFlag{
 	},
 }
 
+func YesNoAutoFlag(desc string) *cmd.EnumFlag {
+	return &cmd.EnumFlag{
+		Description: desc,
+		Options: [][2]string{
+			{"auto", ""},
+			{"yes", ""},
+			{"no", ""},
+		},
+	}
+}
+
 // pure flag: bool or counter flag. It does not have a value.
 // all single-letter name (shorthand) flags are always considered as pure (for now),
 // so they are not included in the list.
@@ -55,6 +66,7 @@ var pureFlags = []string{
 	"clients",
 	"delete-added",
 	"dense",
+	"do",
 	"dry-run",
 	"force",
 	"force-dangerous",

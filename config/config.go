@@ -184,6 +184,7 @@ func UpdateSites(updatesites []*SiteConfigStruct) {
 	}
 	allsites := Get().Sites
 	for _, updatesite := range updatesites {
+		updatesite.Register()
 		index := slices.IndexFunc(allsites, func(scs *SiteConfigStruct) bool {
 			return scs.GetName() == updatesite.GetName()
 		})
@@ -279,33 +280,7 @@ func Get() *ConfigStruct {
 			clientsConfigMap[client.Name] = client
 		}
 		for _, site := range configData.Sites {
-			v, err := util.RAMInBytes(site.TorrentUploadSpeedLimit)
-			if err != nil || v <= 0 {
-				v = DEFAULT_SITE_TORRENT_UPLOAD_SPEED_LIMIT
-			}
-			site.TorrentUploadSpeedLimitValue = v
-
-			if site.Url != "" {
-				urlObj, err := url.Parse(site.Url)
-				if err != nil {
-					log.Fatalf("Failed to parse site %s url config: %v", site.GetName(), err)
-				}
-				site.Url = urlObj.String()
-			}
-
-			v, err = util.RAMInBytes(site.BrushTorrentMinSizeLimit)
-			if err != nil || v <= 0 {
-				v = DEFAULT_SITE_BRUSH_TORRENT_MIN_SIZE_LIMIT
-			}
-			site.BrushTorrentMinSizeLimitValue = v
-
-			v, err = util.RAMInBytes(site.BrushTorrentMaxSizeLimit)
-			if err != nil || v <= 0 {
-				v = DEFAULT_SITE_BRUSH_TORRENT_MAX_SIZE_LIMIT
-			}
-			site.BrushTorrentMaxSizeLimitValue = v
-
-			sitesConfigMap[site.GetName()] = site
+			site.Register()
 		}
 		for _, group := range configData.Groups {
 			if group.Name == "" {
@@ -396,6 +371,37 @@ func ParseGroupAndOtherNamesWithoutDeduplicate(names ...string) []string {
 func ParseGroupAndOtherNames(names ...string) []string {
 	names = ParseGroupAndOtherNamesWithoutDeduplicate(names...)
 	return util.UniqueSlice(names)
+}
+
+// Generate derivative info from site config and register itself
+func (siteConfig *SiteConfigStruct) Register() {
+	v, err := util.RAMInBytes(siteConfig.TorrentUploadSpeedLimit)
+	if err != nil || v <= 0 {
+		v = DEFAULT_SITE_TORRENT_UPLOAD_SPEED_LIMIT
+	}
+	siteConfig.TorrentUploadSpeedLimitValue = v
+
+	if siteConfig.Url != "" {
+		urlObj, err := url.Parse(siteConfig.Url)
+		if err != nil {
+			log.Fatalf("Failed to parse site %s url config: %v", siteConfig.GetName(), err)
+		}
+		siteConfig.Url = urlObj.String()
+	}
+
+	v, err = util.RAMInBytes(siteConfig.BrushTorrentMinSizeLimit)
+	if err != nil || v <= 0 {
+		v = DEFAULT_SITE_BRUSH_TORRENT_MIN_SIZE_LIMIT
+	}
+	siteConfig.BrushTorrentMinSizeLimitValue = v
+
+	v, err = util.RAMInBytes(siteConfig.BrushTorrentMaxSizeLimit)
+	if err != nil || v <= 0 {
+		v = DEFAULT_SITE_BRUSH_TORRENT_MAX_SIZE_LIMIT
+	}
+	siteConfig.BrushTorrentMaxSizeLimitValue = v
+
+	sitesConfigMap[siteConfig.GetName()] = siteConfig
 }
 
 func (siteConfig *SiteConfigStruct) GetName() string {

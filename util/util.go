@@ -245,3 +245,31 @@ func ParseFilenameArgs(args ...string) []string {
 	}
 	return names
 }
+
+// Ask user to confirm an (dangerous) action via typing yes in stdin
+func AskYesNoConfirm(prompt string) bool {
+	if prompt == "" {
+		prompt = "Will do the action"
+	}
+	fmt.Printf("%s, are you sure? (yes/no): ", prompt)
+	for {
+		input := ""
+		fmt.Scanf("%s\n", &input)
+		switch input {
+		case "yes", "YES", "Yes":
+			return true
+		case "n", "N", "no", "NO", "No":
+			return false
+		default:
+			if len(input) > 0 {
+				fmt.Printf("Respond with yes or no (Or use Ctrl+C to abort): ")
+			} else {
+				return false
+			}
+		}
+	}
+}
+
+func First[T1 any, T2 any](v T1, args ...T2) T1 {
+	return v
+}

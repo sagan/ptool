@@ -74,6 +74,8 @@ cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 
 配置好站点后，使用 ```ptool status <site> -t``` 测试（```<site>```参数为站点的 name）。如果配置正确且 Cookie 有效，会显示站点当前登录用户的状态信息和网站最新种子列表。
 
+程序支持自动与浏览器同步站点 Cookies 或导入站点信息。详细信息请参考本文档 "cookiecloud" 命令说明部分。
+
 ## 程序功能
 
 所有功能通过启动程序时传入的第一个”命令“参数区分：
@@ -97,6 +99,7 @@ ptool <command> args... [flags]
 * parsetorrent : 显示种子(torrent)文件信息。
 * verifytorrent : 测试种子(torrent)文件与硬盘上的文件内容一致。
 * partialdownload : 拆包下载。
+* cookiecloud (v0.1.8+): 使用 [CookieCloud](https://github.com/easychen/CookieCloud) 同步站点的 Cookies 或导入站点。
 * sites : 显示本程序内置支持的所有 PT 站点列表。
 * shell : 进入交互式终端环境。
 * version : 显示本程序版本信息。
@@ -458,6 +461,58 @@ ptool partialdownload <client> <infoHash> --chunk-size 1TiB --chuck-index 0
 ```
 
 该命令的设计目的不是用于刷流。而是用于使用 VPS 等硬盘空间有限的云服务器(分多次)下载体积非常大的单个种子，然后配合 rclone 将下载的文件直接上传到云盘。
+
+### 同步 Cookies & 导入站点 (cookiecloud)
+
+程序支持通过 [CookieCloud](https://github.com/easychen/CookieCloud) 服务器同步站点 Cookies 或导入站点。
+
+要使用此功能，在 ptool.toml 配置文件里添加 CookieCloud 服务器连接信息：
+
+```
+[[cookieclouds]]
+#name = "" # 名称可选
+server = "https://cookiecloud.example.com"
+uuid = "uuid"
+password = "password"
+```
+
+可以添加任意个 CookieCloud 连接信息。如果想要让某个 CookieCloud 连接信息仅用于同步特定站点 cookies，加上 ```sites = ["sitename"]``` 这行配置。
+
+#### 测试 CookieCloud 服务 (status)
+
+```
+ptool cookiecloud status
+```
+
+使用配置的 CookieCloud 连接信息连接服务器，测试配置正确性和当前服务器状态。
+
+#### 同步站点 Cookies (sync)
+
+```
+ptool cookiecloud sync
+```
+
+程序会从 CookieCloud 服务器获取最新的 Cookies，并更新 ptool.toml 里已配置的站点的 Cookies。程序会对 ptool.toml 文件里的站点的当前 Cookie 和其从 CookieCloud 服务器获取的新版 Cookie 分别进行测试，只有在当前 Cookie 失效并且新版 Cookie 有效的情形才会更新 ptool.toml 里的站点 Cookie 字段值。
+
+#### 导入站点 (import)
+
+```
+ptool cookiecloud import
+```
+
+程序会从 CookieCloud 服务器获取最新的 Cookies，筛选出本程序内置支持的站点(```ptool sites```)中当前 ptool.toml 文件里未配置、并且 CookieCloud 服务器数据里存在对应网站有效 Cookie 的站点，然后添加这些站点的配置信息到 ptool.toml 文件里。
+
+import 命令不会检测或更新 ptool.toml 里当前已存在相应配置的站点的 Cookies。
+
+#### 查看 CookieCloud 里的网站 Cookie (get)
+
+```
+ptool cookiecloud get <site>...
+```
+
+显示 CookieCloud 服务器数据里网站的最新 Cookies。参数可以是站点名、分组名、任意域名或 Url。
+
+默认以 Http 请求 "Cookie" 头格式显示 Cookies。如果指定 ```--format js``` 参数，则会以 JavaScript 的 "document.cookie='';" 代码段格式显示 Cookies，可以直接将输出结果复制到浏览器 F12 开发者工具 Console 里执行以导入 Cookies。
 
 ### 交互式终端 (shell)
 

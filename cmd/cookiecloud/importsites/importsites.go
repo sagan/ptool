@@ -52,13 +52,12 @@ func importsites(cmd *cobra.Command, args []string) error {
 			log.Errorf("Cookiecloud server %s (uuid %s) connection failed: %v\n", profile.Server, profile.Uuid, err)
 			cntError++
 		} else {
-			log.Infof("Cookiecloud server %s (uuid %s) connection ok: %d site cookies found\n",
+			log.Infof("Cookiecloud server %s (uuid %s) connection ok: cookies of %d domains found\n",
 				profile.Server, profile.Uuid, len(data.Cookie_data))
 			cookiecloudDatas = append(cookiecloudDatas, cookiecloud.Ccdata_struct{
-				Domain: util.GetUrlDomain(profile.Server),
-				Uuid:   profile.Uuid,
-				Sites:  profile.Sites,
-				Data:   data,
+				Label: fmt.Sprintf("%s-%s", util.GetUrlDomain(profile.Server), profile.Uuid),
+				Sites: profile.Sites,
+				Data:  data,
 			})
 		}
 	}
@@ -85,25 +84,25 @@ func importsites(cmd *cobra.Command, args []string) error {
 			if tplExistingFlags[tplname] {
 				continue
 			}
-			cookie, _ := cookiecloudData.Data.GetEffectiveCookie(tpl.SITES[tplname].Url)
+			cookie, _ := cookiecloudData.Data.GetEffectiveCookie(tpl.SITES[tplname].Url, false, "http")
 			if cookie == "" {
 				continue
 			}
 			newsiteconfig := &config.SiteConfigStruct{Type: tplname, Cookie: cookie}
 			siteInstance, err := site.CreateSiteInternal(tplname, newsiteconfig, config.Get())
 			if err != nil {
-				log.Debugf("New Site %s from cookiecloud %s - %s is invalid (create instance error: %v",
-					tplname, cookiecloudData.Domain, cookiecloudData.Uuid, err)
+				log.Debugf("New Site %s from cookiecloud %s is invalid (create instance error: %v",
+					tplname, cookiecloudData.Label, err)
 				continue
 			}
 			sitestatus, err := siteInstance.GetStatus()
 			if err != nil {
-				log.Debugf("New Site %s from cookiecloud %s - %s is invalid (get status error: %v",
-					tplname, cookiecloudData.Domain, cookiecloudData.Uuid, err)
+				log.Debugf("New Site %s from cookiecloud %s is invalid (get status error: %v",
+					tplname, cookiecloudData.Label, err)
 				continue
 			}
-			log.Infof("✓✓New site %s from cookiecloud %s - %s is valid (username: %s)",
-				tplname, cookiecloudData.Domain, cookiecloudData.Uuid, sitestatus.UserName)
+			log.Infof("✓✓New site %s from cookiecloud %s is valid (username: %s)",
+				tplname, cookiecloudData.Label, sitestatus.UserName)
 			sitename := ""
 			if config.GetSiteConfig(tplname) != nil {
 				i := 1
@@ -133,13 +132,10 @@ func importsites(cmd *cobra.Command, args []string) error {
 
 		configFile := fmt.Sprintf("%s/%s", config.ConfigDir, config.ConfigFile)
 		fmt.Printf("\n")
-		if !doAction {
-			fmt.Printf("Will update the config file (%s). Please be aware that all existing comments will be LOST., are you sure? (yes/no): ", configFile)
-			input := ""
-			fmt.Scanf("%s", &input)
-			if input != "yes" {
-				return fmt.Errorf("abort")
-			}
+		if !doAction && !util.AskYesNoConfirm(
+			fmt.Sprintf("Will update the config file (%s). Be aware that all existing comments will be LOST",
+				configFile)) {
+			return fmt.Errorf("abort")
 		}
 		config.UpdateSites(addSites)
 		err := config.Set()
