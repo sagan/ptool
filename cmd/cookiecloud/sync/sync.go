@@ -189,9 +189,14 @@ func sync(cmd *cobra.Command, args []string) error {
 				continue
 			}
 			sitestatus, err := siteInstance.GetStatus()
-			if err != nil || !sitestatus.IsOk() {
-				log.Debugf("Site %s new cookie from cookiecloud %s is invalid (status error=%v, valid=%t)",
-					sitename, cookiecloudData.Label, err, sitestatus.IsOk())
+			if err != nil {
+				log.Debugf("Site %s new cookie from cookiecloud %s is invalid (status error=%v)",
+					sitename, cookiecloudData.Label, err)
+				continue
+			}
+			if !sitestatus.IsOk() {
+				log.Debugf("Site %s new cookie from cookiecloud %s is invalid (invalid status)",
+					sitename, cookiecloudData.Label)
 				continue
 			}
 			log.Infof("✓✓site %s new cookie from cookiecloud %s is OK (username: %s)",

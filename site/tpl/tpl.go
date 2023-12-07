@@ -436,6 +436,13 @@ var (
 			SelectorTorrentDiscountEndTime: `.free + span`,
 			Comment:                        "PTT",
 		},
+		"ptvicomo": {
+			Type:              "nexusphp",
+			Url:               "https://ptvicomo.net/",
+			TorrentsExtraUrls: []string{"special.php"},
+			// 该网站可能需要配置 ja3 才能正常访问
+			Comment: "象站",
+		},
 		"rousi": {
 			Type:              "nexusphp",
 			Url:               "https://rousi.zip/",

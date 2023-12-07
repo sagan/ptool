@@ -272,7 +272,9 @@ func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, config *config.Co
 		if err != nil {
 			return nil, fmt.Errorf("failed to create site http transport ja3: %v", err)
 		}
-		transport.ForceAttemptHTTP2 = true
+		if siteConfig.Ja3ForceAttemptHTTP2 {
+			transport.ForceAttemptHTTP2 = true
+		}
 	} else {
 		transport = &http.Transport{}
 	}

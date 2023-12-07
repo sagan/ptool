@@ -95,6 +95,7 @@ type SiteConfigStruct struct {
 	HttpHeaders                    *map[string]string `yaml:"httpHeaders"`
 	NoDefaultHttpHeaders           bool               `yaml:"noDefaultHttpHeaders"`
 	Ja3                            string             `yaml:"ja3"`
+	Ja3ForceAttemptHTTP2           bool               `yaml:"ja3ForceAttemptHTTP2"`
 	Proxy                          string             `yaml:"proxy"`
 	Insecure                       bool               `yaml:"insecure"` // 访问站点时跳过TLS证书安全校验
 	TorrentUploadSpeedLimit        string             `yaml:"torrentUploadSpeedLimit"`

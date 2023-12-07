@@ -20,6 +20,7 @@ var (
 	profile   = ""
 	siteProxy = ""
 	siteUa    = ""
+	siteJa3   = ""
 )
 
 var command = &cobra.Command{
@@ -40,6 +41,7 @@ func init() {
 	command.Flags().StringVarP(&profile, "profile", "", "", "Comma-separated string, Set the used cookiecloud profile name(s). If not set, All cookiecloud profiles in config will be used")
 	command.Flags().StringVarP(&siteProxy, "site-proxy", "", "", "Set the proxy for imported sites")
 	command.Flags().StringVarP(&siteUa, "site-ua", "", "", "Set the user-agent for imported sites")
+	command.Flags().StringVarP(&siteJa3, "site-ja3", "", "", "Set the client TLS ja3 fingerprint for imported sites")
 	cookiecloud.Command.AddCommand(command)
 }
 
@@ -94,7 +96,7 @@ func importsites(cmd *cobra.Command, args []string) error {
 				continue
 			}
 			newsiteconfig := &config.SiteConfigStruct{Type: tplname, Cookie: cookie,
-				Proxy: siteProxy, UserAgent: siteUa}
+				Proxy: siteProxy, UserAgent: siteUa, Ja3: siteJa3}
 			siteInstance, err := site.CreateSiteInternal(tplname, newsiteconfig, config.Get())
 			if err != nil {
 				log.Debugf("New Site %s from cookiecloud %s is invalid (create instance error: %v",
@@ -102,9 +104,14 @@ func importsites(cmd *cobra.Command, args []string) error {
 				continue
 			}
 			sitestatus, err := siteInstance.GetStatus()
-			if err != nil || !sitestatus.IsOk() {
-				log.Debugf("New Site %s from cookiecloud %s is invalid (status error=%v, valid=%t)",
-					tplname, cookiecloudData.Label, err, sitestatus.IsOk())
+			if err != nil {
+				log.Debugf("New Site %s from cookiecloud %s is invalid (status error=%v)",
+					tplname, cookiecloudData.Label, err)
+				continue
+			}
+			if !sitestatus.IsOk() {
+				log.Debugf("New Site %s from cookiecloud %s is invalid (invalid status)",
+					tplname, cookiecloudData.Label)
 				continue
 			}
 			log.Infof("✓✓New site %s from cookiecloud %s is valid (username: %s)",
