@@ -2,9 +2,9 @@ package util
 
 import (
 	"reflect"
+	"slices"
 
 	"golang.org/x/exp/constraints"
-	"golang.org/x/exp/slices"
 )
 
 func CopyMap[T1 comparable, T2 any](m map[T1](T2)) map[T1](T2) {

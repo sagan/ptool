@@ -13,11 +13,11 @@ import (
 	"net/textproto"
 	"net/url"
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/exp/slices"
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/config"

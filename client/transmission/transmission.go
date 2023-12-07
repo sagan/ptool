@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"slices"
 	"strings"
 
 	"github.com/ettle/strcase"
@@ -17,7 +18,6 @@ import (
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/util"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/exp/slices"
 )
 
 type Client struct {

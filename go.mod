@@ -1,6 +1,6 @@
 module github.com/sagan/ptool
 
-go 1.20
+go 1.21
 
 // workaround for some problem
 replace github.com/hekmon/transmissionrpc/v2 => ./transmissionrpc

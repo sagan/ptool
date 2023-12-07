@@ -1,8 +1,9 @@
 package common
 
 import (
+	"slices"
+
 	"github.com/sagan/ptool/cmd"
-	"golang.org/x/exp/slices"
 )
 
 // "name", "size", "speed", "state", "time", "tracker", "none"
@@ -77,6 +78,7 @@ var pureFlags = []string{
 	"largest",
 	"lock-or-exit",
 	"newest",
+	"no-check",
 	"no-hr",
 	"no-paid",
 	"parameters",

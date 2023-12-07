@@ -8,12 +8,12 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/constraints"
-	"golang.org/x/exp/slices"
 )
 
 func String2Any(value string) (any, reflect.Kind) {

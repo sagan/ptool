@@ -5,9 +5,8 @@ package tpl
 // 除 Url 以外的所有 ***Url (例如 TorrentsUrl) 均应当使用相对路径
 
 import (
+	"slices"
 	"sort"
-
-	"golang.org/x/exp/slices"
 
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"

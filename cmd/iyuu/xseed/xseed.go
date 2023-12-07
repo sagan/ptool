@@ -2,12 +2,12 @@ package xseed
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"golang.org/x/exp/slices"
 	"gorm.io/gorm/clause"
 
 	"github.com/sagan/ptool/client"

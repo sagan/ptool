@@ -2,11 +2,11 @@ package importsites
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"golang.org/x/exp/slices"
 
 	"github.com/sagan/ptool/cmd/cookiecloud"
 	"github.com/sagan/ptool/config"
@@ -17,6 +17,7 @@ import (
 
 var (
 	doAction  = false
+	noCheck   = false
 	profile   = ""
 	siteProxy = ""
 	siteUa    = ""
@@ -38,6 +39,7 @@ Be aware that all existing comments in config file will be LOST when updating co
 
 func init() {
 	command.Flags().BoolVarP(&doAction, "do", "", false, "Do update the config file without confirm. Be aware that all existing comments in config file will be LOST")
+	command.Flags().BoolVarP(&noCheck, "no-check", "", false, "Do not check the cookies validity before importing new sites")
 	command.Flags().StringVarP(&profile, "profile", "", "", "Comma-separated string, Set the used cookiecloud profile name(s). If not set, All cookiecloud profiles in config will be used")
 	command.Flags().StringVarP(&siteProxy, "site-proxy", "", "", "Set the proxy for imported sites")
 	command.Flags().StringVarP(&siteUa, "site-ua", "", "", "Set the user-agent for imported sites")
@@ -97,25 +99,27 @@ func importsites(cmd *cobra.Command, args []string) error {
 			}
 			newsiteconfig := &config.SiteConfigStruct{Type: tplname, Cookie: cookie,
 				Proxy: siteProxy, UserAgent: siteUa, Ja3: siteJa3}
-			siteInstance, err := site.CreateSiteInternal(tplname, newsiteconfig, config.Get())
-			if err != nil {
-				log.Debugf("New Site %s from cookiecloud %s is invalid (create instance error: %v",
-					tplname, cookiecloudData.Label, err)
-				continue
+			if !noCheck {
+				siteInstance, err := site.CreateSiteInternal(tplname, newsiteconfig, config.Get())
+				if err != nil {
+					log.Debugf("New Site %s from cookiecloud %s is invalid (create instance error: %v",
+						tplname, cookiecloudData.Label, err)
+					continue
+				}
+				sitestatus, err := siteInstance.GetStatus()
+				if err != nil {
+					log.Debugf("New Site %s from cookiecloud %s is invalid (status error=%v)",
+						tplname, cookiecloudData.Label, err)
+					continue
+				}
+				if !sitestatus.IsOk() {
+					log.Debugf("New Site %s from cookiecloud %s is invalid (invalid status)",
+						tplname, cookiecloudData.Label)
+					continue
+				}
+				log.Infof("✓✓New site %s from cookiecloud %s is valid (username: %s)",
+					tplname, cookiecloudData.Label, sitestatus.UserName)
 			}
-			sitestatus, err := siteInstance.GetStatus()
-			if err != nil {
-				log.Debugf("New Site %s from cookiecloud %s is invalid (status error=%v)",
-					tplname, cookiecloudData.Label, err)
-				continue
-			}
-			if !sitestatus.IsOk() {
-				log.Debugf("New Site %s from cookiecloud %s is invalid (invalid status)",
-					tplname, cookiecloudData.Label)
-				continue
-			}
-			log.Infof("✓✓New site %s from cookiecloud %s is valid (username: %s)",
-				tplname, cookiecloudData.Label, sitestatus.UserName)
 			sitename := ""
 			if config.GetSiteConfig(tplname) != nil {
 				i := 1

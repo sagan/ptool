@@ -7,12 +7,12 @@ import (
 	"mime"
 	"net/http"
 	"net/url"
+	"slices"
 	"sync"
 
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/ja3transport"
 	"github.com/sagan/ptool/util"
-	"golang.org/x/exp/slices"
 )
 
 type Torrent struct {

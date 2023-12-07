@@ -3,11 +3,11 @@ package client
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/exp/slices"
 
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/util"

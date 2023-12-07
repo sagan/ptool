@@ -3,9 +3,9 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/spf13/cobra"
-	"golang.org/x/exp/slices"
 )
 
 // an enum of string type

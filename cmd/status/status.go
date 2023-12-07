@@ -2,11 +2,11 @@ package status
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"golang.org/x/exp/slices"
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
