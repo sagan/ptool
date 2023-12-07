@@ -379,7 +379,7 @@ func (npclient *Site) sync() error {
 	}
 
 	// possibly parsing error or some problem
-	if siteStatus.UserName == "" && siteStatus.UserDownloaded == 0 && siteStatus.UserUploaded == 0 {
+	if !siteStatus.IsOk() {
 		log.TraceFn(func() []any {
 			return []any{"Site GetStatus got no data, possible a parser error"}
 		})
@@ -424,7 +424,7 @@ func (npclient *Site) syncExtra() error {
 
 func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.ConfigStruct) (site.Site, error) {
 	if siteConfig.Cookie == "" {
-		return nil, fmt.Errorf("no cookie provided")
+		log.Warnf("Site %s has no cookie provided", name)
 	}
 	location, err := time.LoadLocation(siteConfig.GetTimezone())
 	if err != nil {

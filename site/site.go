@@ -80,6 +80,11 @@ func (torrent *Torrent) MatchFilter(filter string) bool {
 	return false
 }
 
+// check if (seems) as a valid site status
+func (status *Status) IsOk() bool {
+	return status.UserName != "" || status.UserDownloaded > 0 || status.UserUploaded > 0
+}
+
 // will match if any filter in list matches
 func (torrent *Torrent) MatchFiltersOr(filters []string) bool {
 	return slices.IndexFunc(filters, func(filter string) bool {

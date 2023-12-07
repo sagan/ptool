@@ -16,8 +16,10 @@ import (
 )
 
 var (
-	doAction = false
-	profile  = ""
+	doAction  = false
+	profile   = ""
+	siteProxy = ""
+	siteUa    = ""
 )
 
 var command = &cobra.Command{
@@ -36,6 +38,8 @@ Be aware that all existing comments in config file will be LOST when updating co
 func init() {
 	command.Flags().BoolVarP(&doAction, "do", "", false, "Do update the config file without confirm. Be aware that all existing comments in config file will be LOST")
 	command.Flags().StringVarP(&profile, "profile", "", "", "Comma-separated string, Set the used cookiecloud profile name(s). If not set, All cookiecloud profiles in config will be used")
+	command.Flags().StringVarP(&siteProxy, "site-proxy", "", "", "Set the proxy for imported sites")
+	command.Flags().StringVarP(&siteUa, "site-ua", "", "", "Set the user-agent for imported sites")
 	cookiecloud.Command.AddCommand(command)
 }
 
@@ -79,6 +83,7 @@ func importsites(cmd *cobra.Command, args []string) error {
 			tplExistingFlags[tplname] = true
 		}
 	}
+	nowStr := util.FormatTime(util.Now())
 	for _, cookiecloudData := range cookiecloudDatas {
 		for _, tplname := range tpl.SITENAMES {
 			if tplExistingFlags[tplname] {
@@ -88,7 +93,8 @@ func importsites(cmd *cobra.Command, args []string) error {
 			if cookie == "" {
 				continue
 			}
-			newsiteconfig := &config.SiteConfigStruct{Type: tplname, Cookie: cookie}
+			newsiteconfig := &config.SiteConfigStruct{Type: tplname, Cookie: cookie,
+				Proxy: siteProxy, UserAgent: siteUa}
 			siteInstance, err := site.CreateSiteInternal(tplname, newsiteconfig, config.Get())
 			if err != nil {
 				log.Debugf("New Site %s from cookiecloud %s is invalid (create instance error: %v",
@@ -96,9 +102,9 @@ func importsites(cmd *cobra.Command, args []string) error {
 				continue
 			}
 			sitestatus, err := siteInstance.GetStatus()
-			if err != nil {
-				log.Debugf("New Site %s from cookiecloud %s is invalid (get status error: %v",
-					tplname, cookiecloudData.Label, err)
+			if err != nil || !sitestatus.IsOk() {
+				log.Debugf("New Site %s from cookiecloud %s is invalid (status error=%v, valid=%t)",
+					tplname, cookiecloudData.Label, err, sitestatus.IsOk())
 				continue
 			}
 			log.Infof("✓✓New site %s from cookiecloud %s is valid (username: %s)",
@@ -119,6 +125,8 @@ func importsites(cmd *cobra.Command, args []string) error {
 				Name:   sitename,
 				Type:   tplname,
 				Cookie: cookie,
+				AutoComment: fmt.Sprintf(`imported by "ptool cookiecloue import" at %s from cookiecloud %s`,
+					nowStr, cookiecloudData.Label),
 			})
 			tplExistingFlags[tplname] = true
 		}
@@ -127,7 +135,11 @@ func importsites(cmd *cobra.Command, args []string) error {
 	if len(addSites) > 0 {
 		fmt.Printf("✓new sites found (%d): %s", len(addSites),
 			strings.Join(util.Map(addSites, func(site *config.SiteConfigStruct) string {
-				return site.Type
+				sitename := site.Type
+				if site.Name != "" {
+					sitename = fmt.Sprintf("%s (as %s)", sitename, site.Name)
+				}
+				return sitename
 			}), ", "))
 
 		configFile := fmt.Sprintf("%s/%s", config.ConfigDir, config.ConfigFile)

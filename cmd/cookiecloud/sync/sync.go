@@ -129,6 +129,13 @@ func sync(cmd *cobra.Command, args []string) error {
 						msg:      fmt.Sprintf("site current cookie is invalid (get status error: %v)", err),
 					}
 				}
+			} else if !sitestatus.IsOk() {
+				ch <- &site_test_result{
+					sitename: sitename,
+					url:      siteInstance.GetSiteConfig().Url,
+					flag:     3,
+					msg:      "site status is not OK (cookie may be invalid)",
+				}
 			} else {
 				ch <- &site_test_result{
 					sitename: sitename,
@@ -154,6 +161,7 @@ func sync(cmd *cobra.Command, args []string) error {
 		siteUrls[result.sitename] = result.url
 		log.Infof("%s site %s: %s // remaining sites: %d", symbol, result.sitename, result.msg, len(sitenames)-i-1)
 	}
+	nowStr := util.FormatTime(util.Now())
 	for _, sitename := range sitenames {
 		if siteFlags[sitename] != 3 {
 			continue
@@ -166,7 +174,7 @@ func sync(cmd *cobra.Command, args []string) error {
 			}
 			newcookie, err := cookiecloudData.Data.GetEffectiveCookie(siteUrls[sitename], false, "http")
 			if newcookie == "" {
-				log.Debugf("No cookie found for % site from cookiecloud %s (url=%s, error: %v)",
+				log.Debugf("No cookie found for %s site from cookiecloud %s (url=%s, error: %v)",
 					sitename, cookiecloudData.Label, siteUrls[sitename], err)
 				continue
 			}
@@ -181,14 +189,17 @@ func sync(cmd *cobra.Command, args []string) error {
 				continue
 			}
 			sitestatus, err := siteInstance.GetStatus()
-			if err != nil {
-				log.Debugf("Site %s new cookie from cookiecloud %s is invalid (get status error: %v",
-					sitename, cookiecloudData.Label, err)
+			if err != nil || !sitestatus.IsOk() {
+				log.Debugf("Site %s new cookie from cookiecloud %s is invalid (status error=%v, valid=%t)",
+					sitename, cookiecloudData.Label, err, sitestatus.IsOk())
 				continue
 			}
 			log.Infof("✓✓site %s new cookie from cookiecloud %s is OK (username: %s)",
 				sitename, cookiecloudData.Label, sitestatus.UserName)
 			siteFlags[sitename] = 4
+			newsiteconfig.AutoComment = fmt.Sprintf(
+				`cookie updated by "ptool cookiecloud sync" at %s from cookiecloud %s`,
+				nowStr, cookiecloudData.Label)
 			updatesites = append(updatesites, newsiteconfig)
 		}
 	}

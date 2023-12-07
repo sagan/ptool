@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"path"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -47,16 +48,19 @@ type CookiecloudConfigStruct struct {
 	Password string   `yaml:"password"`
 	Proxy    string   `yaml:"proxy"`
 	Sites    []string `yaml:"sites"`
+	Comment  string   `yaml:"comment"`
 }
 
 type GroupConfigStruct struct {
-	Name  string   `yaml:"name"`
-	Sites []string `yaml:"sites"`
+	Name    string   `yaml:"name"`
+	Sites   []string `yaml:"sites"`
+	Comment string   `yaml:"comment"`
 }
 
 type ClientConfigStruct struct {
 	Type                              string  `yaml:"type"`
 	Name                              string  `yaml:"name"`
+	Comment                           string  `yaml:"comment"`
 	Disabled                          bool    `yaml:"disabled"`
 	Url                               string  `yaml:"url"`
 	Username                          string  `yaml:"username"`
@@ -128,14 +132,15 @@ type SiteConfigStruct struct {
 	TorrentDownloadUrl             string             `yaml:"torrentDownloadUrl"` // use {id} placeholders in url
 	TorrentDownloadUrlPrefix       string             `yaml:"torrentDownloadUrlPrefix"`
 	Passkey                        string             `yaml:"passkey"`
-	UseCuhash                      bool               `yaml:"useCuhash"`    // hdcity 使用机制。种子下载地址里必须有cuhash参数。
-	UseDigitHash                   bool               `yaml:"useDigitHash"` // ttg 使用机制。种子下载地址末段必须有4位数字校验码或Passkey参数(即使有 Cookie)。
+	UseCuhash                      bool               `yaml:"useCuhash"`    // hdcity 使用机制。种子下载地址里必须有cuhash参数
+	UseDigitHash                   bool               `yaml:"useDigitHash"` // ttg 使用机制。种子下载地址末段必须有4位数字校验码或Passkey参数(即使有 Cookie)
 	TorrentUrlIdRegexp             string             `yaml:"torrentUrlIdRegexp"`
 	FlowControlInterval            int64              `yaml:"flowControlInterval"` // 暂定名。两次请求种子列表页间隔时间(秒)
 	NexusphpNoLetDown              bool               `yaml:"nexusphpNoLetDown"`
 	TorrentUploadSpeedLimitValue   int64
 	BrushTorrentMinSizeLimitValue  int64
 	BrushTorrentMaxSizeLimitValue  int64
+	AutoComment                    string // 自动更新 ptool.toml 时系统生成的 comment。会被写入 Comment 字段
 }
 
 type ConfigStruct struct {
@@ -153,6 +158,7 @@ type ConfigStruct struct {
 	Sites                    []*SiteConfigStruct        `yaml:"sites"`
 	Groups                   []*GroupConfigStruct       `yaml:"groups"`
 	Cookieclouds             []*CookiecloudConfigStruct `yaml:"cookieclouds"`
+	Comment                  string                     `yaml:"comment"`
 }
 
 var (
@@ -184,6 +190,17 @@ func UpdateSites(updatesites []*SiteConfigStruct) {
 	}
 	allsites := Get().Sites
 	for _, updatesite := range updatesites {
+		if updatesite.AutoComment != "" {
+			m := regexp.MustCompile(`^(.*?)<!--\{ptool\}.*?-->(.*)$`)
+			autoComment := fmt.Sprintf(`<!--{ptool} %s-->`, updatesite.AutoComment)
+			comment := m.ReplaceAllString(updatesite.Comment, fmt.Sprintf(`$1%s$2`, autoComment))
+			if comment == updatesite.Comment {
+				updatesite.Comment += autoComment
+			} else {
+				updatesite.Comment = comment
+			}
+		}
+
 		updatesite.Register()
 		index := slices.IndexFunc(allsites, func(scs *SiteConfigStruct) bool {
 			return scs.GetName() == updatesite.GetName()

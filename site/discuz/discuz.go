@@ -14,6 +14,8 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/util"
@@ -104,7 +106,7 @@ func (dzsite *Site) DownloadTorrentById(id string) ([]byte, string, error) {
 
 func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.ConfigStruct) (site.Site, error) {
 	if siteConfig.Cookie == "" {
-		return nil, fmt.Errorf("cann't create site: no cookie provided")
+		log.Warnf("Site %s has no cookie provided", name)
 	}
 	location, err := time.LoadLocation(siteConfig.GetTimezone())
 	if err != nil {

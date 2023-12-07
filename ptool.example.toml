@@ -1,7 +1,7 @@
-iyuuToken = "" # iyuu token。用于自动辅种功能
+iyuuToken = '' # iyuu token。用于自动辅种功能
 # 注释掉的配置项值为默认值
-#siteProxy = "" # 使用代理访问 PT 站点。（不适用于访问 BT 客户端）。格式为 "http://127.0.0.1:1080"
-#siteUserAgent = "" #  所有站点默认使用的 ua。默认使用最新稳定版 Chrome on Windows x64 en-US 的 ua
+#siteProxy = '' # 使用代理访问 PT 站点。（不适用于访问 BT 客户端）。格式为 'http://127.0.0.1:1080'
+#siteUserAgent = '' #  所有站点默认使用的 ua。默认使用最新稳定版 Chrome on Windows x64 en-US 的 ua
 #brushEnableStats = false # 启用刷流统计功能
 #hushshell = false # 如果设为 true, 启动 ptool shell 时将不显示欢迎信息 
 #shellMaxSuggestions = 5 # ptool shell 自动补全显示建议数量。设为 0 禁用
@@ -10,64 +10,64 @@ iyuuToken = "" # iyuu token。用于自动辅种功能
 
 # 自定义访问站点时设置的 http 请求头。如果值设为空，删除对应header
 #[siteHttpHeaders]
-#"Cache-Control" = "no-cache"
+#'Cache-Control' = 'no-cache'
 
 # 完整支持 qBittorrent  v4.1+ (推荐使用 qb v4.4+)
 [[clients]]
-name = "local"
-type = "qbittorrent"
-url = "http://localhost:8085/"
-username = "admin"
-password = "adminadmin"
+name = 'local'
+type = 'qbittorrent'
+url = 'http://localhost:8085/'
+username = 'admin'
+password = 'adminadmin'
 #qbittorrentNoLogin = false # 如果启用，不会发送登录请求。这将提高命令响应速度。需要在 QB Web UI 设置里开启跳过验证
 #qbittorrentNoLogout = false # 如果启用，不会发送退出登录请求。这将提高命令响应速度，但会导致 QB web session 占用的内存不能及时释放
-#brushMinDiskSpace = "5GiB" # 刷流：保留最小剩余磁盘空间
-#brushSlowUploadSpeedTier = "100KiB" # 刷流：上传速度(/s)持续低于此值的种子将可能被删除
+#brushMinDiskSpace = '5GiB' # 刷流：保留最小剩余磁盘空间
+#brushSlowUploadSpeedTier = '100KiB' # 刷流：上传速度(/s)持续低于此值的种子将可能被删除
 #brushMaxDownloadingTorrents = 6 # 刷流：位于下载状态的种子数上限
 #brushMaxTorrents = 9999 # 刷流：种子数（所有状态）上限
 #brushMinRatio = 0.2 # 刷流：最小 ratio (上传量/下载量)比例。ratio 持续低于此值的种子将可能被删除
-#brushDefaultUploadSpeedLimit = "10MiB" # 刷流：默认最大上传速度限制(/s)
+#brushDefaultUploadSpeedLimit = '10MiB' # 刷流：默认最大上传速度限制(/s)
 
 
 # 对 Transmission 客户端支持不完整且尚未充分测试。不建议用于刷流
 # 支持 Transmission 2.80 ~ 3.00 (Transmission v4 还有问题)
 [[clients]]
-name = "tr"
-type = "transmission"
-url = "http://localhost:9091/"
-username = "admin"
-password = "123456"
+name = 'tr'
+type = 'transmission'
+url = 'http://localhost:9091/'
+username = 'admin'
+password = '123456'
 
 
 # 配置 CookieCloud ( https://github.com/easychen/CookieCloud ) 后，可以从服务器同步站点 cookies 或导入站点
 # 可以配置任意多个 CookieCloud 服务器信息
-# 如果想要让某个 CookieCloud 服务器信息仅用于同步特定站点 cookies，加上 sites = ["sitename"] 这行配置
-# 请参考 "cookiecloud" 命令帮助。同步站点 cookies 或导入站点会更新 ptool.toml 配置文件（已有的注释信息会丢失）
+# 如果想要让某个 CookieCloud 服务器信息仅用于同步特定站点 cookies，加上 sites = ['sitename'] 这行配置
+# 请参考 'cookiecloud' 命令帮助。同步站点 cookies 或导入站点会更新 ptool.toml 配置文件（已有的注释信息会丢失）
 [[cookieclouds]]
-#name = "" # 名称可选
-server = "https://cookiecloud.example.com"
-uuid = "uuid"
-password = "password"
+#name = '' # 名称可选
+server = 'https://cookiecloud.example.com'
+uuid = 'uuid'
+password = 'password'
 
 
 [[sites]]
-type = "mteam"
-cookie = "cookie_here"
-#proxy = "" # 访问该站点使用的代理。优先级高于全局的 siteProxy 配置。格式为 "http://127.0.0.1:1080"
-#userAgent = "" # 部分站点 cookie 绑定 ua。优先级高于全局的 siteUserAgent 配置
-#torrentUploadSpeedLimit = "10MiB" # 站点单个种子上传速度限制(/s)
-#brushTorrentMinSizeLimit = "0" # 刷流：种子最小体积限制。体积小于此值的种子不会被选择
-#brushTorrentMaxSizeLimit = "1PiB" # 刷流：种子最大体积限制。体积大于此值的种子不会被选择
+type = 'mteam'
+cookie = 'cookie_here'
+#proxy = '' # 访问该站点使用的代理。优先级高于全局的 siteProxy 配置。格式为 'http://127.0.0.1:1080'
+#userAgent = '' # 部分站点 cookie 绑定 ua。优先级高于全局的 siteUserAgent 配置
+#torrentUploadSpeedLimit = '10MiB' # 站点单个种子上传速度限制(/s)
+#brushTorrentMinSizeLimit = '0' # 刷流：种子最小体积限制。体积小于此值的种子不会被选择
+#brushTorrentMaxSizeLimit = '1PiB' # 刷流：种子最大体积限制。体积大于此值的种子不会被选择
 #brushAllowNoneFree = false # 是否允许使用非免费种子刷流
-#brushAllowPaid = false # 是否允许使用"付费"种子刷流（付费种子：第一次下载或汇报时需要扣除积分）
+#brushAllowPaid = false # 是否允许使用'付费'种子刷流（付费种子：第一次下载或汇报时需要扣除积分）
 #brushAllowHr = false # 是否允许使用HR种子刷流。程序不会特意保证HR种子的做种时长，所以仅当你的账户无视HR(如VIP)时开启此选项
 #brushAllowZeroSeeders = false # 是否允许刷流任务添加当前0做种的种子到客户端
 #brushExcludes = [] # 排除种子关键字列表。标题或副标题包含列表中任意项的种子不会被刷流任务选择
-#timezone = "Asia/Shanghai" # 网站页面显示时间的时区
+#timezone = 'Asia/Shanghai' # 网站页面显示时间的时区
 
 # 站点分组功能
 # 定义分组后，大部分命令中 <site> 类型的参数可以使用分组名代替以指代多个站点，例如：
-# 在 acg 分组的所有站点中搜索 "clannad" 关键词的种子: ptool search acg clannad
+# 在 acg 分组的所有站点中搜索 'clannad' 关键词的种子: ptool search acg clannad
 [[groups]]
-name = "acg"
-sites = ["u2", "kamept"]
+name = 'acg'
+sites = ['u2', 'kamept']
