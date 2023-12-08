@@ -109,7 +109,7 @@ func CreateSiteInternal(name string,
 }
 
 func GetConfigSiteReginfo(name string) *RegInfo {
-	for _, siteConfig := range config.Get().Sites {
+	for _, siteConfig := range config.Get().SitesEnabled {
 		if siteConfig.GetName() == name {
 			return registryMap[siteConfig.Type]
 		}
@@ -210,15 +210,15 @@ func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool, 
 
 func GetConfigSiteNameByDomain(domain string) (string, error) {
 	var firstMatchSite, lastMatchSite *config.SiteConfigStruct
-	for _, siteConfig := range config.Get().Sites {
+	for _, siteConfig := range config.Get().SitesEnabled {
 		if config.MatchSite(domain, siteConfig) {
 			firstMatchSite = siteConfig
 			break
 		}
 	}
-	for i := len(config.Get().Sites) - 1; i >= 0; i-- {
-		if config.MatchSite(domain, config.Get().Sites[i]) {
-			lastMatchSite = config.Get().Sites[i]
+	for i := len(config.Get().SitesEnabled) - 1; i >= 0; i-- {
+		if config.MatchSite(domain, config.Get().SitesEnabled[i]) {
+			lastMatchSite = config.Get().SitesEnabled[i]
 			break
 		}
 	}
@@ -234,15 +234,15 @@ func GetConfigSiteNameByDomain(domain string) (string, error) {
 
 func GetConfigSiteNameByTypes(types ...string) (string, error) {
 	var firstMatchSite, lastMatchSite *config.SiteConfigStruct
-	for _, siteConfig := range config.Get().Sites {
+	for _, siteConfig := range config.Get().SitesEnabled {
 		if slices.Index(types, siteConfig.Type) != -1 {
 			firstMatchSite = siteConfig
 			break
 		}
 	}
-	for i := len(config.Get().Sites) - 1; i >= 0; i-- {
-		if slices.Index(types, config.Get().Sites[i].Type) != -1 {
-			lastMatchSite = config.Get().Sites[i]
+	for i := len(config.Get().SitesEnabled) - 1; i >= 0; i-- {
+		if slices.Index(types, config.Get().SitesEnabled[i].Type) != -1 {
+			lastMatchSite = config.Get().SitesEnabled[i]
 			break
 		}
 	}

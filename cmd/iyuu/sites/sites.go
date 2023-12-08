@@ -61,7 +61,7 @@ func sites(cmd *cobra.Command, args []string) error {
 		return site.ToSite()
 	})
 	log.Printf("Iyuu sites: len(sites)=%v\n", len(iyuuSites))
-	iyuu2LocalSiteMap := iyuu.GenerateIyuu2LocalSiteMap(iyuuSites, config.Get().Sites)
+	iyuu2LocalSiteMap := iyuu.GenerateIyuu2LocalSiteMap(iyuuSites, config.Get().SitesEnabled)
 
 	if showAll {
 		fmt.Printf("<all iyuu supported sites>\n")

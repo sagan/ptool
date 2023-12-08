@@ -144,7 +144,7 @@ func importsites(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(addSites) > 0 {
-		fmt.Printf("✓new sites found (%d): %s", len(addSites),
+		fmt.Printf("✓new sites found (%d): %s\n", len(addSites),
 			strings.Join(util.Map(addSites, func(site *config.SiteConfigStruct) string {
 				sitename := site.Type
 				if site.Name != "" {
@@ -152,9 +152,7 @@ func importsites(cmd *cobra.Command, args []string) error {
 				}
 				return sitename
 			}), ", "))
-
 		configFile := fmt.Sprintf("%s/%s", config.ConfigDir, config.ConfigFile)
-		fmt.Printf("\n")
 		if !doAction && !util.AskYesNoConfirm(
 			fmt.Sprintf("Will update the config file (%s). Be aware that all existing comments will be LOST",
 				configFile)) {
@@ -163,12 +161,12 @@ func importsites(cmd *cobra.Command, args []string) error {
 		config.UpdateSites(addSites)
 		err := config.Set()
 		if err == nil {
-			fmt.Printf("Successfully update config file %s", configFile)
+			fmt.Printf("Successfully update config file %s\n", configFile)
 		} else {
 			log.Fatalf("Failed to update config file %s : %v", configFile, err)
 		}
 	} else {
-		fmt.Printf("!No new sites found in cookiecloud datas")
+		fmt.Printf("!No new sites found in cookiecloud datas\n")
 	}
 
 	if cntError > 0 {

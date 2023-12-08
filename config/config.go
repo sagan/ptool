@@ -160,6 +160,8 @@ type ConfigStruct struct {
 	Groups                   []*GroupConfigStruct       `yaml:"groups"`
 	Cookieclouds             []*CookiecloudConfigStruct `yaml:"cookieclouds"`
 	Comment                  string                     `yaml:"comment"`
+	ClientsEnabled           []*ClientConfigStruct
+	SitesEnabled             []*SiteConfigStruct
 }
 
 var (
@@ -213,6 +215,7 @@ func UpdateSites(updatesites []*SiteConfigStruct) {
 		}
 	}
 	configData.Sites = allsites
+	configData.UpdateSitesDerivative()
 }
 
 // Re-write the whole config file using memory data.
@@ -311,12 +314,10 @@ func Get() *ConfigStruct {
 				cookiecloudsConfigMap[cookiecloud.Name] = cookiecloud
 			}
 		}
-		configData.Clients = util.Filter(configData.Clients, func(c *ClientConfigStruct) bool {
+		configData.ClientsEnabled = util.Filter(configData.Clients, func(c *ClientConfigStruct) bool {
 			return !c.Disabled
 		})
-		configData.Sites = util.Filter(configData.Sites, func(s *SiteConfigStruct) bool {
-			return !s.Disabled
-		})
+		configData.UpdateSitesDerivative()
 	})
 	return configData
 }
@@ -357,8 +358,8 @@ func GetCookiecloudConfig(name string) *CookiecloudConfigStruct {
 func GetGroupSites(name string) []string {
 	if name == "_all" { // special group of all sites
 		sitenames := []string{}
-		for _, siteConfig := range Get().Sites {
-			if siteConfig.Disabled || siteConfig.Hidden {
+		for _, siteConfig := range Get().SitesEnabled {
+			if siteConfig.Hidden {
 				continue
 			}
 			sitenames = append(sitenames, siteConfig.GetName())
@@ -476,4 +477,10 @@ func MatchSite(domain string, siteConfig *SiteConfigStruct) bool {
 		}
 	}
 	return false
+}
+
+func (configData *ConfigStruct) UpdateSitesDerivative() {
+	configData.SitesEnabled = util.Filter(configData.Sites, func(s *SiteConfigStruct) bool {
+		return !s.Disabled
+	})
 }

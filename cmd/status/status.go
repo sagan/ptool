@@ -65,16 +65,13 @@ func status(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("--all, --clients, --sites flags cann't be used with site or client names")
 		}
 		if showAll || showAllClients {
-			for _, client := range config.Get().Clients {
-				if client.Disabled {
-					continue
-				}
+			for _, client := range config.Get().ClientsEnabled {
 				names = append(names, client.Name)
 			}
 		}
 		if showAll || showAllSites {
-			for _, site := range config.Get().Sites {
-				if site.Disabled || site.Hidden {
+			for _, site := range config.Get().SitesEnabled {
+				if site.Hidden {
 					continue
 				}
 				names = append(names, site.GetName())

@@ -190,9 +190,6 @@ func GenerateIyuu2LocalSiteMap(iyuuSites []Site,
 	iyuu2LocalSiteMap := map[int64]string{} // iyuu sid => local site name
 	for _, iyuuSite := range iyuuSites {
 		localSite := util.FindInSlice(localSites, func(siteConfig *config.SiteConfigStruct) bool {
-			if siteConfig.Disabled {
-				return false
-			}
 			if siteConfig.Url != "" && siteConfig.Url == iyuuSite.Url {
 				return true
 			}

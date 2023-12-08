@@ -75,10 +75,7 @@ func sync(cmd *cobra.Command, args []string) error {
 	var sitenames []string
 	if siteFlag == "" {
 		sitenames = []string{}
-		for _, site := range config.Get().Sites {
-			if site.Disabled {
-				continue
-			}
+		for _, site := range config.Get().SitesEnabled {
 			sitenames = append(sitenames, site.GetName())
 		}
 	} else {
@@ -241,12 +238,12 @@ func sync(cmd *cobra.Command, args []string) error {
 		config.UpdateSites(updatesites)
 		err := config.Set()
 		if err == nil {
-			fmt.Printf("Successfully update config file %s", configFile)
+			fmt.Printf("Successfully update config file %s\n", configFile)
 		} else {
 			log.Fatalf("Failed to update config file %s : %v", configFile, err)
 		}
 	} else {
-		fmt.Printf("!No new cookie found for any site")
+		fmt.Printf("!No new cookie found for any site\n")
 	}
 
 	if cntError > 0 {

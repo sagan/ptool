@@ -205,7 +205,7 @@ func xseed(cmd *cobra.Command, args []string) error {
 	var clientTorrentsMap = map[string][]*iyuu.Torrent{} // targetInfoHash => iyuuTorrent
 	iyuu.Db().Find(&sites)
 	iyuu.Db().Where("target_info_hash in ?", reqInfoHashes).Find(&clientTorrents)
-	site2LocalMap := iyuu.GenerateIyuu2LocalSiteMap(sites, config.Get().Sites)
+	site2LocalMap := iyuu.GenerateIyuu2LocalSiteMap(sites, config.Get().SitesEnabled)
 	log.Tracef("iyuu->local site map: %v; clientTorrents: len=%d", site2LocalMap, len(clientTorrents))
 	for _, torrent := range clientTorrents {
 		list := clientTorrentsMap[torrent.TargetInfoHash]

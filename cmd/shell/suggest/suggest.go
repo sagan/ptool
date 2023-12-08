@@ -78,8 +78,8 @@ func FileArg(prefix string, suffix string, dirOnly bool) []prompt.Suggest {
 
 func ClientArg(prefix string) []prompt.Suggest {
 	suggestions := []prompt.Suggest{}
-	for _, client := range config.Get().Clients {
-		if !client.Disabled && strings.HasPrefix(client.Name, prefix) {
+	for _, client := range config.Get().ClientsEnabled {
+		if strings.HasPrefix(client.Name, prefix) {
 			suggestions = append(suggestions, prompt.Suggest{Text: client.Name, Description: "<client>"})
 		}
 	}
@@ -88,8 +88,8 @@ func ClientArg(prefix string) []prompt.Suggest {
 
 func SiteArg(prefix string) []prompt.Suggest {
 	suggestions := []prompt.Suggest{}
-	for _, site := range config.Get().Sites {
-		if !site.Disabled && strings.HasPrefix(site.GetName(), prefix) {
+	for _, site := range config.Get().SitesEnabled {
+		if strings.HasPrefix(site.GetName(), prefix) {
 			suggestions = append(suggestions, prompt.Suggest{Text: site.GetName(), Description: "<site>"})
 		}
 	}
@@ -98,13 +98,13 @@ func SiteArg(prefix string) []prompt.Suggest {
 
 func ClientOrSiteArg(prefix string) []prompt.Suggest {
 	suggestions := []prompt.Suggest{}
-	for _, client := range config.Get().Clients {
-		if !client.Disabled && strings.HasPrefix(client.Name, prefix) {
+	for _, client := range config.Get().ClientsEnabled {
+		if strings.HasPrefix(client.Name, prefix) {
 			suggestions = append(suggestions, prompt.Suggest{Text: client.Name, Description: "<client>"})
 		}
 	}
-	for _, site := range config.Get().Sites {
-		if !site.Disabled && strings.HasPrefix(site.GetName(), prefix) {
+	for _, site := range config.Get().SitesEnabled {
+		if strings.HasPrefix(site.GetName(), prefix) {
 			suggestions = append(suggestions, prompt.Suggest{Text: site.GetName(), Description: "<site>"})
 		}
 	}
@@ -113,13 +113,13 @@ func ClientOrSiteArg(prefix string) []prompt.Suggest {
 
 func ClientOrSiteOrGroupArg(prefix string) []prompt.Suggest {
 	suggestions := []prompt.Suggest{}
-	for _, client := range config.Get().Clients {
-		if !client.Disabled && strings.HasPrefix(client.Name, prefix) {
+	for _, client := range config.Get().ClientsEnabled {
+		if strings.HasPrefix(client.Name, prefix) {
 			suggestions = append(suggestions, prompt.Suggest{Text: client.Name, Description: "<client>"})
 		}
 	}
-	for _, site := range config.Get().Sites {
-		if !site.Disabled && strings.HasPrefix(site.GetName(), prefix) {
+	for _, site := range config.Get().SitesEnabled {
+		if strings.HasPrefix(site.GetName(), prefix) {
 			suggestions = append(suggestions, prompt.Suggest{Text: site.GetName(), Description: "<site>"})
 		}
 	}
@@ -133,8 +133,8 @@ func ClientOrSiteOrGroupArg(prefix string) []prompt.Suggest {
 
 func SiteOrGroupArg(prefix string) []prompt.Suggest {
 	suggestions := []prompt.Suggest{}
-	for _, site := range config.Get().Sites {
-		if !site.Disabled && strings.HasPrefix(site.GetName(), prefix) {
+	for _, site := range config.Get().SitesEnabled {
+		if strings.HasPrefix(site.GetName(), prefix) {
 			suggestions = append(suggestions, prompt.Suggest{Text: site.GetName(), Description: "<site>"})
 		}
 	}
