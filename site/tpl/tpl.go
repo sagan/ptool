@@ -425,6 +425,11 @@ var (
 			Url:     "https://pthome.net/",
 			Comment: "铂金家",
 		},
+		"ptlsp": {
+			Type:    "nexusphp",
+			Url:     "https://www.ptlsp.com/",
+			Comment: "",
+		},
 		"pttime": {
 			Type:                           "nexusphp",
 			Aliases:                        []string{"ptt"},

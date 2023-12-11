@@ -1,4 +1,4 @@
-package version
+package sites
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"github.com/sagan/ptool/util"
 )
 
-var command = &cobra.Command{
+var Command = &cobra.Command{
 	Use:   "sites [--filter filter]",
 	Short: "Show internal supported PT sites list which can be used with this software.",
 	Long:  `Show internal supported PT sites list which can be used with this software.`,
@@ -24,8 +24,8 @@ var (
 )
 
 func init() {
-	command.Flags().StringVarP(&filter, "filter", "", "", "Filter sites. Only show sites which name / url / comment contain this string")
-	cmd.RootCmd.AddCommand(command)
+	Command.Flags().StringVarP(&filter, "filter", "", "", "Filter sites. Only show sites which name / url / comment contain this string")
+	cmd.RootCmd.AddCommand(Command)
 }
 
 func sites(cmd *cobra.Command, args []string) error {

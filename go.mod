@@ -25,6 +25,7 @@ require (
 	github.com/hekmon/transmissionrpc/v2 v2.0.1
 	github.com/jpillora/go-tld v1.2.1
 	github.com/mattn/go-runewidth v0.0.14
+	github.com/pelletier/go-toml/v2 v2.0.8
 	github.com/refraction-networking/utls v1.3.2
 	github.com/sirupsen/logrus v1.9.1
 	github.com/spf13/cobra v1.7.0
@@ -66,7 +67,6 @@ require (
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-tty v0.0.3 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
-	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
 	github.com/pkg/term v1.2.0-beta.2 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/spf13/afero v1.9.5 // indirect
