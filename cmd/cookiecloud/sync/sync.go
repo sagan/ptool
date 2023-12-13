@@ -228,9 +228,9 @@ func sync(cmd *cobra.Command, args []string) error {
 	fmt.Printf("✕Sites invalid-cookie (no new valid cookie found) (%d): %s\n", len(sitesInvalid), strings.Join(sitesInvalid, ", "))
 	fmt.Printf("✓✓Sites success-with-new-cookie (%d): %s\n", len(sitesUpdated), strings.Join(sitesUpdated, ", "))
 
+	fmt.Printf("\n")
 	if len(updatesites) > 0 {
 		configFile := fmt.Sprintf("%s/%s", config.ConfigDir, config.ConfigFile)
-		fmt.Printf("\n")
 		if !doAction && !util.AskYesNoConfirm(fmt.Sprintf(
 			"Will update the config file (%s). Be aware that all existing comments will be LOST", configFile)) {
 			return fmt.Errorf("abort")

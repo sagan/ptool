@@ -241,6 +241,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 			}
 		})
 	}
+	log.Tracef("np parse fieldColumIndex: %v", fieldColumIndex)
 	var torrentBlocks *goquery.Selection
 	if option.selectorTorrentBlock != "" {
 		torrentBlocks = containerEl.Find(option.selectorTorrentBlock)
@@ -368,7 +369,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		} else if id != "" {
 			downloadUrl = option.siteurl + generateTorrentDownloadUrl(id, option.torrentDownloadUrl, option.npletdown)
 		}
-		if fieldColumIndex["time"] == -1 {
+		if fieldColumIndex["time"] == -1 || time == 0 {
 			if option.selectorTorrentTime != "" {
 				time, _ = util.ExtractTime(util.DomSelectorText(s, option.selectorTorrentTime), option.location)
 			} else {
@@ -385,10 +386,8 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		if fieldColumIndex["snatched"] == -1 && option.selectorTorrentSnatched != "" {
 			snatched = util.ParseInt(util.DomSelectorText(s, option.selectorTorrentSnatched))
 		}
-		if fieldColumIndex["size"] == -1 {
-			if option.selectorTorrentSize != "" {
-				size, _ = util.RAMInBytes(util.DomSelectorText(s, option.selectorTorrentSize))
-			}
+		if (fieldColumIndex["size"] == -1 || size <= 0) && option.selectorTorrentSize != "" {
+			size, _ = util.RAMInBytes(util.DomSelectorText(s, option.selectorTorrentSize))
 		}
 		if s.Find(`*[title="H&R"],*[alt="H&R"],*[title="Hit and Run"]`).Length() > 0 {
 			hnr = true
