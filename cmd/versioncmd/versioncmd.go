@@ -28,6 +28,8 @@ func versioncmd(cmd *cobra.Command, args []string) error {
 	fmt.Printf("- os/type: %s\n", runtime.GOOS)
 	fmt.Printf("- os/arch: %s\n", runtime.GOARCH)
 	fmt.Printf("- go/version: %s\n", runtime.Version())
+	fmt.Printf("- config/default_tls_ja3: %s\n", util.CHROME_JA3)
+	fmt.Printf("- config/default_h2_fingerprint: %s\n", util.CHROME_H2FINGERPRINT)
 	fmt.Printf("- config/default_http_request_headers:\n")
 	for _, header := range util.CHROME_HTTP_REQUEST_HEADERS {
 		value := header[1]

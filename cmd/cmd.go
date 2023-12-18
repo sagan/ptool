@@ -96,16 +96,16 @@ func Execute() {
 
 func init() {
 	UserHomeDir, _ := os.UserHomeDir()
-	configFile := "ptool.toml"
+	configFile := filepath.Join(UserHomeDir, ".config/ptool/ptool.toml")
 	configFiles := []string{
-		filepath.Join(UserHomeDir, ".config/ptool/ptool.toml"),
+		configFile,
 		filepath.Join(UserHomeDir, ".config/ptool/ptool.yaml"),
 		"ptool.toml",
 		"ptool.yaml",
 	}
 	for _, cf := range configFiles {
 		_, err := os.Stat(cf)
-		if err == nil {
+		if err == nil || !os.IsNotExist(err) {
 			configFile = cf
 			break
 		}
