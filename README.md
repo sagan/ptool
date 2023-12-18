@@ -1,6 +1,6 @@
 # ptool
 
-自用的 PT (private tracker) 网站辅助工具。提供全自动刷流(brush)、自动辅种(使用 iyuu 接口)、BT客户端控制等功能。
+自用的 PT (private tracker) 网站辅助工具([Github](https://github.com/sagan/ptool))。提供全自动刷流(brush)、自动辅种(使用 iyuu 接口)、BT客户端控制等功能。
 
 主要特性：
 

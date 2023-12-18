@@ -1,18 +1,19 @@
 package site
 
 import (
-	"crypto/tls"
 	"fmt"
-	"io"
 	"mime"
-	"net/http"
 	"net/url"
 	"slices"
 	"sync"
+	"time"
+
+	"github.com/Noooste/azuretls-client"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/sagan/ptool/config"
-	"github.com/sagan/ptool/ja3transport"
 	"github.com/sagan/ptool/util"
+	"github.com/sagan/ptool/util/crypto"
 )
 
 type Torrent struct {
@@ -69,8 +70,10 @@ type RegInfo struct {
 type SiteCreator func(*RegInfo) (Site, error)
 
 var (
-	registryMap = map[string]*RegInfo{}
-	sites       = map[string]Site{}
+	registryMap  = map[string]*RegInfo{}
+	sites        = map[string]Site{}
+	siteSessions = map[string]*azuretls.Session{}
+	mu           sync.Mutex
 )
 
 func (torrent *Torrent) MatchFilter(filter string) bool {
@@ -256,44 +259,77 @@ func GetConfigSiteNameByTypes(types ...string) (string, error) {
 	return "", nil
 }
 
-func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, config *config.ConfigStruct) (*http.Client, error) {
-	httpClient := &http.Client{}
-	ja3 := ""
-	// ja3 = utils.CHROME_JA3 // there are still some SERIOUS problems unsolved for now.
+func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, globalConfig *config.ConfigStruct) (*azuretls.Session, error) {
+	ja3 := util.CHROME_JA3
 	if siteConfig.Ja3 != "" {
 		ja3 = siteConfig.Ja3
-	} else if config.SiteJa3 != "" {
-		ja3 = config.SiteJa3
+	} else if globalConfig.SiteJa3 != "" {
+		ja3 = globalConfig.SiteJa3
 	}
-	var transport *http.Transport
-	var err error
-	if ja3 != "" && ja3 != "none" {
-		transport, err = ja3transport.NewTransport(ja3)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create site http transport ja3: %v", err)
-		}
-		if siteConfig.Ja3ForceAttemptHTTP2 {
-			transport.ForceAttemptHTTP2 = true
-		}
-	} else {
-		transport = &http.Transport{}
+	h2fingerprint := util.CHROME_H2FINGERPRINT
+	if siteConfig.H2Fingerprint != "" {
+		h2fingerprint = siteConfig.H2Fingerprint
+	} else if globalConfig.SiteH2Fingerprint != "" {
+		h2fingerprint = globalConfig.SiteH2Fingerprint
 	}
-	proxy := config.SiteProxy
+	proxy := globalConfig.SiteProxy
 	if siteConfig.Proxy != "" {
 		proxy = siteConfig.Proxy
 	}
-	if proxy != "" && proxy != "none" {
-		proxyUrl, err := url.Parse(proxy)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse siteProxy %s: %v", proxy, err)
+	// 暂时默认设为 insecure。因为 azuretls 似乎对某些站点(如 byr)的 TLS 证书校验有问题。
+	insecure := true
+	if globalConfig.SiteSecure {
+		insecure = false
+	}
+	if siteConfig.Insecure && !siteConfig.Secure {
+		insecure = true
+	}
+	timeout := config.DEFAULT_SITE_TIMEOUT
+	if siteConfig.Timeoout > 0 {
+		timeout = siteConfig.Timeoout
+	} else if globalConfig.SiteTimeout > 0 {
+		timeout = globalConfig.SiteTimeout
+	}
+	if ja3 == "none" {
+		ja3 = ""
+	}
+	if h2fingerprint == "none" {
+		h2fingerprint = ""
+	}
+	if proxy == "none" {
+		proxy = ""
+	}
+	sep := "\n"
+	specs := fmt.Sprint(ja3, sep, h2fingerprint, sep, proxy, sep, insecure, sep, timeout)
+	log.Tracef("Create site %s http client with specs %s", siteConfig.GetName(), specs)
+	hash := crypto.Md5String(specs)
+	mu.Lock()
+	defer mu.Unlock()
+	if siteSessions[hash] != nil {
+		return siteSessions[hash], nil
+	}
+	session := azuretls.NewSession()
+	session.SetTimeout(time.Duration(timeout) * time.Second)
+	if ja3 != "" {
+		if err := session.ApplyJa3(ja3, azuretls.Chrome); err != nil {
+			return nil, fmt.Errorf("failed to set ja3: %v", err)
 		}
-		transport.Proxy = http.ProxyURL(proxyUrl)
 	}
-	if siteConfig.Insecure {
-		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	if h2fingerprint != "" {
+		if err := session.ApplyHTTP2(h2fingerprint); err != nil {
+			return nil, fmt.Errorf("failed to set h2 finterprint: %v", err)
+		}
 	}
-	httpClient.Transport = transport
-	return httpClient, nil
+	if proxy != "" {
+		if err := session.SetProxy(proxy); err != nil {
+			return nil, fmt.Errorf("failed to set proxy: %v", err)
+		}
+	}
+	if insecure {
+		session.InsecureSkipVerify = true
+	}
+	siteSessions[hash] = session
+	return session, nil
 }
 
 // return site ua from siteConfig and globalConfig
@@ -305,23 +341,19 @@ func GetUa(siteInstance Site) string {
 	return ua
 }
 
-func GetHttpHeaders(siteInstance Site) map[string]string {
-	var globalHttpHeaders, siteHttpHeaders map[string]string
-	if config.Get().SiteHttpHeaders != nil {
-		globalHttpHeaders = *config.Get().SiteHttpHeaders
-	}
-	if siteInstance.GetSiteConfig().HttpHeaders != nil {
-		siteHttpHeaders = *siteInstance.GetSiteConfig().HttpHeaders
-	}
+func GetHttpHeaders(siteInstance Site) [][]string {
+	headers := [][]string{}
 	if config.Get().SiteNoDefaultHttpHeaders || siteInstance.GetSiteConfig().NoDefaultHttpHeaders {
-		return util.AssignMap(nil, util.CHROME_HTTP_REQUEST_HEADERS_EMPTY, globalHttpHeaders, siteHttpHeaders)
+		headers = append(headers, util.CHROME_HTTP_REQUEST_HEADERS_EMPTY...)
 	}
-	return util.AssignMap(nil, globalHttpHeaders, siteHttpHeaders)
+	headers = append(headers, config.Get().SiteHttpHeaders...)
+	headers = append(headers, siteInstance.GetSiteConfig().HttpHeaders...)
+	return headers
 }
 
 // general download torrent func
-func DownloadTorrentByUrl(siteInstance Site, httpClient *http.Client, torrentUrl string, torrentId string) ([]byte, string, error) {
-	res, header, err := util.FetchUrl(torrentUrl, httpClient,
+func DownloadTorrentByUrl(siteInstance Site, httpClient *azuretls.Session, torrentUrl string, torrentId string) ([]byte, string, error) {
+	res, header, err := util.FetchUrlWithAzuretls(torrentUrl, httpClient,
 		siteInstance.GetSiteConfig().Cookie, GetUa(siteInstance), nil)
 	if err != nil {
 		return nil, "", fmt.Errorf("can not fetch torrents from site: %v", err)
@@ -347,10 +379,7 @@ func DownloadTorrentByUrl(siteInstance Site, httpClient *http.Client, torrentUrl
 	} else {
 		filename = fmt.Sprintf("%s.torrent", filenamePrefix)
 	}
-
-	defer res.Body.Close()
-	data, err := io.ReadAll(res.Body)
-	return data, filename, err
+	return res.Body, filename, err
 }
 
 func init() {

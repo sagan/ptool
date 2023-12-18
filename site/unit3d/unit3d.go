@@ -6,11 +6,11 @@ package unit3d
 
 import (
 	"fmt"
-	"net/http"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/Noooste/azuretls-client"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/sagan/ptool/config"
@@ -23,7 +23,7 @@ type Site struct {
 	Location   *time.Location
 	SiteConfig *config.SiteConfigStruct
 	Config     *config.ConfigStruct
-	HttpClient *http.Client
+	HttpClient *azuretls.Session
 }
 
 const (
@@ -44,7 +44,7 @@ func (usite *Site) GetSiteConfig() *config.SiteConfigStruct {
 }
 
 func (usite *Site) GetStatus() (*site.Status, error) {
-	doc, _, err := util.GetUrlDoc(usite.SiteConfig.Url+"torrents", usite.HttpClient,
+	doc, _, err := util.GetUrlDocWithAzuretls(usite.SiteConfig.Url+"torrents", usite.HttpClient,
 		usite.GetSiteConfig().Cookie, site.GetUa(usite), site.GetHttpHeaders(usite))
 	if err != nil {
 		return nil, err

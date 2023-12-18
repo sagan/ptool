@@ -2,12 +2,12 @@ package nexusphp
 
 import (
 	"fmt"
-	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/Noooste/azuretls-client"
 	"github.com/PuerkitoBio/goquery"
 	log "github.com/sirupsen/logrus"
 
@@ -21,7 +21,7 @@ type Site struct {
 	Location             *time.Location
 	SiteConfig           *config.SiteConfigStruct
 	Config               *config.ConfigStruct
-	HttpClient           *http.Client
+	HttpClient           *azuretls.Session
 	siteStatus           *site.Status
 	latestTorrents       []site.Torrent
 	extraTorrents        []site.Torrent
@@ -76,12 +76,12 @@ func (npclient *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Tor
 	}
 	searchUrl = strings.Replace(searchUrl, "%s", url.PathEscape(keyword), 1)
 
-	doc, res, err := util.GetUrlDoc(searchUrl, npclient.HttpClient,
+	doc, res, err := util.GetUrlDocWithAzuretls(searchUrl, npclient.HttpClient,
 		npclient.SiteConfig.Cookie, site.GetUa(npclient), site.GetHttpHeaders(npclient))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse site page dom: %v", err)
 	}
-	if res.Request.URL.Path == "/login.php" {
+	if strings.Contains(res.Request.Url, "/login.php") {
 		return nil, fmt.Errorf("not logined (cookie may has expired)")
 	}
 	return npclient.parseTorrentsFromDoc(doc, util.Now())
@@ -148,7 +148,7 @@ func (npclient *Site) DownloadTorrentById(id string) ([]byte, string, error) {
 
 func (npclient *Site) getDigithash(id string) (string, error) {
 	detailsUrl := npclient.SiteConfig.ParseSiteUrl(fmt.Sprintf("t/%s/", id), false)
-	doc, _, err := util.GetUrlDoc(detailsUrl, npclient.HttpClient,
+	doc, _, err := util.GetUrlDocWithAzuretls(detailsUrl, npclient.HttpClient,
 		npclient.SiteConfig.Cookie, site.GetUa(npclient), site.GetHttpHeaders(npclient))
 	if err != nil {
 		return "", fmt.Errorf("failed to get torrent detail page: %v", err)
@@ -231,13 +231,13 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 	}
 	pageStr := "page=" + fmt.Sprint(page)
 	now := util.Now()
-	doc, res, error := util.GetUrlDoc(pageUrl+queryString+pageStr, npclient.HttpClient,
+	doc, res, error := util.GetUrlDocWithAzuretls(pageUrl+queryString+pageStr, npclient.HttpClient,
 		npclient.SiteConfig.Cookie, site.GetUa(npclient), site.GetHttpHeaders(npclient))
 	if error != nil {
 		err = fmt.Errorf("failed to fetch torrents page dom: %v", error)
 		return
 	}
-	if res.Request.URL.Path == "/login.php" {
+	if strings.Contains(res.Request.Url, "/login.php") {
 		return nil, "", fmt.Errorf("not logined (cookie may has expired)")
 	}
 
@@ -260,13 +260,13 @@ labelLastPage:
 		page = lastPage
 		pageStr = "page=" + fmt.Sprint(page)
 		now = util.Now()
-		doc, res, error = util.GetUrlDoc(pageUrl+queryString+pageStr, npclient.HttpClient,
+		doc, res, error = util.GetUrlDocWithAzuretls(pageUrl+queryString+pageStr, npclient.HttpClient,
 			npclient.SiteConfig.Cookie, site.GetUa(npclient), site.GetHttpHeaders(npclient))
 		if error != nil {
 			err = fmt.Errorf("failed to fetch torrents page dom: %v", error)
 			return
 		}
-		if res.Request.URL.Path == "/login.php" {
+		if strings.Contains(res.Request.Url, "/login.php") {
 			err = fmt.Errorf("not logined (cookie may has expired)")
 			return
 		}
@@ -316,12 +316,12 @@ func (npclient *Site) sync() error {
 		url = DEFAULT_TORRENTS_URL
 	}
 	url = npclient.SiteConfig.ParseSiteUrl(url, false)
-	doc, res, err := util.GetUrlDoc(url, npclient.HttpClient,
+	doc, res, err := util.GetUrlDocWithAzuretls(url, npclient.HttpClient,
 		npclient.SiteConfig.Cookie, site.GetUa(npclient), site.GetHttpHeaders(npclient))
 	if err != nil {
 		return fmt.Errorf("failed to get site page dom: %v", err)
 	}
-	if res.Request.URL.Path == "/login.php" {
+	if strings.Contains(res.Request.Url, "/login.php") {
 		return fmt.Errorf("not logined (cookie may has expired)")
 	}
 	html := doc.Find("html")
@@ -401,13 +401,13 @@ func (npclient *Site) syncExtra() error {
 	}
 	extraTorrents := []site.Torrent{}
 	for _, extraUrl := range npclient.SiteConfig.TorrentsExtraUrls {
-		doc, res, err := util.GetUrlDoc(npclient.SiteConfig.ParseSiteUrl(extraUrl, false), npclient.HttpClient,
+		doc, res, err := util.GetUrlDocWithAzuretls(npclient.SiteConfig.ParseSiteUrl(extraUrl, false), npclient.HttpClient,
 			npclient.SiteConfig.Cookie, site.GetUa(npclient), site.GetHttpHeaders(npclient))
 		if err != nil {
 			log.Errorf("failed to parse site page dom: %v", err)
 			continue
 		}
-		if res.Request.URL.Path == "/login.php" {
+		if strings.Contains(res.Request.Url, "/login.php") {
 			return fmt.Errorf("not logined (cookie may has expired)")
 		}
 		torrents, err := npclient.parseTorrentsFromDoc(doc, util.Now())

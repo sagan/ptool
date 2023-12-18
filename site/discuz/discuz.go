@@ -8,12 +8,12 @@ package discuz
 
 import (
 	"fmt"
-	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/Noooste/azuretls-client"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/sagan/ptool/config"
@@ -26,7 +26,7 @@ type Site struct {
 	Location   *time.Location
 	SiteConfig *config.SiteConfigStruct
 	Config     *config.ConfigStruct
-	HttpClient *http.Client
+	HttpClient *azuretls.Session
 }
 
 func (dzsite *Site) PurgeCache() {
@@ -41,7 +41,7 @@ func (dzsite *Site) GetSiteConfig() *config.SiteConfigStruct {
 }
 
 func (dzsite *Site) GetStatus() (*site.Status, error) {
-	doc, _, err := util.GetUrlDoc(dzsite.SiteConfig.Url+"forum.php?mod=torrents", dzsite.HttpClient,
+	doc, _, err := util.GetUrlDocWithAzuretls(dzsite.SiteConfig.Url+"forum.php?mod=torrents", dzsite.HttpClient,
 		dzsite.GetSiteConfig().Cookie, site.GetUa(dzsite), site.GetHttpHeaders(dzsite))
 	if err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func (dzsite *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error) {
 	}
 	threadUrl := regexp.MustCompile(`mod=viewthread&tid=(?P<id>\d+)\b`)
 	if threadUrl.MatchString(torrentUrl) {
-		doc, _, err := util.GetUrlDoc(torrentUrl, dzsite.HttpClient,
+		doc, _, err := util.GetUrlDocWithAzuretls(torrentUrl, dzsite.HttpClient,
 			dzsite.GetSiteConfig().Cookie, site.GetUa(dzsite), site.GetHttpHeaders(dzsite))
 		if err != nil {
 			return nil, "", fmt.Errorf("failed to get thread doc: %v", err)

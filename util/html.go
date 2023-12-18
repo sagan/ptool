@@ -1,12 +1,13 @@
 package util
 
 import (
+	"bytes"
 	"fmt"
-	"net/http"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/Noooste/azuretls-client"
 	"github.com/PuerkitoBio/goquery"
 	"golang.org/x/net/html"
 )
@@ -88,14 +89,13 @@ func DomTime(s *goquery.Selection, location *time.Location) int64 {
 	return 0
 }
 
-func GetUrlDoc(url string, client *http.Client,
-	cookie string, ua string, otherHeaders map[string]string) (*goquery.Document, *http.Response, error) {
-	res, _, err := FetchUrl(url, client, cookie, ua, otherHeaders)
+func GetUrlDocWithAzuretls(url string, client *azuretls.Session,
+	cookie string, ua string, otherHeaders [][]string) (*goquery.Document, *azuretls.Response, error) {
+	res, _, err := FetchUrlWithAzuretls(url, client, cookie, ua, otherHeaders)
 	if err != nil {
 		return nil, nil, fmt.Errorf("can not fetch site data %v", err)
 	}
-	defer res.Body.Close()
-	doc, err := goquery.NewDocumentFromReader(res.Body)
+	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(res.Body))
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to parse site page DOM, error: %v", err)
 	}

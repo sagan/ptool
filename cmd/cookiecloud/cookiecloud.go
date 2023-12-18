@@ -10,8 +10,9 @@ import (
 )
 
 var Command = &cobra.Command{
-	Use:   "cookiecloud",
-	Short: "Use cookiecloud to sync site cookies or import sites.",
+	Use:     "cookiecloud",
+	Aliases: []string{"cc"},
+	Short:   "Use cookiecloud to sync site cookies or import sites.",
 	Long: `Use cookiecloud to sync site cookies or import sites.
 To use this feature, add the cookiecloud servers to config file, e.g. :
 

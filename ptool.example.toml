@@ -1,9 +1,13 @@
 iyuuToken = '' # iyuu token。用于自动辅种功能
 # 注释掉的配置项值为默认值
-#siteProxy = '' # 使用代理访问 PT 站点。（不适用于访问 BT 客户端）。格式为 'http://127.0.0.1:1080'
-#siteUserAgent = '' #  所有站点默认使用的 ua。默认使用最新稳定版 Chrome on Windows x64 en-US 的 ua
+#siteSecure = false # 启用访问站点时的 TLS 证书校验
+#siteTimeout = 5 # 访问网站超时时间(秒)
+#siteJa3 = "" # 设置访问站点时使用的 TLS ja3 指纹。默认使用最新稳定版 Chrome on Windows x64 en-US 的
+#siteH2Fingerprint = "" # 设置访问站点时使用的 HTTP2 指纹(akamai_fingerprint)。默认使用 Chrome 的
+#siteProxy = '' # 使用代理访问 PT 站点。（不适用于访问 BT 客户端）。格式为 'http://127.0.0.1:1080'. 所有支持的代理协议: https://github.com/Noooste/azuretls-client?tab=readme-ov-file#proxy
+#siteUserAgent = '' #  所有站点默认使用的 ua。默认使用 Chrome 的
 #brushEnableStats = false # 启用刷流统计功能
-#hushshell = false # 如果设为 true, 启动 ptool shell 时将不显示欢迎信息 
+#hushshell = false # 如果设为 true, 启动 ptool shell 时将不显示欢迎信息
 #shellMaxSuggestions = 5 # ptool shell 自动补全显示建议数量。设为 0 禁用
 #shellMaxHistory = 500 # ptool shell 命令历史记录保存数量。设为 0 禁用
 #siteNoDefaultHttpHeaders = false # 如果设为 true, 访问站点时禁用默认设置的模仿 Chrome 的 http 请求头

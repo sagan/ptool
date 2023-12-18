@@ -7,11 +7,11 @@ package gazelle
 
 import (
 	"fmt"
-	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
+	"github.com/Noooste/azuretls-client"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/sagan/ptool/config"
@@ -24,7 +24,7 @@ type Site struct {
 	Location   *time.Location
 	SiteConfig *config.SiteConfigStruct
 	Config     *config.ConfigStruct
-	HttpClient *http.Client
+	HttpClient *azuretls.Session
 }
 
 const (
@@ -45,7 +45,7 @@ func (gzsite *Site) GetSiteConfig() *config.SiteConfigStruct {
 }
 
 func (gzsite *Site) GetStatus() (*site.Status, error) {
-	doc, _, err := util.GetUrlDoc(gzsite.SiteConfig.Url+"torrents.php", gzsite.HttpClient,
+	doc, _, err := util.GetUrlDocWithAzuretls(gzsite.SiteConfig.Url+"torrents.php", gzsite.HttpClient,
 		gzsite.GetSiteConfig().Cookie, site.GetUa(gzsite), site.GetHttpHeaders(gzsite))
 	if err != nil {
 		return nil, err

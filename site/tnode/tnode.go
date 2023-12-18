@@ -6,11 +6,11 @@ package tnode
 
 import (
 	"fmt"
-	"net/http"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/Noooste/azuretls-client"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/sagan/ptool/config"
@@ -23,7 +23,7 @@ type Site struct {
 	Location   *time.Location
 	SiteConfig *config.SiteConfigStruct
 	Config     *config.ConfigStruct
-	HttpClient *http.Client
+	HttpClient *azuretls.Session
 	csrfToken  string
 }
 
@@ -31,7 +31,7 @@ func (tnsite *Site) syncCsrfToken() error {
 	if tnsite.csrfToken != "" {
 		return nil
 	}
-	doc, _, err := util.GetUrlDoc(tnsite.SiteConfig.Url, tnsite.HttpClient,
+	doc, _, err := util.GetUrlDocWithAzuretls(tnsite.SiteConfig.Url, tnsite.HttpClient,
 		tnsite.GetSiteConfig().Cookie, site.GetUa(tnsite), site.GetHttpHeaders(tnsite))
 	if err != nil {
 		return err
@@ -63,10 +63,10 @@ func (tnsite *Site) GetStatus() (*site.Status, error) {
 
 	var data = &apiMainInfoResponse{}
 	apiUrl := tnsite.SiteConfig.Url + "api/user/getMainInfo"
-	headers := map[string]string{
-		"x-csrf-token": tnsite.csrfToken,
+	headers := [][]string{
+		{"x-csrf-token", tnsite.csrfToken},
 	}
-	err = util.FetchJson(apiUrl, data, tnsite.HttpClient,
+	err = util.FetchJsonWithAzuretls(apiUrl, data, tnsite.HttpClient,
 		tnsite.SiteConfig.Cookie, site.GetUa(tnsite), headers)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get use status: %v", err)

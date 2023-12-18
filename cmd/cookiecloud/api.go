@@ -55,7 +55,7 @@ func GetCookiecloudData(server string, uuid string, password string, proxy strin
 		}
 	}
 	var data *CookieCloudBody
-	err := util.FetchJson(server+"get/"+uuid, &data, httpClient, "", "", nil)
+	err := util.FetchJson(server+"get/"+uuid, &data, httpClient)
 	if err != nil || data == nil {
 		return nil, fmt.Errorf("failed to get cookiecloud data: err=%v, null data=%t", err, data == nil)
 	}

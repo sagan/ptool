@@ -38,8 +38,12 @@ var (
 			Comment: "芒果",
 		},
 		"52pt": {
-			Type:      "nexusphp",
-			Url:       "https://52pt.site/",
+			Type: "nexusphp",
+			Url:  "https://52pt.site/",
+			// 个别站点还不支持TLS1.3。
+			// 目前 azuretls 有 bug，如果使用 ja3，ServerHello 选择的 TLS 协议版本与 ClientHello 不一致时会报错
+			// tls: server selected unsupported protocol version 303
+			Ja3:       "none",
 			GlobalHnR: true,
 			Comment:   "52PT",
 		},
@@ -192,6 +196,7 @@ var (
 		"hdfans": {
 			Type:    "nexusphp",
 			Url:     "https://hdfans.org/",
+			Ja3:     "none",
 			Comment: "红豆饭",
 		},
 		"hdhome": {
@@ -300,11 +305,13 @@ var (
 		"joyhd": {
 			Type:    "nexusphp",
 			Url:     "https://www.joyhd.net/",
+			Ja3:     "none",
 			Comment: "JoyHD",
 		},
 		"jpopsuki": {
 			Type:                       "gazelle",
 			Url:                        "https://jpopsuki.eu/",
+			Ja3:                        "none",
 			SelectorUserInfoUserName:   `#userinfo_username a.username`,
 			SelectorUserInfoUploaded:   `#userinfo_stats li:nth-child(1)`,
 			SelectorUserInfoDownloaded: `#userinfo_stats li:nth-child(2)`,
@@ -368,6 +375,7 @@ var (
 		"monikadesign": {
 			Type:    "unit3d",
 			Aliases: []string{"monika"},
+			Ja3:     "none",
 			Url:     "https://monikadesign.uk/",
 			Comment: "莫妮卡",
 		},
@@ -561,6 +569,7 @@ var (
 		"zmpt": {
 			Type:    "nexusphp",
 			Url:     "https://zmpt.cc/",
+			Ja3:     "none",
 			Comment: "织梦",
 		},
 	}

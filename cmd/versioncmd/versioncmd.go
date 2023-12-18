@@ -28,11 +28,13 @@ func versioncmd(cmd *cobra.Command, args []string) error {
 	fmt.Printf("- os/type: %s\n", runtime.GOOS)
 	fmt.Printf("- os/arch: %s\n", runtime.GOARCH)
 	fmt.Printf("- go/version: %s\n", runtime.Version())
-	fmt.Printf("- config/default_ua: %s\n", util.CHROME_HTTP_REQUEST_HEADERS["User-Agent"])
 	fmt.Printf("- config/default_http_request_headers:\n")
-	defaultHttpHeaders := util.MapKeys(util.CHROME_HTTP_REQUEST_HEADERS)
-	for _, key := range defaultHttpHeaders {
-		fmt.Printf("  %s: %s\n", key, util.CHROME_HTTP_REQUEST_HEADERS[key])
+	for _, header := range util.CHROME_HTTP_REQUEST_HEADERS {
+		value := header[1]
+		if value == util.HTTP_HEADER_PLACEHOLDER {
+			value = ""
+		}
+		fmt.Printf("  %s: %s\n", header[0], value)
 	}
 	return nil
 }

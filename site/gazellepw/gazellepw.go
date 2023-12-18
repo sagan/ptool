@@ -7,11 +7,11 @@ package gazellepw
 
 import (
 	"fmt"
-	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
+	"github.com/Noooste/azuretls-client"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/sagan/ptool/config"
@@ -24,7 +24,7 @@ type Site struct {
 	Location   *time.Location
 	SiteConfig *config.SiteConfigStruct
 	Config     *config.ConfigStruct
-	HttpClient *http.Client
+	HttpClient *azuretls.Session
 }
 
 func (gpwsite *Site) PurgeCache() {
@@ -39,7 +39,7 @@ func (gpwsite *Site) GetSiteConfig() *config.SiteConfigStruct {
 }
 
 func (gpwsite *Site) GetStatus() (*site.Status, error) {
-	doc, _, err := util.GetUrlDoc(gpwsite.SiteConfig.Url+"torrents.php", gpwsite.HttpClient,
+	doc, _, err := util.GetUrlDocWithAzuretls(gpwsite.SiteConfig.Url+"torrents.php", gpwsite.HttpClient,
 		gpwsite.GetSiteConfig().Cookie, site.GetUa(gpwsite), site.GetHttpHeaders(gpwsite))
 	if err != nil {
 		return nil, err

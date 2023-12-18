@@ -114,16 +114,14 @@ func IyuuApiHash(token string, infoHashes []string) (map[string][]IyuuTorrentInf
 }
 
 func IyuuApiGetUser(token string) (data map[string]any, err error) {
-	err = util.FetchJson("https://api.iyuu.cn/index.php?s=App.Api.GetUser&sign="+token,
-		&data, nil, "", "", nil)
+	err = util.FetchJson("https://api.iyuu.cn/index.php?s=App.Api.GetUser&sign="+token, &data, nil)
 	return
 }
 
 func IyuuApiSites(token string) ([]IyuuApiSite, error) {
 	resData := &IyuuApiSitesResponse{}
 	err := util.FetchJson("https://api.iyuu.cn/index.php?s=App.Api.Sites&version="+
-		IYUU_VERSION+"&sign="+token,
-		resData, nil, "", "", nil)
+		IYUU_VERSION+"&sign="+token, resData, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +136,7 @@ func IyuuApiBind(token string, site string, uid int64, passkey string) (map[stri
 		"&site=" + site + "&id=" + fmt.Sprint(uid) + "&passkey=" + util.Sha1String(passkey)
 
 	resData := &IyuuApiResponse{}
-	err := util.FetchJson(apiUrl, &resData, nil, "", "", nil)
+	err := util.FetchJson(apiUrl, &resData, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +150,7 @@ func IyuuApiGetRecommendSites() ([]IyuuApiRecommendSite, error) {
 	apiUrl := "https://api.iyuu.cn/index.php?s=App.Api.GetRecommendSites"
 
 	var resData *IyuuGetRecommendSitesResponse
-	err := util.FetchJson(apiUrl, &resData, nil, "", "", nil)
+	err := util.FetchJson(apiUrl, &resData, nil)
 	if err != nil {
 		return nil, err
 	}

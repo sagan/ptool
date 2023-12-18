@@ -849,7 +849,7 @@ func (qbclient *Client) GetTorrentContents(infoHash string) ([]client.TorrentCon
 	}
 	apiUrl := qbclient.ClientConfig.Url + "api/v2/torrents/files?hash=" + infoHash
 	qbTorrentContents := []apiTorrentContent{}
-	err = util.FetchJson(apiUrl, &qbTorrentContents, qbclient.HttpClient, "", "", nil)
+	err = util.FetchJson(apiUrl, &qbTorrentContents, qbclient.HttpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -877,7 +877,7 @@ func (qbclient *Client) GetTorrentTrackers(infoHash string) (client.TorrentTrack
 	}
 	apiUrl := qbclient.ClientConfig.Url + "api/v2/torrents/trackers?hash=" + infoHash
 	qbTorrentTrackers := []apiTorrentTracker{}
-	err = util.FetchJson(apiUrl, &qbTorrentTrackers, qbclient.HttpClient, "", "", nil)
+	err = util.FetchJson(apiUrl, &qbTorrentTrackers, qbclient.HttpClient)
 	if err != nil {
 		return nil, err
 	}
