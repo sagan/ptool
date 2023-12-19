@@ -33,7 +33,8 @@ func status(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("no cookiecloud profile specified or found")
 	}
 	for _, profile := range cookiecloudProfiles {
-		data, err := cookiecloud.GetCookiecloudData(profile.Server, profile.Uuid, profile.Password, profile.Proxy)
+		data, err := cookiecloud.GetCookiecloudData(profile.Server, profile.Uuid, profile.Password,
+			profile.Proxy, profile.Timeoout)
 		if err != nil {
 			fmt.Printf("✕cookiecloud server %s (uuid %s) test failed: %v\n",
 				util.ParseUrlHostname(profile.Server), profile.Uuid, err)

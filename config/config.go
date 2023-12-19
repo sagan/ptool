@@ -25,6 +25,7 @@ const (
 	STATS_FILENAME   = "ptool_stats.txt"
 	HISTORY_FILENAME = "ptool_history"
 
+	DEFAULT_TIMEOUT                                 = int64(5)
 	DEFAULT_SHELL_MAX_SUGGESTIONS                   = int64(5)
 	DEFAULT_SHELL_MAX_HISTORY                       = int64(500)
 	DEFAULT_SITE_TIMEZONE                           = "Asia/Shanghai"
@@ -34,11 +35,12 @@ const (
 	DEFAULT_CLIENT_BRUSH_MAX_TORRENTS               = int64(9999)
 	DEFAULT_CLIENT_BRUSH_MIN_RATION                 = float64(0.2)
 	DEFAULT_CLIENT_BRUSH_DEFAULT_UPLOAD_SPEED_LIMIT = int64(10 * 1024 * 1024)
-	DEFAULT_SITE_TIMEOUT                            = int64(5)
+	DEFAULT_SITE_TIMEOUT                            = DEFAULT_TIMEOUT
 	DEFAULT_SITE_BRUSH_TORRENT_MIN_SIZE_LIMIT       = int64(0)
 	DEFAULT_SITE_BRUSH_TORRENT_MAX_SIZE_LIMIT       = int64(1024 * 1024 * 1024 * 1024 * 1024) // 1PB, that's say, unlimited
 	DEFAULT_SITE_TORRENT_UPLOAD_SPEED_LIMIT         = int64(10 * 1024 * 1024)
 	DEFAULT_SITE_FLOW_CONTROL_INTERVAL              = int64(3)
+	DEFAULT_COOKIECLOUD_TIMEOUT                     = DEFAULT_TIMEOUT
 )
 
 type CookiecloudConfigStruct struct {
@@ -49,6 +51,7 @@ type CookiecloudConfigStruct struct {
 	Password string   `yaml:"password"`
 	Proxy    string   `yaml:"proxy"`
 	Sites    []string `yaml:"sites"`
+	Timeoout int64    `yaml:"timeout"`
 	Comment  string   `yaml:"comment"`
 }
 

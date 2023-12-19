@@ -276,6 +276,9 @@ func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, globalConfig *con
 	if siteConfig.Proxy != "" {
 		proxy = siteConfig.Proxy
 	}
+	if proxy == "" {
+		proxy = util.ParseProxyFromEnv(siteConfig.Url)
+	}
 	// 暂时默认设为 insecure。因为 azuretls 似乎对某些站点(如 byr)的 TLS 证书校验有问题。
 	insecure := true
 	if globalConfig.SiteSecure {

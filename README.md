@@ -70,11 +70,13 @@ cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 
 推荐使用“方式 1”。程序内置了对大部分国内 NexusPHP PT 站点的支持。站点 type 通常为 PT 网站域名的主体部分（不含次级域名和 TLD 部分），例如 BTSCHOOL ( https://pt.btschool.club/ )的站点 type 是 btschool。部分 PT 网站也可以使用别名(alias)配置，例如 M-TEAM ( https://kp.m-team.cc/ )在本程序配置文件里的 type 设为 "m-team" 或 "mteam" 均可。运行 ```ptool sites``` 查看所有本程序内置支持的 PT 站点列表。本程序没有内置支持的 PT 站点必须通过“方式 2”配置。 （注：部分非 NP 架构站点本程序目前只支持自动辅种、查看站点状态，暂不支持刷流、搜索站点种子等功能）
 
-参考程序代码根目录下的 ```ptool.example.toml``` 和 ```ptool.example.yaml``` 示例配置文件了解所有可用的配置项。
-
 配置好站点后，使用 ```ptool status <site> -t``` 测试（```<site>```参数为站点的 name）。如果配置正确且 Cookie 有效，会显示站点当前登录用户的状态信息和网站最新种子列表。
 
 程序支持自动与浏览器同步站点 Cookies 或导入站点信息。详细信息请参考本文档 "cookiecloud" 命令说明部分。
+
+参考程序代码根目录下的 ```ptool.example.toml``` 或 ```ptool.example.yaml``` 示例配置文件了解常用配置项信息。
+
+查看程序代码 [config/config.go](https://github.com/sagan/ptool/blob/master/config/config.go) 文件里的 type ConfigStruct struct 获取全部可配置项信息。
 
 ## 程序功能
 
@@ -513,6 +515,16 @@ ptool cookiecloud get <site>...
 显示 CookieCloud 服务器数据里网站的最新 Cookies。参数可以是站点名、分组名、任意域名或 Url。
 
 默认以 Http 请求 "Cookie" 头格式显示 Cookies。如果指定 ```--format js``` 参数，则会以 JavaScript 的 "document.cookie='';" 代码段格式显示 Cookies，可以直接将输出结果复制到浏览器 F12 开发者工具 Console 里执行以导入 Cookies。
+
+### 查看内置支持站点信息 (sites)
+
+```
+# 显示所有内置支持的站点列表。ptool.toml 配置文件里将 [[site]] 配置块的 type 设为站点的 Type 或 Alias。
+ptool sites
+
+# 显示对应站点在本程序内部使用的详细配置参数。参数为站点的 Type 或 Alias。
+ptool sites show mteam
+```
 
 ### 交互式终端 (shell)
 

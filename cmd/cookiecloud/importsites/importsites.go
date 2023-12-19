@@ -55,7 +55,8 @@ func importsites(cmd *cobra.Command, args []string) error {
 	}
 	cookiecloudDatas := []cookiecloud.Ccdata_struct{}
 	for _, profile := range cookiecloudProfiles {
-		data, err := cookiecloud.GetCookiecloudData(profile.Server, profile.Uuid, profile.Password, profile.Proxy)
+		data, err := cookiecloud.GetCookiecloudData(profile.Server, profile.Uuid, profile.Password,
+			profile.Proxy, profile.Timeoout)
 		if err != nil {
 			log.Errorf("Cookiecloud server %s (uuid %s) connection failed: %v\n", profile.Server, profile.Uuid, err)
 			cntError++

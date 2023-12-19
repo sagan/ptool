@@ -7,7 +7,9 @@ import (
 	"net/url"
 	"sort"
 	"strings"
+	"time"
 
+	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/util"
 	"github.com/sagan/ptool/util/crypto"
 )
@@ -35,23 +37,31 @@ type CookiecloudData struct {
 	Cookie_data map[string][]map[string]any `json:"cookie_data"`
 }
 
-func GetCookiecloudData(server string, uuid string, password string, proxy string) (*CookiecloudData, error) {
+// If proxy is empty, will try to get proxy from HTTP_PROXY & HTTPS_PROXY envs.
+func GetCookiecloudData(server string, uuid string, password string,
+	proxy string, timeout int64) (*CookiecloudData, error) {
 	if server == "" || uuid == "" || password == "" {
 		return nil, fmt.Errorf("all params of server,uuid,password must be provided")
 	}
 	if !strings.HasSuffix(server, "/") {
 		server += "/"
 	}
-	var httpClient *http.Client
+	if proxy == "" {
+		proxy = util.ParseProxyFromEnv(server)
+	}
+	if timeout == 0 {
+		timeout = config.DEFAULT_COOKIECLOUD_TIMEOUT
+	}
+	httpClient := &http.Client{
+		Timeout: time.Duration(timeout) * time.Second,
+	}
 	if proxy != "" {
 		proxyUrl, err := url.Parse(proxy)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse proxy %s: %v", proxy, err)
 		}
-		httpClient = &http.Client{
-			Transport: &http.Transport{
-				Proxy: http.ProxyURL(proxyUrl),
-			},
+		httpClient.Transport = &http.Transport{
+			Proxy: http.ProxyURL(proxyUrl),
 		}
 	}
 	var data *CookieCloudBody
