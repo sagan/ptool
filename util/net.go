@@ -124,8 +124,8 @@ func FetchJsonWithAzuretls(url string, v any, client *azuretls.Session,
 func FetchUrlWithAzuretls(url string, client *azuretls.Session,
 	cookie string, ua string, otherHeaders [][]string) (*azuretls.Response, http.Header, error) {
 	log.Tracef("FetchUrlWithAzuretls url=%s hasCookie=%t", url, cookie != "")
-	SetHttpRequestBrowserHeaders(client, ua, cookie, otherHeaders)
-	res, err := client.Get(url)
+	reqHeaders := GetHttpReqHeaders(ua, cookie, otherHeaders)
+	res, err := client.Get(url, reqHeaders)
 	if err != nil {
 		if _, ok := err.(net.Error); ok {
 			return nil, nil, fmt.Errorf("failed to fetch url: <network error>: %v", err)
@@ -173,8 +173,7 @@ func PostUrlForJson(url string, data url.Values, v any, client *http.Client) err
 	return err
 }
 
-func SetHttpRequestBrowserHeaders(session *azuretls.Session, ua string, cookie string,
-	otherHeaders [][]string) {
+func GetHttpReqHeaders(ua string, cookie string, otherHeaders [][]string) azuretls.OrderedHeaders {
 	allHeaders := [][]string{}
 	headers := [][]string{}
 	headerIndexs := map[string]int{}
@@ -199,8 +198,7 @@ func SetHttpRequestBrowserHeaders(session *azuretls.Session, ua string, cookie s
 		}
 		orderedHeaders = append(orderedHeaders, header)
 	}
-	log.Tracef("Http request actual headers: %v", orderedHeaders)
-	session.OrderedHeaders = orderedHeaders
+	return orderedHeaders
 }
 
 func MatchUrlWithHostOrUrl(urlStr string, hostOrUrl string) bool {
