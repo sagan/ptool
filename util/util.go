@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -276,46 +277,17 @@ func First[T1 any, T2 any](v T1, args ...T2) T1 {
 }
 
 // Parse standard HTTP_PROXY, HTTPS_PROXY, NO_PROXY (and lowercase versions) envs, return proxy for urlStr.
-// If urlStr is empty, return default http(s) proxy, prefer HTTPS_PROXY over HTTP_PROXY.
-// However, it currently does not support CIDR style IP range value in NO_PROXY.
 func ParseProxyFromEnv(urlStr string) string {
-	var noProxyEnv, httpProxyEnv, httpsProxyEnv string
-	if os.Getenv("NO_PROXY") != "" {
-		noProxyEnv = os.Getenv("NO_PROXY")
-	} else if os.Getenv("no_proxy") != "" {
-		noProxyEnv = os.Getenv("no_proxy")
-	}
-	if os.Getenv("HTTP_PROXY") != "" {
-		httpProxyEnv = os.Getenv("HTTP_PROXY")
-	} else if os.Getenv("http_proxy") != "" {
-		httpProxyEnv = os.Getenv("http_proxy")
-	}
-	if os.Getenv("HTTPS_PROXY") != "" {
-		httpsProxyEnv = os.Getenv("HTTPS_PROXY")
-	} else if os.Getenv("https_proxy") != "" {
-		httpsProxyEnv = os.Getenv("https_proxy")
-	}
 	if urlStr == "" {
-		if httpsProxyEnv != "" {
-			return httpsProxyEnv
-		}
-		return httpProxyEnv
+		return ""
 	}
 	urlObj, err := url.Parse(urlStr)
 	if err != nil {
-		if httpsProxyEnv != "" {
-			return httpsProxyEnv
-		}
-		return httpProxyEnv
+		return ""
 	}
-	if urlObj.Host != "" {
-		if noProxys := strings.Split(noProxyEnv, ","); slices.Index(noProxys, urlObj.Host) != -1 {
-			return ""
-		}
+	proxyUrl, err := http.ProxyFromEnvironment(&http.Request{URL: urlObj})
+	if err != nil || proxyUrl == nil {
+		return ""
 	}
-	if urlObj.Scheme == "http" {
-		return httpProxyEnv
-	} else {
-		return httpsProxyEnv
-	}
+	return proxyUrl.String()
 }
