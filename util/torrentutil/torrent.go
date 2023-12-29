@@ -216,14 +216,23 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash b
 		} else {
 			filename = prefixPath + file.Path
 		}
-		mm, err := mmapFile(filename)
+		stat, err := os.Stat(filename)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get file %s stat: %v", file.Path, err)
 		}
-		if int64(len(mm)) != file.Size {
+		if stat.Size() != file.Size {
 			return fmt.Errorf("file %q has wrong length", filename)
 		}
-		span.Append(mm)
+		if checkHash {
+			// only mmap file when necessary. Windows may throw "MapViewOfFile: The paging file is too small for this operation to complete." error
+			// when mmaping big torrents (when torrent content size exceeds PC memory ?).
+			// @todo : use more robust way to calculate hash
+			mm, err := mmapFile(filename)
+			if err != nil {
+				return err
+			}
+			span.Append(mm)
+		}
 	}
 	if checkHash {
 		piecesCnt := meta.Info.NumPieces()
