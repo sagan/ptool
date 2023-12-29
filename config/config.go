@@ -61,6 +61,11 @@ type GroupConfigStruct struct {
 	Comment string   `yaml:"comment"`
 }
 
+type AliasConfigStruct struct {
+	Name string `yaml:"name"`
+	Cmd  string `yaml:"cmd"`
+}
+
 type ClientConfigStruct struct {
 	Type                              string  `yaml:"type"`
 	Name                              string  `yaml:"name"`
@@ -167,6 +172,7 @@ type ConfigStruct struct {
 	Clients                  []*ClientConfigStruct      `yaml:"clients"`
 	Sites                    []*SiteConfigStruct        `yaml:"sites"`
 	Groups                   []*GroupConfigStruct       `yaml:"groups"`
+	Aliases                  []*AliasConfigStruct       `yaml:"aliases"`
 	Cookieclouds             []*CookiecloudConfigStruct `yaml:"cookieclouds"`
 	Comment                  string                     `yaml:"comment"`
 	ClientsEnabled           []*ClientConfigStruct
@@ -179,6 +185,7 @@ var (
 	Initialized                         = false
 	ConfigDir                           = "" // "/root/.config/ptool"
 	ConfigFile                          = "" // "ptool.toml"
+	DefaultConfigFile                   = "" // set when start
 	ConfigName                          = "" // "ptool"
 	ConfigType                          = "" // "toml"
 	LockFile                            = ""
@@ -187,6 +194,7 @@ var (
 	configData            *ConfigStruct = &ConfigStruct{}
 	clientsConfigMap                    = map[string]*ClientConfigStruct{}
 	sitesConfigMap                      = map[string]*SiteConfigStruct{}
+	aliasesConfigMap                    = map[string]*AliasConfigStruct{}
 	groupsConfigMap                     = map[string]*GroupConfigStruct{}
 	cookiecloudsConfigMap               = map[string]*CookiecloudConfigStruct{}
 	once                  sync.Once
@@ -306,22 +314,46 @@ func Get() *ConfigStruct {
 			if client.Name == "" {
 				log.Fatalf("Invalid config file: client name can not be empty")
 			}
-
+			if clientsConfigMap[client.Name] != nil {
+				log.Fatalf("Invalid config file: duplicate client name %s found", client.Name)
+			}
 			clientsConfigMap[client.Name] = client
 		}
 		for _, site := range configData.Sites {
+			if sitesConfigMap[site.GetName()] != nil {
+				log.Fatalf("Invalid config file: duplicate site name %s found", site.GetName())
+			}
 			site.Register()
 		}
 		for _, group := range configData.Groups {
 			if group.Name == "" {
-				log.Fatalf("Invalid config file: group name can not be empty")
+				log.Fatalf("Invalid config file: group name can not be empty for %v", group)
+			}
+			if groupsConfigMap[group.Name] != nil {
+				log.Fatalf("Invalid config file: duplicate group name %s found", group.Name)
 			}
 			groupsConfigMap[group.Name] = group
 		}
-		for _, cookiecloud := range configData.Cookieclouds {
-			if cookiecloud.Name != "" {
-				cookiecloudsConfigMap[cookiecloud.Name] = cookiecloud
+		for _, alias := range configData.Aliases {
+			if alias.Name == "" {
+				log.Fatalf("Invalid config file: alias name can not be empty for %v", alias)
 			}
+			if alias.Name == "alias" {
+				log.Fatalf("Invalid config file: alias name can not be 'alias' itself")
+			}
+			if aliasesConfigMap[alias.Name] != nil {
+				log.Fatalf("Invalid config file: duplicate alias name %s found", alias.Name)
+			}
+			aliasesConfigMap[alias.Name] = alias
+		}
+		for _, cookiecloud := range configData.Cookieclouds {
+			if cookiecloud.Name == "" {
+				continue
+			}
+			if cookiecloudsConfigMap[cookiecloud.Name] != nil {
+				log.Fatalf("Invalid config file: duplicate cookiecloud name %s found", cookiecloud.Name)
+			}
+			cookiecloudsConfigMap[cookiecloud.Name] = cookiecloud
 		}
 		configData.ClientsEnabled = util.Filter(configData.Clients, func(c *ClientConfigStruct) bool {
 			return !c.Disabled
@@ -353,6 +385,14 @@ func GetGroupConfig(name string) *GroupConfigStruct {
 		return nil
 	}
 	return groupsConfigMap[name]
+}
+
+func GetAliasConfig(name string) *AliasConfigStruct {
+	Get()
+	if name == "" {
+		return nil
+	}
+	return aliasesConfigMap[name]
 }
 
 func GetCookiecloudConfig(name string) *CookiecloudConfigStruct {

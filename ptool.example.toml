@@ -72,7 +72,13 @@ cookie = 'cookie_here'
 
 # 站点分组功能
 # 定义分组后，大部分命令中 <site> 类型的参数可以使用分组名代替以指代多个站点，例如：
-# 在 acg 分组的所有站点中搜索 'clannad' 关键词的种子: ptool search acg clannad
+# 在 acg 分组的所有站点中搜索 'clannad' 关键词的种子: "ptool search acg clannad"
 [[groups]]
 name = 'acg'
 sites = ['u2', 'kamept']
+
+# 命令别名功能
+# 定义以下别名后，运行 "ptool st" 等效于运行 "ptool status local -t"
+[[aliases]]
+name = "st"
+cmd = "status local -t"

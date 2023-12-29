@@ -3,7 +3,6 @@ package brush
 import (
 	"fmt"
 	"math/rand"
-	"os"
 	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
@@ -63,7 +62,6 @@ func brush(cmd *cobra.Command, args []string) error {
 	cntAddTorrents := int64(0)
 	cntDeleteTorrents := int64(0)
 	doneSiteFlag := map[string]bool{}
-	tmpdir, _ := os.MkdirTemp(os.TempDir(), "ptool")
 	var statDb *stats.StatDb
 	if config.Get().BrushEnableStats {
 		statDb, err = stats.NewDb(filepath.Join(config.ConfigDir, config.STATS_FILENAME))
@@ -299,7 +297,6 @@ func brush(cmd *cobra.Command, args []string) error {
 
 	fmt.Printf("Finish brushing %d sites: successSites=%d, skipSites=%d; Added / Deleted torrents: %d / %d to client %s\n",
 		len(sitenames), cntSuccessSite, cntSkipSite, cntAddTorrents, cntDeleteTorrents, clientInstance.GetName())
-	os.RemoveAll(tmpdir)
 	if cntSuccessSite == 0 {
 		return fmt.Errorf("no sites successed")
 	}

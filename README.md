@@ -585,3 +585,15 @@ ptool search acg clannad
 ```
 
 预置的 ```_all``` 分组可以用来指代所有站点。
+
+### 命令别名 (Alias) 功能
+
+ptool.toml 里可以使用 `[[alias]]` 区块自定义命令别名，例如：
+
+```
+[[aliases]]
+name = "st"
+cmd = "status local -t"
+```
+
+然后可以直接运行 `ptool st`, 等效于运行 `ptool status local -t`。注：定义的别名无法覆盖内置命令。

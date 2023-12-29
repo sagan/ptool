@@ -6,6 +6,7 @@ import (
 	_ "github.com/sagan/ptool/cmd/addlocal"
 	_ "github.com/sagan/ptool/cmd/addtags"
 	_ "github.com/sagan/ptool/cmd/addtrackers"
+	_ "github.com/sagan/ptool/cmd/alias"
 	_ "github.com/sagan/ptool/cmd/batchdl"
 	_ "github.com/sagan/ptool/cmd/brush"
 	_ "github.com/sagan/ptool/cmd/clientctl"

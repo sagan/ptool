@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -24,8 +25,9 @@ var RootCmd = &cobra.Command{
 	Long: `ptool is a command-line program which facilitate the use of private tracker sites and BitTorrent clients.
 It's a free and open-source software, visit https://github.com/sagan/ptool for more infomation.`,
 	// Run: func(cmd *cobra.Command, args []string) { },
-	// SilenceErrors: true,
-	SilenceUsage: true,
+	SilenceErrors:      true,
+	SilenceUsage:       true,
+	DisableSuggestions: true,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		if config.InShell && config.Get().ShellMaxHistory != 0 {
 			in := strings.Join(os.Args[1:], " ")
@@ -84,14 +86,23 @@ func Execute() {
 		}
 		ShellHistory = &ShellHistoryStruct{filename: filepath.Join(config.ConfigDir, config.HISTORY_FILENAME)}
 	})
-	// see https://github.com/spf13/cobra/issues/914
-	// Must use RunE to capture error
+	// See https://github.com/spf13/cobra/issues/914 .
+	// Must use RunE to capture error.
+	// Returned errors:
+	// Unknown command (specified direct subcommand not found), unknown shorthand flag,
 	err := RootCmd.Execute()
 	if err != nil {
-		Exit(1)
-	} else {
-		Exit(0)
+		if strings.HasPrefix(err.Error(), "unknown command ") {
+			log.Debugf("Unknown command. Try to parse input as alias: %v", os.Args)
+			os.Args = append([]string{os.Args[0], "alias"}, os.Args[1:]...)
+			err = RootCmd.Execute()
+		}
+		if err != nil {
+			fmt.Printf("Error: %v.\n", err)
+			Exit(1)
+		}
 	}
+	Exit(0)
 }
 
 func init() {
@@ -110,11 +121,12 @@ func init() {
 			break
 		}
 	}
+	config.DefaultConfigFile = configFile
 
 	// global flags
 	RootCmd.PersistentFlags().BoolVarP(&config.Fork, "fork", "", false, "Enables a daemon mode that runs the ptool process in the background (detached from current terminal). The current stdout / stderr will still be used so you may want to redirect them to files using pipe. It only works on Linux platform")
 	RootCmd.PersistentFlags().BoolVarP(&config.LockOrExit, "lock-or-exit", "", false, "Used with --lock flag. If failed to acquire lock, exit 1 immediately instead of waiting")
-	RootCmd.PersistentFlags().StringVarP(&config.ConfigFile, "config", "", configFile, "Config file ([ptool.toml])")
+	RootCmd.PersistentFlags().StringVarP(&config.ConfigFile, "config", "", config.DefaultConfigFile, "Config file ([ptool.toml])")
 	RootCmd.PersistentFlags().StringVarP(&config.LockFile, "lock", "", "", "Lock filename. If set, ptool will acquire the lock on the file before executing command. It is intended to be used to prevent multiple invocations of ptool process at the same time. If the lock file does not exist, it will be created automatically. However, it will NOT be deleted after ptool process exits")
 	RootCmd.PersistentFlags().CountVarP(&config.VerboseLevel, "verbose", "v", "verbose (-v, -vv, -vvv)")
 }

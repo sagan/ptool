@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/util"
 	"github.com/sagan/ptool/version"
 )
@@ -28,6 +29,7 @@ func versioncmd(cmd *cobra.Command, args []string) error {
 	fmt.Printf("- os/type: %s\n", runtime.GOOS)
 	fmt.Printf("- os/arch: %s\n", runtime.GOARCH)
 	fmt.Printf("- go/version: %s\n", runtime.Version())
+	fmt.Printf("- config_file: %s\n", config.DefaultConfigFile)
 	fmt.Printf("- config/default_tls_ja3: %s\n", util.CHROME_JA3)
 	fmt.Printf("- config/default_h2_fingerprint: %s\n", util.CHROME_H2FINGERPRINT)
 	fmt.Printf("- config/default_http_request_headers:\n")
