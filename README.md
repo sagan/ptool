@@ -1,21 +1,22 @@
 # ptool
 
-自用的 PT (private tracker) 网站辅助工具([Github](https://github.com/sagan/ptool))。提供全自动刷流(brush)、自动辅种(使用 iyuu 接口)、BT客户端控制等功能。
+自用的 PT (private tracker) 网站辅助工具([Github](https://github.com/sagan/ptool))。提供全自动刷流(brush)、自动辅种(使用 iyuu 接口)、BT 客户端控制等功能。
 
 主要特性：
 
-* 使用 Go 开发的纯 CLI 程序。单文件可执行程序，没有外部依赖。支持 Windows / Linux、x64 / arm64 等多种环境、架构。
-* 无状态(stateless)：程序自身不保存任何状态、不在后台持续运行。“刷流”等任务需要使用 cron job 等方式定时运行本程序。
-* 使用简单。只需5分钟时间，配置 BT 客户端地址、PT 网站地址和 cookie 即可开始全自动刷流。
-* 目前支持的 BT 客户端： qBittorrent v4.1+ / Transmission (<= v3.0)。
-  * 推荐使用 qBittorrent。Transmission 客户端未充分测试。
-* 目前支持的 PT 站点：绝大部分使用 nexusphp 的网站。
-  * 测试过支持的站点：M-Team(馒头)、柠檬、U2、冬樱、红叶、聆音、铂金家、若干不可说的站点。
-  * 未列出的大部分 np 站点应该也支持。除了个别魔改 np 很厉害的站点可能不支持。
-* 刷流功能(brush)：
-  * 不依赖 RSS。直接抓取站点页面上最新的种子。
-  * 无需配置选种规则。自动跳过非免费的和有 HR 的种子；自动筛选适合刷流的种子。
-  * 无需配置删种规则。自动删除已无刷流价值的种子；自动删除免费时间到期并且尚未下载完成的种子；硬盘空间不足时也会自动删种。
+- 使用 Go 开发的纯 CLI 程序。单文件可执行程序，没有外部依赖。支持 Windows / Linux、x64 / arm64 等多种环境、架构。
+- 无状态(stateless)：程序自身不保存任何状态、不在后台持续运行。“刷流”等任务需要使用 cron job 等方式定时运行本程序。
+- 使用简单。只需 5 分钟时间，配置 BT 客户端地址、PT 网站地址和 cookie 即可开始全自动刷流。
+- 目前支持的 BT 客户端： qBittorrent v4.1+ / Transmission (<= v3.0)。
+  - 推荐使用 qBittorrent。Transmission 客户端未充分测试。
+- 目前支持的 PT 站点：绝大部分使用 nexusphp 的网站。
+  - 测试过支持的站点：M-Team(馒头)、柠檬、U2、冬樱、红叶、聆音、铂金家、若干不可说的站点。
+  - 未列出的大部分 np 站点应该也支持。除了个别魔改 np 很厉害的站点可能不支持。
+- 刷流功能(brush)：
+  - 不依赖 RSS。直接抓取站点页面上最新的种子。
+  - 无需配置选种规则。自动跳过非免费的和有 HR 的种子；自动筛选适合刷流的种子。
+  - 无需配置删种规则。自动删除已无刷流价值的种子；自动删除免费时间到期并且尚未下载完成的种子；硬盘空间不足时也会自动删种。
+- 自动模仿浏览器访问 PT 站点，能够绕过大多数站点的 CF 盾 (impersonate 特性)。
 
 ## 快速开始（刷流）
 
@@ -34,24 +35,24 @@ type = "mteam"
 cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 ```
 
-然后在当前目录下运行 ```ptool brush local mteam``` 即可执行刷流任务。程序会从 M-Team 获取最新的种子、根据一定规则筛选出适合的种子添加到本地的 qBittorrent 客户端里，同时自动从 BT 客户端里删除（已经没有上传的）旧的刷流种子。刷流任务添加到客户端里的种子会放到 ```_brush``` 分类(Category)里。程序只会对这个分类里的种子进行管理或删除等操作。
+然后在当前目录下运行 `ptool brush local mteam` 即可执行刷流任务。程序会从 M-Team 获取最新的种子、根据一定规则筛选出适合的种子添加到本地的 qBittorrent 客户端里，同时自动从 BT 客户端里删除（已经没有上传的）旧的刷流种子。刷流任务添加到客户端里的种子会放到 `_brush` 分类(Category)里。程序只会对这个分类里的种子进行管理或删除等操作。
 
 使用 Linux cron job / Windows 计划任务 (taskschd.msc) 等方式定时执行上面的刷流任务命令（例如每隔 10 分钟执行一次）即可。
 
 ## 配置文件
 
-程序支持使用 toml 或 yaml 格式的配置文件（```ptool.toml``` 或 ```ptool.yaml```），推荐使用前者。
+程序支持使用 toml 或 yaml 格式的配置文件（`ptool.toml` 或 `ptool.yaml`），推荐使用前者。
 
 将 ptool.toml 配置文件放到当前操作系统用户主目录下的 ".config/ptool/" 路径下（推荐）:
 
-* Linux: ```~/.config/ptool/ptool.toml```
-* Windows: ```%USERPROFILE%\.config\ptool\ptool.toml```
+- Linux: `~/.config/ptool/ptool.toml`
+- Windows: `%USERPROFILE%\.config\ptool\ptool.toml`
 
 如果临时测试，也可以将 ptool.toml 配置文件直接放到程序启动时的当前目录(cwd)下。
 
-配置文件里可以使用 ```[[clients]]``` 和 ```[[sites]]``` 区块添加任意多个 BT 客户端和站点。
+配置文件里可以使用 `[[clients]]` 和 `[[sites]]` 区块添加任意多个 BT 客户端和站点。
 
-```[[site]]``` 区块有两种配置方式：
+`[[site]]` 区块有两种配置方式：
 
 ```toml
 # 方式 1（推荐）：直接使用站点 ID 或 alias 作为类型(type)。无需手动输入站点 url。
@@ -68,13 +69,13 @@ url = "https://kp.m-team.cc/" # 站点首页 URL
 cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 ```
 
-推荐使用“方式 1”。程序内置了对大部分国内 NexusPHP PT 站点的支持。站点 type 通常为 PT 网站域名的主体部分（不含次级域名和 TLD 部分），例如 BTSCHOOL ( https://pt.btschool.club/ )的站点 type 是 btschool。部分 PT 网站也可以使用别名(alias)配置，例如 M-TEAM ( https://kp.m-team.cc/ )在本程序配置文件里的 type 设为 "m-team" 或 "mteam" 均可。运行 ```ptool sites``` 查看所有本程序内置支持的 PT 站点列表。本程序没有内置支持的 PT 站点必须通过“方式 2”配置。 （注：部分非 NP 架构站点本程序目前只支持自动辅种、查看站点状态，暂不支持刷流、搜索站点种子等功能）
+推荐使用“方式 1”。程序内置了对大部分国内 NexusPHP PT 站点的支持。站点 type 通常为 PT 网站域名的主体部分（不含次级域名和 TLD 部分），例如 BTSCHOOL ( https://pt.btschool.club/ )的站点 type 是 btschool。部分 PT 网站也可以使用别名(alias)配置，例如 M-TEAM ( https://kp.m-team.cc/ )在本程序配置文件里的 type 设为 "m-team" 或 "mteam" 均可。运行 `ptool sites` 查看所有本程序内置支持的 PT 站点列表。本程序没有内置支持的 PT 站点必须通过“方式 2”配置。 （注：部分非 NP 架构站点本程序目前只支持自动辅种、查看站点状态，暂不支持刷流、搜索站点种子等功能）
 
-配置好站点后，使用 ```ptool status <site> -t``` 测试（```<site>```参数为站点的 name）。如果配置正确且 Cookie 有效，会显示站点当前登录用户的状态信息和网站最新种子列表。
+配置好站点后，使用 `ptool status <site> -t` 测试（`<site>`参数为站点的 name）。如果配置正确且 Cookie 有效，会显示站点当前登录用户的状态信息和网站最新种子列表。
 
 程序支持自动与浏览器同步站点 Cookies 或导入站点信息。详细信息请参考本文档 "cookiecloud" 命令说明部分。
 
-参考程序代码根目录下的 ```ptool.example.toml``` 或 ```ptool.example.yaml``` 示例配置文件了解常用配置项信息。
+参考程序代码根目录下的 `ptool.example.toml` 或 `ptool.example.yaml` 示例配置文件了解常用配置项信息。
 
 查看程序代码 [config/config.go](https://github.com/sagan/ptool/blob/master/config/config.go) 文件里的 type ConfigStruct struct 获取全部可配置项信息。
 
@@ -86,32 +87,32 @@ cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 ptool <command> args... [flags]
 ```
 
-所有可用的 ```<command>``` 包括:
+所有可用的 `<command>` 包括:
 
-* brush : 自动刷流。
-* iyuu : 使用 iyuu 接口自动辅种。
-* batchdl : 批量下载站点的种子。
-* status : 显示 BT 客户端或 PT 站点当前状态信息。
-* stats : 显示刷流任务流量统计。
-* search : 在某个站点搜索指定关键词的种子。
-* add : 将某个站点的指定种子添加到 BT 客户端。
-* dltorrent : 下载站点的种子。
-* addlocal : 将本地的种子文件添加到 BT 客户端。
-* BT 客户端控制命令集: clientctl / show / pause / resume / delete / reannounce / recheck / getcategories / createcategory / removecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / edittracker / addtrackers / removetrackers / setsavepath。
-* parsetorrent : 显示种子(torrent)文件信息。
-* verifytorrent : 测试种子(torrent)文件与硬盘上的文件内容一致。
-* partialdownload : 拆包下载。
-* cookiecloud (v0.1.8+): 使用 [CookieCloud](https://github.com/easychen/CookieCloud) 同步站点的 Cookies 或导入站点。
-* sites : 显示本程序内置支持的所有 PT 站点列表。
-* shell : 进入交互式终端环境。
-* version : 显示本程序版本信息。
+- brush : 自动刷流。
+- iyuu : 使用 iyuu 接口自动辅种。
+- batchdl : 批量下载站点的种子。
+- status : 显示 BT 客户端或 PT 站点当前状态信息。
+- stats : 显示刷流任务流量统计。
+- search : 在某个站点搜索指定关键词的种子。
+- add : 将某个站点的指定种子添加到 BT 客户端。
+- dltorrent : 下载站点的种子。
+- addlocal : 将本地的种子文件添加到 BT 客户端。
+- BT 客户端控制命令集: clientctl / show / pause / resume / delete / reannounce / recheck / getcategories / createcategory / removecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / edittracker / addtrackers / removetrackers / setsavepath。
+- parsetorrent : 显示种子(torrent)文件信息。
+- verifytorrent : 测试种子(torrent)文件与硬盘上的文件内容一致。
+- partialdownload : 拆包下载。
+- cookiecloud (v0.1.8+): 使用 [CookieCloud](https://github.com/easychen/CookieCloud) 同步站点的 Cookies 或导入站点。
+- sites : 显示本程序内置支持的所有 PT 站点列表。
+- shell : 进入交互式终端环境。
+- version : 显示本程序版本信息。
 
-运行 ```ptool``` 查看程序支持的所有命令列表；运行 ```ptool <command> -h``` 查看指定命令的参数格式和使用说明。本程序目前仍位于 0.x.x 版本的开发阶段，各个命令、命令参数名称或格式、配置文件配置项等可能会经常变动。
+运行 `ptool` 查看程序支持的所有命令列表；运行 `ptool <command> -h` 查看指定命令的参数格式和使用说明。本程序目前仍位于 0.x.x 版本的开发阶段，各个命令、命令参数名称或格式、配置文件配置项等可能会经常变动。
 
 全局参数(flags)：
 
-* --config string : 手动指定使用的 ptool.toml 配置文件路径。
-* -v, -vv, -vvv : verbose。输出更多的日志信息（v 出现的次数越多，输出的日志越详细）。
+- --config string : 手动指定使用的 ptool.toml 配置文件路径。
+- -v, -vv, -vvv : verbose。输出更多的日志信息（v 出现的次数越多，输出的日志越详细）。
 
 ### 刷流 (brush)
 
@@ -123,10 +124,10 @@ ptool brush <client> <site>... [flags]
 
 参数
 
-* ```<client>``` : 配置文件里定义的 BT 客户端 name。
-* ```<site>``` : 配置文件里定义的 PT 站点 name。
+- `<client>` : 配置文件里定义的 BT 客户端 name。
+- `<site>` : 配置文件里定义的 PT 站点 name。
 
-可以提供多个 ```<site>``` 参数。程序会按随机顺序从提供的 ```<site>``` 列表里的各站点获取最新种子、筛选一定数量的合适的种子添加到 BT 客户端。可以将同一个站点名重复出现多次以增加其权重，使刷流任务添加该站点种子的几率更大。如果提供的所有站点里都没有找到合适的刷流种子，程序也不会添加种子到客户端。
+可以提供多个 `<site>` 参数。程序会按随机顺序从提供的 `<site>` 列表里的各站点获取最新种子、筛选一定数量的合适的种子添加到 BT 客户端。可以将同一个站点名重复出现多次以增加其权重，使刷流任务添加该站点种子的几率更大。如果提供的所有站点里都没有找到合适的刷流种子，程序也不会添加种子到客户端。
 
 示例
 
@@ -137,22 +138,22 @@ ptool brush local mteam
 
 选种（选择新种子添加到 BT 客户端）规则：
 
-* 不会选择有以下任意特征的种子：不免费、存在 HnR 考查、免费时间临近截止。
-* 部分站点存在“付费”种子（下载或汇报时会扣除积分），这类种子也不会被选择。
-* 发布时间过久的种子也不会被选择。
-* 种子的当前做种、下载人数，种子大小等因素也都会考虑。
+- 不会选择有以下任意特征的种子：不免费、存在 HnR 考查、免费时间临近截止。
+- 部分站点存在“付费”种子（下载或汇报时会扣除积分），这类种子也不会被选择。
+- 发布时间过久的种子也不会被选择。
+- 种子的当前做种、下载人数，种子大小等因素也都会考虑。
 
 删种（删除 BT 客户端里旧的刷流种子）规则：
 
-* 未下载完成的种子免费时间临近截止时，删除种子或停止下载（只上传模式）。
-* 硬盘剩余可用空间不足（默认保留 5GiB）时，开始删除没有上传速度的种子。
-* 未下载完成的种子，如果长时间没有上传速度或上传/下载速度比例过低，也可能被删除。
+- 未下载完成的种子免费时间临近截止时，删除种子或停止下载（只上传模式）。
+- 硬盘剩余可用空间不足（默认保留 5GiB）时，开始删除没有上传速度的种子。
+- 未下载完成的种子，如果长时间没有上传速度或上传/下载速度比例过低，也可能被删除。
 
-刷流任务添加到客户端里的种子会放到 ```_brush``` 分类(category)里。程序只会对这个分类里的种子进行管理或删除等操作。不会干扰 BT 客户端里其它正常的下载任务。如果需要永久保留某个刷流任务添加的种子（防止其被自动删除），在 BT 客户端里更改其分类即可。
+刷流任务添加到客户端里的种子会放到 `_brush` 分类(category)里。程序只会对这个分类里的种子进行管理或删除等操作。不会干扰 BT 客户端里其它正常的下载任务。如果需要永久保留某个刷流任务添加的种子（防止其被自动删除），在 BT 客户端里更改其分类即可。
 
 其它说明：
 
-* No-Add 模式：如果 BT 客户端里当前存在 "_noadd" 这个标签(tag)，刷流任务不会添加任何新种子到客户端。
+- No-Add 模式：如果 BT 客户端里当前存在 "\_noadd" 这个标签(tag)，刷流任务不会添加任何新种子到客户端。
 
 ### 自动辅种 (iyuu)
 
@@ -160,7 +161,7 @@ iyuu 命令通过 [iyuu 接口](https://api.iyuu.cn/docs.php) 提供自动辅种
 
 #### iyuu 配置
 
-如果是第一次使用 iyuu，首先需要在 [iyuu 网站](https://iyuu.cn/) 上微信扫码申请IYUU令牌（token）。在本程序的配置文件 ptool.toml 里配置 iyuu token：
+如果是第一次使用 iyuu，首先需要在 [iyuu 网站](https://iyuu.cn/) 上微信扫码申请 IYUU 令牌（token）。在本程序的配置文件 ptool.toml 里配置 iyuu token：
 
 ```
 iyuuToken = "IYUU0011223344..."
@@ -174,14 +175,14 @@ ptool iyuu bind --site zhuque --uid 123456 --passkey 0123456789abcdef
 
 所有参数均必须提供
 
-* --site : 用于验证的 PT 站点名。可以使用 `ptool iyuu sites -b` 命令查询 iyuu 支持的合作站点列表。
-* --uid : 对应 PT 站点的用户 uid（数字）。在 PT 网站的个人页面获取。
-* --passkey : 对应 PT 站点的用户 passkey。在 PT 网站的个人页面获取。
+- --site : 用于验证的 PT 站点名。可以使用 `ptool iyuu sites -b` 命令查询 iyuu 支持的合作站点列表。
+- --uid : 对应 PT 站点的用户 uid（数字）。在 PT 网站的个人页面获取。
+- --passkey : 对应 PT 站点的用户 passkey。在 PT 网站的个人页面获取。
 
 其他说明：
 
-* 使用 ```ptool iyuu sites -a``` 查看 iyuu 支持的所有可辅种站点列表。
-* 使用 ```ptool iyuu status``` 查询当前 iyuu token 的激活和绑定状态。
+- 使用 `ptool iyuu sites -a` 查看 iyuu 支持的所有可辅种站点列表。
+- 使用 `ptool iyuu status` 查询当前 iyuu token 的激活和绑定状态。
 
 #### 使用 iyuu 自动辅种
 
@@ -191,9 +192,9 @@ ptool iyuu xseed <client>...
 
 可以提供多个 client。程序会获取这些 client 里正在做种的种子信息，通过 iyuu 接口查询可以辅种的种子并将其自动添加到对应客户端里。注意只有在本程序的 ptool.toml 配置文件里添加的站点才会被辅种。
 
-iyuu xseed 子命令支持很多可选参数。运行 ```ptool iyuu xseed -h``` 查看所有可选参数使用说明。
+iyuu xseed 子命令支持很多可选参数。运行 `ptool iyuu xseed -h` 查看所有可选参数使用说明。
 
-添加的辅种种子默认跳过客户端 hash 校验并立即开始做种。本程序会对客户端里目标种子和 iyuu 接口返回的候选辅种种子的文件列表进行比较（文件路径、大小），只有完全一致才会添加辅种种子。添加的辅种种子会打上 ```_xseed``` 标签。
+添加的辅种种子默认跳过客户端 hash 校验并立即开始做种。本程序会对客户端里目标种子和 iyuu 接口返回的候选辅种种子的文件列表进行比较（文件路径、大小），只有完全一致才会添加辅种种子。添加的辅种种子会打上 `_xseed` 标签。
 
 ### BT 客户端控制命令集
 
@@ -207,17 +208,16 @@ ptool clientctl <client> [<option>[=value] ...]
 
 clientctl 命令可以显示或修改指定 name 的 BT 客户端的配置参数。
 
+支持的参数(`<option>`) 列表：
 
-支持的参数(```<option>```) 列表：
-
-* global_download_speed_limit : 全局下载速度上限。
-* global_upload_speed_limit : 全局上传速度上限。
-* global_download_speed : (只读)当前下载速度。
-* global_upload_speed : (只读)当前上传速度。
-* free_disk_space : (只读)默认下载目录的剩余磁盘空间(-1: Unknown)。
-* save_path : 默认下载目录。
-* ```qb_*``` : qBittorrent 的所有 [application Preferences](https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-4.1)#get-application-preferences) 配置项，例如 "qb_start_paused_enabled"。
-* ```tr_*``` : transmission 的所有 [Session Arguments](https://github.com/transmission/transmission/blob/3.00/extras/rpc-spec.txt#L482) 配置项(转换为 snake_case 格式)，例如 "tr_config_dir"。
+- global_download_speed_limit : 全局下载速度上限。
+- global_upload_speed_limit : 全局上传速度上限。
+- global_download_speed : (只读)当前下载速度。
+- global_upload_speed : (只读)当前上传速度。
+- free_disk_space : (只读)默认下载目录的剩余磁盘空间(-1: Unknown)。
+- save_path : 默认下载目录。
+- `qb_*` : qBittorrent 的所有 [application Preferences](<https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-4.1)#get-application-preferences>) 配置项，例如 "qb_start_paused_enabled"。
+- `tr_*` : transmission 的所有 [Session Arguments](https://github.com/transmission/transmission/blob/3.00/extras/rpc-spec.txt#L482) 配置项(转换为 snake_case 格式)，例如 "tr_config_dir"。
 
 示例：
 
@@ -229,7 +229,7 @@ ptool clientctl local
 ptool clientctl local global_upload_speed_limit=10M
 ```
 
-#### 显示信息 / 暂停 / 恢复 / 删除 / 强制汇报 / 强制检测Hash 客户端里种子 (show / pause / resume / delete / reannounce / recheck)
+#### 显示信息 / 暂停 / 恢复 / 删除 / 强制汇报 / 强制检测 Hash 客户端里种子 (show / pause / resume / delete / reannounce / recheck)
 
 命令格式均为：
 
@@ -237,20 +237,20 @@ ptool clientctl local global_upload_speed_limit=10M
 ptool <command> [client] [flags] [<infoHash>...]
 ```
 
-```<infoHash>``` 参数为指定的 BT 客户端里需要操作的种子的 infoHash 列表。也可以使用以下特殊值参数操作多个种子（delete 命令根据除 infoHash 以外的条件删除种子时需要二次确认）：
+`<infoHash>` 参数为指定的 BT 客户端里需要操作的种子的 infoHash 列表。也可以使用以下特殊值参数操作多个种子（delete 命令根据除 infoHash 以外的条件删除种子时需要二次确认）：
 
-* _all : 所有种子
-* _done : 所有已下载完成的种子（无论是否正在做种）(_seeding | _completed)
-* _undone : 所有未下载完成的种子(_downloading | _paused)
-* _active : 当前正在活动（上传或下载）的种子
-* _error : 状态为“出错”的种子
-* _downloading / _seeding / _paused / _completed : 状态为正在下载 / 做种 / 暂停下载 / 下载完成(但未做种)的种子
+- \_all : 所有种子
+- \_done : 所有已下载完成的种子（无论是否正在做种）(\_seeding | \_completed)
+- \_undone : 所有未下载完成的种子(\_downloading | \_paused)
+- \_active : 当前正在活动（上传或下载）的种子
+- \_error : 状态为“出错”的种子
+- \_downloading / \_seeding / \_paused / \_completed : 状态为正在下载 / 做种 / 暂停下载 / 下载完成(但未做种)的种子
 
 也可以使用以下条件 flags 筛选种子：
 
-* ```--category string``` : 指定分类的种子
-* ```--tag string``` : 含有指定标签的种子（可以用逗号分隔多个标签，种子含有其中任意标签均视为符合条件）
-* ```--filter string``` : 种子名称中包含指定文字的种子
+- `--category string` : 指定分类的种子
+- `--tag string` : 含有指定标签的种子（可以用逗号分隔多个标签，种子含有其中任意标签均视为符合条件）
+- `--filter string` : 种子名称中包含指定文字的种子
 
 示例：
 
@@ -330,13 +330,13 @@ ptool status <clientOrSite>...
 
 显示的信息包括：
 
-* BT 客户端：显示当前下载 / 上传速度和其上限，硬盘剩余可用空间。
-* PT 站点：显示用户名、上传量、下载量。
+- BT 客户端：显示当前下载 / 上传速度和其上限，硬盘剩余可用空间。
+- PT 站点：显示用户名、上传量、下载量。
 
 可选参数：
 
-* -t : 显示 BT 客户端或站点的种子列表（BT 客户端：当前活动的种子；PT 站点：最新种子）。
-* -f : 显示完整的种子列表信息。
+- -t : 显示 BT 客户端或站点的种子列表（BT 客户端：当前活动的种子；PT 站点：最新种子）。
+- -f : 显示完整的种子列表信息。
 
 ### 显示刷流任务流量统计 (stats)
 
@@ -344,9 +344,9 @@ ptool status <clientOrSite>...
 ptool stats [client...]
 ```
 
-显示 BT 客户端的刷流任务流量统计信息（下载流量、上传流量总和）。本功能默认不启用，如需启用，在 ptool.toml 配置文件的最上方里增加一行：```brushEnableStats = true``` 配置项。启用刷流统计后，刷流任务会使用 ptool.toml 配置文件相同目录下的 "ptool_stats.txt" 文件存储所需保存的信息。
+显示 BT 客户端的刷流任务流量统计信息（下载流量、上传流量总和）。本功能默认不启用，如需启用，在 ptool.toml 配置文件的最上方里增加一行：`brushEnableStats = true` 配置项。启用刷流统计后，刷流任务会使用 ptool.toml 配置文件相同目录下的 "ptool_stats.txt" 文件存储所需保存的信息。
 
-只有刷流任务添加和管理的 BT 客户端的种子（即 ```_brush``` 分类的种子）的流量信息会被记录和统计。目前设计只有在刷流任务从 BT 客户端删除某个种子时才会记录和统计该种子产生的流量信息。
+只有刷流任务添加和管理的 BT 客户端的种子（即 `_brush` 分类的种子）的流量信息会被记录和统计。目前设计只有在刷流任务从 BT 客户端删除某个种子时才会记录和统计该种子产生的流量信息。
 
 ### 添加站点种子到 BT 客户端 (add)
 
@@ -363,7 +363,7 @@ ptool add local "https://kp.m-team.cc/details.php?id=488424"
 ptool add local "https://kp.m-team.cc/download.php?id=488424"
 ```
 
-以上几条命令均可以将 M-Team 站点上ID为 [488424](https://kp.m-team.cc/details.php?id=488424&hit=1)  的种子添加到 "local" BT客户端。
+以上几条命令均可以将 M-Team 站点上 ID 为 [488424](https://kp.m-team.cc/details.php?id=488424&hit=1) 的种子添加到 "local" BT 客户端。
 
 ### 下载站点的种子
 
@@ -375,7 +375,7 @@ ptool dltorrent <torrentIdOrUrl>...
 
 参数：
 
-* --download-dir : 下载的种子文件保存路径。默认为当前目录(CWD)。
+- --download-dir : 下载的种子文件保存路径。默认为当前目录(CWD)。
 
 ### 添加本地种子到 BT 客户端 (addlocal)
 
@@ -383,8 +383,7 @@ ptool dltorrent <torrentIdOrUrl>...
 ptool addlocal <client> <filename.torrent>...
 ```
 
-将本地硬盘里的种子文件添加到 BT 客户端。种子文件名支持使用 * 通配符，例如 "*.torrent"。
-
+将本地硬盘里的种子文件添加到 BT 客户端。种子文件名支持使用 _ 通配符，例如 "_.torrent"。
 
 ### 搜索 PT 站点种子 (search)
 
@@ -392,9 +391,9 @@ ptool addlocal <client> <filename.torrent>...
 ptool search <sites> <keyword>
 ```
 
-```<sites>``` 参数为需要所搜索的 PT 站点，可以使用 "," 分割提供多个站点。可以使用 "_all" 搜索所有已配置的 PT 站点。
+`<sites>` 参数为需要所搜索的 PT 站点，可以使用 "," 分割提供多个站点。可以使用 "\_all" 搜索所有已配置的 PT 站点。
 
-可以用 ```ptool add``` 命令将搜索结果列表中的种子添加到 BT 客户端。
+可以用 `ptool add` 命令将搜索结果列表中的种子添加到 BT 客户端。
 
 ### 批量下载种子 (batchdl)
 
@@ -414,16 +413,16 @@ ptool batchdl <site> --action add --add-client local
 
 此命令提供非常多的配置参数。部分常用参数：
 
-* --max-torrents int : 最多下载多少个种子。默认 -1 (无限制，一直运行除非手动 Ctrl + C 停止)。
-* --sort string : 站点种子排序方式：size|time|name|seeders|leechers|snatched|none (default size)
-* --order string : 排序顺序：asc|desc。默认 asc。
-* --min-torrent-size string : 种子大小的最小值限制 (eg. "100MiB", "1GiB")。默认为 "-1"（无限制）。
-* --max-torrent-size string : 种子大小的最大值限制。默认为 "-1"（无限制）。
-* --max-total-size string : 下载种子内容总体积最大值限制 (eg. "512GiB", "1TiB")。默认为 "-1"（无限制）。
-* --free : 只下载免费种子。
-* --no-hr : 跳过存在 HR 的种子。
-* --no-paid : 跳过"付费"的种子。(部分站点存在"付费"种子，第一次下载或汇报时扣除积分)
-* --base-url : 手动指定种子列表页 URL，例如："special.php"、"adult.php"、"torrents.php?cat=100"。
+- --max-torrents int : 最多下载多少个种子。默认 -1 (无限制，一直运行除非手动 Ctrl + C 停止)。
+- --sort string : 站点种子排序方式：size|time|name|seeders|leechers|snatched|none (default size)
+- --order string : 排序顺序：asc|desc。默认 asc。
+- --min-torrent-size string : 种子大小的最小值限制 (eg. "100MiB", "1GiB")。默认为 "-1"（无限制）。
+- --max-torrent-size string : 种子大小的最大值限制。默认为 "-1"（无限制）。
+- --max-total-size string : 下载种子内容总体积最大值限制 (eg. "512GiB", "1TiB")。默认为 "-1"（无限制）。
+- --free : 只下载免费种子。
+- --no-hr : 跳过存在 HR 的种子。
+- --no-paid : 跳过"付费"的种子。(部分站点存在"付费"种子，第一次下载或汇报时扣除积分)
+- --base-url : 手动指定种子列表页 URL，例如："special.php"、"adult.php"、"torrents.php?cat=100"。
 
 ### 显示种子文件信息 (parsetorrent)
 
@@ -445,9 +444,9 @@ ptool verifytorrent MyTorrent.torrent --content-path D:\Downloads\MyTorrent --ch
 
 参数
 
-* ```--save-path``` : 种子内容保存路径(下载文件夹)。可以用于校验多个 torrent 文件。
-* ```--content-path``` : 种子内容路径(root folder 或单文件种子的文件路径)。只能用于校验1个 torrent 文件。必须且只能提供 ```--save-path``` 和 ```-content-path``` 两者中的其中1个参数。
-* ```--check``` : 对硬盘上文件进行 hash 校验。如果不提供此参数，默认只对比文件元信息(文件名、文件大小)。
+- `--save-path` : 种子内容保存路径(下载文件夹)。可以用于校验多个 torrent 文件。
+- `--content-path` : 种子内容路径(root folder 或单文件种子的文件路径)。只能用于校验 1 个 torrent 文件。必须且只能提供 `--save-path` 和 `-content-path` 两者中的其中 1 个参数。
+- `--check` : 对硬盘上文件进行 hash 校验。如果不提供此参数，默认只对比文件元信息(文件名、文件大小)。
 
 ### 拆包下载 (partialdownload)
 
@@ -478,7 +477,7 @@ uuid = "uuid"
 password = "password"
 ```
 
-可以添加任意个 CookieCloud 连接信息。如果想要让某个 CookieCloud 连接信息仅用于同步特定站点 cookies，加上 ```sites = ["sitename"]``` 这行配置。
+可以添加任意个 CookieCloud 连接信息。如果想要让某个 CookieCloud 连接信息仅用于同步特定站点 cookies，加上 `sites = ["sitename"]` 这行配置。
 
 #### 测试 CookieCloud 服务 (status)
 
@@ -502,7 +501,7 @@ ptool cookiecloud sync
 ptool cookiecloud import
 ```
 
-程序会从 CookieCloud 服务器获取最新的 Cookies，筛选出本程序内置支持的站点(```ptool sites```)中当前 ptool.toml 文件里未配置、并且 CookieCloud 服务器数据里存在对应网站有效 Cookie 的站点，然后添加这些站点的配置信息到 ptool.toml 文件里。
+程序会从 CookieCloud 服务器获取最新的 Cookies，筛选出本程序内置支持的站点(`ptool sites`)中当前 ptool.toml 文件里未配置、并且 CookieCloud 服务器数据里存在对应网站有效 Cookie 的站点，然后添加这些站点的配置信息到 ptool.toml 文件里。
 
 import 命令不会检测或更新 ptool.toml 里当前已存在相应配置的站点的 Cookies。
 
@@ -514,7 +513,7 @@ ptool cookiecloud get <site>...
 
 显示 CookieCloud 服务器数据里网站的最新 Cookies。参数可以是站点名、分组名、任意域名或 Url。
 
-默认以 Http 请求 "Cookie" 头格式显示 Cookies。如果指定 ```--format js``` 参数，则会以 JavaScript 的 "document.cookie='';" 代码段格式显示 Cookies，可以直接将输出结果复制到浏览器 F12 开发者工具 Console 里执行以导入 Cookies。
+默认以 Http 请求 "Cookie" 头格式显示 Cookies。如果指定 `--format js` 参数，则会以 JavaScript 的 "document.cookie='';" 代码段格式显示 Cookies，可以直接将输出结果复制到浏览器 F12 开发者工具 Console 里执行以导入 Cookies。
 
 ### 查看内置支持站点信息 (sites)
 
@@ -528,9 +527,9 @@ ptool sites show mteam
 
 ### 交互式终端 (shell)
 
-```ptool shell``` 可以启动一个交互式的 shell 终端环境。终端里可以运行所有 ptool 支持的命令。命令和命令参数输入支持完整的自动补全。
+`ptool shell` 可以启动一个交互式的 shell 终端环境。终端里可以运行所有 ptool 支持的命令。命令和命令参数输入支持完整的自动补全。
 
-ptool 也支持 bash、powershell 等操作系统 shell 环境下的命令自动补全，需要在系统 shell 里安装程序生成的自动补全脚本。运行 ```ptool completion``` 了解详细信息。但由于技术限制，系统 shell 里仅支持基本的自动补全（不支持BT客户端名称、站点名称等动态内容参数的自动补全）。
+ptool 也支持 bash、powershell 等操作系统 shell 环境下的命令自动补全，需要在系统 shell 里安装程序生成的自动补全脚本。运行 `ptool completion` 了解详细信息。但由于技术限制，系统 shell 里仅支持基本的自动补全（不支持 BT 客户端名称、站点名称等动态内容参数的自动补全）。
 
 ### 站点种子信息显示
 
@@ -547,25 +546,25 @@ You Sheng Xiao Shuo He Ji Mp3 M4a         265.3GiB  ✓              2022-10-31 
 
 列表里包括以下字段：
 
-* Name : 种子名称。
-* Size : 种子大小。
-* Free : 种子的免费和其它关键属性信息。各个部分符号含义：
-  * ```2.0``` : 上传量计算倍率。
-  * ```!``` : HR 种子。
-  * ```$``` : 付费(paid)种子。第一次下载或汇报种子时会扣除积分。
-  * ```✓``` : 免费(free)种子（不计算下载量）。
-  * ```✕``` : 非免费(none-free)种子（下载量倍率 > 0）。
-  * ```(1d12h)``` : 种子优惠(下载量免费或折扣、上传量倍率等)剩余时间。
-  * ```N``` : 中性(Neutral)种子。不计算上传量、下载量、做种魔力。
-  * ```Z``` : 零流量种子。不计算上传量、下载量。
-* Time : 种子的发布时间。
-* ↑S : 种子的做种人数。
-* ↓L : 种子的下载人数。
-* ✓C : 种子的已完成人数。
-* ID : 种子的 ID，包括站点名称前缀。可以用 ```ptool add <client> <id>``` 命令将种子添加到 BT 客户端。
-* P : 种子的下载进度或历史下载状态。此信息由站点提供。目前显示的值为：
-  * ```-``` : 未曾下载过此种子。
-  * ```0%``` : 正在下载或下载过此种子。
+- Name : 种子名称。
+- Size : 种子大小。
+- Free : 种子的免费和其它关键属性信息。各个部分符号含义：
+  - `2.0` : 上传量计算倍率。
+  - `!` : HR 种子。
+  - `$` : 付费(paid)种子。第一次下载或汇报种子时会扣除积分。
+  - `✓` : 免费(free)种子（不计算下载量）。
+  - `✕` : 非免费(none-free)种子（下载量倍率 > 0）。
+  - `(1d12h)` : 种子优惠(下载量免费或折扣、上传量倍率等)剩余时间。
+  - `N` : 中性(Neutral)种子。不计算上传量、下载量、做种魔力。
+  - `Z` : 零流量种子。不计算上传量、下载量。
+- Time : 种子的发布时间。
+- ↑S : 种子的做种人数。
+- ↓L : 种子的下载人数。
+- ✓C : 种子的已完成人数。
+- ID : 种子的 ID，包括站点名称前缀。可以用 `ptool add <client> <id>` 命令将种子添加到 BT 客户端。
+- P : 种子的下载进度或历史下载状态。此信息由站点提供。目前显示的值为：
+  - `-` : 未曾下载过此种子。
+  - `0%` : 正在下载或下载过此种子。
 
 ### 站点分组 (group) 功能
 
@@ -577,14 +576,14 @@ name = "acg"
 sites = ["u2", "kamept"]
 ```
 
-定义分组后，大部分命令中 ```<site>``` 类型的参数可以使用分组名代替以指代多个站点，例如：
+定义分组后，大部分命令中 `<site>` 类型的参数可以使用分组名代替以指代多个站点，例如：
 
 ```
 # 在 acg 分组的所有站点中搜索 "clannad" 关键词的种子
 ptool search acg clannad
 ```
 
-预置的 ```_all``` 分组可以用来指代所有站点。
+预置的 `_all` 分组可以用来指代所有站点。
 
 ### 命令别名 (Alias) 功能
 
@@ -597,3 +596,9 @@ cmd = "status local -t"
 ```
 
 然后可以直接运行 `ptool st`, 等效于运行 `ptool status local -t`。注：定义的别名无法覆盖内置命令。
+
+### 模仿浏览器 (impersonate)
+
+ptool 会在访问站点时自动模拟浏览器环境（类似 [curl-impersonate](https://github.com/lwthiker/curl-impersonate)），会设置 TLS ja3 指纹、HTTP2 akamai_fingerprint 指纹、访问请求的 http headers 等。测试能够绕过大多数站点的 CF 盾。
+
+默认模仿最新稳定版 Chrome on Windows x64 en-US 环境。可以在 ptool.toml 里使用 `siteImpersonate = "chrome120"` 设置为想要模仿的浏览器。运行 `ptool version` 会列出所有支持模仿的浏览器环境列表。运行 `ptool version --show-impersonate chrome120` 查看对应模仿浏览器环境的详细参数。

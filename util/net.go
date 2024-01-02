@@ -7,59 +7,72 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"slices"
+	"strings"
 
 	"github.com/Noooste/azuretls-client"
 	log "github.com/sirupsen/logrus"
 )
 
-var (
-	// 默认对站点的 http 请求模仿最新版 Chrome Windows 11 x64 en-US 环境。包括：
-	// TLS Ja3 指纹、http2 指纹、http headers。
-	// 查看当前 http 客户端的 ja3, http2 指纹, http headers 等信息:
-	// https://tls.peet.ws/api/all (该网站生成的ja3可能有问题),
-	// https://tools.scrapfly.io/api/fp/anything ,
-	// https://scrapfly.io/web-scraping-tools/ja3-fingerprint (建议用这个 ja3).
+type ImpersonateProfile struct {
+	// "chrome", "firefox", "opera", "safari", "edge", "ios", "android"
+	Navigator     string
+	Ja3           string
+	H2fingerpring string
+	Headers       [][]string // use "\n" as placeholder for order; use "" (empty) to delete a header
+}
 
-	// TLS ja3 指纹。参考: https://scrapfly.io/blog/how-to-avoid-web-scraping-blocking-tls/ .
-	// Ja3 should be generated without the "TLS Session has been resurected" warning
-	CHROME_JA3 = "772,4865-4866-4867-49195-49199-49196-49200-52393-52392-49171-49172-156-157-47-53,65281-45-11-65037-18-5-51-0-23-27-43-16-10-35-17513-13,29-23-24,0"
-	// akamai_fingerprint 格式。http2 指纹参考: https://lwthiker.com/networks/2022/06/17/http2-fingerprinting.html .
-	CHROME_H2FINGERPRINT = "1:65536,2:0,4:6291456,6:262144|15663105|0|m,a,s,p"
+const (
+	// 默认对站点的 http 请求模仿最新版 Chrome Windows 11 x64 en-US 环境
+	DEFAULT_IMPERSONATE = "chrome120"
 	// header 占位符。用于保证实际发送 headers 的顺序
 	HTTP_HEADER_PLACEHOLDER = "\n"
-	// 请求默认 http headers。有序！
-	CHROME_HTTP_REQUEST_HEADERS = [][]string{
-		{"Cache-Control", "max-age=0"},
-		// Sec-Ch-Ua, Sec-Ch-Ua-Mobile, Sec-Ch-Ua-Platform 这3个 headers 默认发送，除非禁用JavaScript。
-		// 其余 Sec-** headers 需要网站 opt in。
-		{"Sec-Ch-Ua", `"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"`},
-		// "Sec-Ch-Ua-Arch":              `"x86"`,
-		// "Sec-Ch-Ua-Bitness":           `"64"`,
-		// "Sec-Ch-Ua-Full-Version":      `"120.0.6099.72"`,
-		// "Sec-Ch-Ua-Full-Version-List": `"Not_A Brand";v="8.0.0.0", "Chromium";v="120.0.6099.72", "Google Chrome";v="120.0.6099.72"`,
-		{"Sec-Ch-Ua-Mobile", `?0`},
-		// "Sec-Ch-Ua-Model":             `""`,
-		{"Sec-Ch-Ua-Platform", `"Windows"`},
-		// "Sec-Ch-Ua-Platform-Version":  `"15.0.0"`,
-		// "Sec-Ch-Ua-Wow64":             `?0`,
-		{"Upgrade-Insecure-Requests", "1"},
-		{"User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"},
-		{"Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"},
-		{"Sec-Fetch-Site", `none`},
-		{"Sec-Fetch-Mode", `navigate`},
-		{"Sec-Fetch-User", `?1`},
-		{"Sec-Fetch-Dest", `document`},
-		// {"Accept-Encoding", "gzip, deflate, br"},
-		{"Accept-Language", "en-US,en;q=0.9"},
-		{"Cookie", HTTP_HEADER_PLACEHOLDER},
-	}
-	CHROME_HTTP_REQUEST_HEADERS_EMPTY = [][]string{}
+)
+
+// 对站点的 http 请求模仿真实浏览器环境。包括：
+// TLS Ja3 指纹、http2 指纹、http headers。
+// 查看当前 http 客户端的 ja3, http2 指纹, http headers 等信息:
+// https://tls.peet.ws/api/all (该网站生成的ja3可能有问题),
+// https://tools.scrapfly.io/api/fp/anything ,
+// https://scrapfly.io/web-scraping-tools/ja3-fingerprint (建议用这个 ja3).
+var ImpersonateProfiles = map[string]*ImpersonateProfile{
+	"chrome120": {
+		Navigator: "chrome",
+		// TLS ja3 指纹。参考: https://scrapfly.io/blog/how-to-avoid-web-scraping-blocking-tls/ .
+		// Ja3 should be generated without the "TLS Session has been resurected" warning
+		Ja3: "772,4865-4866-4867-49195-49199-49196-49200-52393-52392-49171-49172-156-157-47-53,65281-45-11-65037-18-5-51-0-23-27-43-16-10-35-17513-13,29-23-24,0",
+		// akamai_fingerprint 格式。http2 指纹参考: https://lwthiker.com/networks/2022/06/17/http2-fingerprinting.html .
+		H2fingerpring: "1:65536,2:0,4:6291456,6:262144|15663105|0|m,a,s,p",
+		// 请求默认 http headers。有序！
+		Headers: [][]string{
+			{"Cache-Control", "max-age=0"},
+			{"Sec-Ch-Ua", `"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"`},
+			{"Sec-Ch-Ua-Mobile", `?0`},
+			{"Sec-Ch-Ua-Platform", `"Windows"`},
+			{"Upgrade-Insecure-Requests", "1"},
+			{"User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"},
+			{"Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"},
+			{"Sec-Fetch-Site", `none`},
+			{"Sec-Fetch-Mode", `navigate`},
+			{"Sec-Fetch-User", `?1`},
+			{"Sec-Fetch-Dest", `document`},
+			// {"Accept-Encoding", "gzip, deflate, br"},
+			{"Accept-Language", "en-US,en;q=0.9"},
+			{"Cookie", HTTP_HEADER_PLACEHOLDER},
+		},
+	},
+}
+
+var (
+	// all supported impersonate names
+	Impersonates []string
 )
 
 func init() {
-	for _, header := range CHROME_HTTP_REQUEST_HEADERS {
-		CHROME_HTTP_REQUEST_HEADERS_EMPTY = append(CHROME_HTTP_REQUEST_HEADERS_EMPTY, []string{header[0], ""})
+	for key := range ImpersonateProfiles {
+		Impersonates = append(Impersonates, key)
 	}
+	slices.Sort(Impersonates)
 }
 
 func FetchJson(url string, v any, client *http.Client) error {
@@ -108,8 +121,8 @@ func FetchUrl(url string, client *http.Client) (*http.Response, http.Header, err
 }
 
 func FetchJsonWithAzuretls(url string, v any, client *azuretls.Session,
-	cookie string, ua string, otherHeaders [][]string) error {
-	res, _, err := FetchUrlWithAzuretls(url, client, cookie, ua, otherHeaders)
+	cookie string, ua string, headers [][]string) error {
+	res, _, err := FetchUrlWithAzuretls(url, client, cookie, ua, headers)
 	if err != nil {
 		return err
 	}
@@ -122,9 +135,9 @@ func FetchJsonWithAzuretls(url string, v any, client *azuretls.Session,
 }
 
 func FetchUrlWithAzuretls(url string, client *azuretls.Session,
-	cookie string, ua string, otherHeaders [][]string) (*azuretls.Response, http.Header, error) {
+	cookie string, ua string, headers [][]string) (*azuretls.Response, http.Header, error) {
 	log.Tracef("FetchUrlWithAzuretls url=%s hasCookie=%t", url, cookie != "")
-	reqHeaders := GetHttpReqHeaders(ua, cookie, otherHeaders)
+	reqHeaders := GetHttpReqHeaders(headers, cookie, ua)
 	res, err := client.Get(url, reqHeaders)
 	if err != nil {
 		if _, ok := err.(net.Error); ok {
@@ -173,26 +186,31 @@ func PostUrlForJson(url string, data url.Values, v any, client *http.Client) err
 	return err
 }
 
-func GetHttpReqHeaders(ua string, cookie string, otherHeaders [][]string) azuretls.OrderedHeaders {
+func GetHttpReqHeaders(headers [][]string, cookie string, ua string) azuretls.OrderedHeaders {
 	allHeaders := [][]string{}
-	headers := [][]string{}
+	effectiveHeaders := [][]string{}
 	headerIndexs := map[string]int{}
-	allHeaders = append(allHeaders, CHROME_HTTP_REQUEST_HEADERS...)
-	allHeaders = append(allHeaders, []string{"Cookie", cookie}, []string{"User-Agent", ua})
-	allHeaders = append(allHeaders, otherHeaders...)
+	allHeaders = append(allHeaders, headers...)
+	if cookie != "" {
+		allHeaders = append(allHeaders, []string{"Cookie", cookie})
+	}
+	if ua != "" {
+		allHeaders = append(allHeaders, []string{"User-Agent", ua})
+	}
 	for _, header := range allHeaders {
-		if index, ok := headerIndexs[header[0]]; ok {
-			headers[index] = []string{header[0], header[1]}
+		headerLowerCase := strings.ToLower(header[0])
+		if index, ok := headerIndexs[headerLowerCase]; ok {
+			effectiveHeaders[index] = []string{header[0], header[1]}
 			if header[1] == "" {
-				delete(headerIndexs, header[0])
+				delete(headerIndexs, headerLowerCase)
 			}
 		} else if header[1] != "" {
-			headers = append(headers, []string{header[0], header[1]})
-			headerIndexs[header[0]] = len(headers) - 1
+			effectiveHeaders = append(effectiveHeaders, []string{header[0], header[1]})
+			headerIndexs[headerLowerCase] = len(effectiveHeaders) - 1
 		}
 	}
 	orderedHeaders := azuretls.OrderedHeaders{}
-	for _, header := range headers {
+	for _, header := range effectiveHeaders {
 		if header[1] == "" || header[1] == HTTP_HEADER_PLACEHOLDER {
 			continue
 		}

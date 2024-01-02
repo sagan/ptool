@@ -16,12 +16,13 @@ import (
 )
 
 var (
-	doAction  = false
-	noCheck   = false
-	profile   = ""
-	siteProxy = ""
-	siteUa    = ""
-	siteJa3   = ""
+	doAction        = false
+	noCheck         = false
+	profile         = ""
+	siteProxy       = ""
+	siteImpersonate = ""
+	siteUa          = ""
+	siteJa3         = ""
 )
 
 var command = &cobra.Command{
@@ -42,6 +43,7 @@ func init() {
 	command.Flags().BoolVarP(&noCheck, "no-check", "", false, "Do not check the cookies validity before importing new sites")
 	command.Flags().StringVarP(&profile, "profile", "", "", "Comma-separated string, Set the used cookiecloud profile name(s). If not set, All cookiecloud profiles in config will be used")
 	command.Flags().StringVarP(&siteProxy, "site-proxy", "", "", "Set the proxy for imported sites")
+	command.Flags().StringVarP(&siteImpersonate, "site-impersonate", "", "", "Set the impersonate for imported sites")
 	command.Flags().StringVarP(&siteUa, "site-ua", "", "", "Set the user-agent for imported sites")
 	command.Flags().StringVarP(&siteJa3, "site-ja3", "", "", "Set the client TLS ja3 fingerprint for imported sites")
 	cookiecloud.Command.AddCommand(command)
@@ -98,8 +100,8 @@ func importsites(cmd *cobra.Command, args []string) error {
 			if cookie == "" {
 				continue
 			}
-			newsiteconfig := &config.SiteConfigStruct{Type: tplname, Cookie: cookie,
-				Proxy: siteProxy, UserAgent: siteUa, Ja3: siteJa3}
+			newsiteconfig := &config.SiteConfigStruct{Type: tplname, Cookie: cookie, Proxy: siteProxy,
+				Impersonate: siteImpersonate, UserAgent: siteUa, Ja3: siteJa3}
 			if !noCheck {
 				siteInstance, err := site.CreateSiteInternal(tplname, newsiteconfig, config.Get())
 				if err != nil {

@@ -2,20 +2,12 @@ iyuuToken = '' # iyuu token。用于自动辅种功能
 # 注释掉的配置项值为默认值
 #siteSecure = false # 启用访问站点时的 TLS 证书校验
 #siteTimeout = 5 # 访问网站超时时间(秒)
-#siteJa3 = "" # 设置访问站点时使用的 TLS ja3 指纹。默认使用最新稳定版 Chrome on Windows x64 en-US 的
-#siteH2Fingerprint = "" # 设置访问站点时使用的 HTTP2 指纹(akamai_fingerprint)。默认使用 Chrome 的
+#siteImpersonate = "" # 设置访问站点时模仿的浏览器，ptool 会使用该浏览器的 TLS ja3 指纹、H2 指纹、http headers。默认模仿最新稳定版 Chrome on Windows x64 en-US
 #siteProxy = '' # 使用代理访问 PT 站点（不适用于访问 BT 客户端）。格式为 'http://127.0.0.1:1080'。所有支持的代理协议: https://github.com/Noooste/azuretls-client?tab=readme-ov-file#proxy . 也支持通过 HTTP_PROXY & HTTPS_PROXY 环境变量设置代理
-#siteUserAgent = '' #  所有站点默认使用的 ua。默认使用 Chrome 的
 #brushEnableStats = false # 启用刷流统计功能
 #hushshell = false # 如果设为 true, 启动 ptool shell 时将不显示欢迎信息
 #shellMaxSuggestions = 5 # ptool shell 自动补全显示建议数量。设为 0 禁用
 #shellMaxHistory = 500 # ptool shell 命令历史记录保存数量。设为 0 禁用
-#siteNoDefaultHttpHeaders = false # 如果设为 true, 访问站点时禁用默认设置的模仿 Chrome 的 http 请求头
-
-# 自定义访问站点时设置的 http 请求头。如果值设为空，删除对应 header
-#siteHttpHeaders = [
-#  ['Cache-Control', 'no-cache']
-#]
 
 # 完整支持 qBittorrent  v4.1+ (推荐使用 qb v4.4+)
 [[clients]]
@@ -59,7 +51,6 @@ password = 'password'
 type = 'mteam'
 cookie = 'cookie_here'
 #proxy = '' # 访问该站点使用的代理。优先级高于全局的 siteProxy 配置。格式为 'http://127.0.0.1:1080'
-#userAgent = '' # 部分站点 cookie 绑定 ua。优先级高于全局的 siteUserAgent 配置
 #torrentUploadSpeedLimit = '10MiB' # 站点单个种子上传速度限制(/s)
 #brushTorrentMinSizeLimit = '0' # 刷流：种子最小体积限制。体积小于此值的种子不会被选择
 #brushTorrentMaxSizeLimit = '1PiB' # 刷流：种子最大体积限制。体积大于此值的种子不会被选择

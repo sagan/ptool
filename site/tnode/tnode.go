@@ -19,12 +19,17 @@ import (
 )
 
 type Site struct {
-	Name       string
-	Location   *time.Location
-	SiteConfig *config.SiteConfigStruct
-	Config     *config.ConfigStruct
-	HttpClient *azuretls.Session
-	csrfToken  string
+	Name        string
+	Location    *time.Location
+	SiteConfig  *config.SiteConfigStruct
+	Config      *config.ConfigStruct
+	HttpClient  *azuretls.Session
+	HttpHeaders [][]string
+	csrfToken   string
+}
+
+func (tnsite *Site) GetDefaultHttpHeaders() [][]string {
+	return tnsite.HttpHeaders
 }
 
 func (tnsite *Site) syncCsrfToken() error {
@@ -32,7 +37,7 @@ func (tnsite *Site) syncCsrfToken() error {
 		return nil
 	}
 	doc, _, err := util.GetUrlDocWithAzuretls(tnsite.SiteConfig.Url, tnsite.HttpClient,
-		tnsite.GetSiteConfig().Cookie, site.GetUa(tnsite), site.GetHttpHeaders(tnsite))
+		tnsite.GetSiteConfig().Cookie, site.GetUa(tnsite), tnsite.GetDefaultHttpHeaders())
 	if err != nil {
 		return err
 	}
@@ -125,16 +130,17 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 	if err != nil {
 		return nil, fmt.Errorf("invalid site timezone %s: %v", siteConfig.GetTimezone(), err)
 	}
-	httpClient, err := site.CreateSiteHttpClient(siteConfig, config)
+	httpClient, httpHeaders, err := site.CreateSiteHttpClient(siteConfig, config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create site http client: %v", err)
 	}
 	site := &Site{
-		Name:       name,
-		Location:   location,
-		SiteConfig: siteConfig,
-		Config:     config,
-		HttpClient: httpClient,
+		Name:        name,
+		Location:    location,
+		SiteConfig:  siteConfig,
+		Config:      config,
+		HttpClient:  httpClient,
+		HttpHeaders: httpHeaders,
 	}
 	return site, nil
 }

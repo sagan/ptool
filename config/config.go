@@ -101,8 +101,8 @@ type SiteConfigStruct struct {
 	TorrentsExtraUrls              []string   `yaml:"torrentsExtraUrls"`
 	Cookie                         string     `yaml:"cookie"`
 	UserAgent                      string     `yaml:"userAgent"`
+	Impersonate                    string     `yaml:"impersonate"`
 	HttpHeaders                    [][]string `yaml:"httpHeaders"`
-	NoDefaultHttpHeaders           bool       `yaml:"noDefaultHttpHeaders"`
 	Ja3                            string     `yaml:"ja3"`
 	Timeoout                       int64      `yaml:"timeout"`
 	H2Fingerprint                  string     `yaml:"h2Fingerprint"`
@@ -156,27 +156,27 @@ type SiteConfigStruct struct {
 }
 
 type ConfigStruct struct {
-	Hushshell                bool                       `yaml:"hushshell"`
-	ShellMaxSuggestions      int64                      `yaml:"shellMaxSuggestions"`
-	ShellMaxHistory          int64                      `yaml:"shellMaxHistory"`
-	IyuuToken                string                     `yaml:"iyuuToken"`
-	SiteProxy                string                     `yaml:"siteProxy"`
-	SiteUserAgent            string                     `yaml:"siteUserAgent"`
-	SiteNoDefaultHttpHeaders bool                       `yaml:"siteNoDefaultHttpHeaders"`
-	SiteHttpHeaders          [][]string                 `yaml:"siteHttpHeaders"`
-	SiteJa3                  string                     `yaml:"siteJa3"`
-	SiteTimeout              int64                      `yaml:"siteTimeout"` // 访问网站超时时间(秒)
-	SiteSecure               bool                       `yaml:"siteSecure"`  // 强制开启所有站点 TLS 证书校验。
-	SiteH2Fingerprint        string                     `yaml:"siteH2Fingerprint"`
-	BrushEnableStats         bool                       `yaml:"brushEnableStats"`
-	Clients                  []*ClientConfigStruct      `yaml:"clients"`
-	Sites                    []*SiteConfigStruct        `yaml:"sites"`
-	Groups                   []*GroupConfigStruct       `yaml:"groups"`
-	Aliases                  []*AliasConfigStruct       `yaml:"aliases"`
-	Cookieclouds             []*CookiecloudConfigStruct `yaml:"cookieclouds"`
-	Comment                  string                     `yaml:"comment"`
-	ClientsEnabled           []*ClientConfigStruct
-	SitesEnabled             []*SiteConfigStruct
+	Hushshell           bool                       `yaml:"hushshell"`
+	ShellMaxSuggestions int64                      `yaml:"shellMaxSuggestions"`
+	ShellMaxHistory     int64                      `yaml:"shellMaxHistory"`
+	IyuuToken           string                     `yaml:"iyuuToken"`
+	SiteProxy           string                     `yaml:"siteProxy"`
+	SiteUserAgent       string                     `yaml:"siteUserAgent"`
+	SiteImpersonate     string                     `yaml:"siteImpersonate"`
+	SiteHttpHeaders     [][]string                 `yaml:"siteHttpHeaders"`
+	SiteJa3             string                     `yaml:"siteJa3"`
+	SiteTimeout         int64                      `yaml:"siteTimeout"` // 访问网站超时时间(秒)
+	SiteSecure          bool                       `yaml:"siteSecure"`  // 强制开启所有站点 TLS 证书校验。
+	SiteH2Fingerprint   string                     `yaml:"siteH2Fingerprint"`
+	BrushEnableStats    bool                       `yaml:"brushEnableStats"`
+	Clients             []*ClientConfigStruct      `yaml:"clients"`
+	Sites               []*SiteConfigStruct        `yaml:"sites"`
+	Groups              []*GroupConfigStruct       `yaml:"groups"`
+	Aliases             []*AliasConfigStruct       `yaml:"aliases"`
+	Cookieclouds        []*CookiecloudConfigStruct `yaml:"cookieclouds"`
+	Comment             string                     `yaml:"comment"`
+	ClientsEnabled      []*ClientConfigStruct
+	SitesEnabled        []*SiteConfigStruct
 }
 
 var (

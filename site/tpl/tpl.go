@@ -125,6 +125,13 @@ var (
 			Url:     "https://pt.eastgame.org/",
 			Comment: "吐鲁番",
 		},
+		// need heavy work to support it
+		// "filelist": {
+		// 	Type:              "nexusphp",
+		// 	Url:               "https://filelist.io/",
+		// 	TorrentsUrl:       "browse.php",
+		// 	TorrentsExtraUrls: []string{"internal.php"},
+		// },
 		"gainbound": {
 			Type:    "nexusphp",
 			Url:     "https://gainbound.net/",

@@ -48,6 +48,8 @@ type Status struct {
 
 type Site interface {
 	GetName() string
+	// default sent http request headers
+	GetDefaultHttpHeaders() [][]string
 	GetSiteConfig() *config.SiteConfigStruct
 	// download torrent by id (eg. 12345), sitename.id (eg. mteam.12345), or absolute download url (eg. https://kp.m-team.cc/download.php?id=12345)
 	DownloadTorrent(url string) (content []byte, filename string, err error)
@@ -259,18 +261,47 @@ func GetConfigSiteNameByTypes(types ...string) (string, error) {
 	return "", nil
 }
 
-func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, globalConfig *config.ConfigStruct) (*azuretls.Session, error) {
-	ja3 := util.CHROME_JA3
+func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, globalConfig *config.ConfigStruct) (
+	*azuretls.Session, [][]string, error) {
+	var impersonate string
+	var impersonateProfile *util.ImpersonateProfile
+	var httpHeaders [][]string
+	if siteConfig.Impersonate != "" {
+		impersonate = siteConfig.Impersonate
+	} else if globalConfig.SiteImpersonate != "" {
+		impersonate = globalConfig.SiteImpersonate
+	}
+	if impersonate != "" && impersonate != "none" {
+		if ip := util.ImpersonateProfiles[impersonate]; ip == nil {
+			return nil, nil, fmt.Errorf("impersonate '%s' not supported", impersonate)
+		} else {
+			impersonateProfile = ip
+		}
+	}
+	ja3 := ""
 	if siteConfig.Ja3 != "" {
 		ja3 = siteConfig.Ja3
 	} else if globalConfig.SiteJa3 != "" {
 		ja3 = globalConfig.SiteJa3
+	} else if impersonateProfile != nil {
+		ja3 = impersonateProfile.Ja3
 	}
-	h2fingerprint := util.CHROME_H2FINGERPRINT
+	h2fingerprint := ""
 	if siteConfig.H2Fingerprint != "" {
 		h2fingerprint = siteConfig.H2Fingerprint
 	} else if globalConfig.SiteH2Fingerprint != "" {
 		h2fingerprint = globalConfig.SiteH2Fingerprint
+	} else if impersonateProfile != nil {
+		h2fingerprint = impersonateProfile.H2fingerpring
+	}
+	if impersonateProfile != nil && impersonateProfile.Headers != nil {
+		httpHeaders = append(httpHeaders, impersonateProfile.Headers...)
+	}
+	if globalConfig.SiteHttpHeaders != nil {
+		httpHeaders = append(httpHeaders, globalConfig.SiteHttpHeaders...)
+	}
+	if siteConfig.HttpHeaders != nil {
+		httpHeaders = append(httpHeaders, siteConfig.HttpHeaders...)
 	}
 	proxy := globalConfig.SiteProxy
 	if siteConfig.Proxy != "" {
@@ -309,30 +340,34 @@ func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, globalConfig *con
 	mu.Lock()
 	defer mu.Unlock()
 	if siteSessions[hash] != nil {
-		return siteSessions[hash], nil
+		return siteSessions[hash], httpHeaders, nil
 	}
 	session := azuretls.NewSession()
 	session.SetTimeout(time.Duration(timeout) * time.Second)
+	navigator := azuretls.Chrome
+	if impersonateProfile != nil {
+		navigator = impersonateProfile.Navigator
+	}
 	if ja3 != "" {
-		if err := session.ApplyJa3(ja3, azuretls.Chrome); err != nil {
-			return nil, fmt.Errorf("failed to set ja3: %v", err)
+		if err := session.ApplyJa3(ja3, navigator); err != nil {
+			return nil, nil, fmt.Errorf("failed to set ja3: %v", err)
 		}
 	}
 	if h2fingerprint != "" {
 		if err := session.ApplyHTTP2(h2fingerprint); err != nil {
-			return nil, fmt.Errorf("failed to set h2 finterprint: %v", err)
+			return nil, nil, fmt.Errorf("failed to set h2 finterprint: %v", err)
 		}
 	}
 	if proxy != "" {
 		if err := session.SetProxy(proxy); err != nil {
-			return nil, fmt.Errorf("failed to set proxy: %v", err)
+			return nil, nil, fmt.Errorf("failed to set proxy: %v", err)
 		}
 	}
 	if insecure {
 		session.InsecureSkipVerify = true
 	}
 	siteSessions[hash] = session
-	return session, nil
+	return session, httpHeaders, nil
 }
 
 // return site ua from siteConfig and globalConfig
@@ -344,20 +379,10 @@ func GetUa(siteInstance Site) string {
 	return ua
 }
 
-func GetHttpHeaders(siteInstance Site) [][]string {
-	headers := [][]string{}
-	if config.Get().SiteNoDefaultHttpHeaders || siteInstance.GetSiteConfig().NoDefaultHttpHeaders {
-		headers = append(headers, util.CHROME_HTTP_REQUEST_HEADERS_EMPTY...)
-	}
-	headers = append(headers, config.Get().SiteHttpHeaders...)
-	headers = append(headers, siteInstance.GetSiteConfig().HttpHeaders...)
-	return headers
-}
-
 // general download torrent func
 func DownloadTorrentByUrl(siteInstance Site, httpClient *azuretls.Session, torrentUrl string, torrentId string) ([]byte, string, error) {
 	res, header, err := util.FetchUrlWithAzuretls(torrentUrl, httpClient,
-		siteInstance.GetSiteConfig().Cookie, GetUa(siteInstance), nil)
+		siteInstance.GetSiteConfig().Cookie, GetUa(siteInstance), siteInstance.GetDefaultHttpHeaders())
 	if err != nil {
 		return nil, "", fmt.Errorf("can not fetch torrents from site: %v", err)
 	}

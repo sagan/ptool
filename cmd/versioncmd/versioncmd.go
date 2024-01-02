@@ -2,7 +2,9 @@ package versioncmd
 
 import (
 	"fmt"
+	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -20,25 +22,41 @@ var command = &cobra.Command{
 	RunE:  versioncmd,
 }
 
+var (
+	impersonate string
+)
+
 func init() {
+	command.Flags().StringVarP(&impersonate, "show-impersonate", "", "", "Show details of specified impersonate and exit")
 	cmd.RootCmd.AddCommand(command)
 }
 
 func versioncmd(cmd *cobra.Command, args []string) error {
+	if impersonate != "" {
+		impersonateProfile := util.ImpersonateProfiles[impersonate]
+		if impersonateProfile == nil {
+			return fmt.Errorf("impersonate '%s' not supported", impersonate)
+		}
+		fmt.Printf("Impersonate '%s'\n", impersonate)
+		fmt.Printf("- navigator: %s\n", impersonateProfile.Navigator)
+		fmt.Printf("- tls_ja3: %s\n", impersonateProfile.Ja3)
+		fmt.Printf("- h2_fingerprint: %s\n", impersonateProfile.H2fingerpring)
+		fmt.Printf("- http_request_headers:\n")
+		for _, header := range impersonateProfile.Headers {
+			value := header[1]
+			if value == util.HTTP_HEADER_PLACEHOLDER {
+				value = ""
+			}
+			fmt.Printf("  %s: %s\n", header[0], value)
+		}
+		return nil
+	}
 	fmt.Printf("ptool %s\n", version.Version)
 	fmt.Printf("- os/type: %s\n", runtime.GOOS)
 	fmt.Printf("- os/arch: %s\n", runtime.GOARCH)
 	fmt.Printf("- go/version: %s\n", runtime.Version())
-	fmt.Printf("- config_file: %s\n", config.DefaultConfigFile)
-	fmt.Printf("- config/default_tls_ja3: %s\n", util.CHROME_JA3)
-	fmt.Printf("- config/default_h2_fingerprint: %s\n", util.CHROME_H2FINGERPRINT)
-	fmt.Printf("- config/default_http_request_headers:\n")
-	for _, header := range util.CHROME_HTTP_REQUEST_HEADERS {
-		value := header[1]
-		if value == util.HTTP_HEADER_PLACEHOLDER {
-			value = ""
-		}
-		fmt.Printf("  %s: %s\n", header[0], value)
-	}
+	fmt.Printf("- config_file: %s%c%s\n", config.ConfigDir, filepath.Separator, config.ConfigFile)
+	fmt.Printf("- config_dir: %s\n", config.ConfigDir)
+	fmt.Printf("- config/supported_impersonates: %s\n", strings.Join(util.Impersonates, ", "))
 	return nil
 }

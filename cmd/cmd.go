@@ -111,8 +111,8 @@ func init() {
 	configFiles := []string{
 		configFile,
 		filepath.Join(UserHomeDir, ".config/ptool/ptool.yaml"),
-		"ptool.toml",
-		"ptool.yaml",
+		filepath.Join(".", "ptool.toml"),
+		filepath.Join(".", "ptool.yaml"),
 	}
 	for _, cf := range configFiles {
 		_, err := os.Stat(cf)

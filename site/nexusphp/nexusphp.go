@@ -22,6 +22,7 @@ type Site struct {
 	SiteConfig           *config.SiteConfigStruct
 	Config               *config.ConfigStruct
 	HttpClient           *azuretls.Session
+	HttpHeaders          [][]string
 	siteStatus           *site.Status
 	latestTorrents       []site.Torrent
 	extraTorrents        []site.Torrent
@@ -44,6 +45,10 @@ var sortFields = map[string]string{
 	"seeders":  "7",
 	"leechers": "8",
 	"snatched": "6",
+}
+
+func (npclient *Site) GetDefaultHttpHeaders() [][]string {
+	return npclient.HttpHeaders
 }
 
 func (npclient *Site) PurgeCache() {
@@ -77,7 +82,7 @@ func (npclient *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Tor
 	searchUrl = strings.Replace(searchUrl, "%s", url.PathEscape(keyword), 1)
 
 	doc, res, err := util.GetUrlDocWithAzuretls(searchUrl, npclient.HttpClient,
-		npclient.SiteConfig.Cookie, site.GetUa(npclient), site.GetHttpHeaders(npclient))
+		npclient.SiteConfig.Cookie, site.GetUa(npclient), npclient.GetDefaultHttpHeaders())
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse site page dom: %v", err)
 	}
@@ -149,7 +154,7 @@ func (npclient *Site) DownloadTorrentById(id string) ([]byte, string, error) {
 func (npclient *Site) getDigithash(id string) (string, error) {
 	detailsUrl := npclient.SiteConfig.ParseSiteUrl(fmt.Sprintf("t/%s/", id), false)
 	doc, _, err := util.GetUrlDocWithAzuretls(detailsUrl, npclient.HttpClient,
-		npclient.SiteConfig.Cookie, site.GetUa(npclient), site.GetHttpHeaders(npclient))
+		npclient.SiteConfig.Cookie, site.GetUa(npclient), npclient.GetDefaultHttpHeaders())
 	if err != nil {
 		return "", fmt.Errorf("failed to get torrent detail page: %v", err)
 	}
@@ -232,7 +237,7 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 	pageStr := "page=" + fmt.Sprint(page)
 	now := util.Now()
 	doc, res, error := util.GetUrlDocWithAzuretls(pageUrl+queryString+pageStr, npclient.HttpClient,
-		npclient.SiteConfig.Cookie, site.GetUa(npclient), site.GetHttpHeaders(npclient))
+		npclient.SiteConfig.Cookie, site.GetUa(npclient), npclient.GetDefaultHttpHeaders())
 	if error != nil {
 		err = fmt.Errorf("failed to fetch torrents page dom: %v", error)
 		return
@@ -261,7 +266,7 @@ labelLastPage:
 		pageStr = "page=" + fmt.Sprint(page)
 		now = util.Now()
 		doc, res, error = util.GetUrlDocWithAzuretls(pageUrl+queryString+pageStr, npclient.HttpClient,
-			npclient.SiteConfig.Cookie, site.GetUa(npclient), site.GetHttpHeaders(npclient))
+			npclient.SiteConfig.Cookie, site.GetUa(npclient), npclient.GetDefaultHttpHeaders())
 		if error != nil {
 			err = fmt.Errorf("failed to fetch torrents page dom: %v", error)
 			return
@@ -317,7 +322,7 @@ func (npclient *Site) sync() error {
 	}
 	url = npclient.SiteConfig.ParseSiteUrl(url, false)
 	doc, res, err := util.GetUrlDocWithAzuretls(url, npclient.HttpClient,
-		npclient.SiteConfig.Cookie, site.GetUa(npclient), site.GetHttpHeaders(npclient))
+		npclient.SiteConfig.Cookie, site.GetUa(npclient), npclient.GetDefaultHttpHeaders())
 	if err != nil {
 		return fmt.Errorf("failed to get site page dom: %v", err)
 	}
@@ -402,7 +407,7 @@ func (npclient *Site) syncExtra() error {
 	extraTorrents := []site.Torrent{}
 	for _, extraUrl := range npclient.SiteConfig.TorrentsExtraUrls {
 		doc, res, err := util.GetUrlDocWithAzuretls(npclient.SiteConfig.ParseSiteUrl(extraUrl, false), npclient.HttpClient,
-			npclient.SiteConfig.Cookie, site.GetUa(npclient), site.GetHttpHeaders(npclient))
+			npclient.SiteConfig.Cookie, site.GetUa(npclient), npclient.GetDefaultHttpHeaders())
 		if err != nil {
 			log.Errorf("failed to parse site page dom: %v", err)
 			continue
@@ -430,16 +435,17 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 	if err != nil {
 		return nil, fmt.Errorf("invalid site timezone %s: %v", siteConfig.GetTimezone(), err)
 	}
-	httpClient, err := site.CreateSiteHttpClient(siteConfig, config)
+	httpClient, httpHeaders, err := site.CreateSiteHttpClient(siteConfig, config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create site http client: %v", err)
 	}
 	site := &Site{
-		Name:       name,
-		Location:   location,
-		SiteConfig: siteConfig,
-		Config:     config,
-		HttpClient: httpClient,
+		Name:        name,
+		Location:    location,
+		SiteConfig:  siteConfig,
+		Config:      config,
+		HttpClient:  httpClient,
+		HttpHeaders: httpHeaders,
 		torrentsParserOption: &TorrentsParserOption{
 			location:                       location,
 			siteurl:                        siteConfig.Url,

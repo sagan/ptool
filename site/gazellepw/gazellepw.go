@@ -20,11 +20,16 @@ import (
 )
 
 type Site struct {
-	Name       string
-	Location   *time.Location
-	SiteConfig *config.SiteConfigStruct
-	Config     *config.ConfigStruct
-	HttpClient *azuretls.Session
+	Name        string
+	Location    *time.Location
+	SiteConfig  *config.SiteConfigStruct
+	Config      *config.ConfigStruct
+	HttpClient  *azuretls.Session
+	HttpHeaders [][]string
+}
+
+func (gpwsite *Site) GetDefaultHttpHeaders() [][]string {
+	return gpwsite.HttpHeaders
 }
 
 func (gpwsite *Site) PurgeCache() {
@@ -40,7 +45,7 @@ func (gpwsite *Site) GetSiteConfig() *config.SiteConfigStruct {
 
 func (gpwsite *Site) GetStatus() (*site.Status, error) {
 	doc, _, err := util.GetUrlDocWithAzuretls(gpwsite.SiteConfig.Url+"torrents.php", gpwsite.HttpClient,
-		gpwsite.GetSiteConfig().Cookie, site.GetUa(gpwsite), site.GetHttpHeaders(gpwsite))
+		gpwsite.GetSiteConfig().Cookie, site.GetUa(gpwsite), gpwsite.GetDefaultHttpHeaders())
 	if err != nil {
 		return nil, err
 	}
@@ -94,16 +99,17 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 	if err != nil {
 		return nil, fmt.Errorf("invalid site timezone %s: %v", siteConfig.GetTimezone(), err)
 	}
-	httpClient, err := site.CreateSiteHttpClient(siteConfig, config)
+	httpClient, httpHeaders, err := site.CreateSiteHttpClient(siteConfig, config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create site http client: %v", err)
 	}
 	site := &Site{
-		Name:       name,
-		Location:   location,
-		SiteConfig: siteConfig,
-		Config:     config,
-		HttpClient: httpClient,
+		Name:        name,
+		Location:    location,
+		SiteConfig:  siteConfig,
+		Config:      config,
+		HttpClient:  httpClient,
+		HttpHeaders: httpHeaders,
 	}
 	return site, nil
 }

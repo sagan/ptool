@@ -90,8 +90,8 @@ func DomTime(s *goquery.Selection, location *time.Location) int64 {
 }
 
 func GetUrlDocWithAzuretls(url string, client *azuretls.Session,
-	cookie string, ua string, otherHeaders [][]string) (*goquery.Document, *azuretls.Response, error) {
-	res, _, err := FetchUrlWithAzuretls(url, client, cookie, ua, otherHeaders)
+	cookie string, ua string, headers [][]string) (*goquery.Document, *azuretls.Response, error) {
+	res, _, err := FetchUrlWithAzuretls(url, client, cookie, ua, headers)
 	if err != nil {
 		return nil, nil, fmt.Errorf("can not fetch site data %v", err)
 	}
