@@ -20,6 +20,7 @@ type ImpersonateProfile struct {
 	Ja3           string
 	H2fingerpring string
 	Headers       [][]string // use "\n" as placeholder for order; use "" (empty) to delete a header
+	Comment       string
 }
 
 const (
@@ -38,6 +39,7 @@ const (
 var ImpersonateProfiles = map[string]*ImpersonateProfile{
 	"chrome120": {
 		Navigator: "chrome",
+		Comment:   "Chrome 120 on Windows 11 x64 en-US",
 		// TLS ja3 指纹。参考: https://scrapfly.io/blog/how-to-avoid-web-scraping-blocking-tls/ .
 		// Ja3 should be generated without the "TLS Session has been resurected" warning
 		Ja3: "772,4865-4866-4867-49195-49199-49196-49200-52393-52392-49171-49172-156-157-47-53,65281-45-11-65037-18-5-51-0-23-27-43-16-10-35-17513-13,29-23-24,0",
@@ -56,9 +58,31 @@ var ImpersonateProfiles = map[string]*ImpersonateProfile{
 			{"Sec-Fetch-Mode", `navigate`},
 			{"Sec-Fetch-User", `?1`},
 			{"Sec-Fetch-Dest", `document`},
-			// {"Accept-Encoding", "gzip, deflate, br"},
+			{"Accept-Encoding", "gzip, deflate, br"},
 			{"Accept-Language", "en-US,en;q=0.9"},
 			{"Cookie", HTTP_HEADER_PLACEHOLDER},
+		},
+	},
+	"firefox121": {
+		Navigator: "firefox",
+		Comment:   "Firefox 121 on Windows 11 x64 en-US",
+		// Ja3:           "772,4865-4867-4866-49195-49199-52393-52392-49196-49200-49162-49161-49171-49172-156-157-47-53,0-23-65281-10-11-35-16-5-34-51-43-13-45-28-65037,29-23-24-25-256-257,0",
+		// utls do not support TLS 34 delegated_credentials (34) (IANA) extension at this time.
+		// see https://github.com/refraction-networking/utls/issues/274
+		Ja3:           "772,4865-4867-4866-49195-49199-52393-52392-49196-49200-49162-49161-49171-49172-156-157-47-53,0-23-65281-10-11-35-16-5-51-43-13-45-28-65037,29-23-24-25-256-257,0",
+		H2fingerpring: "1:65536,4:131072,5:16384|12517377|3:0:0:201,5:0:0:101,7:0:0:1,9:0:7:1,11:0:3:1,13:0:0:241|m,p,a,s",
+		Headers: [][]string{
+			{"User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0"},
+			{"Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"},
+			{"Accept-Language", "en-US,en;q=0.5"},
+			{"Accept-Encoding", "gzip, deflate, br"},
+			{"Cookie", HTTP_HEADER_PLACEHOLDER},
+			{"Upgrade-Insecure-Requests", "1"},
+			{"Sec-Fetch-Dest", `document`},
+			{"Sec-Fetch-Mode", `navigate`},
+			{"Sec-Fetch-Site", `none`},
+			{"Sec-Fetch-User", `?1`},
+			{"te", "trailers"},
 		},
 	},
 }

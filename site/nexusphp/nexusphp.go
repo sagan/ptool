@@ -71,13 +71,19 @@ func (npclient *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Tor
 	if baseUrl == "" {
 		if npclient.SiteConfig.SearchUrl != "" {
 			baseUrl = npclient.SiteConfig.SearchUrl
+		} else if npclient.SiteConfig.TorrentsUrl != "" {
+			baseUrl = npclient.SiteConfig.TorrentsUrl
 		} else {
 			baseUrl = DEFAULT_TORRENTS_URL
 		}
 	}
 	searchUrl := npclient.SiteConfig.ParseSiteUrl(baseUrl, true)
 	if !strings.Contains(searchUrl, "%s") {
-		searchUrl += "search=%s"
+		searchQueryVariable := "search"
+		if npclient.SiteConfig.SearchQueryVariable != "" {
+			searchQueryVariable = npclient.SiteConfig.SearchQueryVariable
+		}
+		searchUrl += searchQueryVariable + "=%s"
 	}
 	searchUrl = strings.Replace(searchUrl, "%s", url.PathEscape(keyword), 1)
 

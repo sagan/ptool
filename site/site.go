@@ -51,9 +51,9 @@ type Site interface {
 	// default sent http request headers
 	GetDefaultHttpHeaders() [][]string
 	GetSiteConfig() *config.SiteConfigStruct
-	// download torrent by id (eg. 12345), sitename.id (eg. mteam.12345), or absolute download url (eg. https://kp.m-team.cc/download.php?id=12345)
+	// download torrent by id (e.g.: 12345), sitename.id (e.g.: mteam.12345), or absolute download url (e.g.: https://kp.m-team.cc/download.php?id=12345)
 	DownloadTorrent(url string) (content []byte, filename string, err error)
-	// download torrent by torrent id (eg. 12345)
+	// download torrent by torrent id (e.g.: 12345)
 	DownloadTorrentById(id string) (content []byte, filename string, err error)
 	GetLatestTorrents(full bool) ([]Torrent, error)
 	// sort: size|name|none(or "")

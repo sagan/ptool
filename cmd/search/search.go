@@ -34,6 +34,7 @@ var command = &cobra.Command{
 var (
 	dense             = false
 	largestFlag       = false
+	newestFlag        = false
 	showJson          = false
 	maxResults        = int64(0)
 	perSiteMaxResults = int64(0)
@@ -43,10 +44,11 @@ var (
 func init() {
 	command.Flags().BoolVarP(&dense, "dense", "", false, "Dense mode: show full torrent title & subtitle")
 	command.Flags().BoolVarP(&largestFlag, "largest", "l", false, "Sort search result by torrent size in desc order")
+	command.Flags().BoolVarP(&newestFlag, "newest", "n", false, "Sort search result by torrent time in desc order")
 	command.Flags().BoolVarP(&showJson, "json", "", false, "Show output in json format")
 	command.Flags().Int64VarP(&maxResults, "max-results", "", 100, "Number limit of search result of all sites combined. -1 == no limit")
 	command.Flags().Int64VarP(&perSiteMaxResults, "per-site-max-results", "", -1, "Number limit of search result of any single site. -1 == no limit")
-	command.Flags().StringVarP(&baseUrl, "base-url", "", "", "Manually set the base url of search page. eg. adult.php or https://kp.m-team.cc/adult.php for M-Team site")
+	command.Flags().StringVarP(&baseUrl, "base-url", "", "", "Manually set the base url of search page. e.g.: adult.php, special.php")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -103,6 +105,13 @@ func search(cmd *cobra.Command, args []string) error {
 		sort.Slice(torrents, func(i, j int) bool {
 			if torrents[i].Size != torrents[j].Size {
 				return torrents[i].Size > torrents[j].Size
+			}
+			return torrents[i].Seeders > torrents[j].Seeders
+		})
+	} else if newestFlag {
+		sort.Slice(torrents, func(i, j int) bool {
+			if torrents[i].Time != torrents[j].Time {
+				return torrents[i].Time > torrents[j].Time
 			}
 			return torrents[i].Seeders > torrents[j].Seeders
 		})

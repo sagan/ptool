@@ -22,7 +22,7 @@ var command = &cobra.Command{
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "addlocal"},
 	Short:       "Add local torrents to client.",
 	Long: `Add local torrents to client.
-It's possible to use "*" wildcard in filename to match multiple torrents. eg. "*.torrent".
+It's possible to use "*" wildcard in filename to match multiple torrents. e.g.: "*.torrent".
 `,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	RunE: addlocal,

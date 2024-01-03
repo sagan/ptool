@@ -52,7 +52,7 @@ cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 
 配置文件里可以使用 `[[clients]]` 和 `[[sites]]` 区块添加任意多个 BT 客户端和站点。
 
-`[[site]]` 区块有两种配置方式：
+`[[sites]]` 区块有两种配置方式：
 
 ```toml
 # 方式 1（推荐）：直接使用站点 ID 或 alias 作为类型(type)。无需手动输入站点 url。
@@ -234,7 +234,7 @@ ptool clientctl local global_upload_speed_limit=10M
 命令格式均为：
 
 ```
-ptool <command> [client] [flags] [<infoHash>...]
+ptool <command> <client> [flags] [<infoHash>...]
 ```
 
 `<infoHash>` 参数为指定的 BT 客户端里需要操作的种子的 infoHash 列表。也可以使用以下特殊值参数操作多个种子（delete 命令根据除 infoHash 以外的条件删除种子时需要二次确认）：
@@ -416,9 +416,9 @@ ptool batchdl <site> --action add --add-client local
 - --max-torrents int : 最多下载多少个种子。默认 -1 (无限制，一直运行除非手动 Ctrl + C 停止)。
 - --sort string : 站点种子排序方式：size|time|name|seeders|leechers|snatched|none (default size)
 - --order string : 排序顺序：asc|desc。默认 asc。
-- --min-torrent-size string : 种子大小的最小值限制 (eg. "100MiB", "1GiB")。默认为 "-1"（无限制）。
+- --min-torrent-size string : 种子大小的最小值限制 (e.g.: "100MiB", "1GiB")。默认为 "-1"（无限制）。
 - --max-torrent-size string : 种子大小的最大值限制。默认为 "-1"（无限制）。
-- --max-total-size string : 下载种子内容总体积最大值限制 (eg. "512GiB", "1TiB")。默认为 "-1"（无限制）。
+- --max-total-size string : 下载种子内容总体积最大值限制 (e.g.: "512GiB", "1TiB")。默认为 "-1"（无限制）。
 - --free : 只下载免费种子。
 - --no-hr : 跳过存在 HR 的种子。
 - --no-paid : 跳过"付费"的种子。(部分站点存在"付费"种子，第一次下载或汇报时扣除积分)
@@ -518,7 +518,7 @@ ptool cookiecloud get <site>...
 ### 查看内置支持站点信息 (sites)
 
 ```
-# 显示所有内置支持的站点列表。ptool.toml 配置文件里将 [[site]] 配置块的 type 设为站点的 Type 或 Alias。
+# 显示所有内置支持的站点列表。ptool.toml 配置文件里将 [[sites]] 配置块的 type 设为站点的 Type 或 Alias。
 ptool sites
 
 # 显示对应站点在本程序内部使用的详细配置参数。参数为站点的 Type 或 Alias。
@@ -587,7 +587,7 @@ ptool search acg clannad
 
 ### 命令别名 (Alias) 功能
 
-ptool.toml 里可以使用 `[[alias]]` 区块自定义命令别名，例如：
+ptool.toml 里可以使用 `[[aliases]]` 区块自定义命令别名，例如：
 
 ```
 [[aliases]]

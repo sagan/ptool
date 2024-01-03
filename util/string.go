@@ -106,7 +106,7 @@ func AppendUrlQueryString(url string, qs string) string {
 	return url + qs
 }
 
-// return (top-level) domain of a url. eg. https://www.google.com/ => google.com
+// return (top-level) domain of a url. e.g.: https://www.google.com/ => google.com
 func GetUrlDomain(url string) string {
 	u, err := tld.Parse(url)
 	if err != nil {

@@ -29,8 +29,8 @@ type Site struct {
 	Sid          int64  `gorm:"primaryKey"`
 	Name         string `gorm:"index"`
 	Nickname     string
-	Url          string // site homepage url. eg. https://hdvideo.one/
-	DownloadPage string // (relative) torrent download url. eg. "download.php?id={}&passkey={passkey}"
+	Url          string // site homepage url. e.g.: https://hdvideo.one/
+	DownloadPage string // (relative) torrent download url. e.g.: "download.php?id={}&passkey={passkey}"
 }
 
 // gorm "meta" (not metas!) table

@@ -467,8 +467,7 @@ var (
 			Type:              "nexusphp",
 			Url:               "https://ptvicomo.net/",
 			TorrentsExtraUrls: []string{"special.php"},
-			// 该网站可能需要配置 ja3 才能正常访问
-			Comment: "象站",
+			Comment:           "象站",
 		},
 		"rousi": {
 			Type:              "nexusphp",
@@ -498,11 +497,14 @@ var (
 			Comment: "聆音",
 		},
 		"totheglory": {
-			Type:                        "nexusphp",
-			Aliases:                     []string{"ttg"},
-			Url:                         "https://totheglory.im/",
-			TorrentsUrl:                 "browse.php?c=M",
-			TorrentsExtraUrls:           []string{"browse.php?c=G"},
+			Type:              "nexusphp",
+			Aliases:           []string{"ttg"},
+			Url:               "https://totheglory.im/",
+			TorrentsUrl:       "browse.php?c=M",
+			TorrentsExtraUrls: []string{"browse.php?c=G"},
+			// 是否能够直接同时搜索影视区和游戏区？
+			// SearchUrl:                   "browse.php?search_field=%s",
+			SearchQueryVariable:         "search_field",
 			SelectorTorrent:             `a.dl_a[href^="/dl/"]`,
 			SelectorTorrentDownloadLink: `a.dl_a[href^="/dl/"]`,
 			SelectorTorrentDetailsLink:  `.name_left a[href^="/t/"]`,

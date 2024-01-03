@@ -135,7 +135,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		if containerElNode != nil {
 			containerEl = nodeSelectionMap[containerElNode]
 		}
-	} else if torrentEls.Length() == 1 { // only one torrent found (eg. search result page)
+	} else if torrentEls.Length() == 1 { // only one torrent found (e.g.: search result page)
 		containerEl = doc.Find(SELECTOR_TORRENTS_LIST_DEFAULT)
 		if containerEl.Length() > 0 {
 			containerElNode = containerEl.Get(0)
@@ -303,7 +303,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		if titleEl == nil {
 			titleEl = s.Find(option.selectorTorrentDetailsLink)
 		}
-		// 尽量不使用 a img 这种题图类型的标题元素(eg. M-Team)
+		// 尽量不使用 a img 这种题图类型的标题元素(e.g.: M-Team)
 		titleTextEl := titleEl.FilterFunction(func(i int, s *goquery.Selection) bool {
 			parentNode := s.Parent().Get(0)
 			if parentNode.DataAtom == atom.Img || parentNode.DataAtom == atom.Image {

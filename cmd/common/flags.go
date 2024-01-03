@@ -57,7 +57,7 @@ func YesNoAutoFlag(desc string) *cmd.EnumFlag {
 // pure flag: bool or counter flag. It does not have a value.
 // all single-letter name (shorthand) flags are always considered as pure (for now),
 // so they are not included in the list.
-// none-pure flag: a flag which has a value. eg. "--name=value", "--name value".
+// none-pure flag: a flag which has a value. e.g.: "--name=value", "--name value".
 // This list is manually maintenanced for now.
 var pureFlags = []string{
 	"add-category-auto",

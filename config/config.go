@@ -98,6 +98,7 @@ type SiteConfigStruct struct {
 	Domains                        []string   `yaml:"domains"` // other site domains (do not include subdomain part)
 	TorrentsUrl                    string     `yaml:"torrentsUrl"`
 	SearchUrl                      string     `yaml:"searchUrl"`
+	SearchQueryVariable            string     `yaml:"searchQueryVariable"`
 	TorrentsExtraUrls              []string   `yaml:"torrentsExtraUrls"`
 	Cookie                         string     `yaml:"cookie"`
 	UserAgent                      string     `yaml:"userAgent"`
@@ -488,7 +489,7 @@ func (siteConfig *SiteConfigStruct) GetTimezone() string {
 	return tz
 }
 
-// parse a site internal url (eg. special.php), return absolute url
+// parse a site internal url (e.g.: special.php), return absolute url
 func (siteConfig *SiteConfigStruct) ParseSiteUrl(siteUrl string, appendQueryStringDelimiter bool) string {
 	pageUrl := ""
 	if siteUrl != "" {

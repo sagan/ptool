@@ -39,6 +39,7 @@ func versioncmd(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Printf("Impersonate '%s'\n", impersonate)
 		fmt.Printf("- navigator: %s\n", impersonateProfile.Navigator)
+		fmt.Printf("- comment: %s\n", impersonateProfile.Comment)
 		fmt.Printf("- tls_ja3: %s\n", impersonateProfile.Ja3)
 		fmt.Printf("- h2_fingerprint: %s\n", impersonateProfile.H2fingerpring)
 		fmt.Printf("- http_request_headers:\n")
@@ -57,6 +58,7 @@ func versioncmd(cmd *cobra.Command, args []string) error {
 	fmt.Printf("- go/version: %s\n", runtime.Version())
 	fmt.Printf("- config_file: %s%c%s\n", config.ConfigDir, filepath.Separator, config.ConfigFile)
 	fmt.Printf("- config_dir: %s\n", config.ConfigDir)
-	fmt.Printf("- config/supported_impersonates: %s\n", strings.Join(util.Impersonates, ", "))
+	fmt.Printf("- config/default_impersonate: %s\n", util.DEFAULT_IMPERSONATE)
+	fmt.Printf("- config/supported_impersonates: %s, none\n", strings.Join(util.Impersonates, ", "))
 	return nil
 }
