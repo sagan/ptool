@@ -366,6 +366,11 @@ func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, globalConfig *con
 	if insecure {
 		session.InsecureSkipVerify = true
 	}
+	maxRedirects := config.DEFAULT_SITE_MAX_REDIRECTS
+	if siteConfig.MaxRedirects != 0 {
+		maxRedirects = siteConfig.MaxRedirects
+	}
+	session.MaxRedirects = uint(maxRedirects)
 	siteSessions[hash] = session
 	return session, httpHeaders, nil
 }

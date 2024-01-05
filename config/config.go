@@ -40,6 +40,7 @@ const (
 	DEFAULT_SITE_BRUSH_TORRENT_MAX_SIZE_LIMIT       = int64(1024 * 1024 * 1024 * 1024 * 1024) // 1PB, that's say, unlimited
 	DEFAULT_SITE_TORRENT_UPLOAD_SPEED_LIMIT         = int64(10 * 1024 * 1024)
 	DEFAULT_SITE_FLOW_CONTROL_INTERVAL              = int64(3)
+	DEFAULT_SITE_MAX_REDIRECTS                      = int64(3)
 	DEFAULT_COOKIECLOUD_TIMEOUT                     = DEFAULT_TIMEOUT
 )
 
@@ -150,6 +151,7 @@ type SiteConfigStruct struct {
 	TorrentUrlIdRegexp             string     `yaml:"torrentUrlIdRegexp"`
 	FlowControlInterval            int64      `yaml:"flowControlInterval"` // 暂定名。两次请求种子列表页间隔时间(秒)
 	NexusphpNoLetDown              bool       `yaml:"nexusphpNoLetDown"`
+	MaxRedirects                   int64      `yaml:"maxRedirects"`
 	TorrentUploadSpeedLimitValue   int64
 	BrushTorrentMinSizeLimitValue  int64
 	BrushTorrentMaxSizeLimitValue  int64
