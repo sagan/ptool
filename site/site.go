@@ -396,8 +396,7 @@ func DownloadTorrentByUrl(siteInstance Site, httpClient *azuretls.Session, torre
 		return nil, "", fmt.Errorf("server return invalid content-type: %s", mimeType)
 	}
 	filename := ""
-	_, params, err := mime.ParseMediaType(header.Get("content-disposition"))
-	if err == nil {
+	if _, params, err := mime.ParseMediaType(header.Get("content-disposition")); err == nil {
 		unescapedFilename, err := url.QueryUnescape(params["filename"])
 		if err == nil {
 			filename = unescapedFilename
