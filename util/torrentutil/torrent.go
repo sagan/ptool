@@ -8,10 +8,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Emyrk/torrent/mmap_span"
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/bradfitz/iter"
-	mmap "github.com/edsrzf/mmap-go"
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/site/tpl"
 	"github.com/sagan/ptool/util"
@@ -182,24 +180,8 @@ func (meta *TorrentMeta) XseedCheckWithClientTorrent(clientTorrentContents []cli
 	return 0
 }
 
-func mmapFile(name string) (mm mmap.MMap, err error) {
-	f, err := os.Open(name)
-	if err != nil {
-		return
-	}
-	defer f.Close()
-	fi, err := f.Stat()
-	if err != nil {
-		return
-	}
-	if fi.Size() == 0 {
-		return
-	}
-	return mmap.MapRegion(f, -1, mmap.RDONLY, mmap.COPY, 0)
-}
-
 func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash bool) error {
-	span := new(mmap_span.MMapSpan)
+	var filenames []string
 	prefixPath := ""
 	if contentPath != "" {
 		prefixPath = contentPath + "/"
@@ -224,30 +206,50 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash b
 			return fmt.Errorf("file %q has wrong length", filename)
 		}
 		if checkHash {
-			// only mmap file when necessary. Windows may throw "MapViewOfFile: The paging file is too small for this operation to complete." error
-			// when mmaping big torrents (when torrent content size exceeds PC memory ?).
-			// @todo : use more robust way to calculate hash
-			mm, err := mmapFile(filename)
-			if err != nil {
-				return err
-			}
-			span.Append(mm)
+			filenames = append(filenames, filename)
 		}
 	}
-	if checkHash {
+	if checkHash && len(meta.Files) > 0 {
 		piecesCnt := meta.Info.NumPieces()
+		var currentFileIndex = int64(0)
+		var currentFileOffset = int64(0)
+		var currentFileRemain = int64(0)
+		var currentFile *os.File
+		var err error
 		for i := range iter.N(piecesCnt) {
 			p := meta.Info.Piece(i)
 			hash := sha1.New()
-			_, err := io.Copy(hash, io.NewSectionReader(span, p.Offset(), p.Length()))
-			if err != nil {
-				return err
+			len := p.Length()
+			for len > 0 {
+				if currentFile == nil {
+					if currentFile, err = os.Open(filenames[currentFileIndex]); err != nil {
+						return fmt.Errorf("piece %d/%d: failed to open file %s: %v",
+							i, piecesCnt, filenames[currentFileIndex], err)
+					}
+					log.Tracef("piece %d/%d: open file %s", i, piecesCnt, filenames[currentFileIndex])
+					currentFileOffset = 0
+					currentFileRemain = meta.Files[currentFileIndex].Size
+				}
+				readlen := min(currentFileRemain, len)
+				_, err := io.Copy(hash, io.NewSectionReader(currentFile, currentFileOffset, readlen))
+				if err != nil {
+					currentFile.Close()
+					return err
+				}
+				currentFileOffset += readlen
+				currentFileRemain -= readlen
+				len -= readlen
+				if currentFileRemain == 0 {
+					currentFile.Close()
+					currentFile = nil
+					currentFileIndex++
+				}
 			}
 			good := bytes.Equal(hash.Sum(nil), p.Hash().Bytes())
 			if !good {
-				return fmt.Errorf("hash mismatch at piece %d/%d", i, piecesCnt)
+				return fmt.Errorf("piece %d/%d: hash mismatch", i, piecesCnt)
 			}
-			log.Tracef("verify-hash %d/%d: %x: %v\n", i, piecesCnt, p.Hash(), good)
+			log.Tracef("piece %d/%d verify-hash %x: %v", i, piecesCnt, p.Hash(), good)
 		}
 	}
 	if contentPath != "" {
