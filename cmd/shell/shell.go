@@ -80,6 +80,11 @@ func shell(command *cobra.Command, args []string) error {
 		return fmt.Errorf("--fork or --lock flag can NOT be used with shell")
 	}
 	config.InShell = true
+	cmd.RootCmd.SilenceErrors = false
+	defer func() {
+		config.InShell = false
+		cmd.RootCmd.SilenceErrors = true
+	}()
 	ptoolPrompt.GoPromptOptions = append(ptoolPrompt.GoPromptOptions,
 		prompt.OptionMaxSuggestion(uint16(config.Get().ShellMaxSuggestions)))
 	history, err := cmd.ShellHistory.Load()
