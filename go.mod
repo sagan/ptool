@@ -2,6 +2,9 @@ module github.com/sagan/ptool
 
 go 1.21
 
+// workaround for https://github.com/Noooste/azuretls-client/issues/27
+replace github.com/Noooste/azuretls-client v1.2.5 => github.com/sagan/azuretls-client v0.0.0-20240110021915-00703735ede6
+
 // workaround for some problem
 replace github.com/hekmon/transmissionrpc/v2 => ./transmissionrpc
 
@@ -12,13 +15,11 @@ replace github.com/c-bata/go-prompt => ./go-prompt
 replace github.com/stromland/cobra-prompt => ./cobra-prompt
 
 require (
-	github.com/Emyrk/torrent v0.0.0-20170330203609-3216b1ef9450
 	github.com/Noooste/azuretls-client v1.2.5
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/anacrolix/torrent v1.53.2
 	github.com/bradfitz/iter v0.0.0-20191230175014-e8f45d346db8
 	github.com/c-bata/go-prompt v0.2.6
-	github.com/edsrzf/mmap-go v1.1.0
 	github.com/ettle/strcase v0.2.0
 	github.com/glebarez/sqlite v1.10.0
 	github.com/gofrs/flock v0.8.1
@@ -49,7 +50,6 @@ require (
 
 require (
 	github.com/Noooste/fhttp v1.0.6 // indirect
-	github.com/Noooste/go-utils v1.0.5 // indirect
 	github.com/Noooste/utls v1.2.4 // indirect
 	github.com/Noooste/websocket v1.0.1 // indirect
 	github.com/anacrolix/missinggo v1.3.0 // indirect
