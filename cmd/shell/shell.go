@@ -2,6 +2,7 @@ package shell
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/google/shlex"
@@ -68,6 +69,10 @@ var ptoolPrompt = &cobraprompt.CobraPrompt{
 		if err != nil {
 			return nil
 		}
+		// allow "!cmd" style (no space between) external cmd invocation
+		if len(words) > 0 && strings.HasPrefix(words[0], "!") && len(words[0]) > 1 {
+			words = append([]string{"!", words[0][1:]}, words[1:]...)
+		}
 		return words
 	},
 }
@@ -79,12 +84,9 @@ func shell(command *cobra.Command, args []string) error {
 	if config.Fork || config.LockFile != "" {
 		return fmt.Errorf("--fork or --lock flag can NOT be used with shell")
 	}
+	// once in shell, one can only quit shell by exit the program.
 	config.InShell = true
 	cmd.RootCmd.SilenceErrors = false
-	defer func() {
-		config.InShell = false
-		cmd.RootCmd.SilenceErrors = true
-	}()
 	ptoolPrompt.GoPromptOptions = append(ptoolPrompt.GoPromptOptions,
 		prompt.OptionMaxSuggestion(uint16(config.Get().ShellMaxSuggestions)))
 	history, err := cmd.ShellHistory.Load()
