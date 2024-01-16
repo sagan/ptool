@@ -1,9 +1,13 @@
 package version
 
+import "strings"
+
 var (
 	VersionSuffix = "DEV" // e.g.: DEV
 	VersionTag    = "v0.1.9"
 	Version       = ""
+	Commit        = "none"
+	Date          = "unknown"
 )
 
 func init() {
@@ -13,5 +17,7 @@ func init() {
 		} else {
 			Version = VersionTag + "-" + VersionSuffix
 		}
+	} else if !strings.HasPrefix(Version, "v") {
+		Version = "v" + Version
 	}
 }

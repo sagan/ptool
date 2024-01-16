@@ -34,6 +34,17 @@ func IsUrl(str string) bool {
 	return strings.HasPrefix(str, "http://") || strings.HasPrefix(str, "https://")
 }
 
+// parse a baseUrl relative relativeUrl, return absolute url. baseUrl could also be a host, in which case https schema is assumed
+func ParseRelativeUrl(relativeUrl string, baseUrl string) string {
+	if IsUrl(relativeUrl) || baseUrl == "" {
+		return relativeUrl
+	}
+	if !IsUrl(baseUrl) {
+		baseUrl = "https://" + baseUrl
+	}
+	return strings.TrimSuffix(baseUrl, "/") + "/" + strings.TrimPrefix(relativeUrl, "/")
+}
+
 func IsHostname(str string) bool {
 	return hostnameRegex.MatchString(str)
 }

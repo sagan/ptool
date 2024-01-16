@@ -29,7 +29,7 @@ It's a free and open-source software, visit https://github.com/sagan/ptool for m
 	SilenceUsage:       true,
 	DisableSuggestions: true,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		if config.InShell && config.Get().ShellMaxHistory != 0 {
+		if config.InShell && config.Get().ShellMaxHistory > 0 {
 			in := strings.Join(os.Args[1:], " ")
 			ShellHistory.Write(in)
 		}

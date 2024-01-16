@@ -53,6 +53,8 @@ func versioncmd(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	fmt.Printf("ptool %s\n", version.Version)
+	fmt.Printf("- build/date: %s\n", version.Date)
+	fmt.Printf("- build/commit: %s\n", version.Commit)
 	fmt.Printf("- os/type: %s\n", runtime.GOOS)
 	fmt.Printf("- os/arch: %s\n", runtime.GOARCH)
 	fmt.Printf("- go/version: %s\n", runtime.Version())

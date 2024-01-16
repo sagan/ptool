@@ -25,6 +25,7 @@ const (
 	STATS_FILENAME   = "ptool_stats.txt"
 	HISTORY_FILENAME = "ptool_history"
 
+	DEFAULT_IYUU_DOMAIN                             = "api.iyuu.cn"
 	DEFAULT_TIMEOUT                                 = int64(5)
 	DEFAULT_SHELL_MAX_SUGGESTIONS                   = int64(5)
 	DEFAULT_SHELL_MAX_HISTORY                       = int64(500)
@@ -161,8 +162,9 @@ type SiteConfigStruct struct {
 type ConfigStruct struct {
 	Hushshell           bool                       `yaml:"hushshell"`
 	ShellMaxSuggestions int64                      `yaml:"shellMaxSuggestions"`
-	ShellMaxHistory     int64                      `yaml:"shellMaxHistory"`
+	ShellMaxHistory     int64                      `yaml:"shellMaxHistory"` // -1 禁用
 	IyuuToken           string                     `yaml:"iyuuToken"`
+	IyuuDomain          string                     `yaml:"iyuuDomain"` // iyuu API 域名。默认使用 api.iyuu.cn
 	SiteProxy           string                     `yaml:"siteProxy"`
 	SiteUserAgent       string                     `yaml:"siteUserAgent"`
 	SiteImpersonate     string                     `yaml:"siteImpersonate"`
@@ -183,23 +185,23 @@ type ConfigStruct struct {
 }
 
 var (
-	VerboseLevel                        = 0
-	InShell                             = false
-	Initialized                         = false
-	ConfigDir                           = "" // "/root/.config/ptool"
-	ConfigFile                          = "" // "ptool.toml"
-	DefaultConfigFile                   = "" // set when start
-	ConfigName                          = "" // "ptool"
-	ConfigType                          = "" // "toml"
-	LockFile                            = ""
-	LockOrExit                          = false
-	Fork                                = false
-	configData            *ConfigStruct = &ConfigStruct{}
-	clientsConfigMap                    = map[string]*ClientConfigStruct{}
-	sitesConfigMap                      = map[string]*SiteConfigStruct{}
-	aliasesConfigMap                    = map[string]*AliasConfigStruct{}
-	groupsConfigMap                     = map[string]*GroupConfigStruct{}
-	cookiecloudsConfigMap               = map[string]*CookiecloudConfigStruct{}
+	VerboseLevel          = 0
+	InShell               = false
+	Initialized           = false
+	ConfigDir             = "" // "/root/.config/ptool"
+	ConfigFile            = "" // "ptool.toml"
+	DefaultConfigFile     = "" // set when start
+	ConfigName            = "" // "ptool"
+	ConfigType            = "" // "toml"
+	LockFile              = ""
+	LockOrExit            = false
+	Fork                  = false
+	configData            *ConfigStruct
+	clientsConfigMap      = map[string]*ClientConfigStruct{}
+	sitesConfigMap        = map[string]*SiteConfigStruct{}
+	aliasesConfigMap      = map[string]*AliasConfigStruct{}
+	groupsConfigMap       = map[string]*GroupConfigStruct{}
+	cookiecloudsConfigMap = map[string]*CookiecloudConfigStruct{}
 	once                  sync.Once
 )
 
@@ -264,17 +266,29 @@ func Get() *ConfigStruct {
 		viper.SetConfigName(ConfigName)
 		viper.SetConfigType(ConfigType)
 		viper.AddConfigPath(ConfigDir)
-		viper.SetDefault("ShellMaxSuggestions", DEFAULT_SHELL_MAX_SUGGESTIONS)
-		viper.SetDefault("ShellMaxHistory", DEFAULT_SHELL_MAX_HISTORY)
 		err := viper.ReadInConfig()
 		if err != nil {
-			log.Fatalf("Fail to read config file: %v", err)
+			log.Errorf("Fail to read config file: %v", err)
+		} else {
+			err = viper.Unmarshal(&configData)
+			if err != nil {
+				log.Errorf("Fail to parse config file: %v", err)
+			}
 		}
-		err = viper.Unmarshal(&configData)
 		if err != nil {
-			log.Fatalf("Fail to parse config file: %v", err)
+			configData = &ConfigStruct{}
 		}
-
+		if configData.IyuuDomain == "" {
+			configData.IyuuDomain = DEFAULT_IYUU_DOMAIN
+		}
+		if configData.ShellMaxSuggestions == 0 {
+			configData.ShellMaxSuggestions = DEFAULT_SHELL_MAX_SUGGESTIONS
+		} else if configData.ShellMaxSuggestions < 0 {
+			configData.ShellMaxSuggestions = 0
+		}
+		if configData.ShellMaxHistory == 0 {
+			configData.ShellMaxHistory = DEFAULT_SHELL_MAX_HISTORY
+		}
 		for _, client := range configData.Clients {
 			v, err := util.RAMInBytes(client.BrushMinDiskSpace)
 			if err != nil || v < 0 {
