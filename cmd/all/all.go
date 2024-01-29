@@ -29,6 +29,7 @@ import (
 	_ "github.com/sagan/ptool/cmd/removetags"
 	_ "github.com/sagan/ptool/cmd/removetrackers"
 	_ "github.com/sagan/ptool/cmd/resume"
+	_ "github.com/sagan/ptool/cmd/run"
 	_ "github.com/sagan/ptool/cmd/search"
 	_ "github.com/sagan/ptool/cmd/setcategory"
 	_ "github.com/sagan/ptool/cmd/setsavepath"

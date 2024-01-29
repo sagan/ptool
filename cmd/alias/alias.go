@@ -1,4 +1,4 @@
-package versioncmd
+package alias
 
 import (
 	"fmt"

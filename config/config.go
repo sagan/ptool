@@ -278,9 +278,6 @@ func Get() *ConfigStruct {
 		if err != nil {
 			configData = &ConfigStruct{}
 		}
-		if configData.IyuuDomain == "" {
-			configData.IyuuDomain = DEFAULT_IYUU_DOMAIN
-		}
 		if configData.ShellMaxSuggestions == 0 {
 			configData.ShellMaxSuggestions = DEFAULT_SHELL_MAX_SUGGESTIONS
 		} else if configData.ShellMaxSuggestions < 0 {
@@ -549,4 +546,11 @@ func (configData *ConfigStruct) UpdateSitesDerivative() {
 	configData.SitesEnabled = util.Filter(configData.Sites, func(s *SiteConfigStruct) bool {
 		return !s.Disabled
 	})
+}
+
+func (configData *ConfigStruct) GetIyuuDomain() string {
+	if configData.IyuuDomain == "" {
+		return DEFAULT_IYUU_DOMAIN
+	}
+	return configData.IyuuDomain
 }

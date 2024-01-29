@@ -88,7 +88,7 @@ func IyuuApiHash(token string, infoHashes []string) (map[string][]IyuuTorrentInf
 		return infoHashes[i] < infoHashes[j]
 	})
 	hash, _ := json.Marshal(&infoHashes)
-	apiUrl := util.ParseRelativeUrl("index.php?s=App.Api.Hash", config.Get().IyuuDomain)
+	apiUrl := util.ParseRelativeUrl("index.php?s=App.Api.Hash", config.Get().GetIyuuDomain())
 	data := url.Values{
 		"sign":      {token},
 		"timestamp": {fmt.Sprint(util.Now())},
@@ -114,14 +114,14 @@ func IyuuApiHash(token string, infoHashes []string) (map[string][]IyuuTorrentInf
 }
 
 func IyuuApiGetUser(token string) (data map[string]any, err error) {
-	err = util.FetchJson(util.ParseRelativeUrl("index.php?s=App.Api.GetUser&sign="+token, config.Get().IyuuDomain), &data, nil)
+	err = util.FetchJson(util.ParseRelativeUrl("index.php?s=App.Api.GetUser&sign="+token, config.Get().GetIyuuDomain()), &data, nil)
 	return
 }
 
 func IyuuApiSites(token string) ([]IyuuApiSite, error) {
 	resData := &IyuuApiSitesResponse{}
 	err := util.FetchJson(util.ParseRelativeUrl("index.php?s=App.Api.Sites&version="+
-		IYUU_VERSION+"&sign="+token, config.Get().IyuuDomain), resData, nil)
+		IYUU_VERSION+"&sign="+token, config.Get().GetIyuuDomain()), resData, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func IyuuApiSites(token string) ([]IyuuApiSite, error) {
 
 func IyuuApiBind(token string, site string, uid int64, passkey string) (map[string]any, error) {
 	apiUrl := util.ParseRelativeUrl("index.php?s=App.Api.Bind&token="+token+
-		"&site="+site+"&id="+fmt.Sprint(uid)+"&passkey="+util.Sha1String(passkey), config.Get().IyuuDomain)
+		"&site="+site+"&id="+fmt.Sprint(uid)+"&passkey="+util.Sha1String(passkey), config.Get().GetIyuuDomain())
 
 	resData := &IyuuApiResponse{}
 	err := util.FetchJson(apiUrl, &resData, nil)
@@ -147,7 +147,7 @@ func IyuuApiBind(token string, site string, uid int64, passkey string) (map[stri
 }
 
 func IyuuApiGetRecommendSites() ([]IyuuApiRecommendSite, error) {
-	apiUrl := util.ParseRelativeUrl("index.php?s=App.Api.GetRecommendSites", config.Get().IyuuDomain)
+	apiUrl := util.ParseRelativeUrl("index.php?s=App.Api.GetRecommendSites", config.Get().GetIyuuDomain())
 
 	var resData *IyuuGetRecommendSitesResponse
 	err := util.FetchJson(apiUrl, &resData, nil)
