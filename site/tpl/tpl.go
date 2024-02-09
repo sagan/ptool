@@ -230,6 +230,12 @@ var (
 			TorrentUrlIdRegexp:         `\bt-(?P<id>\d+)\b`,
 			Comment:                    "城市",
 		},
+		"hdkyl": {
+			Type:    "nexusphp",
+			Aliases: []string{"hdkylin"},
+			Url:     "https://www.hdkyl.in/",
+			Comment: "麒麟",
+		},
 		"hdmayi": {
 			Type:    "nexusphp",
 			Url:     "http://hdmayi.com/",
