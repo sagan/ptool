@@ -120,10 +120,17 @@ var (
 			Comment: "龍之家",
 		},
 		"eastgame": {
+			Type:              "nexusphp",
+			Aliases:           []string{"tlfbits", "tlf"},
+			Url:               "https://pt.eastgame.org/",
+			TorrentsExtraUrls: []string{"trls.php"},
+			Comment:           "吐鲁番",
+		},
+		"et8": {
 			Type:    "nexusphp",
-			Aliases: []string{"tlfbits", "tlf"},
-			Url:     "https://pt.eastgame.org/",
-			Comment: "吐鲁番",
+			Aliases: []string{"tccf", "torrentccf"},
+			Url:     "https://et8.org/",
+			Comment: "精品论坛，他吹吹风",
 		},
 		// need heavy work to support it
 		// "filelist": {

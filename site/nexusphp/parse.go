@@ -72,11 +72,20 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		option.selectorTorrentPaid = SELECTOR_TORRENT_PAID
 	}
 
+	globalFree := false
+	maybeGlobalFree := false
 	globalDiscountEndTime := int64(0)
-	globalDiscountLabels := doc.Find("p,span,b,i,a").FilterFunction(func(i int, s *goquery.Selection) bool {
+	globalDiscountLabels := doc.Find("p,h1,h2,span,b,i,a").FilterFunction(func(i int, s *goquery.Selection) bool {
 		txt := util.DomRemovedSpecialCharsTextPreservingTime(s)
-		re := regexp.MustCompile(`(全站|全局)\s*(\dX Free|Free|优惠)\s*生效`)
-		return re.MatchString(txt)
+		re := regexp.MustCompile(`(全站|全局)\s*(?P<free>\dX Free|Free|免费|优惠)\s*生效`)
+		if matches := re.FindStringSubmatch(txt); matches != nil {
+			discountText := strings.ToLower(matches[re.SubexpIndex("free")])
+			if strings.Contains(discountText, "free") || strings.Contains(discountText, "免费") {
+				maybeGlobalFree = true
+			}
+			return true
+		}
+		return false
 	})
 	if globalDiscountLabels.Length() > 0 {
 		var globalDiscountLabel *goquery.Selection
@@ -91,7 +100,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 			return true
 		})
 		globalDiscountEl := globalDiscountLabel.Parent()
-		for i := 0; globalDiscountEl.Prev().Length() == 0 && i < 3; i++ {
+		for i := 0; globalDiscountLabel.Parent().Length() > 0 && globalDiscountEl.Prev().Length() == 0 && i < 3; i++ {
 			globalDiscountEl = globalDiscountEl.Parent()
 		}
 		txt := util.DomRemovedSpecialCharsTextPreservingTime(globalDiscountEl)
@@ -103,6 +112,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		if time1 > 0 && time2 > 0 && doctime >= time1 && doctime < time2 {
 			log.Tracef("Found global discount timespan: %s ~ %s", util.FormatTime(time1), util.FormatTime(time2))
 			globalDiscountEndTime = time2
+			globalFree = maybeGlobalFree
 		}
 	}
 
@@ -436,6 +446,9 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		}
 		if discountEndTime <= 0 && globalDiscountEndTime > 0 {
 			discountEndTime = globalDiscountEndTime
+		}
+		if downloadMultiplier == 1 && globalFree {
+			downloadMultiplier = 0
 		}
 		if name != "" && (downloadUrl != "" || id != "") {
 			if id != "" && siteName != "" {
