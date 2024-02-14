@@ -86,6 +86,7 @@ var pureFlags = []string{
 	"raw",
 	"rename-added",
 	"one-page",
+	"sequential-download",
 	"show-files",
 	"show-info-hash-only",
 	"show-names-only",

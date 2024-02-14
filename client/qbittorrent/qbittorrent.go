@@ -143,6 +143,9 @@ func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 		if option.SkipChecking {
 			mp.WriteField("skip_checking", "true")
 		}
+		if option.SequentialDownload {
+			mp.WriteField("sequentialDownload", "true")
+		}
 	}
 	resp, err := qbclient.HttpClient.Post(qbclient.ClientConfig.Url+"api/v2/torrents/add",
 		mp.FormDataContentType(), body)
@@ -513,6 +516,9 @@ func (qbclient *Client) ModifyTorrent(infoHash string,
 			}
 		}
 	}
+
+	// @todo: apply option.SequentialDownload using qb toggleSequentialDownload.
+	// However, we must know current sequentialDownload status in ahead.
 
 	if option.Category != "" && option.Category != qbtorrent.Category {
 		data := url.Values{

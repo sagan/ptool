@@ -79,6 +79,7 @@ type TorrentOption struct {
 	SkipChecking       bool
 	Pause              bool
 	Resume             bool // use only in ModifyTorrent, to start a paused torrent
+	SequentialDownload bool // qb only
 }
 
 type TorrentCategory struct {

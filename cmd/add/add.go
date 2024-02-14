@@ -25,19 +25,23 @@ var command = &cobra.Command{
 }
 
 var (
-	addCategoryAuto = false
-	addPaused       = false
-	skipCheck       = false
-	addCategory     = ""
-	defaultSite     = ""
-	addTags         = ""
-	savePath        = ""
+	addCategoryAuto    = false
+	addPaused          = false
+	skipCheck          = false
+	sequentialDownload = false
+	addCategory        = ""
+	defaultSite        = ""
+	addTags            = ""
+	savePath           = ""
 )
 
 func init() {
 	command.Flags().BoolVarP(&skipCheck, "skip-check", "", false, "Skip hash checking when adding torrents")
 	command.Flags().BoolVarP(&addPaused, "add-paused", "", false, "Add torrents to client in paused state")
-	command.Flags().BoolVarP(&addCategoryAuto, "add-category-auto", "", false, "Automatically set category of added torrent to corresponding sitename")
+	command.Flags().BoolVarP(&addCategoryAuto, "add-category-auto", "", false,
+		"Automatically set category of added torrent to corresponding sitename")
+	command.Flags().BoolVarP(&sequentialDownload, "sequential-download", "", false,
+		"(qbittorrent only) Enable sequential download")
 	command.Flags().StringVarP(&addCategory, "add-category", "", "", "Set category of added torrents")
 	command.Flags().StringVarP(&savePath, "add-save-path", "", "", "Set save path of added torrents")
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of torrents")
@@ -58,9 +62,10 @@ func add(cmd *cobra.Command, args []string) error {
 	siteInstanceMap := map[string]site.Site{}
 	errorCnt := int64(0)
 	option := &client.TorrentOption{
-		Pause:        addPaused,
-		SavePath:     savePath,
-		SkipChecking: skipCheck,
+		Pause:              addPaused,
+		SavePath:           savePath,
+		SkipChecking:       skipCheck,
+		SequentialDownload: sequentialDownload,
 	}
 	var fixedTags []string
 	if addTags != "" {

@@ -29,24 +29,29 @@ It's possible to use "*" wildcard in filename to match multiple torrents. e.g.: 
 }
 
 var (
-	paused          = false
-	skipCheck       = false
-	renameAdded     = false
-	deleteAdded     = false
-	addCategoryAuto = false
-	defaultSite     = ""
-	rename          = ""
-	addCategory     = ""
-	addTags         = ""
-	savePath        = ""
+	paused             = false
+	skipCheck          = false
+	renameAdded        = false
+	deleteAdded        = false
+	addCategoryAuto    = false
+	sequentialDownload = false
+	defaultSite        = ""
+	rename             = ""
+	addCategory        = ""
+	addTags            = ""
+	savePath           = ""
 )
 
 func init() {
 	command.Flags().BoolVarP(&skipCheck, "skip-check", "", false, "Skip hash checking when adding torrents")
-	command.Flags().BoolVarP(&renameAdded, "rename-added", "", false, "Rename successfully added torrents to .added extension")
+	command.Flags().BoolVarP(&renameAdded, "rename-added", "", false,
+		"Rename successfully added torrents to .added extension")
 	command.Flags().BoolVarP(&deleteAdded, "delete-added", "", false, "Delete successfully added torrents")
 	command.Flags().BoolVarP(&paused, "add-paused", "", false, "Add torrents to client in paused state")
-	command.Flags().BoolVarP(&addCategoryAuto, "add-category-auto", "", false, "Automatically set category of added torrent to corresponding sitename")
+	command.Flags().BoolVarP(&addCategoryAuto, "add-category-auto", "", false,
+		"Automatically set category of added torrent to corresponding sitename")
+	command.Flags().BoolVarP(&sequentialDownload, "sequential-download", "", false,
+		"(qbittorrent only) Enable sequential download")
 	command.Flags().StringVarP(&savePath, "add-save-path", "", "", "Set save path of added torrents")
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of torrents")
 	command.Flags().StringVarP(&addCategory, "add-category", "", "", "Manually set category of added torrents")
@@ -73,10 +78,11 @@ func addlocal(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("--rename flag can only be used with exact one torrent file arg")
 	}
 	option := &client.TorrentOption{
-		Pause:        paused,
-		SavePath:     savePath,
-		SkipChecking: skipCheck,
-		Name:         rename,
+		Pause:              paused,
+		SavePath:           savePath,
+		SkipChecking:       skipCheck,
+		SequentialDownload: sequentialDownload,
+		Name:               rename,
 	}
 	var fixedTags []string
 	if addTags != "" {
