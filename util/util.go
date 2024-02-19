@@ -186,13 +186,14 @@ func GetNewFilename(filename string) string {
 }
 
 // "*.torrent" => ["a.torrent", "b.torrent"...].
+// Return filestr untouched if it does not contains wildcard char.
 // Windows cmd / powershell 均不支持命令行 *.torrent 参数扩展。必须应用自己实现。做个简易版的
 func GetWildcardFilenames(filestr string) []string {
-	dir := filepath.Dir(filestr)
-	name := filepath.Base(filestr)
-	if name == "" {
+	if !strings.ContainsAny(filestr, "*") {
 		return nil
 	}
+	dir := filepath.Dir(filestr)
+	name := filepath.Base(filestr)
 	ext := filepath.Ext(name)
 	if ext != "" {
 		name = name[:len(name)-len(ext)]

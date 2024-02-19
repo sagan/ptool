@@ -95,9 +95,8 @@ ptool <command> args... [flags]
 - status : 显示 BT 客户端或 PT 站点当前状态信息。
 - stats : 显示刷流任务流量统计。
 - search : 在某个站点搜索指定关键词的种子。
-- add : 将某个站点的指定种子添加到 BT 客户端。
+- add : 将种子添加到 BT 客户端。
 - dltorrent : 下载站点的种子。
-- addlocal : 将本地的种子文件添加到 BT 客户端。
 - BT 客户端控制命令集: clientctl / show / pause / resume / delete / reannounce / recheck / getcategories / createcategory / removecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / edittracker / addtrackers / removetrackers / setsavepath。
 - parsetorrent : 显示种子(torrent)文件信息。
 - verifytorrent : 测试种子(torrent)文件与硬盘上的文件内容一致。
@@ -153,7 +152,7 @@ ptool brush local mteam
 
 其它说明：
 
-- No-Add 模式：如果 BT 客户端里当前存在 "\_noadd" 这个标签(tag)，刷流任务不会添加任何新种子到客户端。
+- No-Add 模式：如果 BT 客户端里当前存在 `_noadd` 这个标签(tag)，刷流任务不会添加任何新种子到客户端。
 
 ### 自动辅种 (iyuu)
 
@@ -348,13 +347,19 @@ ptool stats [client...]
 
 只有刷流任务添加和管理的 BT 客户端的种子（即 `_brush` 分类的种子）的流量信息会被记录和统计。目前设计只有在刷流任务从 BT 客户端删除某个种子时才会记录和统计该种子产生的流量信息。
 
-### 添加站点种子到 BT 客户端 (add)
+### 添加种子到 BT 客户端 (add)
 
 ```
-ptool add <client> <torrentIdOrUrl>...
+ptool add <client> <torrentFileNameOrIdOrUrl>...
 ```
 
-示例：
+参数可以是本地硬盘里的种子文件名(支持 `*` 通配符)、站点的种子 id 或 url。例如：
+
+```
+ptool add local *.torrent
+```
+
+以上命令将当前目录下所有 ".torrent" 种子文件添加到 "local" BT 客户端。
 
 ```
 ptool add local mteam.488424
@@ -371,19 +376,11 @@ ptool add local "https://kp.m-team.cc/download.php?id=488424"
 ptool dltorrent <torrentIdOrUrl>...
 ```
 
-类似 add 命令，但只会将种子下载到本地。
+将站点的种子文件下载到本地。参数是站点的种子 id 或 url（参考上面 "add" 命令）。
 
-参数：
+可选参数：
 
 - --download-dir : 下载的种子文件保存路径。默认为当前目录(CWD)。
-
-### 添加本地种子到 BT 客户端 (addlocal)
-
-```
-ptool addlocal <client> <filename.torrent>...
-```
-
-将本地硬盘里的种子文件添加到 BT 客户端。种子文件名支持使用 _ 通配符，例如 "_.torrent"。
 
 ### 搜索 PT 站点种子 (search)
 

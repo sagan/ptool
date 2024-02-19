@@ -3,7 +3,6 @@ package all
 import (
 	_ "github.com/sagan/ptool/cmd"
 	_ "github.com/sagan/ptool/cmd/add"
-	_ "github.com/sagan/ptool/cmd/addlocal"
 	_ "github.com/sagan/ptool/cmd/addtags"
 	_ "github.com/sagan/ptool/cmd/addtrackers"
 	_ "github.com/sagan/ptool/cmd/alias"

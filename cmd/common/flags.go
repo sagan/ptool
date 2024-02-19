@@ -71,6 +71,7 @@ var pureFlags = []string{
 	"dry-run",
 	"force",
 	"force-dangerous",
+	"force-local",
 	"fork",
 	"help",
 	"include-downloaded",
