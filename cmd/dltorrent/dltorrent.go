@@ -12,25 +12,36 @@ import (
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/site/tpl"
 	"github.com/sagan/ptool/util"
+	"github.com/sagan/ptool/util/torrentutil"
 )
 
 var command = &cobra.Command{
-	Use:         "dltorrent {torrentId | torrentUrl}... [--download-dir dir]",
+	Use:         "dltorrent {torrentId | torrentUrl}... [--dir dir]",
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "dltorrent"},
 	Short:       "Download site torrents to local.",
-	Long:        `Download site torrents to local.`,
-	Args:        cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
-	RunE:        dltorrent,
+	Long: `Download site torrents to local.
+
+--filename <name> flag supports the following variable placeholders:
+* [size] : Torrent size
+* [id] :  Torrent id in site
+* [site] : Torrent site
+* [filename] : Original torrent filename, with ".torrent" extension removed
+* [name] : Torrent name`,
+	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
+	RunE: dltorrent,
 }
 
 var (
 	downloadDir = ""
+	savename    = ""
 	defaultSite = ""
 )
 
 func init() {
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of torrents")
-	command.Flags().StringVarP(&downloadDir, "download-dir", "", ".", "Set the local dir of downloaded torrents. Default == current dir")
+	command.Flags().StringVarP(&downloadDir, "dir", "", ".", `Set the dir of downloaded torrents`)
+	command.Flags().StringVarP(&savename, "filename", "", "",
+		"Set the filename of downloaded torrents (supports variables)")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -52,7 +63,7 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 		} else {
 			domain := util.GetUrlDomain(torrentId)
 			if domain == "" {
-				fmt.Printf("torrent %s: failed to parse domain", torrentId)
+				fmt.Printf("✕download %s: failed to parse domain", torrentId)
 				continue
 			}
 			sitename := ""
@@ -71,7 +82,7 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 			}
 		}
 		if siteName == "" {
-			fmt.Printf("torrent %s: no site provided\n", torrentId)
+			fmt.Printf("✕download %s: no site provided\n", torrentId)
 			errorCnt++
 			continue
 		}
@@ -83,18 +94,39 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 			siteInstanceMap[siteName] = siteInstance
 		}
 		siteInstance := siteInstanceMap[siteName]
-		torrentContent, filename, err := siteInstance.DownloadTorrent(torrentId)
+		content, filename, id, err := siteInstance.DownloadTorrent(torrentId)
 		if err != nil {
-			fmt.Printf("add site %s torrent %s error: failed to get site torrent: %v\n", siteInstance.GetName(), torrentId, err)
+			fmt.Printf("✕download %s (site=%s): failed to fetch: %v\n", torrentId, siteName, err)
 			errorCnt++
 			continue
 		}
-		err = os.WriteFile(downloadDir+"/"+filename, torrentContent, 0666)
+		tinfo, err := torrentutil.ParseTorrent(content, 99)
 		if err != nil {
-			fmt.Printf("torrent %s: failed to download to %s/: %v\n", filename, downloadDir, err)
+			fmt.Printf("✕download %s (site=%s): failed to parse torrent: %v\n", torrentId, siteName, err)
+			errorCnt++
+			continue
+		}
+		fileName := ""
+		if savename == "" {
+			fileName = filename
+		} else {
+			fileName = savename
+			basename := filename
+			if i := strings.LastIndex(basename, "."); i != -1 {
+				basename = basename[:i]
+			}
+			fileName = strings.ReplaceAll(fileName, "[size]", util.BytesSize(float64(tinfo.Size)))
+			fileName = strings.ReplaceAll(fileName, "[id]", id)
+			fileName = strings.ReplaceAll(fileName, "[site]", siteName)
+			fileName = strings.ReplaceAll(fileName, "[filename]", basename)
+			fileName = strings.ReplaceAll(fileName, "[name]", tinfo.Info.Name)
+		}
+		err = os.WriteFile(downloadDir+"/"+fileName, content, 0666)
+		if err != nil {
+			fmt.Printf("✕download %s (site=%s): failed to save to %s/: %v\n", fileName, siteName, downloadDir, err)
 			errorCnt++
 		} else {
-			fmt.Printf("torrent %s: downloaded to %s/\n", filename, downloadDir)
+			fmt.Printf("✓download %s (site=%s): saved to %s/\n", fileName, siteName, downloadDir)
 		}
 	}
 	if errorCnt > 0 {

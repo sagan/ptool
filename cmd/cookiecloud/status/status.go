@@ -27,7 +27,7 @@ func init() {
 }
 
 func status(cmd *cobra.Command, args []string) error {
-	cntError := int64(0)
+	errorCnt := int64(0)
 	cookiecloudProfiles := cookiecloud.ParseProfile(profile)
 	if len(cookiecloudProfiles) == 0 {
 		return fmt.Errorf("no cookiecloud profile specified or found")
@@ -38,14 +38,14 @@ func status(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			fmt.Printf("✕cookiecloud server %s (uuid %s) test failed: %v\n",
 				util.ParseUrlHostname(profile.Server), profile.Uuid, err)
-			cntError++
+			errorCnt++
 		} else {
 			fmt.Printf("✓cookiecloud server %s (uuid %s) test ok: cookies of %d domains found\n",
 				util.ParseUrlHostname(profile.Server), profile.Uuid, len(data.Cookie_data))
 		}
 	}
-	if cntError > 0 {
-		return fmt.Errorf("%d errors", cntError)
+	if errorCnt > 0 {
+		return fmt.Errorf("%d errors", errorCnt)
 	}
 	return nil
 }

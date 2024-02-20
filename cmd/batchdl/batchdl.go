@@ -353,9 +353,9 @@ mainloop:
 				var torrentContent []byte
 				var filename string
 				if torrent.DownloadUrl != "" {
-					torrentContent, filename, err = siteInstance.DownloadTorrent(torrent.DownloadUrl)
+					torrentContent, filename, _, err = siteInstance.DownloadTorrent(torrent.DownloadUrl)
 				} else {
-					torrentContent, filename, err = siteInstance.DownloadTorrent(torrent.Id)
+					torrentContent, filename, _, err = siteInstance.DownloadTorrent(torrent.Id)
 				}
 				if err != nil {
 					fmt.Printf("torrent %s (%s): failed to download: %v\n", torrent.Id, torrent.Name, err)

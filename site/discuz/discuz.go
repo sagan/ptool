@@ -76,32 +76,34 @@ func (dzsite *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Torre
 	return nil, fmt.Errorf("not implemented yet")
 }
 
-func (dzsite *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error) {
+func (dzsite *Site) DownloadTorrent(torrentUrl string) (content []byte, filename string, id string, err error) {
 	if !util.IsUrl(torrentUrl) {
-		id := strings.TrimPrefix(torrentUrl, dzsite.GetName()+".")
-		return dzsite.DownloadTorrentById(id)
+		id = strings.TrimPrefix(torrentUrl, dzsite.GetName()+".")
+		content, filename, err = dzsite.DownloadTorrentById(id)
+		return
 	}
 	threadUrl := regexp.MustCompile(`mod=viewthread&tid=(?P<id>\d+)\b`)
 	if threadUrl.MatchString(torrentUrl) {
-		doc, _, err := util.GetUrlDocWithAzuretls(torrentUrl, dzsite.HttpClient,
+		doc, _, errFetch := util.GetUrlDocWithAzuretls(torrentUrl, dzsite.HttpClient,
 			dzsite.GetSiteConfig().Cookie, site.GetUa(dzsite), dzsite.GetDefaultHttpHeaders())
-		if err != nil {
-			return nil, "", fmt.Errorf("failed to get thread doc: %v", err)
+		if errFetch != nil {
+			return nil, "", "", fmt.Errorf("failed to get thread doc: %v", errFetch)
 		}
 		dlLink := doc.Find(`a[href^="download.php?id="]`).AttrOr("href", "")
 		idRegexp := regexp.MustCompile(`\bid=(?P<id>\d+)\b`)
 		m := idRegexp.FindStringSubmatch(dlLink)
 		if m == nil {
-			return nil, "", fmt.Errorf("no torrent download link found")
+			return nil, "", "", fmt.Errorf("no torrent download link found")
 		}
-		return dzsite.DownloadTorrentById(m[idRegexp.SubexpIndex("id")])
+		content, filename, err = dzsite.DownloadTorrentById(m[idRegexp.SubexpIndex("id")])
+		return
 	}
 	urlObj, err := url.Parse(torrentUrl)
-	id := ""
 	if err == nil {
 		id = urlObj.Query().Get("id")
 	}
-	return site.DownloadTorrentByUrl(dzsite, dzsite.HttpClient, torrentUrl, id)
+	content, filename, err = site.DownloadTorrentByUrl(dzsite, dzsite.HttpClient, torrentUrl, id)
+	return
 }
 
 func (dzsite *Site) DownloadTorrentById(id string) ([]byte, string, error) {

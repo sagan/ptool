@@ -73,17 +73,18 @@ func (gpwsite *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Torr
 	return nil, fmt.Errorf("not implemented yet")
 }
 
-func (gpwsite *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error) {
+func (gpwsite *Site) DownloadTorrent(torrentUrl string) (content []byte, filename string, id string, err error) {
 	if !util.IsUrl(torrentUrl) {
-		id := strings.TrimPrefix(torrentUrl, gpwsite.GetName()+".")
-		return gpwsite.DownloadTorrentById(id)
+		id = strings.TrimPrefix(torrentUrl, gpwsite.GetName()+".")
+		content, filename, err = gpwsite.DownloadTorrentById(id)
+		return
 	}
 	urlObj, err := url.Parse(torrentUrl)
-	id := ""
 	if err == nil {
 		id = urlObj.Query().Get("id")
 	}
-	return site.DownloadTorrentByUrl(gpwsite, gpwsite.HttpClient, torrentUrl, id)
+	content, filename, err = site.DownloadTorrentByUrl(gpwsite, gpwsite.HttpClient, torrentUrl, id)
+	return
 }
 
 func (gpwsite *Site) DownloadTorrentById(id string) ([]byte, string, error) {

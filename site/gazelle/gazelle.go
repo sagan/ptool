@@ -92,17 +92,18 @@ func (gzsite *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Torre
 	return nil, fmt.Errorf("not implemented yet")
 }
 
-func (gzsite *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error) {
+func (gzsite *Site) DownloadTorrent(torrentUrl string) (content []byte, filename string, id string, err error) {
 	if !util.IsUrl(torrentUrl) {
-		id := strings.TrimPrefix(torrentUrl, gzsite.GetName()+".")
-		return gzsite.DownloadTorrentById(id)
+		id = strings.TrimPrefix(torrentUrl, gzsite.GetName()+".")
+		content, filename, err = gzsite.DownloadTorrentById(id)
+		return
 	}
 	urlObj, err := url.Parse(torrentUrl)
-	id := ""
 	if err == nil {
 		id = urlObj.Query().Get("id")
 	}
-	return site.DownloadTorrentByUrl(gzsite, gzsite.HttpClient, torrentUrl, id)
+	content, filename, err = site.DownloadTorrentByUrl(gzsite, gzsite.HttpClient, torrentUrl, id)
+	return
 }
 
 func (gzsite *Site) DownloadTorrentById(id string) ([]byte, string, error) {

@@ -100,24 +100,27 @@ func (npclient *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Tor
 
 // If torrentUrl is (seems) a torrent download url, direct use it.
 // Otherwise try to parse torrent id from it and download torrent from id
-func (npclient *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error) {
+func (npclient *Site) DownloadTorrent(torrentUrl string) (content []byte, filename string, id string, err error) {
 	if !util.IsUrl(torrentUrl) {
-		id := strings.TrimPrefix(torrentUrl, npclient.GetName()+".")
-		return npclient.DownloadTorrentById(id)
+		id = strings.TrimPrefix(torrentUrl, npclient.GetName()+".")
+		content, filename, err = npclient.DownloadTorrentById(id)
+		return
 	}
 	urlObj, err := url.Parse(torrentUrl)
 	if err != nil {
-		return nil, "", fmt.Errorf("invalid torrent url: %v", err)
+		return nil, "", "", fmt.Errorf("invalid torrent url: %v", err)
 	}
-	id := parseTorrentIdFromUrl(torrentUrl, npclient.torrentsParserOption.idRegexp)
+	id = parseTorrentIdFromUrl(torrentUrl, npclient.torrentsParserOption.idRegexp)
 	downloadUrlPrefix := strings.TrimPrefix(npclient.SiteConfig.TorrentDownloadUrlPrefix, "/")
 	if downloadUrlPrefix == "" {
 		downloadUrlPrefix = "download"
 	}
 	if !strings.HasPrefix(urlObj.Path, "/"+downloadUrlPrefix) && id != "" {
-		return npclient.DownloadTorrentById(id)
+		content, filename, err = npclient.DownloadTorrentById(id)
+		return
 	}
-	return site.DownloadTorrentByUrl(npclient, npclient.HttpClient, torrentUrl, id)
+	content, filename, err = site.DownloadTorrentByUrl(npclient, npclient.HttpClient, torrentUrl, id)
+	return
 }
 
 func (npclient *Site) DownloadTorrentById(id string) ([]byte, string, error) {

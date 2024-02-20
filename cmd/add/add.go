@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -24,7 +25,15 @@ var command = &cobra.Command{
 	Short:       "Add torrents to client.",
 	Long: `Add torrents to client.
 Each arg could be a local filename (e.g. "*.torrent" or "[M-TEAM]CLANNAD (2007).torrent"),
-torrent id (e.g.: "mteam.488424"), or torrent url (e.g.: "https://kp.m-team.cc/details.php?id=488424").`,
+torrent id (e.g.: "mteam.488424"), or torrent url (e.g.: "https://kp.m-team.cc/details.php?id=488424").
+Use "-" as arg to read torrent content from stdin.
+
+--rename <name> flag supports the following variable placeholders:
+* [size] : Torrent size
+* [id] :  Torrent id in site
+* [site] : Torrent site
+* [filename] : Original torrent filename, with ".torrent" extension removed
+* [name] : Torrent name`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	RunE: add,
 }
@@ -55,7 +64,7 @@ func init() {
 		"Rename successfully added *.torrent file to *.torrent.added")
 	command.Flags().BoolVarP(&deleteAdded, "delete-added", "", false, "Delete successfully added *.torrent file")
 	command.Flags().BoolVarP(&forceLocal, "force-local", "", false, "Force treat all arg as local torrent filename")
-	command.Flags().StringVarP(&rename, "rename", "", "", "Rename added torrent (for adding single torrent only)")
+	command.Flags().StringVarP(&rename, "rename", "", "", "Rename added torrents (supports variables)")
 	command.Flags().StringVarP(&addCategory, "add-category", "", "", "Set category of added torrents")
 	command.Flags().StringVarP(&savePath, "add-save-path", "", "", "Set save path of added torrents")
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of added torrents")
@@ -71,9 +80,6 @@ func add(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("--rename-added and --delete-added flags are NOT compatible")
 	}
 	torrents := util.ParseFilenameArgs(args[1:]...)
-	if rename != "" && len(torrents) > 1 {
-		return fmt.Errorf("--rename flag can only be used with exact one torrent arg")
-	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
 		return fmt.Errorf("failed to create client: %v", err)
@@ -83,7 +89,6 @@ func add(cmd *cobra.Command, args []string) error {
 		SavePath:           savePath,
 		SkipChecking:       skipCheck,
 		SequentialDownload: sequentialDownload,
-		Name:               rename,
 	}
 	var fixedTags []string
 	if addTags != "" {
@@ -91,7 +96,7 @@ func add(cmd *cobra.Command, args []string) error {
 	}
 	domainSiteMap := map[string]string{}
 	siteInstanceMap := map[string]site.Site{}
-	cntError := int64(0)
+	errorCnt := int64(0)
 	cntAdded := int64(0)
 	sizeAdded := int64(0)
 	cntAll := len(torrents)
@@ -99,7 +104,9 @@ func add(cmd *cobra.Command, args []string) error {
 	for i, torrent := range torrents {
 		var isLocal bool
 		var siteName string
-		var torrentContent []byte
+		var filename string // original torrent filename
+		var content []byte
+		var id string // site torrent id
 		var err error
 		var hr bool
 		if forceLocal || torrent == "-" || !util.IsUrl(torrent) && strings.HasSuffix(torrent, ".torrent") {
@@ -113,13 +120,12 @@ func add(cmd *cobra.Command, args []string) error {
 				i := strings.Index(torrent, ".")
 				if i != -1 && i < len(torrent)-1 {
 					siteName = torrent[:i]
-					torrent = torrent[i+1:]
 				}
 			} else {
 				domain := util.GetUrlDomain(torrent)
 				if domain == "" {
-					fmt.Printf("✕add (%d/%d) %s error: failed to parse domain", i+1, cntAll, torrent)
-					cntError++
+					fmt.Printf("✕add (%d/%d) %s: failed to parse domain", i+1, cntAll, torrent)
+					errorCnt++
 					continue
 				}
 				sitename := ""
@@ -138,8 +144,8 @@ func add(cmd *cobra.Command, args []string) error {
 				}
 			}
 			if siteName == "" {
-				fmt.Printf("✕add (%d/%d) %s error: no site found or provided\n", i+1, cntAll, torrent)
-				cntError++
+				fmt.Printf("✕add (%d/%d) %s: no site found or provided\n", i+1, cntAll, torrent)
+				errorCnt++
 				continue
 			}
 			if siteInstanceMap[siteName] == nil {
@@ -151,7 +157,7 @@ func add(cmd *cobra.Command, args []string) error {
 			}
 			siteInstance := siteInstanceMap[siteName]
 			hr = siteInstance.GetSiteConfig().GlobalHnR
-			torrentContent, _, err = siteInstance.DownloadTorrent(torrent)
+			content, filename, id, err = siteInstance.DownloadTorrent(torrent)
 		} else {
 			isLocal = true
 			if strings.HasSuffix(torrent, ".added") {
@@ -159,23 +165,23 @@ func add(cmd *cobra.Command, args []string) error {
 				continue
 			}
 			if torrent == "-" {
-				torrentContent, err = io.ReadAll(os.Stdin)
+				filename = ""
+				content, err = io.ReadAll(os.Stdin)
 			} else {
-				torrentContent, err = os.ReadFile(torrent)
+				filename = path.Base(torrent)
+				content, err = os.ReadFile(torrent)
 			}
 		}
 
 		if err != nil {
-			fmt.Printf("✕add (%d/%d) %s (site=%s) error: failed to get torrent: %v\n",
-				i+1, cntAll, torrent, siteName, err)
-			cntError++
+			fmt.Printf("✕add (%d/%d) %s (site=%s): failed to fetch: %v\n", i+1, cntAll, torrent, siteName, err)
+			errorCnt++
 			continue
 		}
-		tinfo, err := torrentutil.ParseTorrent(torrentContent, 99)
+		tinfo, err := torrentutil.ParseTorrent(content, 99)
 		if err != nil {
-			fmt.Printf("✕add (%d/%d) %s (site=%s) error: failed to parse torrent: %v\n",
-				i+1, cntAll, torrent, siteName, err)
-			cntError++
+			fmt.Printf("✕add (%d/%d) %s (site=%s): failed to parse torrent: %v\n", i+1, cntAll, torrent, siteName, err)
+			errorCnt++
 			continue
 		}
 		if siteName == "" {
@@ -203,11 +209,23 @@ func add(cmd *cobra.Command, args []string) error {
 			option.Tags = append(option.Tags, "_hr")
 		}
 		option.Tags = append(option.Tags, fixedTags...)
-		err = clientInstance.AddTorrent(torrentContent, option, nil)
+		if rename != "" {
+			basename := filename
+			if i := strings.LastIndex(basename, "."); i != -1 {
+				basename = basename[:i]
+			}
+			option.Name = rename
+			option.Name = strings.ReplaceAll(option.Name, "[size]", util.BytesSize(float64(tinfo.Size)))
+			option.Name = strings.ReplaceAll(option.Name, "[id]", id)
+			option.Name = strings.ReplaceAll(option.Name, "[site]", siteName)
+			option.Name = strings.ReplaceAll(option.Name, "[filename]", basename)
+			option.Name = strings.ReplaceAll(option.Name, "[name]", tinfo.Info.Name)
+		}
+		err = clientInstance.AddTorrent(content, option, nil)
 		if err != nil {
-			fmt.Printf("✕add (%d/%d) %s (site=%s) error: failed to add torrent to client: %v // %s\n",
+			fmt.Printf("✕add (%d/%d) %s (site=%s): failed to add torrent to client: %v // %s\n",
 				i+1, cntAll, torrent, siteName, err, tinfo.ContentPath)
-			cntError++
+			errorCnt++
 			continue
 		}
 		if isLocal {
@@ -223,13 +241,13 @@ func add(cmd *cobra.Command, args []string) error {
 		}
 		cntAdded++
 		sizeAdded += tinfo.Size
-		fmt.Printf("✓add (%d/%d) %s (site=%s) success. infoHash=%s // %s\n",
+		fmt.Printf("✓add (%d/%d) %s (site=%s). infoHash=%s // %s\n",
 			i+1, cntAll, torrent, siteName, tinfo.InfoHash, tinfo.ContentPath)
 	}
 	fmt.Printf("\nDone. Added torrent (Size/Cnt): %s / %d; ErrorCnt: %d\n",
-		util.BytesSize(float64(sizeAdded)), cntAdded, cntError)
-	if cntError > 0 {
-		return fmt.Errorf("%d errors", cntError)
+		util.BytesSize(float64(sizeAdded)), cntAdded, errorCnt)
+	if errorCnt > 0 {
+		return fmt.Errorf("%d errors", errorCnt)
 	}
 	return nil
 }

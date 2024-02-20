@@ -380,7 +380,7 @@ ptool dltorrent <torrentIdOrUrl>...
 
 可选参数：
 
-- --download-dir : 下载的种子文件保存路径。默认为当前目录(CWD)。
+- --dir : 下载的种子文件保存路径。默认为当前目录(.)。
 
 ### 搜索 PT 站点种子 (search)
 

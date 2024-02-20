@@ -96,25 +96,27 @@ func (tnsite *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Torre
 	return nil, fmt.Errorf("not implemented yet")
 }
 
-func (tnsite *Site) DownloadTorrent(torrentUrl string) ([]byte, string, error) {
+func (tnsite *Site) DownloadTorrent(torrentUrl string) (content []byte, filename string, id string, err error) {
 	if !util.IsUrl(torrentUrl) {
-		id := strings.TrimPrefix(torrentUrl, tnsite.GetName()+".")
-		return tnsite.DownloadTorrentById(id)
+		id = strings.TrimPrefix(torrentUrl, tnsite.GetName()+".")
+		content, filename, err = tnsite.DownloadTorrentById(id)
+		return
 	}
 	if !strings.Contains(torrentUrl, "api/torrent/download/") {
 		idRegexp := regexp.MustCompile(`/info/(?P<id>\d+)\b`)
 		m := idRegexp.FindStringSubmatch(torrentUrl)
 		if m != nil {
-			return tnsite.DownloadTorrentById(m[idRegexp.SubexpIndex("id")])
+			content, filename, err = tnsite.DownloadTorrentById(m[idRegexp.SubexpIndex("id")])
+			return
 		}
 	}
-	id := ""
 	idRegexp := regexp.MustCompile(`/download/(?P<id>\d+)\b`)
 	m := idRegexp.FindStringSubmatch(torrentUrl)
 	if m != nil {
 		id = m[idRegexp.SubexpIndex("id")]
 	}
-	return site.DownloadTorrentByUrl(tnsite, tnsite.HttpClient, torrentUrl, id)
+	content, filename, err = site.DownloadTorrentByUrl(tnsite, tnsite.HttpClient, torrentUrl, id)
+	return
 }
 
 func (tnsite *Site) DownloadTorrentById(id string) ([]byte, string, error) {

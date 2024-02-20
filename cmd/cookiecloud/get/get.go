@@ -54,7 +54,7 @@ func init() {
 }
 
 func get(cmd *cobra.Command, args []string) error {
-	cntError := int64(0)
+	errorCnt := int64(0)
 	cookiecloudProfiles := cookiecloud.ParseProfile(profile)
 	if len(cookiecloudProfiles) == 0 {
 		return fmt.Errorf("no cookiecloud profile specified or found")
@@ -65,7 +65,7 @@ func get(cmd *cobra.Command, args []string) error {
 			profile.Proxy, profile.Timeoout)
 		if err != nil {
 			log.Errorf("Cookiecloud server %s (uuid %s) connection failed: %v\n", profile.Server, profile.Uuid, err)
-			cntError++
+			errorCnt++
 		} else {
 			log.Infof("Cookiecloud server %s (uuid %s) connection ok: cookies of %d domains found\n",
 				profile.Server, profile.Uuid, len(data.Cookie_data))
@@ -98,13 +98,13 @@ func get(cmd *cobra.Command, args []string) error {
 		if domainOrUrl == "" {
 			fmt.Printf("%-20s  %-20s  %s\n",
 				util.First(util.StringPrefixInWidth(siteOrDomainOrUrl, 20)), "", "// Error: empty hostname")
-			cntError++
+			errorCnt++
 			continue
 		} else if !util.IsUrl(domainOrUrl) && !util.IsHostname(domainOrUrl) {
 			fmt.Printf("%-20s  %-20s  %s\n",
 				util.First(util.StringPrefixInWidth(siteOrDomainOrUrl, 20)),
 				"", "// Error: invalid site, url or hostname")
-			cntError++
+			errorCnt++
 			continue
 		} else if util.IsUrl(domainOrUrl) {
 			urlObj, err := url.Parse(domainOrUrl)
@@ -130,8 +130,8 @@ func get(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if cntError > 0 {
-		return fmt.Errorf("%d errors", cntError)
+	if errorCnt > 0 {
+		return fmt.Errorf("%d errors", errorCnt)
 	}
 	return nil
 }

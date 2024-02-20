@@ -51,13 +51,15 @@ type Site interface {
 	// default sent http request headers
 	GetDefaultHttpHeaders() [][]string
 	GetSiteConfig() *config.SiteConfigStruct
-	// download torrent by id (e.g.: 12345), sitename.id (e.g.: mteam.12345), or absolute download url (e.g.: https://kp.m-team.cc/download.php?id=12345)
-	DownloadTorrent(url string) (content []byte, filename string, err error)
-	// download torrent by torrent id (e.g.: 12345)
+	// download torrent by id (e.g.: 12345), sitename.id (e.g.: mteam.12345),
+	// or absolute download url (e.g.: https://kp.m-team.cc/download.php?id=12345)
+	DownloadTorrent(url string) (content []byte, filename string, id string, err error)
+	// download torrent by torrent id (e.g.: "12345")
 	DownloadTorrentById(id string) (content []byte, filename string, err error)
 	GetLatestTorrents(full bool) ([]Torrent, error)
 	// sort: size|name|none(or "")
-	GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (torrents []Torrent, nextPageMarker string, err error)
+	GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (
+		torrents []Torrent, nextPageMarker string, err error)
 	SearchTorrents(keyword string, baseUrl string) ([]Torrent, error)
 	GetStatus() (*Status, error)
 	PurgeCache()
@@ -384,8 +386,9 @@ func GetUa(siteInstance Site) string {
 	return ua
 }
 
-// general download torrent func
-func DownloadTorrentByUrl(siteInstance Site, httpClient *azuretls.Session, torrentUrl string, torrentId string) ([]byte, string, error) {
+// General download torrent func. Return torrentContent, filename, err
+func DownloadTorrentByUrl(siteInstance Site, httpClient *azuretls.Session, torrentUrl string, torrentId string) (
+	[]byte, string, error) {
 	res, header, err := util.FetchUrlWithAzuretls(torrentUrl, httpClient,
 		siteInstance.GetSiteConfig().Cookie, GetUa(siteInstance), siteInstance.GetDefaultHttpHeaders())
 	if err != nil {
