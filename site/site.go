@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"mime"
 	"net/url"
+	"os"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/Noooste/azuretls-client"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/term"
 
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/util"
@@ -144,12 +147,25 @@ func CreateSite(name string) (Site, error) {
 	return siteInstance, err
 }
 
-func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool, dense bool, scores map[string]float64) {
+func PrintTorrents(torrents []Torrent, filter string, now int64,
+	noHeader bool, dense bool, scores map[string]float64) {
+	width, _, _ := term.GetSize(int(os.Stdout.Fd()))
+	if width < config.SITE_TORRENTS_WIDTH {
+		width = config.SITE_TORRENTS_WIDTH
+	}
+	widthExcludingName := 0
+	widthName := 0
 	if !noHeader {
 		if scores == nil {
-			fmt.Printf("%-40s  %8s  %-11s  %-19s  %4s  %4s  %4s  %-15s  %2s\n", "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "P")
+			widthExcludingName = 81 // 6+11+19+4+4+4+15+2+8*2
+			widthName = width - widthExcludingName
+			fmt.Printf("%-*s  %6s  %-11s  %-19s  %4s  %4s  %4s  %-15s  %2s\n",
+				widthName, "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "P")
 		} else {
-			fmt.Printf("%-40s  %8s  %-11s  %-19s  %4s  %4s  %4s  %-15s  %5s  %2s\n", "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "Score", "P")
+			widthExcludingName = 88 // 6+11+19+4+4+4+15+5+2+9*2
+			widthName = width - widthExcludingName
+			fmt.Printf("%-*s  %6s  %-11s  %-19s  %4s  %4s  %4s  %-15s  %5s  %2s\n",
+				widthName, "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "Score", "P")
 		}
 	}
 	for _, torrent := range torrents {
@@ -185,12 +201,12 @@ func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool, 
 			process = "0%"
 		}
 		if dense {
-			fmt.Printf("// %s  %s\n", torrent.Name, torrent.Description)
+			name += " // " + torrent.Description
 		}
-		util.PrintStringInWidth(name, 40, true)
+		remain := util.PrintStringInWidth(name, int64(widthName), true)
 		if scores == nil {
-			fmt.Printf("  %8s  %-11s  %-19s  %4s  %4s  %4s  %-15s  %2s\n",
-				util.BytesSize(float64(torrent.Size)),
+			fmt.Printf("  %6s  %-11s  %-19s  %4s  %4s  %4s  %-15s  %2s\n",
+				util.BytesSizeAround(float64(torrent.Size)),
 				freeStr,
 				util.FormatTime(torrent.Time),
 				fmt.Sprint(torrent.Seeders),
@@ -200,8 +216,8 @@ func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool, 
 				process,
 			)
 		} else {
-			fmt.Printf("  %8s  %-11s  %-19s  %4s  %4s  %4s  %-15s  %5.0f  %2s\n",
-				util.BytesSize(float64(torrent.Size)),
+			fmt.Printf("  %6s  %-11s  %-19s  %4s  %4s  %4s  %-15s  %5.0f  %2s\n",
+				util.BytesSizeAround(float64(torrent.Size)),
 				freeStr,
 				util.FormatTime(torrent.Time),
 				fmt.Sprint(torrent.Seeders),
@@ -211,6 +227,16 @@ func PrintTorrents(torrents []Torrent, filter string, now int64, noHeader bool, 
 				scores[torrent.Id],
 				process,
 			)
+		}
+		if dense {
+			for {
+				remain = strings.TrimSpace(remain)
+				if remain == "" {
+					break
+				}
+				remain = util.PrintStringInWidth(remain, int64(widthName), true)
+				fmt.Printf("\n")
+			}
 		}
 	}
 }
@@ -233,7 +259,9 @@ func GetConfigSiteNameByDomain(domain string) (string, error) {
 		if firstMatchSite == lastMatchSite {
 			return firstMatchSite.GetName(), nil
 		} else {
-			return "", fmt.Errorf("ambiguous result - multiple sites in config match: names of first and last match: %s, %s", firstMatchSite.GetName(), lastMatchSite.GetName())
+			return "",
+				fmt.Errorf("ambiguous result - multiple sites in config match: names of first and last match: %s, %s",
+					firstMatchSite.GetName(), lastMatchSite.GetName())
 		}
 	}
 	return "", nil
@@ -257,7 +285,9 @@ func GetConfigSiteNameByTypes(types ...string) (string, error) {
 		if firstMatchSite == lastMatchSite {
 			return firstMatchSite.GetName(), nil
 		} else {
-			return "", fmt.Errorf("ambiguous result - multiple sites in config match: names of first and last match: %s, %s", firstMatchSite.GetName(), lastMatchSite.GetName())
+			return "",
+				fmt.Errorf("ambiguous result - multiple sites in config match: names of first and last match: %s, %s",
+					firstMatchSite.GetName(), lastMatchSite.GetName())
 		}
 	}
 	return "", nil

@@ -47,11 +47,13 @@ func init() {
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all clients and sites")
 	command.Flags().BoolVarP(&showAllClients, "clients", "c", false, "Show all clients")
 	command.Flags().BoolVarP(&showAllSites, "sites", "s", false, "Show all sites")
-	command.Flags().BoolVarP(&showTorrents, "torrents", "t", false, "Show torrents (active torrents for client / latest torrents for site)")
+	command.Flags().BoolVarP(&showTorrents, "torrents", "t", false,
+		"Show torrents (active torrents for client / latest torrents for site)")
 	command.Flags().BoolVarP(&showFull, "full", "f", false, "Show full info of each client or site")
 	command.Flags().BoolVarP(&showScore, "score", "", false, "Show brush score of site torrents")
 	command.Flags().BoolVarP(&largestFlag, "largest", "l", false, `Sort site torrents by size in desc order"`)
-	command.Flags().BoolVarP(&newestFlag, "newest", "n", false, `Sort site torrents by time in desc order (newest first)"`)
+	command.Flags().BoolVarP(&newestFlag, "newest", "n", false,
+		`Sort site torrents by time in desc order (newest first)"`)
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -167,7 +169,7 @@ func status(cmd *cobra.Command, args []string) error {
 			}
 			if response.ClientTorrents != nil {
 				fmt.Printf("\n")
-				client.PrintTorrents(response.ClientTorrents, filter, 0)
+				client.PrintTorrents(response.ClientTorrents, filter, 0, dense)
 				if i != len(responses)-1 {
 					fmt.Printf("\n")
 				}

@@ -154,3 +154,15 @@ func parseSize(sizeStr string, uMap sizeunitMap) (int64, error) {
 badSuffix:
 	return -1, fmt.Errorf("invalid suffix: '%s'", sfx)
 }
+
+// return at most 6 bytes, e.g.: "123.1G"
+func BytesSizeAround(size float64) string {
+	s := BytesSize(size)
+	s = strings.TrimSuffix(s, "iB")
+	s = strings.TrimSuffix(s, "B")
+	if i := strings.IndexAny(s, "KMGTPE"); i != -1 {
+		num, _ := strconv.ParseFloat(s[:i], 64)
+		s = fmt.Sprintf("%.1f%s", num, s[i:])
+	}
+	return s
+}

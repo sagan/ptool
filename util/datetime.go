@@ -117,11 +117,21 @@ func ParseTime(str string, location *time.Location) (int64, error) {
 
 	td, error := ParseTimeDuration(str)
 	if error == nil {
-		return time.Now().Unix() - td, nil
+		now := time.Now()
+		// 以距今的相对时间标识，精度有限
+		if td%86400 == 0 {
+			if td > 86400*30 {
+				now = now.Truncate(time.Hour * 24)
+			} else if td > 86400 {
+				now = now.Truncate(time.Hour)
+			}
+		}
+		return now.Unix() - td, nil
 	}
 	return 0, fmt.Errorf("invalid time str")
 }
 
+// Return time duration in seconds
 func ParseTimeDuration(str string) (int64, error) {
 	// remove inside spaces like the one in "9 小时"
 	var re = regexp.MustCompile(`^(.*?)\s*(\D+)\s*(.*?)$`)

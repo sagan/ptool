@@ -2,6 +2,7 @@ package status
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd/brush/strategy"
@@ -35,6 +36,18 @@ func fetchClientStatus(clientInstance client.Client, showTorrents bool, showAllT
 
 	if showTorrents {
 		clientTorrents, err := clientInstance.GetTorrents("", category, showAllTorrents)
+		if showAllTorrents {
+			sort.Slice(clientTorrents, func(i, j int) bool {
+				if clientTorrents[i].Name != clientTorrents[j].Name {
+					return clientTorrents[i].Name < clientTorrents[j].Name
+				}
+				return clientTorrents[i].InfoHash < clientTorrents[j].InfoHash
+			})
+		} else {
+			sort.Slice(clientTorrents, func(i, j int) bool {
+				return clientTorrents[i].Atime > clientTorrents[j].Atime
+			})
+		}
 		response.ClientTorrents = clientTorrents
 		if err != nil {
 			response.Error = fmt.Errorf("cann't get client %s torrents: %v", clientInstance.GetName(), err)

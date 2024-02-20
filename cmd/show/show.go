@@ -39,6 +39,7 @@ var (
 	tracker           = ""
 	minTorrentSizeStr = ""
 	maxTorrentSizeStr = ""
+	dense             = false
 	showAll           = false
 	showRaw           = false
 	showJson          = false
@@ -48,8 +49,11 @@ var (
 )
 
 func init() {
-	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "", -1, "Show at most this number of torrents. -1 == no limit")
-	command.Flags().BoolVarP(&largestFlag, "largest", "l", false, "Show largest torrents first. Equavalent with '--sort size --order desc'")
+	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "", -1,
+		"Show at most this number of torrents. -1 == no limit")
+	command.Flags().BoolVarP(&dense, "dense", "", false, "Dense mode: show full torrent title & subtitle")
+	command.Flags().BoolVarP(&largestFlag, "largest", "l", false,
+		"Show largest torrents first. Equavalent with '--sort size --order desc'")
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all torrents. Equavalent with pass a '_all' arg")
 	command.Flags().BoolVarP(&showRaw, "raw", "", false, "Show torrent size in raw format")
 	command.Flags().BoolVarP(&showJson, "json", "", false, "Show output in json format")
@@ -59,10 +63,13 @@ func init() {
 	command.Flags().BoolVarP(&showFiles, "show-files", "", false, "Show torrent content files info")
 	command.Flags().StringVarP(&filter, "filter", "", "", "Filter torrents by name")
 	command.Flags().StringVarP(&category, "category", "", "", "Filter torrents by category")
-	command.Flags().StringVarP(&tag, "tag", "", "", "Filter torrents by tag. Comma-separated string list. Torrent which tags contain any one in the list will match")
+	command.Flags().StringVarP(&tag, "tag", "", "",
+		"Filter torrents by tag. Comma-separated string list. Torrent which tags contain any one in the list match")
 	command.Flags().StringVarP(&tracker, "tracker", "", "", "Filter torrents by tracker domain")
-	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1", "Skip torrent with size smaller than (<) this value. -1 == no limit")
-	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1", "Skip torrent with size larger than (>) this value. -1 == no limit")
+	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1",
+		"Skip torrent with size smaller than (<) this value. -1 == no limit")
+	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1",
+		"Skip torrent with size larger than (>) this value. -1 == no limit")
 	cmd.AddEnumFlagP(command, &sortFlag, "sort", "", common.ClientTorrentSortFlag)
 	cmd.AddEnumFlagP(command, &orderFlag, "order", "", common.OrderFlag)
 	cmd.RootCmd.AddCommand(command)
@@ -92,7 +99,8 @@ func show(cmd *cobra.Command, args []string) error {
 	minTorrentSize, _ := util.RAMInBytes(minTorrentSizeStr)
 	maxTorrentSize, _ := util.RAMInBytes(maxTorrentSizeStr)
 
-	noConditionFlags := category == "" && tag == "" && filter == "" && tracker == "" && minTorrentSize < 0 && maxTorrentSize < 0
+	noConditionFlags := category == "" && tag == "" && filter == "" && tracker == "" &&
+		minTorrentSize < 0 && maxTorrentSize < 0
 	var torrents []client.Torrent
 	if showAll {
 		torrents, err = client.QueryTorrents(clientInstance, "", "", "")
@@ -217,7 +225,7 @@ func show(cmd *cobra.Command, args []string) error {
 		if showSum {
 			showSummary = 2
 		}
-		client.PrintTorrents(torrents, "", showSummary)
+		client.PrintTorrents(torrents, "", showSummary, dense)
 	} else {
 		for i, torrent := range torrents {
 			if i > 0 {

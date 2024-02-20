@@ -2,12 +2,14 @@ package client
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"slices"
 	"strings"
 	"sync"
 
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/term"
 
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/util"
@@ -372,11 +374,13 @@ func PrintTorrentFiles(files []TorrentContentFile, showRaw bool) {
 		if showRaw {
 			fmt.Printf("%-5d  %-5d  %-10d  %-5s  %s\n", i+1, file.Index, file.Size, isDone, file.Path)
 		} else {
-			fmt.Printf("%-5d  %-5d  %-10s  %-5s  %s\n", i+1, file.Index, util.BytesSize(float64(file.Size)), isDone, file.Path)
+			fmt.Printf("%-5d  %-5d  %-10s  %-5s  %s\n",
+				i+1, file.Index, util.BytesSize(float64(file.Size)), isDone, file.Path)
 		}
 	}
 	if ignoredFilesCnt > 0 {
-		fmt.Printf("// Note: some files (marked with -) are ignored (not_download). Download / Ignore / All files: %d / %d / %d\n",
+		fmt.Printf("// Note: some files (marked with -) are ignored (not_download). "+
+			"Download / Ignore / All files: %d / %d / %d\n",
 			len(files)-int(ignoredFilesCnt), ignoredFilesCnt, len(files))
 	}
 }
@@ -412,13 +416,20 @@ func PrintTorrent(torrent *Torrent) {
 }
 
 // showSum: 0 - no; 1 - yes; 2 - sum only
-func PrintTorrents(torrents []Torrent, filter string, showSum int64) {
+func PrintTorrents(torrents []Torrent, filter string, showSum int64, dense bool) {
+	width, _, _ := term.GetSize(int(os.Stdout.Fd()))
+	if width < config.CLIENT_TORRENTS_WIDTH {
+		width = config.CLIENT_TORRENTS_WIDTH
+	}
+	widthExcludingName := 109 // 40+6+5+6+6+5+5+20+8*2
+	widthName := width - widthExcludingName
 	cnt := int64(0)
 	var cntPaused, cntDownloading, cntSeeding, cntCompleted, cntOthers int64
 	size := int64(0)
 	sizeUnfinished := int64(0)
 	if showSum < 2 {
-		fmt.Printf("%-25s  %-40s  %-8s  %-5s  %-8s  %-8s  %-5s  %-5s  %-20s\n", "Name", "InfoHash", "Size", "State", "↓S(/s)", "↑S(/s)", "Seeds", "Peers", "Tracker")
+		fmt.Printf("%-*s  %-40s  %-6s  %-5s  %-6s  %-6s  %-5s  %-5s  %-20s\n",
+			widthName, "Name", "InfoHash", "Size", "State", "↓S(/s)", "↑S(/s)", "Seeds", "Peers", "Tracker")
 	}
 	for _, torrent := range torrents {
 		if filter != "" && !util.ContainsI(torrent.Name, filter) && !util.ContainsI(torrent.InfoHash, filter) {
@@ -439,22 +450,34 @@ func PrintTorrents(torrents []Torrent, filter string, showSum int64) {
 		}
 		size += torrent.Size
 		sizeUnfinished += torrent.Size - torrent.SizeCompleted
-		if showSum < 2 {
-			util.PrintStringInWidth(torrent.Name, 25, true)
-			fmt.Printf("  %-40s  %-8s  %-5s  %-8s  %-8s  %-5d  %-5d  %-20s\n",
-				torrent.InfoHash,
-				util.BytesSize(float64(torrent.Size)),
-				torrent.StateIconText(),
-				util.BytesSize(float64(torrent.DownloadSpeed)),
-				util.BytesSize(float64(torrent.UploadSpeed)),
-				torrent.Seeders,
-				torrent.Leechers,
-				torrent.TrackerDomain,
-			)
+		if showSum >= 2 {
+			continue
+		}
+		remain := util.PrintStringInWidth(torrent.Name, int64(widthName), true)
+		fmt.Printf("  %-40s  %-6s  %-5s  %-6s  %-6s  %-5d  %-5d  %-20s\n",
+			torrent.InfoHash,
+			util.BytesSizeAround(float64(torrent.Size)),
+			torrent.StateIconText(),
+			util.BytesSizeAround(float64(torrent.DownloadSpeed)),
+			util.BytesSizeAround(float64(torrent.UploadSpeed)),
+			torrent.Seeders,
+			torrent.Leechers,
+			torrent.TrackerDomain,
+		)
+		if dense {
+			for {
+				remain = strings.TrimSpace(remain)
+				if remain == "" {
+					break
+				}
+				remain = util.PrintStringInWidth(remain, int64(widthName), true)
+				fmt.Printf("\n")
+			}
 		}
 	}
 	if showSum > 0 {
-		fmt.Printf("// Summary - Cnt / Size / SizeUnfinished: %d / %s / %s\n", cnt, util.BytesSize(float64(size)), util.BytesSize(float64(sizeUnfinished)))
+		fmt.Printf("// Summary - Cnt / Size / SizeUnfinished: %d / %s / %s\n",
+			cnt, util.BytesSize(float64(size)), util.BytesSize(float64(sizeUnfinished)))
 		fmt.Printf("// Torrents: ↓%d / -%d / ↑%d / ✓%d / +%d\n",
 			cntDownloading, cntPaused, cntSeeding, cntCompleted, cntOthers)
 	}

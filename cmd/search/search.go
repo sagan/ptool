@@ -39,6 +39,8 @@ var (
 	maxResults        = int64(0)
 	perSiteMaxResults = int64(0)
 	baseUrl           = ""
+	minTorrentSizeStr = ""
+	maxTorrentSizeStr = ""
 )
 
 func init() {
@@ -46,13 +48,22 @@ func init() {
 	command.Flags().BoolVarP(&largestFlag, "largest", "l", false, "Sort search result by torrent size in desc order")
 	command.Flags().BoolVarP(&newestFlag, "newest", "n", false, "Sort search result by torrent time in desc order")
 	command.Flags().BoolVarP(&showJson, "json", "", false, "Show output in json format")
-	command.Flags().Int64VarP(&maxResults, "max-results", "", 100, "Number limit of search result of all sites combined. -1 == no limit")
-	command.Flags().Int64VarP(&perSiteMaxResults, "per-site-max-results", "", -1, "Number limit of search result of any single site. -1 == no limit")
-	command.Flags().StringVarP(&baseUrl, "base-url", "", "", "Manually set the base url of search page. e.g.: adult.php, special.php")
+	command.Flags().Int64VarP(&maxResults, "max-results", "", 100,
+		"Number limit of search result of all sites combined. -1 == no limit")
+	command.Flags().Int64VarP(&perSiteMaxResults, "per-site-max-results", "", -1,
+		"Number limit of search result of any single site. -1 == no limit")
+	command.Flags().StringVarP(&baseUrl, "base-url", "", "",
+		"Manually set the base url of search page. e.g.: adult.php, special.php")
+	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1",
+		"Skip torrent with size smaller than (<) this value. -1 == no limit")
+	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1",
+		"Skip torrent with size larger than (>) this value. -1 == no limit")
 	cmd.RootCmd.AddCommand(command)
 }
 
 func search(cmd *cobra.Command, args []string) error {
+	minTorrentSize, _ := util.RAMInBytes(minTorrentSizeStr)
+	maxTorrentSize, _ := util.RAMInBytes(maxTorrentSizeStr)
 	sitenames := config.ParseGroupAndOtherNames(strings.Split(args[0], ",")...)
 	keyword := strings.Join(args[1:], " ")
 	siteInstancesMap := map[string]site.Site{}
@@ -98,7 +109,13 @@ func search(cmd *cobra.Command, args []string) error {
 			if perSiteMaxResults >= 0 && len(siteTorrents) > int(perSiteMaxResults) {
 				siteTorrents = siteTorrents[:perSiteMaxResults]
 			}
-			torrents = append(torrents, siteTorrents...)
+			for _, torrent := range siteTorrents {
+				if minTorrentSize > 0 && torrent.Size < minTorrentSize ||
+					maxTorrentSize > 0 && torrent.Size > maxTorrentSize {
+					continue
+				}
+				torrents = append(torrents, torrent)
+			}
 		}
 	}
 	if largestFlag {
@@ -134,8 +151,8 @@ func search(cmd *cobra.Command, args []string) error {
 		fmt.Println(string(bytes))
 		return nil
 	}
-	fmt.Printf("Done searching %d sites. Success / NoResult / Error sites: %d / %d / %d. Showing %d result\n", cntSuccessSites+cntErrorSites+cntNoResultSites,
-		cntSuccessSites, cntNoResultSites, cntErrorSites, len(torrents))
+	fmt.Printf("Done searching %d sites. Success / NoResult / Error sites: %d / %d / %d. Showing %d result\n",
+		cntSuccessSites+cntErrorSites+cntNoResultSites, cntSuccessSites, cntNoResultSites, cntErrorSites, len(torrents))
 	if errorStr != "" {
 		log.Warnf("Errors encountered: %s", errorStr)
 	}

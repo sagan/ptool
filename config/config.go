@@ -18,12 +18,14 @@ import (
 )
 
 const (
-	BRUSH_CAT        = "_brush"
-	XSEED_TAG        = "_xseed"
-	NOADD_TAG        = "_noadd"
-	NOXSEED_TAG      = "noxseed" // BT 客户端里含有此 tag 的种子不会被辅种
-	STATS_FILENAME   = "ptool_stats.txt"
-	HISTORY_FILENAME = "ptool_history"
+	BRUSH_CAT             = "_brush"
+	XSEED_TAG             = "_xseed"
+	NOADD_TAG             = "_noadd"
+	NOXSEED_TAG           = "noxseed" // BT 客户端里含有此 tag 的种子不会被辅种
+	STATS_FILENAME        = "ptool_stats.txt"
+	HISTORY_FILENAME      = "ptool_history"
+	SITE_TORRENTS_WIDTH   = 120 // min width for printing site torrents
+	CLIENT_TORRENTS_WIDTH = 120 // min width for printing client torrents
 
 	DEFAULT_IYUU_DOMAIN                             = "api.iyuu.cn"
 	DEFAULT_TIMEOUT                                 = int64(5)
