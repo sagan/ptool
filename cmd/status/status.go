@@ -30,20 +30,20 @@ var (
 )
 
 var command = &cobra.Command{
-	Use: "status [client | site | group]... [-a]",
+	Use: "status [client | site | group]... [-a | -c | -s]",
 	// Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "status"},
 	Short:       "Show clients or sites status.",
 	Long: `Show clients or sites status.
-[client | site | group]: name of a client, site or group, or "_all" which means all sites.
+[client | site | group]: name of a client, site or group.
 `,
 	RunE: status,
 }
 
 func init() {
-	command.Flags().StringVarP(&filter, "filter", "", "", "Filter client torrents by name")
+	command.Flags().StringVarP(&filter, "filter", "", "", "Filter torrents by name")
 	command.Flags().StringVarP(&category, "category", "", "", "Filter client torrents by category")
-	command.Flags().BoolVarP(&dense, "dense", "", false, "Dense mode: show full torrent title & subtitle")
+	command.Flags().BoolVarP(&dense, "dense", "d", false, "Dense mode: show full torrent title & subtitle")
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all clients and sites")
 	command.Flags().BoolVarP(&showAllClients, "clients", "c", false, "Show all clients")
 	command.Flags().BoolVarP(&showAllSites, "sites", "s", false, "Show all sites")
@@ -51,9 +51,8 @@ func init() {
 		"Show torrents (active torrents for client / latest torrents for site)")
 	command.Flags().BoolVarP(&showFull, "full", "f", false, "Show full info of each client or site")
 	command.Flags().BoolVarP(&showScore, "score", "", false, "Show brush score of site torrents")
-	command.Flags().BoolVarP(&largestFlag, "largest", "l", false, `Sort site torrents by size in desc order"`)
-	command.Flags().BoolVarP(&newestFlag, "newest", "n", false,
-		`Sort site torrents by time in desc order (newest first)"`)
+	command.Flags().BoolVarP(&largestFlag, "largest", "l", false, `Sort torrents by size in desc order"`)
+	command.Flags().BoolVarP(&newestFlag, "newest", "n", false, `Sort torrents by time in desc order"`)
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -133,46 +132,55 @@ func status(cmd *cobra.Command, args []string) error {
 		return indexA < indexB
 	})
 
+	// type, name, ↑info, ↓info, others
+	var format = "%-6s  %-15s  %-27s  %-27s  %-s\n"
 	errorsStr := ""
-	for i, response := range responses {
+	for _, response := range responses {
 		if response.Kind == 1 {
 			if response.Error != nil {
 				errorsStr += fmt.Sprintf("Error get client %s status: error=%v\n", response.Name, response.Error)
 				errorCnt++
 			}
 			if response.ClientStatus != nil {
-				fmt.Printf("%-6s  %-13s  %-25s  %-25s  %-25s",
+				info := fmt.Sprintf("FreeSpace: %s; Unfinished(All/DL): %s/%s",
+					util.BytesSizeAround(float64(response.ClientStatus.FreeSpaceOnDisk)),
+					util.BytesSizeAround(float64(response.ClientStatus.UnfinishedSize)),
+					util.BytesSizeAround(float64(response.ClientStatus.UnfinishedDownloadingSize)),
+				)
+				if len(response.ClientTorrents) > 0 {
+					info += fmt.Sprintf("; Torrents: %d", len(response.ClientTorrents))
+				}
+				fmt.Printf(format,
 					"Client",
 					response.Name,
 					fmt.Sprintf("↑Spd/Lmt: %s / %s/s", util.BytesSize(float64(response.ClientStatus.UploadSpeed)),
-						util.BytesSize(float64(response.ClientStatus.UploadSpeedLimit))),
+						util.BytesSizeAround(float64(response.ClientStatus.UploadSpeedLimit))),
 					fmt.Sprintf("↓Spd/Lmt: %s / %s/s", util.BytesSize(float64(response.ClientStatus.DownloadSpeed)),
-						util.BytesSize(float64(response.ClientStatus.DownloadSpeedLimit))),
-					fmt.Sprintf("FreeSpace: %s; Unfinished(All/DL): %s/%s",
-						util.BytesSize(float64(response.ClientStatus.FreeSpaceOnDisk)),
-						util.BytesSize(float64(response.ClientStatus.UnfinishedSize)),
-						util.BytesSize(float64(response.ClientStatus.UnfinishedDownloadingSize)),
-					),
+						util.BytesSizeAround(float64(response.ClientStatus.DownloadSpeedLimit))),
+					info,
 				)
-				if len(response.ClientTorrents) > 0 {
-					fmt.Printf("  Torrents: %d", len(response.ClientTorrents))
-				}
-				fmt.Printf("\n")
 			} else {
-				fmt.Printf("%-6s  %-13s  %-25s  %-25s  %-25s\n",
+				fmt.Printf(format,
 					"Client",
 					response.Name,
 					"-",
 					"-",
-					"// failed to get status",
+					"// <error>",
 				)
 			}
 			if response.ClientTorrents != nil {
 				fmt.Printf("\n")
-				client.PrintTorrents(response.ClientTorrents, filter, 0, dense)
-				if i != len(responses)-1 {
-					fmt.Printf("\n")
+				if largestFlag {
+					sort.Slice(response.ClientTorrents, func(i, j int) bool {
+						return response.ClientTorrents[i].Size > response.ClientTorrents[j].Size
+					})
+				} else if newestFlag {
+					sort.Slice(response.ClientTorrents, func(i, j int) bool {
+						return response.ClientTorrents[i].Atime > response.ClientTorrents[j].Atime
+					})
 				}
+				client.PrintTorrents(response.ClientTorrents, filter, 0, dense)
+				fmt.Printf("\n")
 			}
 		} else if response.Kind == 2 {
 			if response.Error != nil {
@@ -180,24 +188,24 @@ func status(cmd *cobra.Command, args []string) error {
 				errorCnt++
 			}
 			if response.SiteStatus != nil {
-				fmt.Printf("%-6s  %-13s  %-25s  %-25s  %-25s",
+				info := fmt.Sprintf("UserName: %s", response.SiteStatus.UserName)
+				if len(response.SiteTorrents) > 0 {
+					info += fmt.Sprintf("; Torrents: %d", len(response.SiteTorrents))
+				}
+				fmt.Printf(format,
 					"Site",
 					response.Name,
 					fmt.Sprintf("↑: %s", util.BytesSize(float64(response.SiteStatus.UserUploaded))),
 					fmt.Sprintf("↓: %s", util.BytesSize(float64(response.SiteStatus.UserDownloaded))),
-					fmt.Sprintf("UserName: %s", response.SiteStatus.UserName),
+					info,
 				)
-				if len(response.SiteTorrents) > 0 {
-					fmt.Printf("  Torrents: %d", len(response.SiteTorrents))
-				}
-				fmt.Printf("\n")
 			} else {
-				fmt.Printf("%-6s  %-13s  %-25s  %-25s  %-25s\n",
+				fmt.Printf(format,
 					"Site",
 					response.Name,
 					"-",
 					"-",
-					"// failed to get status",
+					"// <error>",
 				)
 			}
 			if response.SiteTorrents != nil {
@@ -212,9 +220,7 @@ func status(cmd *cobra.Command, args []string) error {
 					})
 				}
 				site.PrintTorrents(response.SiteTorrents, filter, now, false, dense, response.SiteTorrentScores)
-				if i != len(responses)-1 {
-					fmt.Printf("\n")
-				}
+				fmt.Printf("\n")
 			}
 		}
 	}

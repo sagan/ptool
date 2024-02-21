@@ -321,6 +321,7 @@ func (qbtorrent *apiTorrentInfo) ToTorrent() *client.Torrent {
 		InfoHash:           qbtorrent.Hash,
 		Name:               qbtorrent.Name,
 		TrackerDomain:      util.ParseUrlHostname(qbtorrent.Tracker),
+		TrackerBaseDomain:  util.GetUrlDomain(qbtorrent.Tracker),
 		Tracker:            qbtorrent.Tracker,
 		State:              qbtorrent.ToTorrentState(),
 		LowLevelState:      qbtorrent.State,

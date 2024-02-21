@@ -2,7 +2,8 @@ package tpl
 
 // 站点模板。
 // CSS选择器使用 goquery 解析，支持 jQuery 的扩展语法(例如 :contains("txt") )。
-// 除 Url 以外的所有 ***Url (例如 TorrentsUrl) 均应当使用相对路径
+// 除 Url 以外的所有 ***Url (例如 TorrentsUrl) 均应当使用相对路径。
+// 大部分站点 id 使用其域名（去除二级域名和TLD后）的主要部分；部分站点域名与名称毫无关系，优先使用其通称。
 
 import (
 	"slices"
@@ -125,12 +126,6 @@ var (
 			Url:               "https://pt.eastgame.org/",
 			TorrentsExtraUrls: []string{"trls.php"},
 			Comment:           "吐鲁番",
-		},
-		"et8": {
-			Type:    "nexusphp",
-			Aliases: []string{"tccf", "torrentccf"},
-			Url:     "https://et8.org/",
-			Comment: "精品论坛，他吹吹风",
 		},
 		// need heavy work to support it
 		// "filelist": {
@@ -382,9 +377,9 @@ var (
 			SelectorTorrentFree: `div:contains("免費")`,
 			Comment:             "柠檬",
 		},
-		"m-team": {
+		"mteam": {
 			Type:                "nexusphp",
-			Aliases:             []string{"mteam", "mt"},
+			Aliases:             []string{"m-team", "mt"},
 			Url:                 "https://kp.m-team.cc/",
 			Domains:             []string{"m-team.io"},
 			TorrentsExtraUrls:   []string{"adult.php", "music.php"},
@@ -509,6 +504,12 @@ var (
 			Url:     "https://pt.soulvoice.club/",
 			Comment: "聆音",
 		},
+		"tccf": {
+			Type:    "nexusphp",
+			Aliases: []string{"et8", "torrentccf"},
+			Url:     "https://et8.org/",
+			Comment: "精品论坛，他吹吹风",
+		},
 		"totheglory": {
 			Type:              "nexusphp",
 			Aliases:           []string{"ttg"},
@@ -551,6 +552,7 @@ var (
 		},
 		"ubits": {
 			Type:    "nexusphp",
+			Aliases: []string{"ub"},
 			Url:     "https://ubits.club/",
 			Comment: "你堡",
 		},

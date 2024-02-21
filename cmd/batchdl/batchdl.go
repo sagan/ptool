@@ -71,7 +71,7 @@ var (
 func init() {
 	command.Flags().BoolVarP(&onePage, "one-page", "", false, "Only fetch one page torrents")
 	command.Flags().BoolVarP(&addPaused, "add-paused", "", false, "Add torrents to client in paused state")
-	command.Flags().BoolVarP(&dense, "dense", "", false, "Dense mode: show full torrent title & subtitle")
+	command.Flags().BoolVarP(&dense, "dense", "d", false, "Dense mode: show full torrent title & subtitle")
 	command.Flags().BoolVarP(&freeOnly, "free", "", false, "Skip none-free torrent")
 	command.Flags().BoolVarP(&noPaid, "no-paid", "", false, "Skip paid (use bonus points) torrent")
 	command.Flags().BoolVarP(&noNeutral, "no-neutral", "", false, "Skip neutral (do not count uploading & downloading & seeding bonus) torrent")

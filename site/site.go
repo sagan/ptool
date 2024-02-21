@@ -200,18 +200,18 @@ func PrintTorrents(torrents []Torrent, filter string, now int64,
 		if torrent.IsActive {
 			process = "0%"
 		}
-		if dense {
+		if dense && torrent.Description != "" {
 			name += " // " + torrent.Description
 		}
 		remain := util.PrintStringInWidth(name, int64(widthName), true)
 		if scores == nil {
-			fmt.Printf("  %6s  %-11s  %-19s  %4s  %4s  %4s  %-15s  %2s\n",
+			fmt.Printf("  %6s  %-11s  %-19s  %4d  %4d  %4d  %-15s  %2s\n",
 				util.BytesSizeAround(float64(torrent.Size)),
 				freeStr,
 				util.FormatTime(torrent.Time),
-				fmt.Sprint(torrent.Seeders),
-				fmt.Sprint(torrent.Leechers),
-				fmt.Sprint(torrent.Snatched),
+				torrent.Seeders,
+				torrent.Leechers,
+				torrent.Snatched,
 				torrent.Id,
 				process,
 			)

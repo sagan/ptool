@@ -11,6 +11,7 @@ import (
 	"github.com/gofrs/flock"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/config"
@@ -62,8 +63,11 @@ func Execute() {
 			config.ConfigType = configExt[1:]
 		}
 		logLevel := 3 + config.VerboseLevel
+		isTty := term.IsTerminal(int(os.Stdout.Fd()))
+		width, height, _ := term.GetSize(int(os.Stdout.Fd()))
 		log.SetLevel(log.Level(logLevel))
 		log.Debugf("ptool start: %v", os.Args)
+		log.Debugf("tty=%t, width=%d, height=%d", isTty, width, height)
 		log.Infof("config file: %s/%s", config.ConfigDir, config.ConfigFile)
 		if config.LockFile != "" {
 			log.Debugf("Locking file: %s", config.LockFile)
@@ -124,10 +128,19 @@ func init() {
 	config.DefaultConfigFile = configFile
 
 	// global flags
-	RootCmd.PersistentFlags().BoolVarP(&config.Fork, "fork", "", false, "Enables a daemon mode that runs the ptool process in the background (detached from current terminal). The current stdout / stderr will still be used so you may want to redirect them to files using pipe. It only works on Linux platform")
-	RootCmd.PersistentFlags().BoolVarP(&config.LockOrExit, "lock-or-exit", "", false, "Used with --lock flag. If failed to acquire lock, exit 1 immediately instead of waiting")
-	RootCmd.PersistentFlags().StringVarP(&config.ConfigFile, "config", "", config.DefaultConfigFile, "Config file ([ptool.toml])")
-	RootCmd.PersistentFlags().StringVarP(&config.LockFile, "lock", "", "", "Lock filename. If set, ptool will acquire the lock on the file before executing command. It is intended to be used to prevent multiple invocations of ptool process at the same time. If the lock file does not exist, it will be created automatically. However, it will NOT be deleted after ptool process exits")
+	RootCmd.PersistentFlags().BoolVarP(&config.Fork, "fork", "", false,
+		"Enables a daemon mode that runs the ptool process in the background (detached from current terminal). "+
+			"The current stdout / stderr will still be used so you may want to redirect them to files using pipe. "+
+			"It only works on Linux platform")
+	RootCmd.PersistentFlags().BoolVarP(&config.LockOrExit, "lock-or-exit", "", false,
+		"Used with --lock flag. If failed to acquire lock, exit 1 immediately instead of waiting")
+	RootCmd.PersistentFlags().StringVarP(&config.ConfigFile, "config", "", config.DefaultConfigFile,
+		"Config file ([ptool.toml])")
+	RootCmd.PersistentFlags().StringVarP(&config.LockFile, "lock", "", "",
+		"Lock filename. If set, ptool will acquire the lock on the file before executing command. "+
+			"It is intended to be used to prevent multiple invocations of ptool process at the same time. "+
+			"If the lock file does not exist, it will be created automatically. "+
+			"However, it will NOT be deleted after ptool process exits")
 	RootCmd.PersistentFlags().CountVarP(&config.VerboseLevel, "verbose", "v", "verbose (-v, -vv, -vvv)")
 }
 

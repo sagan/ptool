@@ -18,7 +18,8 @@ import (
 type Torrent struct {
 	InfoHash           string
 	Name               string
-	TrackerDomain      string
+	TrackerDomain      string // e.g.: tracker.m-team.cc
+	TrackerBaseDomain  string // e.g.: m-team.cc
 	Tracker            string
 	State              string // simplified state: seeding|downloading|completed|paused|checking|error|unknown
 	LowLevelState      string // original state value returned by bt client
@@ -421,14 +422,14 @@ func PrintTorrents(torrents []Torrent, filter string, showSum int64, dense bool)
 	if width < config.CLIENT_TORRENTS_WIDTH {
 		width = config.CLIENT_TORRENTS_WIDTH
 	}
-	widthExcludingName := 109 // 40+6+5+6+6+5+5+20+8*2
+	widthExcludingName := 105 // 40+6+5+6+6+5+5+16+8*2
 	widthName := width - widthExcludingName
 	cnt := int64(0)
 	var cntPaused, cntDownloading, cntSeeding, cntCompleted, cntOthers int64
 	size := int64(0)
 	sizeUnfinished := int64(0)
 	if showSum < 2 {
-		fmt.Printf("%-*s  %-40s  %-6s  %-5s  %-6s  %-6s  %-5s  %-5s  %-20s\n",
+		fmt.Printf("%-*s  %-40s  %-6s  %-5s  %-6s  %-6s  %-5s  %-5s  %-16s\n",
 			widthName, "Name", "InfoHash", "Size", "State", "↓S(/s)", "↑S(/s)", "Seeds", "Peers", "Tracker")
 	}
 	for _, torrent := range torrents {
@@ -454,7 +455,7 @@ func PrintTorrents(torrents []Torrent, filter string, showSum int64, dense bool)
 			continue
 		}
 		remain := util.PrintStringInWidth(torrent.Name, int64(widthName), true)
-		fmt.Printf("  %-40s  %-6s  %-5s  %-6s  %-6s  %-5d  %-5d  %-20s\n",
+		fmt.Printf("  %-40s  %-6s  %-5s  %-6s  %-6s  %-5d  %-5d  %-16s\n",
 			torrent.InfoHash,
 			util.BytesSizeAround(float64(torrent.Size)),
 			torrent.StateIconText(),
@@ -462,7 +463,7 @@ func PrintTorrents(torrents []Torrent, filter string, showSum int64, dense bool)
 			util.BytesSizeAround(float64(torrent.UploadSpeed)),
 			torrent.Seeders,
 			torrent.Leechers,
-			torrent.TrackerDomain,
+			torrent.TrackerBaseDomain, // 目前遇到的tracker域名最长的: "wintersakura.net"
 		)
 		if dense {
 			for {

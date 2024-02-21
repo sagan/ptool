@@ -124,11 +124,11 @@ var lsCmd = &cobra.Command{
 					}
 					info, err := file.Info()
 					if err != nil {
-						fmt.Printf("%-1s  %10s  %19s  %-s\n", flag, "<error>", "<error>", file.Name())
+						fmt.Printf("%-1s  %6s  %19s  %-s\n", flag, "!error", "<error>", file.Name())
 					} else {
-						fmt.Printf("%-1s  %10s  %19s  %-s\n",
+						fmt.Printf("%-1s  %6s  %19s  %-s\n",
 							flag,
-							util.BytesSize(float64(info.Size())),
+							util.BytesSizeAround(float64(info.Size())),
 							util.FormatTime(info.ModTime().Unix()),
 							util.QuoteFilename(file.Name()))
 					}

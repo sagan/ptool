@@ -909,6 +909,7 @@ func tr2Torrent(trtorrent *transmissionrpc.Torrent) *client.Torrent {
 		InfoHash:           *trtorrent.HashString,
 		Name:               *trtorrent.Name,
 		TrackerDomain:      util.ParseUrlHostname(tracker),
+		TrackerBaseDomain:  util.GetUrlDomain(tracker),
 		Tracker:            tracker,
 		State:              tr2State(trtorrent),
 		LowLevelState:      fmt.Sprint(trtorrent.Status),

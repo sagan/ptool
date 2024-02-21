@@ -10,17 +10,22 @@
 - 目前支持的 BT 客户端： qBittorrent v4.1+ / Transmission (<= v3.0)。
   - 推荐使用 qBittorrent。Transmission 客户端未充分测试。
 - 目前支持的 PT 站点：绝大部分使用 nexusphp 的网站。
-  - 测试过支持的站点：M-Team(馒头)、柠檬、U2、冬樱、红叶、聆音、铂金家、若干不可说的站点。
-  - 未列出的大部分 np 站点应该也支持。除了个别魔改 np 很厉害的站点可能不支持。
+  - 测试过支持的站点：M-Team(馒头)、U2、冬樱、红叶、聆音、铂金家、若干不可说的站点等。
+  - 未列出的大部分 np 站点应该也支持。除了个别魔改 np 很厉害的站点可能有问题。
 - 刷流功能(brush)：
   - 不依赖 RSS。直接抓取站点页面上最新的种子。
   - 无需配置选种规则。自动跳过非免费的和有 HR 的种子；自动筛选适合刷流的种子。
   - 无需配置删种规则。自动删除已无刷流价值的种子；自动删除免费时间到期并且尚未下载完成的种子；硬盘空间不足时也会自动删种。
 - 自动模仿浏览器访问 PT 站点，能够绕过大多数站点的 CF 盾 (impersonate 特性)。
 
+## 下载
+
+- [开发版本](https://ci.appveyor.com/project/sagan/ptool/build/artifacts) (根据 master 分支最新代码自动构建)
+- [稳定版本](https://github.com/sagan/ptool/releases)
+
 ## 快速开始（刷流）
 
-下载本程序的可执行文件 ptool (Linux) 或 ptool.exe (Windows) 放到任意目录，在同目录下创建名为 "ptool.toml" 的配置文件，内容示例如下：
+将本程序的可执行文件 ptool (Linux) 或 ptool.exe (Windows) 放到任意目录，在同目录下创建名为 "ptool.toml" 的配置文件，内容示例如下：
 
 ```toml
 [[clients]]
@@ -238,12 +243,12 @@ ptool <command> <client> [flags] [<infoHash>...]
 
 `<infoHash>` 参数为指定的 BT 客户端里需要操作的种子的 infoHash 列表。也可以使用以下特殊值参数操作多个种子（delete 命令根据除 infoHash 以外的条件删除种子时需要二次确认）：
 
-- \_all : 所有种子
-- \_done : 所有已下载完成的种子（无论是否正在做种）(\_seeding | \_completed)
-- \_undone : 所有未下载完成的种子(\_downloading | \_paused)
-- \_active : 当前正在活动（上传或下载）的种子
-- \_error : 状态为“出错”的种子
-- \_downloading / \_seeding / \_paused / \_completed : 状态为正在下载 / 做种 / 暂停下载 / 下载完成(但未做种)的种子
+- `_all` : 所有种子
+- `_done` : 所有已下载完成的种子（无论是否正在做种）(`_seeding` | `_completed`)
+- `_undone` : 所有未下载完成的种子(`_downloading` | `_paused`)
+- `_active` : 当前正在活动（上传或下载）的种子
+- `_error` : 状态为“出错”的种子
+- `_downloading` / `_seeding` / `_paused` / `_completed` : 状态为正在下载 / 做种 / 暂停下载 / 下载完成(但未做种)的种子
 
 也可以使用以下条件 flags 筛选种子：
 
@@ -388,9 +393,9 @@ ptool dltorrent <torrentIdOrUrl>...
 ptool search <sites> <keyword>
 ```
 
-`<sites>` 参数为需要所搜索的 PT 站点，可以使用 "," 分割提供多个站点。可以使用 "\_all" 搜索所有已配置的 PT 站点。
+`<sites>` 参数为需要所搜索的 PT 站点，可以使用 "," 分割提供多个站点。可以使用 `_all` 搜索所有已配置的 PT 站点。
 
-可以用 `ptool add` 命令将搜索结果列表中的种子添加到 BT 客户端。
+使用 `ptool add` 命令将搜索结果列表中的种子添加到 BT 客户端。
 
 ### 批量下载种子 (batchdl)
 
@@ -402,7 +407,6 @@ ptool batchdl <site>
 
 # 下载找到的种子到当前目录
 ptool batchdl <site> --action download
-
 
 # 直接将种子添加到 "local" BT 客户端里
 ptool batchdl <site> --action add --add-client local

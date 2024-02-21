@@ -51,7 +51,7 @@ var (
 func init() {
 	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "", -1,
 		"Show at most this number of torrents. -1 == no limit")
-	command.Flags().BoolVarP(&dense, "dense", "", false, "Dense mode: show full torrent title & subtitle")
+	command.Flags().BoolVarP(&dense, "dense", "d", false, "Dense mode: show full torrent title & subtitle")
 	command.Flags().BoolVarP(&largestFlag, "largest", "l", false,
 		"Show largest torrents first. Equavalent with '--sort size --order desc'")
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all torrents. Equavalent with pass a '_all' arg")
