@@ -15,10 +15,13 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
-# config file
+# config files
 ptool.toml
 ptool.yaml
+ptool.lock
+ptool_history
 ptool_stats.txt
+iyuu.db
 
 # local
 devtest/

@@ -4,6 +4,7 @@ package tpl
 // CSS选择器使用 goquery 解析，支持 jQuery 的扩展语法(例如 :contains("txt") )。
 // 除 Url 以外的所有 ***Url (例如 TorrentsUrl) 均应当使用相对路径。
 // 大部分站点 id 使用其域名（去除二级域名和TLD后）的主要部分；部分站点域名与名称毫无关系，优先使用其通称。
+// 站点 id 和 alias 长度限制在 15 个字符以内（最长："greatposterwall"）。
 
 import (
 	"slices"

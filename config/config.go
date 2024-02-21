@@ -1,8 +1,12 @@
 package config
 
 import (
+	"embed"
 	"fmt"
+	"io"
+	"io/fs"
 	"net/url"
+	"os"
 	"path"
 	"regexp"
 	"slices"
@@ -26,6 +30,7 @@ const (
 	HISTORY_FILENAME      = "ptool_history"
 	SITE_TORRENTS_WIDTH   = 120 // min width for printing site torrents
 	CLIENT_TORRENTS_WIDTH = 120 // min width for printing client torrents
+	GLOBAL_LOCK_FILE      = "ptool.lock"
 
 	DEFAULT_IYUU_DOMAIN                             = "api.iyuu.cn"
 	DEFAULT_TIMEOUT                                 = int64(5)
@@ -163,8 +168,8 @@ type SiteConfigStruct struct {
 
 type ConfigStruct struct {
 	Hushshell           bool                       `yaml:"hushshell"`
-	ShellMaxSuggestions int64                      `yaml:"shellMaxSuggestions"`
-	ShellMaxHistory     int64                      `yaml:"shellMaxHistory"` // -1 禁用
+	ShellMaxSuggestions int64                      `yaml:"shellMaxSuggestions"` // -1 禁用
+	ShellMaxHistory     int64                      `yaml:"shellMaxHistory"`     // -1 禁用
 	IyuuToken           string                     `yaml:"iyuuToken"`
 	IyuuDomain          string                     `yaml:"iyuuDomain"` // iyuu API 域名。默认使用 api.iyuu.cn
 	SiteProxy           string                     `yaml:"siteProxy"`
@@ -185,6 +190,10 @@ type ConfigStruct struct {
 	ClientsEnabled      []*ClientConfigStruct
 	SitesEnabled        []*SiteConfigStruct
 }
+
+//go:embed ptool.example.toml
+//go:embed ptool.example.yaml
+var defaultConfigFs embed.FS
 
 var (
 	VerboseLevel          = 0
@@ -247,9 +256,9 @@ func UpdateSites(updatesites []*SiteConfigStruct) {
 // Due to technical limitations, all existing comments will be LOST.
 // For now, new config data will NOT take effect for current ptool process.
 func Set() error {
-	lock := flock.New(path.Join(ConfigDir, "ptool.lock"))
+	lock := flock.New(path.Join(ConfigDir, GLOBAL_LOCK_FILE))
 	if ok, err := lock.TryLock(); err != nil || !ok {
-		return fmt.Errorf("unable to lock config file: err=%v", err)
+		return fmt.Errorf("unable to acquire global lock: %v", err)
 	}
 	defer lock.Unlock()
 	sites := Get().Sites
@@ -457,6 +466,28 @@ func ParseGroupAndOtherNames(names ...string) []string {
 	return util.UniqueSlice(names)
 }
 
+func (cookieCloudConfig *CookiecloudConfigStruct) MatchFilter(filter string) bool {
+	return util.ContainsI(cookieCloudConfig.Name, filter) || util.ContainsI(cookieCloudConfig.Uuid, filter) ||
+		slices.IndexFunc(cookieCloudConfig.Sites, func(s string) bool {
+			return strings.EqualFold(s, filter)
+		}) != -1
+}
+
+func (aliasConfig *AliasConfigStruct) MatchFilter(filter string) bool {
+	return util.ContainsI(aliasConfig.Name, filter) || util.ContainsI(aliasConfig.Cmd, filter)
+}
+
+func (groupConfig *GroupConfigStruct) MatchFilter(filter string) bool {
+	return util.ContainsI(groupConfig.Name, filter) ||
+		slices.IndexFunc(groupConfig.Sites, func(s string) bool {
+			return strings.EqualFold(s, filter)
+		}) != -1
+}
+
+func (clientConfig *ClientConfigStruct) MatchFilter(filter string) bool {
+	return util.ContainsI(clientConfig.Name, filter) || util.ContainsI(clientConfig.Url, filter)
+}
+
 // Generate derivative info from site config and register itself
 func (siteConfig *SiteConfigStruct) Register() {
 	v, err := util.RAMInBytes(siteConfig.TorrentUploadSpeedLimit)
@@ -502,6 +533,11 @@ func (siteConfig *SiteConfigStruct) GetTimezone() string {
 		tz = DEFAULT_SITE_TIMEZONE
 	}
 	return tz
+}
+
+func (siteConfig *SiteConfigStruct) MatchFilter(filter string) bool {
+	return util.ContainsI(siteConfig.GetName(), filter) || util.ContainsI(siteConfig.Type, filter) ||
+		util.ContainsI(siteConfig.Url, filter)
 }
 
 // parse a site internal url (e.g.: special.php), return absolute url
@@ -555,4 +591,38 @@ func (configData *ConfigStruct) GetIyuuDomain() string {
 		return DEFAULT_IYUU_DOMAIN
 	}
 	return configData.IyuuDomain
+}
+
+func CreateDefaultConfig() (err error) {
+	lock := flock.New(path.Join(ConfigDir, GLOBAL_LOCK_FILE))
+	if ok, err := lock.TryLock(); err != nil || !ok {
+		return fmt.Errorf("unable to acquire global lock: %v", err)
+	}
+	defer lock.Unlock()
+	configFile := path.Join(ConfigDir, ConfigFile)
+	if _, err := os.Stat(configFile); !os.IsNotExist(err) {
+		if err == nil {
+			return fmt.Errorf("config file already exists")
+		}
+		return fmt.Errorf("config file can not be accessed: %v", err)
+	}
+	var file fs.File
+	if ConfigType == "toml" {
+		file, err = defaultConfigFs.Open("ptool.example.toml")
+		if err != nil {
+			panic(err)
+		}
+	} else if ConfigType == "yaml" {
+		file, err = defaultConfigFs.Open("ptool.example.yaml")
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		return fmt.Errorf("unsupported config file type %v", ConfigType)
+	}
+	contents, err := io.ReadAll(file)
+	if err != nil {
+		panic(err)
+	}
+	return os.WriteFile(configFile, contents, 0600)
 }

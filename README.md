@@ -25,7 +25,7 @@
 
 ## 快速开始（刷流）
 
-将本程序的可执行文件 ptool (Linux) 或 ptool.exe (Windows) 放到任意目录，在同目录下创建名为 "ptool.toml" 的配置文件，内容示例如下：
+将本程序的可执行文件 ptool (Linux) 或 ptool.exe (Windows) 放到任意目录（推荐放到 PATH 路径里），运行 `ptool config create` 创建本程序使用的 ptool.toml 配置文件。创建的文件位于当前系统用户主目录的 `.config/ptool/` 路径下。编辑这个文件配置 BT 客户端和 PT 站点信息：
 
 ```toml
 [[clients]]
@@ -40,7 +40,7 @@ type = "mteam"
 cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 ```
 
-然后在当前目录下运行 `ptool brush local mteam` 即可执行刷流任务。程序会从 M-Team 获取最新的种子、根据一定规则筛选出适合的种子添加到本地的 qBittorrent 客户端里，同时自动从 BT 客户端里删除（已经没有上传的）旧的刷流种子。刷流任务添加到客户端里的种子会放到 `_brush` 分类(Category)里。程序只会对这个分类里的种子进行管理或删除等操作。
+然后运行 `ptool brush local mteam` 即可执行刷流任务。程序会从 M-Team 获取最新的种子、根据一定规则筛选出适合的种子添加到本地的 qBittorrent 客户端里，同时自动从 BT 客户端里删除（已经没有上传的）旧的刷流种子。刷流任务添加到客户端里的种子会放到 `_brush` 分类(Category)里。程序只会对这个分类里的种子进行管理或删除等操作。
 
 使用 Linux cron job / Windows 计划任务 (taskschd.msc) 等方式定时执行上面的刷流任务命令（例如每隔 10 分钟执行一次）即可。
 
@@ -80,7 +80,7 @@ cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 
 程序支持自动与浏览器同步站点 Cookies 或导入站点信息。详细信息请参考本文档 "cookiecloud" 命令说明部分。
 
-参考程序代码根目录下的 `ptool.example.toml` 或 `ptool.example.yaml` 示例配置文件了解常用配置项信息。
+参考程序代码 config/ 目录下的 `ptool.example.toml` 或 `ptool.example.yaml` 示例配置文件了解常用配置项信息。
 
 查看程序代码 [config/config.go](https://github.com/sagan/ptool/blob/master/config/config.go) 文件里的 type ConfigStruct struct 获取全部可配置项信息。
 
@@ -102,12 +102,13 @@ ptool <command> args... [flags]
 - search : 在某个站点搜索指定关键词的种子。
 - add : 将种子添加到 BT 客户端。
 - dltorrent : 下载站点的种子。
-- BT 客户端控制命令集: clientctl / show / pause / resume / delete / reannounce / recheck / getcategories / createcategory / removecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / edittracker / addtrackers / removetrackers / setsavepath。
+- BT 客户端控制命令集: clientctl / show / pause / resume / delete / reannounce / recheck / getcategories / createcategory / removecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / renametag / edittracker / addtrackers / removetrackers / setsavepath。
 - parsetorrent : 显示种子(torrent)文件信息。
 - verifytorrent : 测试种子(torrent)文件与硬盘上的文件内容一致。
 - partialdownload : 拆包下载。
-- cookiecloud (v0.1.8+): 使用 [CookieCloud](https://github.com/easychen/CookieCloud) 同步站点的 Cookies 或导入站点。
+- cookiecloud : 使用 [CookieCloud](https://github.com/easychen/CookieCloud) 同步站点的 Cookies 或导入站点。
 - sites : 显示本程序内置支持的所有 PT 站点列表。
+- config : 显示当前 ptool.toml 配置文件信息。
 - shell : 进入交互式终端环境。
 - version : 显示本程序版本信息。
 
@@ -275,7 +276,7 @@ ptool delete local 31a615d5984cb63c6f999f72bb3961dce49c194a
 ptool show local 31a615d5984cb63c6f999f72bb3961dce49c194a
 ```
 
-#### 管理 BT 客户端里的的种子分类 / 标签 / Trackers 等(getcategories / createcategory / removecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / edittracker / addtrackers / removetrackers / setsavepath)
+#### 管理 BT 客户端里的的种子分类 / 标签 / Trackers 等(getcategories / createcategory / removecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / renametag / edittracker / addtrackers / removetrackers / setsavepath)
 
 ```
 # 获取所有分类
@@ -304,6 +305,9 @@ ptool addtags <client> <tags> <infoHashes>...
 
 # 为客户端里种子删除tag
 ptool removetags <client> <tags> <infoHashes>...
+
+# 重命名客户端里的 tag
+ptool renametag <client> <old-tag> <new-tag>
 
 # 修改种子的 tracker。只有 old tracker 存在的种子会被修改
 ptool edittracker <client> _all --old-tracker "https://..." --new-tracker "https://..."

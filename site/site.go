@@ -454,9 +454,6 @@ func init() {
 func Exit() {
 	var resourcesWaitGroup sync.WaitGroup
 	// for now, nothing to close
-	for siteName := range sites {
-		delete(sites, siteName)
-	}
 	resourcesWaitGroup.Wait()
 }
 

@@ -635,7 +635,7 @@ func Exit() {
 			defer resourcesWaitGroup.Done()
 			log.Tracef("Close client %s instance", clientName)
 			clientInstance.Close()
-			delete(clients, clientName)
+			// delete(clients, clientName) // may lead to race condition
 		}(clientName, clientInstance)
 	}
 	resourcesWaitGroup.Wait()
