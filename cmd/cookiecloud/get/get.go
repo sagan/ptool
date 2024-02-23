@@ -25,7 +25,7 @@ var command = &cobra.Command{
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "cookiecloud.get"},
 	Short:       "Get cookie for sites or domains from data of cookiecloud servers.",
 	Long: `Get cookie for sites or domains from data of cookiecloud servers.
-Each arg can be a site or group name, a domain (or IP), or a full url. It will query cookiecloud servers
+Each arg can be a site or group name, a domain (or IP), or a url. It will query cookiecloud servers
 and display all found cookies of the corresponding arg in list.
 
 If --all flag is NOT set (the default case), only cookies which path attribute constitutes the prefix of
@@ -48,8 +48,11 @@ func init() {
 			{"js", `JavaScript 'document.cookie=""' code snippet`},
 		},
 	})
-	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all cookies associated with the domain (no path checking)")
-	command.Flags().StringVarP(&profile, "profile", "", "", "Comma-separated string, Set the used cookiecloud profile name(s). If not set, All cookiecloud profiles in config will be used")
+	command.Flags().BoolVarP(&showAll, "all", "a", false,
+		"Show all cookies associated with the domain (no path checking)")
+	command.Flags().StringVarP(&profile, "profile", "", "",
+		"Comma-separated list. Set the used cookiecloud profile name(s). "+
+			"If not set, All cookiecloud profiles in config will be used")
 	cookiecloud.Command.AddCommand(command)
 }
 

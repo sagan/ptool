@@ -674,7 +674,8 @@ func (qbclient *Client) GetStatus() (*client.Status, error) {
 	status.UnfinishedSize = qbclient.unfinishedSize
 	status.UnfinishedDownloadingSize = qbclient.unfinishedDownloadingSize
 	// @workaround
-	// qb 的 Web API 有 bug，有时 FreeSpaceOnDisk 返回 0，但实际硬盘剩余空间充足，原因尚不明确。目前在 Windows QB 4.5.2 上发现此现象。
+	// qb 的 Web API 有 bug，有时 FreeSpaceOnDisk 返回 0，但实际硬盘剩余空间充足，原因尚不明确。
+	// 目前在 Windows QB 4.5.2 上发现此现象。
 	if status.FreeSpaceOnDisk == 0 {
 		hasDownloadingTorrent := false
 		hasErrorTorrent := false
@@ -916,7 +917,8 @@ func (qbclient *Client) GetTorrentTrackers(infoHash string) (client.TorrentTrack
 	return trackers, nil
 }
 
-func (qbclient *Client) EditTorrentTracker(infoHash string, oldTracker string, newTracker string, replaceHost bool) error {
+func (qbclient *Client) EditTorrentTracker(infoHash string, oldTracker string,
+	newTracker string, replaceHost bool) error {
 	if replaceHost {
 		torrent, err := qbclient.GetTorrent(infoHash)
 		if err != nil {
@@ -1027,7 +1029,8 @@ func (qbclient *Client) Close() {
 	}
 }
 
-func NewClient(name string, clientConfig *config.ClientConfigStruct, config *config.ConfigStruct) (client.Client, error) {
+func NewClient(name string, clientConfig *config.ClientConfigStruct, config *config.ConfigStruct) (
+	client.Client, error) {
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		return nil, err

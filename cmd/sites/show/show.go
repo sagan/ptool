@@ -15,7 +15,7 @@ var command = &cobra.Command{
 	Use:   "show {site}...",
 	Short: "Show detailed configuration of internal supported PT site.",
 	Long: `Show detailed configuration of internal supported PT site.
-All configurations of any site can be overrided in ptool.toml.`,
+It prints output in toml format. All configurations of any site can be overrided in ptool.toml.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: show,
 }

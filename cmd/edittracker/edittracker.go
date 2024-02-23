@@ -12,7 +12,8 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:         "edittracker <client> [--category category] [--tag tag] [--filter filter] [infoHash]... --old-tracker {url} --new-tracker {url} [--replace-host]",
+	Use: "edittracker <client> [--category category] [--tag tag] [--filter filter] [infoHash]... " +
+		"--old-tracker {url} --new-tracker {url} [--replace-host]",
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "edittracker"},
 	Short:       "Edit tracker of torrents in client.",
 	Long: `Edit tracker of torrents in client, replace the old tracker url with the new one.
@@ -43,10 +44,13 @@ var (
 
 func init() {
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do NOT actually modify torrent trackers")
-	command.Flags().BoolVarP(&replaceHost, "replace-host", "", false, "Replace host mode. If set, --old-tracker should be the old host (hostname[:port]) instead of full url, the --new-tracker can either be a host or full url")
+	command.Flags().BoolVarP(&replaceHost, "replace-host", "", false,
+		"Replace host mode. If set, --old-tracker should be the old host (hostname[:port]) instead of url, "+
+			"the --new-tracker can either be a host or url")
 	command.Flags().StringVarP(&filter, "filter", "", "", "Filter torrents by name")
 	command.Flags().StringVarP(&category, "category", "", "", "Filter torrents by category")
-	command.Flags().StringVarP(&tag, "tag", "", "", "Filter torrents by tag. Comma-separated string list. Torrent which tags contain any one in the list will match")
+	command.Flags().StringVarP(&tag, "tag", "", "",
+		"Filter torrents by tag. Comma-separated list. Torrent which tags contain any one in the list matches")
 	command.Flags().StringVarP(&oldTracker, "old-tracker", "", "", "Set the old tracker")
 	command.Flags().StringVarP(&newTracker, "new-tracker", "", "", "Set the new tracker")
 	command.MarkFlagRequired("old-tracker")
@@ -77,8 +81,8 @@ func edittracker(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	if !dryRun {
-		log.Warnf("Found %d torrents, will edit their trackers (%s => %s, replaceHost=%t) in few seconds. Press Ctrl+C to stop",
-			len(torrents), oldTracker, newTracker, replaceHost)
+		log.Warnf("Found %d torrents, will edit their trackers (%s => %s, replaceHost=%t) in few seconds. "+
+			"Press Ctrl+C to stop", len(torrents), oldTracker, newTracker, replaceHost)
 	}
 	util.Sleep(3)
 	errorCnt := int64(0)

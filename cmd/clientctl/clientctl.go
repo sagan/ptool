@@ -37,8 +37,12 @@ var (
 		{"global_upload_speed", 1, true, false, "Current global upload speed (/s)"},
 		{"free_disk_space", 2, true, false, "Current free disk space of default save path"},
 		{"save_path", 0, false, false, "Default save path"},
-		{"qb_*", 0, false, false, "The qBittorrent specific preferences. For full list see https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-4.1)#get-application-preferences . e.g.: qb_start_paused_enabled"},
-		{"tr_*", 0, false, false, "The transmission specific preferences. For full list see https://github.com/transmission/transmission/blob/3.00/extras/rpc-spec.txt#L482 . Convert argument name to snake_case. e.g.: tr_config_dir"},
+		{"qb_*", 0, false, false, "The qBittorrent specific preferences. " +
+			"For full list see https://github.com/qbittorrent/qBittorrent/wiki/" +
+			"WebUI-API-(qBittorrent-4.1)#get-application-preferences . E.g.: qb_start_paused_enabled"},
+		{"tr_*", 0, false, false, "The transmission specific preferences. " +
+			"For full list see https://github.com/transmission/transmission/blob/3.00/extras/rpc-spec.txt#L482 . " +
+			"Convert argument name to snake_case. E.g.: tr_config_dir"},
 	}
 	showRaw        = false
 	showValuesOnly = false
@@ -96,7 +100,8 @@ func clientctl(cmd *cobra.Command, args []string) error {
 		value := ""
 		var err error
 		if (clientInstance.GetClientConfig().Type == "qbittorrent" && strings.HasPrefix(variable, "qb_") ||
-			clientInstance.GetClientConfig().Type == "transmission" && strings.HasPrefix(variable, "tr_")) && len(variable) > 3 {
+			clientInstance.GetClientConfig().Type == "transmission" && strings.HasPrefix(variable, "tr_")) &&
+			len(variable) > 3 {
 			if len(s) == 1 {
 				value, err = clientInstance.GetConfig(name)
 				if err != nil {

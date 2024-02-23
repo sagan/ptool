@@ -27,7 +27,8 @@ var (
 
 func init() {
 	command.Flags().BoolVarP(&showBindable, "bindable", "b", false, "Show bindable sites")
-	command.Flags().StringVarP(&filter, "filter", "", "", "Filter sites. Only show sites which name / url / comment contain this string")
+	command.Flags().StringVarP(&filter, "filter", "", "",
+		"Filter sites. Only show sites which name / url / comment contain this string")
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all iyuu sites (instead of only owned sites)")
 	iyuu.Command.AddCommand(command)
 }
@@ -68,7 +69,8 @@ func sites(cmd *cobra.Command, args []string) error {
 	} else {
 		fmt.Printf("<local sites supported by iyuu> (add -a flag to show all iyuu sites)\n")
 	}
-	fmt.Printf("%-10s  %-15s  %-6s  %-13s  %-30s  %-25s\n", "Nickname", "SiteName", "SiteId", "LocalSite", "SiteUrl", "DlPage")
+	fmt.Printf("%-10s  %-15s  %-6s  %-13s  %-30s  %-25s\n",
+		"Nickname", "SiteName", "SiteId", "LocalSite", "SiteUrl", "DlPage")
 	for _, iyuuSite := range iyuuSites {
 		if iyuu2LocalSiteMap[iyuuSite.Sid] == "" {
 			continue

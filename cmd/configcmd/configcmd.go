@@ -41,7 +41,7 @@ func configcmd(cmd *cobra.Command, args []string) error {
 	fmt.Printf("Config file: %s%c%s\n", config.ConfigDir, filepath.Separator, config.ConfigFile)
 	if _, err := os.Stat(path.Join(config.ConfigDir, config.ConfigFile)); err != nil {
 		if os.IsNotExist(err) {
-			fmt.Printf("<config file not exists>\n")
+			fmt.Printf(`<config file does NOT exists, run "ptool config create" to create it>` + "\n")
 		} else {
 			fmt.Printf("<config file can not be accessed: %v>\n", err)
 		}
@@ -185,5 +185,6 @@ func configcmd(cmd *cobra.Command, args []string) error {
 	}
 	fmt.Printf("\n")
 
+	fmt.Printf(`To display effective config of a site / client / other..., run "ptool config show <name>"` + "\n\n")
 	return nil
 }

@@ -21,7 +21,7 @@ _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _err
 
 Example:
 ptool addtrackers <client> <infoHashes...> --tracker "https://..."
---tracker flag can be used many times.
+--tracker flag can be set many times.
 `,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: addtrackers,
@@ -40,9 +40,11 @@ func init() {
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do NOT actually modify torrent trackers")
 	command.Flags().StringVarP(&filter, "filter", "", "", "Filter torrents by name")
 	command.Flags().StringVarP(&category, "category", "", "", "Filter torrents by category")
-	command.Flags().StringVarP(&tag, "tag", "", "", "Filter torrents by tag. Comma-separated string list. Torrent which tags contain any one in the list will match")
-	command.Flags().StringVarP(&oldTracker, "old-tracker", "", "", "The existing tracker host or full url. If set, only torrents that already have this tracker will get new tracker")
-	command.Flags().StringArrayVarP(&trackers, "tracker", "", nil, "Set the tracker to add. Can be used multiple times")
+	command.Flags().StringVarP(&tag, "tag", "", "",
+		"Filter torrents by tag. Comma-separated list. Torrent which tags contain any one in the list matches")
+	command.Flags().StringVarP(&oldTracker, "old-tracker", "", "",
+		"The existing tracker host or url. If set, only torrents that already have this tracker will get new tracker")
+	command.Flags().StringArrayVarP(&trackers, "tracker", "", nil, "Set the tracker to add. Can be set multiple times")
 	command.MarkFlagRequired("tracker")
 	cmd.RootCmd.AddCommand(command)
 }

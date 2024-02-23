@@ -2,7 +2,8 @@ package gazelle
 
 // Gazelle ( https://github.com/WhatCD/Gazelle )
 // WhatCD 开源的音乐站 private tracker。
-// 种子下载链接：https://dicmusic.club/torrents.php?action=download&id=&authkey=&torrent_pass= (如果cookie有效，authkey 和 torrent_pass 可省略)
+// 种子下载链接：https://dicmusic.club/torrents.php?action=download&id=&authkey=&torrent_pass=
+// (如果cookie有效，authkey 和 torrent_pass 可省略)
 // 注意下载时的 id 与 torrent.php 页面url里的 id 不同，后者是当前音乐专辑的 id
 
 import (

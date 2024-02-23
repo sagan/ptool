@@ -21,7 +21,7 @@ _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _err
 
 Example:
 ptool removetrackers <client> <infoHashes...> --tracker "https://..."
---tracker flag can be used many times.
+--tracker flag can be set many times.
 `,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: removetrackers,
@@ -39,8 +39,10 @@ func init() {
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do NOT actually modify torrent trackers")
 	command.Flags().StringVarP(&filter, "filter", "", "", "Filter torrents by name")
 	command.Flags().StringVarP(&category, "category", "", "", "Filter torrents by category")
-	command.Flags().StringVarP(&tag, "tag", "", "", "Filter torrents by tag. Comma-separated string list. Torrent which tags contain any one in the list will match")
-	command.Flags().StringArrayVarP(&trackers, "tracker", "", nil, "Set the tracker to remove. Can be used multiple times")
+	command.Flags().StringVarP(&tag, "tag", "", "",
+		"Filter torrents by tag. Comma-separated list. Torrent which tags contain any one in the list matches")
+	command.Flags().StringArrayVarP(&trackers, "tracker", "", nil,
+		"Set the tracker to remove. Can be set multiple times")
 	command.MarkFlagRequired("tracker")
 	cmd.RootCmd.AddCommand(command)
 }
@@ -73,7 +75,7 @@ func removetrackers(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	if !dryRun {
-		log.Warnf("Found %d torrents, will remove %d trackers to them in 3 seconds. Press Ctrl+C to stop",
+		log.Warnf("Found %d torrents, will remove %d trackers from them in few seconds. Press Ctrl+C to stop",
 			len(torrents), len(trackers))
 	}
 	util.Sleep(3)

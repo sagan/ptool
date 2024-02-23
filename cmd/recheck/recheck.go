@@ -7,6 +7,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/util"
 )
 
 var command = &cobra.Command{
@@ -25,40 +26,58 @@ var (
 	category = ""
 	tag      = ""
 	filter   = ""
+	doAction = false
 )
 
 func init() {
 	command.Flags().StringVarP(&filter, "filter", "", "", "Filter torrents by name")
 	command.Flags().StringVarP(&category, "category", "", "", "Filter torrents by category")
-	command.Flags().StringVarP(&tag, "tag", "", "", "Filter torrents by tag. Comma-separated string list. Torrent which tags contain any one in the list will match")
+	command.Flags().StringVarP(&tag, "tag", "", "",
+		"Filter torrents by tag. Comma-separated list. Torrent which tags contain any one in the list matches")
+	command.Flags().BoolVarP(&doAction, "do", "", false, "Do recheck torrents without asking for confirm")
 	cmd.RootCmd.AddCommand(command)
 }
 
 func recheck(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
-	args = args[1:]
-	if category == "" && tag == "" && filter == "" && len(args) == 0 {
+	infoHashes := args[1:]
+	if category == "" && tag == "" && filter == "" && len(infoHashes) == 0 {
 		return fmt.Errorf("you must provide at least a condition flag or hashFilter")
 	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
 		return fmt.Errorf("failed to create client: %v", err)
 	}
+	quickMode := true
+	if category != "" || tag != "" || filter != "" {
+		quickMode = false
+	} else {
+		for _, infoHash := range infoHashes {
+			if !client.IsValidInfoHash(infoHash) {
+				quickMode = false
+				break
+			}
+		}
+	}
 
-	infoHashes, err := client.SelectTorrents(clientInstance, category, tag, filter, args...)
+	torrents, err := client.QueryTorrents(clientInstance, category, tag, filter, infoHashes...)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to fetch client torrents: %v", err)
 	}
-	if infoHashes == nil {
-		err = clientInstance.RecheckAllTorrents()
-		if err != nil {
-			return err
+	if len(torrents) == 0 {
+		return nil
+	}
+	if !quickMode && !doAction {
+		size := int64(0)
+		for _, torrent := range torrents {
+			size += torrent.Size
 		}
-	} else if len(infoHashes) > 0 {
-		err = clientInstance.RecheckTorrents(infoHashes)
-		if err != nil {
-			return err
+		if !util.AskYesNoConfirm(fmt.Sprintf(
+			"Will recheck %d (%s) torrents. Note the checking process can NOT be stopped once started",
+			len(torrents), util.BytesSizeAround(float64(size)))) {
+			return fmt.Errorf("abort")
 		}
 	}
-	return nil
+	infoHashes = util.Map(torrents, func(t client.Torrent) string { return t.InfoHash })
+	return clientInstance.RecheckTorrents(infoHashes)
 }

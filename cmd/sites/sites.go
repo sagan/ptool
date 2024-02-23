@@ -24,7 +24,8 @@ var (
 )
 
 func init() {
-	Command.Flags().StringVarP(&filter, "filter", "", "", "Filter sites. Only show sites which name / url / comment contain this string")
+	Command.Flags().StringVarP(&filter, "filter", "", "",
+		"Filter sites. Only show sites which name / url / comment contain this string")
 	cmd.RootCmd.AddCommand(Command)
 }
 
@@ -37,7 +38,8 @@ func sites(cmd *cobra.Command, args []string) error {
 			!util.ContainsI(siteInfo.Url, filter) && !util.ContainsI(siteInfo.Comment, filter)) {
 			continue
 		}
-		fmt.Printf("%-15s  %-15s  %-30s  %10s  %s\n", name, strings.Join(siteInfo.Aliases, ","), siteInfo.Url, siteInfo.Type, siteInfo.Comment)
+		fmt.Printf("%-15s  %-15s  %-30s  %10s  %s\n",
+			name, strings.Join(siteInfo.Aliases, ","), siteInfo.Url, siteInfo.Type, siteInfo.Comment)
 	}
 	return nil
 }

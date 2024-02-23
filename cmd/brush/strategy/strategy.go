@@ -13,18 +13,21 @@ import (
 )
 
 const (
-	NEW_TORRENTS_TIMESPAN                 = int64(15 * 60) // new torrents timespan during which will NOT be examined at all
-	NEW_TORRENTS_STALL_EXEMPTION_TIMESPAN = int64(30 * 60) // new torrents timespan during which will NOT be stalled
+	// new torrents timespan during which will NOT be examined at all
+	NEW_TORRENTS_TIMESPAN = int64(15 * 60)
+	// new torrents timespan during which will NOT be stalled
+	NEW_TORRENTS_STALL_EXEMPTION_TIMESPAN = int64(30 * 60)
 	NO_PROCESS_TORRENT_DELETEION_TIMESPAN = int64(30 * 60)
 	STALL_DOWNLOAD_SPEED                  = int64(10 * 1024)
 	SLOW_UPLOAD_SPEED                     = int64(100 * 1024)
 	RATIO_CHECK_MIN_DOWNLOAD_SPEED        = int64(100 * 1024)
 	SLOW_TORRENTS_CHECK_TIMESPAN          = int64(15 * 60)
-	STALL_TORRENT_DELETEION_TIMESPAN      = int64(30 * 60) // stalled torrent will be deleted after this time passed
-	BANDWIDTH_FULL_PERCENT                = float64(0.8)
-	DELETE_TORRENT_IMMEDIATELY_SCORE      = float64(99999)
-	RESUME_TORRENTS_FREE_DISK_SPACE_TIER  = int64(5 * 1024 * 1024 * 1024)  // 5GB
-	DELETE_TORRENTS_FREE_DISK_SPACE_TIER  = int64(10 * 1024 * 1024 * 1024) // 10GB
+	// stalled torrent will be deleted after this time passed
+	STALL_TORRENT_DELETEION_TIMESPAN     = int64(30 * 60)
+	BANDWIDTH_FULL_PERCENT               = float64(0.8)
+	DELETE_TORRENT_IMMEDIATELY_SCORE     = float64(99999)
+	RESUME_TORRENTS_FREE_DISK_SPACE_TIER = int64(5 * 1024 * 1024 * 1024)  // 5GB
+	DELETE_TORRENTS_FREE_DISK_SPACE_TIER = int64(10 * 1024 * 1024 * 1024) // 10GB
 )
 
 type BrushSiteOptionStruct struct {
@@ -126,11 +129,13 @@ func isTorrentStalled(torrent *client.Torrent) bool {
  *   b. It's consuming too much downloading bandwidth and uploading / downloading speed ratio is too low
  *   c. It's incomplete and been totally stalled (no uploading or downloading activity) for some time
  *   d. It's incomplete and the free discount expired (or will soon expire)
- * Stall ALL incomplete torrent of client (limit download speed to 1B/s, so upload only) when free disk space insufficient
+ * Stall ALL incomplete torrent of client (limit download speed to 1B/s, so upload only)
+ *   when free disk space insufficient
  *   * This's somwwhat broken in qBittorrent for now (See https://github.com/qbittorrent/qBittorrent/issues/2185 ).
  *   * Simply limiting downloading speed (to a very low tier) will also drop uploading speed to the same level
  *   * Consider removing this behavior
- * Add new torrents to client when server uploading and downloading bandwidth is somewhat idle AND there is SOME free disk space
+ * Add new torrents to client when server uploading and downloading bandwidth is somewhat idle AND
+ *   there is SOME free disk space
  * Also：
  *   * Use the current seeders / leechers info of torrent when make decisions
  */
@@ -142,7 +147,8 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	cntDownloadingTorrents := int64(0)
 	freespace := clientStatus.FreeSpaceOnDisk
 	freespaceChange := int64(0)
-	freespaceTarget := util.Min(clientOption.MinDiskSpace*2, clientOption.MinDiskSpace+DELETE_TORRENTS_FREE_DISK_SPACE_TIER)
+	freespaceTarget := util.Min(clientOption.MinDiskSpace*2,
+		clientOption.MinDiskSpace+DELETE_TORRENTS_FREE_DISK_SPACE_TIER)
 	estimateUploadSpeed := clientStatus.UploadSpeed
 
 	var candidateTorrents []candidateTorrentStruct
@@ -234,10 +240,12 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 				})
 				clientTorrentsMap[torrent.InfoHash].DeleteCandidateFlag = true
 			}
-		} else if torrent.UploadSpeed < clientOption.SlowUploadSpeedTier { // check slow torrents, add it to watch list first time and mark as deleteCandidate second time
+		} else if torrent.UploadSpeed < clientOption.SlowUploadSpeedTier {
+			// check slow torrents, add it to watch list first time and mark as deleteCandidate second time
 			if torrent.Meta["sct"] > 0 { // second encounter on slow torrent
 				if siteOption.Now-torrent.Meta["sct"] >= SLOW_TORRENTS_CHECK_TIMESPAN {
-					averageUploadSpeedSinceSct := (torrent.Uploaded - torrent.Meta["sctu"]) / (siteOption.Now - torrent.Meta["sct"])
+					averageUploadSpeedSinceSct := (torrent.Uploaded - torrent.Meta["sctu"]) /
+						(siteOption.Now - torrent.Meta["sct"])
 					if averageUploadSpeedSinceSct < clientOption.SlowUploadSpeedTier {
 						if canStallTorrent(&torrent) &&
 							torrent.DownloadSpeed >= RATIO_CHECK_MIN_DOWNLOAD_SPEED &&
@@ -459,8 +467,10 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	}
 
 	// add new torrents
-	if (freespace == -1 || freespace+freespaceChange > clientOption.MinDiskSpace) && cntTorrents <= clientOption.MaxTorrents {
-		for cntDownloadingTorrents < clientOption.MaxDownloadingTorrents && estimateUploadSpeed <= targetUploadSpeed*2 && len(candidateTorrents) > 0 {
+	if (freespace == -1 || freespace+freespaceChange > clientOption.MinDiskSpace) &&
+		cntTorrents <= clientOption.MaxTorrents {
+		for cntDownloadingTorrents < clientOption.MaxDownloadingTorrents &&
+			estimateUploadSpeed <= targetUploadSpeed*2 && len(candidateTorrents) > 0 {
 			candidateTorrent := candidateTorrents[0]
 			candidateTorrents = candidateTorrents[1:]
 			result.AddTorrents = append(result.AddTorrents, AlgorithmAddTorrent{
@@ -487,7 +497,8 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	return
 }
 
-func RateSiteTorrent(siteTorrent *site.Torrent, siteOption *BrushSiteOptionStruct) (score float64, predictionUploadSpeed int64, note string) {
+func RateSiteTorrent(siteTorrent *site.Torrent, siteOption *BrushSiteOptionStruct) (
+	score float64, predictionUploadSpeed int64, note string) {
 	if log.GetLevel() >= log.TraceLevel {
 		defer func() {
 			log.Tracef("rateSiteTorrent score=%0.0f name=%s, free=%t, rtime=%d, seeders=%d, leechers=%d, note=%s",

@@ -115,7 +115,6 @@ func (usite *Site) DownloadTorrent(torrentUrl string) (content []byte, filename 
 }
 
 func (usite *Site) DownloadTorrentById(id string) ([]byte, string, error) {
-
 	torrentUrl := usite.SiteConfig.Url + "torrents/download/" + id
 	return site.DownloadTorrentByUrl(usite, usite.HttpClient, torrentUrl, id)
 }

@@ -485,7 +485,7 @@ func PrintTorrents(torrents []Torrent, filter string, showSum int64, dense bool)
 }
 
 // parse and return torrents that meet criterion.
-// tag: comma-separated list, a torrent will match if it has any tag that in the list
+// tag: comma-separated list, a torrent matches if it has any tag that in the list
 func QueryTorrents(clientInstance Client, category string, tag string, filter string,
 	hashOrStateFilters ...string) ([]Torrent, error) {
 	isAll := len(hashOrStateFilters) == 0
@@ -536,7 +536,7 @@ func QueryTorrents(clientInstance Client, category string, tag string, filter st
 }
 
 // query torrents that meet criterion and return infoHashes. specially, return nil slice if all torrents selected.
-// tag: comma-separated list, a torrent will match if it has any tag that in the list
+// tag: comma-separated list, a torrent matches if it has any tag that in the list
 func SelectTorrents(clientInstance Client, category string, tag string, filter string,
 	hashOrStateFilters ...string) ([]string, error) {
 	isAll := len(hashOrStateFilters) == 0

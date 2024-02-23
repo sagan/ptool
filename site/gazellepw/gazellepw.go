@@ -2,7 +2,8 @@ package gazellepw
 
 // GazellePW ( https://github.com/Mosasauroidea/GazellePW )
 // 海豹( https://greatposterwall.com/ )使用架构
-// 种子下载链接：https://greatposterwall.com/torrents.php?action=download&id={id}&authkey={authkey}&torrent_pass={torrent_pass} (如果cookie有效，authkey 和 torrent_pass 可省略)
+// 种子下载链接：https://greatposterwall.com/torrents.php?action=download&id={id}&authkey={key}&torrent_pass={pass}
+// (如果cookie有效，key 和 pass 可省略)
 // 注意下载时的 id 与 torrent.php 页面url里的 id 不同，后者是当前电影整个分组的 id
 
 import (

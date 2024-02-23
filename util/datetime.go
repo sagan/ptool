@@ -96,7 +96,7 @@ func ParseLocalDateTime(str string) (int64, error) {
 	return 0, fmt.Errorf("invalid date str")
 }
 
-// parse time. Treat duration time as pasted
+// Parse time. Treat duration time as pasted.
 func ParseTime(str string, location *time.Location) (int64, error) {
 	str = strings.TrimSpace(str)
 	if str == "" {

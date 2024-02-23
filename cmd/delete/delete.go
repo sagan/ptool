@@ -37,14 +37,18 @@ var (
 )
 
 func init() {
-	command.Flags().BoolVarP(&preserve, "preserve", "p", false, "Preserve (don't delete) torrent content files on the disk")
+	command.Flags().BoolVarP(&preserve, "preserve", "p", false,
+		"Preserve (don't delete) torrent content files on the disk")
 	command.Flags().BoolVarP(&force, "force-dangerous", "", false, "Force deletion. Do NOT prompt for confirm")
 	command.Flags().StringVarP(&filter, "filter", "", "", "Filter torrents by name")
 	command.Flags().StringVarP(&category, "category", "", "", "Filter torrents by category")
-	command.Flags().StringVarP(&tag, "tag", "", "", "Filter torrents by tag. Comma-separated string list. Torrent which tags contain any one in the list will match")
+	command.Flags().StringVarP(&tag, "tag", "", "",
+		"Filter torrents by tag. Comma-separated list. Torrent which tags contain any one in the list matches")
 	command.Flags().StringVarP(&tracker, "tracker", "", "", "Filter torrents by tracker domain")
-	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1", "Skip torrent with size smaller than (<) this value. -1 == no limit")
-	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1", "Skip torrent with size larger than (>) this value. -1 == no limit")
+	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1",
+		"Skip torrent with size smaller than (<) this value. -1 == no limit")
+	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1",
+		"Skip torrent with size larger than (>) this value. -1 == no limit")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -98,9 +102,7 @@ func delete(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("abort")
 		}
 	}
-	infoHashes = util.Map(torrents, func(t client.Torrent) string {
-		return t.InfoHash
-	})
+	infoHashes = util.Map(torrents, func(t client.Torrent) string { return t.InfoHash })
 	err = clientInstance.DeleteTorrents(infoHashes, !preserve)
 	if err != nil {
 		return fmt.Errorf("failed to delete torrents: %v", err)

@@ -64,7 +64,7 @@ func init() {
 	command.Flags().StringVarP(&filter, "filter", "", "", "Filter torrents by name")
 	command.Flags().StringVarP(&category, "category", "", "", "Filter torrents by category")
 	command.Flags().StringVarP(&tag, "tag", "", "",
-		"Filter torrents by tag. Comma-separated string list. Torrent which tags contain any one in the list match")
+		"Filter torrents by tag. Comma-separated list. Torrent which tags contain any one in the list match")
 	command.Flags().StringVarP(&tracker, "tracker", "", "", "Filter torrents by tracker domain")
 	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1",
 		"Skip torrent with size smaller than (<) this value. -1 == no limit")

@@ -12,9 +12,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Run ptool in the background (detached mode)
-// Basicly it just forks a new ptool process with same args
-// from https://github.com/golang/go/issues/227
+// Run ptool in the background (detached mode).
+// Basicly it just forks a new ptool process with same args.
+// from https://github.com/golang/go/issues/227 .
 func Fork(removeArg string) {
 	err := syscall.FcntlFlock(os.Stdout.Fd(), syscall.F_SETLKW, &syscall.Flock_t{
 		Type: syscall.F_WRLCK, Whence: 0, Start: 0, Len: 0})

@@ -5,7 +5,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"unicode"
 
 	"github.com/jpillora/go-tld"
 	runewidth "github.com/mattn/go-runewidth"
@@ -34,7 +33,8 @@ func IsUrl(str string) bool {
 	return strings.HasPrefix(str, "http://") || strings.HasPrefix(str, "https://")
 }
 
-// parse a baseUrl relative relativeUrl, return absolute url. baseUrl could also be a host, in which case https schema is assumed
+// Parse a baseUrl relative relativeUrl, return absolute url.
+// baseUrl could also be a host, in which case https schema is assumed.
 func ParseRelativeUrl(relativeUrl string, baseUrl string) string {
 	if IsUrl(relativeUrl) || baseUrl == "" {
 		return relativeUrl
@@ -64,8 +64,8 @@ func ParseInt(str string) int64 {
 	return v
 }
 
-// return prefix of string at most width and actual width.
-// ASCII char has 1 width. CJK char has 2 width
+// Return prefix of string at most width and actual width.
+// ASCII char has 1 width. CJK char has 2 width.
 func StringPrefixInWidth(str string, width int64) (string, int64) {
 	strWidth := int64(0)
 	sb := &strings.Builder{}
@@ -152,36 +152,4 @@ func QuoteFilename(str string) string {
 		str = `"` + str + `"`
 	}
 	return str
-}
-
-// Splitting a string at Space, except inside quotation marks.
-// from https://stackoverflow.com/questions/47489745/splitting-a-string-at-space-except-inside-quotation-marks
-func ParseArgs(s string) []string {
-	a := []string{}
-	sb := &strings.Builder{}
-	quoted := false
-	for _, r := range s {
-		if r == '"' {
-			if quoted {
-				a = append(a, sb.String())
-				sb.Reset()
-			}
-			quoted = !quoted
-		} else if !quoted {
-			if unicode.IsSpace(r) {
-				if sb.Len() > 0 {
-					a = append(a, sb.String())
-					sb.Reset()
-				}
-			} else {
-				sb.WriteRune(r)
-			}
-		} else {
-			sb.WriteRune(r)
-		}
-	}
-	if sb.Len() > 0 {
-		a = append(a, sb.String())
-	}
-	return a
 }

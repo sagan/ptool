@@ -74,32 +74,59 @@ func init() {
 	command.Flags().BoolVarP(&dense, "dense", "d", false, "Dense mode: show full torrent title & subtitle")
 	command.Flags().BoolVarP(&freeOnly, "free", "", false, "Skip none-free torrent")
 	command.Flags().BoolVarP(&noPaid, "no-paid", "", false, "Skip paid (use bonus points) torrent")
-	command.Flags().BoolVarP(&noNeutral, "no-neutral", "", false, "Skip neutral (do not count uploading & downloading & seeding bonus) torrent")
-	command.Flags().BoolVarP(&largestFlag, "largest", "l", false, `Sort site torrents by size in desc order. Equivalent with "--sort size --order desc"`)
-	command.Flags().BoolVarP(&newestFlag, "newest", "n", false, `Download newest torrents of site. Equivalent with "--sort time --order desc --one-page"`)
-	command.Flags().BoolVarP(&addRespectNoadd, "add-respect-noadd", "", false, "Used with '--action add'. Check and respect _noadd flag in client")
-	command.Flags().BoolVarP(&nohr, "no-hr", "", false, "Skip torrent that has any type of HnR (Hit and Run) restriction")
-	command.Flags().BoolVarP(&allowBreak, "break", "", false, "Break (stop finding more torrents) if all torrents of current page do not meet criterion")
-	command.Flags().BoolVarP(&includeDownloaded, "include-downloaded", "", false, "Do NOT skip torrent that has been downloaded before")
-	command.Flags().BoolVarP(&addCategoryAuto, "add-category-auto", "", false, "Automatically set category of added torrent to corresponding sitename")
-	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "", -1, "Number limit of torrents handled. -1 == no limit (Press Ctrl+C to stop)")
-	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1", "Skip torrent with size smaller than (<) this value. -1 == no limit")
-	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1", "Skip torrent with size larger than (>) this value. -1 == no limit")
-	command.Flags().StringVarP(&maxTotalSizeStr, "max-total-size", "", "-1", "Will at most download torrents with total contents size of this value. -1 == no limit")
-	command.Flags().Int64VarP(&minSeeders, "min-seeders", "", 1, "Skip torrent with seeders less than (<) this value. -1 == no limit")
-	command.Flags().Int64VarP(&maxSeeders, "max-seeders", "", -1, "Skip torrent with seeders more than (>) this value. -1 == no limit")
-	command.Flags().StringVarP(&freeTimeAtLeastStr, "free-time", "", "", "Used with --free. Set the allowed minimal remaining torrent free time. e.g.: 12h, 1d")
-	command.Flags().StringVarP(&filter, "filter", "", "", "If set, skip torrent which name does NOT contains this string")
-	command.Flags().StringArrayVarP(&includes, "includes", "", nil, "A comma-separated string list. If set, ONLY torrent which name contains any one in the list will be downloaded. Can be provided multiple times, in which case every list MUST be matched")
-	command.Flags().StringVarP(&excludes, "excludes", "", "", "A comma-separated string list that torrent which name contains any one in the list will be skipped")
-	command.Flags().StringVarP(&startPage, "start-page", "", "", "Start fetching torrents from here (should be the returned LastPage value last time you run this command)")
-	command.Flags().StringVarP(&downloadDir, "download-dir", "", ".", "Used with '--action download'. Set the local dir of downloaded torrents. Default == current dir")
-	command.Flags().StringVarP(&addClient, "add-client", "", "", "Used with '--action add'. Set the client. Required in this action")
-	command.Flags().StringVarP(&addCategory, "add-category", "", "", "Used with '--action add'. Set the category when adding torrent to client")
-	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Used with '--action add'. Set the tags when adding torrent to client (comma-separated)")
-	command.Flags().StringVarP(&savePath, "add-save-path", "", "", "Set contents save path of added torrents")
-	command.Flags().StringVarP(&exportFile, "export-file", "", "", "Used with '--action export|printid'. Set the output file. (If not set, will use stdout)")
-	command.Flags().StringVarP(&baseUrl, "base-url", "", "", `Manually set the base url of torrents list page. e.g.: "special.php", "adult.php", "torrents.php?cat=100"`)
+	command.Flags().BoolVarP(&noNeutral, "no-neutral", "", false,
+		"Skip neutral (do not count uploading & downloading & seeding bonus) torrent")
+	command.Flags().BoolVarP(&largestFlag, "largest", "l", false,
+		`Sort site torrents by size in desc order. Equivalent with "--sort size --order desc"`)
+	command.Flags().BoolVarP(&newestFlag, "newest", "n", false,
+		`Download newest torrents of site. Equivalent with "--sort time --order desc --one-page"`)
+	command.Flags().BoolVarP(&addRespectNoadd, "add-respect-noadd", "", false,
+		"Used with '--action add'. Check and respect _noadd flag in client")
+	command.Flags().BoolVarP(&nohr, "no-hr", "", false,
+		"Skip torrent that has any type of HnR (Hit and Run) restriction")
+	command.Flags().BoolVarP(&allowBreak, "break", "", false,
+		"Break (stop finding more torrents) if all torrents of current page do not meet criterion")
+	command.Flags().BoolVarP(&includeDownloaded, "include-downloaded", "", false,
+		"Do NOT skip torrent that has been downloaded before")
+	command.Flags().BoolVarP(&addCategoryAuto, "add-category-auto", "", false,
+		"Automatically set category of added torrent to corresponding sitename")
+	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "", -1,
+		"Number limit of torrents handled. -1 == no limit (Press Ctrl+C to stop)")
+	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1",
+		"Skip torrent with size smaller than (<) this value. -1 == no limit")
+	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1",
+		"Skip torrent with size larger than (>) this value. -1 == no limit")
+	command.Flags().StringVarP(&maxTotalSizeStr, "max-total-size", "", "-1",
+		"Will at most download torrents with total contents size of this value. -1 == no limit")
+	command.Flags().Int64VarP(&minSeeders, "min-seeders", "", 1,
+		"Skip torrent with seeders less than (<) this value. -1 == no limit")
+	command.Flags().Int64VarP(&maxSeeders, "max-seeders", "", -1,
+		"Skip torrent with seeders more than (>) this value. -1 == no limit")
+	command.Flags().StringVarP(&freeTimeAtLeastStr, "free-time", "", "",
+		"Used with --free. Set the allowed minimal remaining torrent free time. e.g.: 12h, 1d")
+	command.Flags().StringVarP(&filter, "filter", "", "",
+		"If set, skip torrent which name does NOT contains this string")
+	command.Flags().StringArrayVarP(&includes, "includes", "", nil,
+		"Comma-separated list that ONLY torrent which name contains any one in the list will be downloaded. "+
+			"Can be provided multiple times, in which case every list MUST be matched")
+	command.Flags().StringVarP(&excludes, "excludes", "", "",
+		"Comma-separated list that torrent which name contains any one in the list will be skipped")
+	command.Flags().StringVarP(&startPage, "start-page", "", "",
+		"Start fetching torrents from here (should be the returned LastPage value last time you run this command)")
+	command.Flags().StringVarP(&downloadDir, "download-dir", "", ".",
+		"Used with '--action download'. Set the local dir of downloaded torrents. Default == current dir")
+	command.Flags().StringVarP(&addClient, "add-client", "", "",
+		"Used with '--action add'. Set the client. Required in this action")
+	command.Flags().StringVarP(&addCategory, "add-category", "", "",
+		"Used with '--action add'. Set the category when adding torrent to client")
+	command.Flags().StringVarP(&addTags, "add-tags", "", "",
+		"Used with '--action add'. Set the tags when adding torrent to client (comma-separated)")
+	command.Flags().StringVarP(&savePath, "add-save-path", "", "",
+		"Set contents save path of added torrents")
+	command.Flags().StringVarP(&exportFile, "export-file", "", "",
+		"Used with '--action export|printid'. Set the output file. (If not set, will use stdout)")
+	command.Flags().StringVarP(&baseUrl, "base-url", "", "",
+		`Manually set the base url of torrents list page. e.g.: "special.php", "adult.php", "torrents.php?cat=100"`)
 	cmd.AddEnumFlagP(command, &action, "action", "", ActionEnumFlag)
 	cmd.AddEnumFlagP(command, &sortFlag, "sort", "", common.SiteTorrentSortFlag)
 	cmd.AddEnumFlagP(command, &orderFlag, "order", "", common.OrderFlag)
@@ -365,7 +392,8 @@ mainloop:
 						if err != nil {
 							fmt.Printf("torrent %s: failed to write to %s/file %s: %v\n", torrent.Id, downloadDir, filename, err)
 						} else {
-							fmt.Printf("torrent %s - %s (%s): downloaded to %s/%s\n", torrent.Id, torrent.Name, util.BytesSize(float64(torrent.Size)), downloadDir, filename)
+							fmt.Printf("torrent %s - %s (%s): downloaded to %s/%s\n", torrent.Id, torrent.Name,
+								util.BytesSize(float64(torrent.Size)), downloadDir, filename)
 						}
 					} else if action == "add" {
 						tags := []string{}
@@ -383,7 +411,8 @@ mainloop:
 						if err != nil {
 							fmt.Printf("torrent %s (%s): failed to add to client: %v\n", torrent.Id, torrent.Name, err)
 						} else {
-							fmt.Printf("torrent %s - %s (%s) (seeders=%d, time=%s): added to client\n", torrent.Id, torrent.Name, util.BytesSize(float64(torrent.Size)), torrent.Seeders, util.FormatDuration(now-torrent.Time))
+							fmt.Printf("torrent %s - %s (%s) (seeders=%d, time=%s): added to client\n", torrent.Id, torrent.Name,
+								util.BytesSize(float64(torrent.Size)), torrent.Seeders, util.FormatDuration(now-torrent.Time))
 						}
 					}
 				}
@@ -408,8 +437,10 @@ mainloop:
 				log.Warnf("Warning, current page %s has no required torrents.", lastMarker)
 			}
 		}
-		log.Warnf("Finish handling page %s. Torrents(Size/Cnt) | AllTorrents(Size/Cnt) till now: %s/%d | %s/%d. Will process next page %s in %d seconds. Press Ctrl + C to stop",
-			lastMarker, util.BytesSize(float64(totalSize)), cntTorrents, util.BytesSize(float64(totalAllSize)), cntAllTorrents, marker, flowControlInterval)
+		log.Warnf("Finish handling page %s. Torrents(Size/Cnt) | AllTorrents(Size/Cnt) till now: %s/%d | %s/%d. "+
+			"Will process next page %s in %d seconds. Press Ctrl + C to stop",
+			lastMarker, util.BytesSize(float64(totalSize)), cntTorrents,
+			util.BytesSize(float64(totalAllSize)), cntAllTorrents, marker, flowControlInterval)
 		util.Sleep(flowControlInterval)
 	}
 	doneHandle()

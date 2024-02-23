@@ -15,6 +15,9 @@ import (
 	"github.com/sagan/ptool/util"
 )
 
+// @todo : azuretls 有时报错 pin verification failed。特别是在同时访问大量站点时大范围出现
+// 部分站点设置 Insecure flag 能够解决？
+
 var (
 	filter         = ""
 	category       = ""

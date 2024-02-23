@@ -95,7 +95,7 @@ func (status *Status) IsOk() bool {
 	return status.UserName != "" || status.UserDownloaded > 0 || status.UserUploaded > 0
 }
 
-// will match if any filter in list matches
+// matches if any filter in list matches
 func (torrent *Torrent) MatchFiltersOr(filters []string) bool {
 	return slices.IndexFunc(filters, func(filter string) bool {
 		return torrent.MatchFilter(filter)
@@ -342,14 +342,7 @@ func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, globalConfig *con
 	if proxy == "" {
 		proxy = util.ParseProxyFromEnv(siteConfig.Url)
 	}
-	// 暂时默认设为 insecure。因为 azuretls 似乎对某些站点(如 byr)的 TLS 证书校验有问题。
-	insecure := true
-	if globalConfig.SiteSecure {
-		insecure = false
-	}
-	if siteConfig.Insecure && !siteConfig.Secure {
-		insecure = true
-	}
+	insecure := !siteConfig.Secure && (siteConfig.Insecure || globalConfig.SiteInsecure)
 	timeout := config.DEFAULT_SITE_TIMEOUT
 	if siteConfig.Timeoout > 0 {
 		timeout = siteConfig.Timeoout

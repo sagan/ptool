@@ -83,7 +83,7 @@ func UniqueSlice[T comparable](slice []T) []T {
 	return list
 }
 
-// return de-duplicated slice that every member has unique key
+// Return de-duplicated slice that every member has unique key.
 func UniqueSliceFn[TS any, TK comparable](slice []TS, keyFunc func(TS) TK) []TS {
 	keys := map[TK]bool{}
 	list := []TS{}
@@ -106,7 +106,7 @@ func MapKeys[T constraints.Ordered, TV any](input map[T]TV) []T {
 	return keys
 }
 
-// from https://stackoverflow.com/questions/23589564/function-for-converting-a-struct-to-map-in-golang .
+// From https://stackoverflow.com/questions/23589564/function-for-converting-a-struct-to-map-in-golang .
 func StructToMap(val interface{}, ignoreNoTagFields bool, ignoreEmptyFields bool) map[string]interface{} {
 	//The name of the tag you will use for fields of struct
 	const tagTitle = "yaml"

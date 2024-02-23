@@ -22,7 +22,9 @@ var command = &cobra.Command{
 }
 
 func init() {
-	command.Flags().StringVarP(&profile, "profile", "", "", "Comma-separated string, Set the used cookiecloud profile name(s). If not set, All cookiecloud profiles in config will be used")
+	command.Flags().StringVarP(&profile, "profile", "", "",
+		"Comma-separated list. Set the used cookiecloud profile name(s). "+
+			"If not set, All cookiecloud profiles in config will be used")
 	cookiecloud.Command.AddCommand(command)
 }
 

@@ -17,8 +17,8 @@ var command = &cobra.Command{
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "tidyup"},
 	Short:       "Tidy up all torrents of client.",
 	Long: `Tidy up all torrents of client.
-Set appropriate tags to all torrents of a client. For example, it will set the "site:m-team" tag for all torrents downloaded from M-Team.
-`,
+Set appropriate tags to all torrents of a client. 
+For example, it will set the "site:m-team" tag for torrents downloaded from M-Team.`,
 	Args: cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 	RunE: tidyup,
 }
@@ -34,7 +34,8 @@ var (
 func init() {
 	command.Flags().StringVarP(&filter, "filter", "", "", "Filter torrents by name")
 	command.Flags().StringVarP(&category, "category", "", "", "Filter torrents by category")
-	command.Flags().StringVarP(&tag, "tag", "", "", "Filter torrents by tag. Comma-separated string list. Torrent which tags contain any one in the list will match")
+	command.Flags().StringVarP(&tag, "tag", "", "",
+		"Filter torrents by tag. Comma-separated list. Torrent which tags contain any one in the list matches")
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do NOT actually modify torrents to client")
 	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "", -1, "Number limit of modified torrents. -1 == no limit")
 	cmd.RootCmd.AddCommand(command)
@@ -107,6 +108,7 @@ func tidyup(cmd *cobra.Command, args []string) error {
 			}
 		}
 	}
-	fmt.Printf("Done tidying up %d torrents. Modify / success torrents = %d / %d\n", len(torrents), cntTorrents, cntSuccessTorrents)
+	fmt.Printf("Done tidying up %d torrents. Modify / success torrents = %d / %d\n",
+		len(torrents), cntTorrents, cntSuccessTorrents)
 	return nil
 }

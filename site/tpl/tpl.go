@@ -82,6 +82,7 @@ var (
 			Url:                 "https://byr.pt/",
 			SelectorTorrentFree: `.pro_free, .pro_free2up`,
 			Comment:             "北邮人",
+			Insecure:            true,
 		},
 		"carpt": {
 			Type:      "nexusphp",

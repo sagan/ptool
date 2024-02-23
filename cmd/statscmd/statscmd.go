@@ -18,8 +18,8 @@ var command = &cobra.Command{
 	Long: `Show client brushing traffic statistics.
 Only torrents added by ptool (of this machine) will be counted.
 The traffic info of a torrent will ONLY be recorded when it's been DELETED from the client.
-To use this command, you must manually enable the statistics feature by add the "brushEnableStats = true" line to ptool.toml config file.
-`,
+To use this command, enable the statistics feature by adding the "brushEnableStats = true"
+line to ptool.toml config file.`,
 	RunE: statscmd,
 }
 
@@ -36,7 +36,9 @@ func init() {
 func statscmd(cmd *cobra.Command, args []string) error {
 	clientnames := args
 	if !config.Get().BrushEnableStats {
-		return fmt.Errorf(`statistics feature is NOT enabled currently. To enable it, add the "brushEnableStats = true" line to the top of ptool.toml config file. It will use the "ptool_stats.txt" (in the same dir of ptool.toml file) as the statistics data file`)
+		return fmt.Errorf("statistics feature is NOT enabled currently. " +
+			"To enable it, add the \"brushEnableStats = true\" line to the top of ptool.toml config file. " +
+			"It will use the \"ptool_stats.txt\" (in the same dir of ptool.toml file) as the statistics data file")
 	}
 	if statsFilename == "" {
 		statsFilename = filepath.Join(config.ConfigDir, config.STATS_FILENAME)

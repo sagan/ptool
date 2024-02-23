@@ -24,5 +24,9 @@ func init() {
 
 func create(cmd *cobra.Command, args []string) error {
 	fmt.Printf("Creating config file %s%c%s\n", config.ConfigDir, filepath.Separator, config.ConfigFile)
-	return config.CreateDefaultConfig()
+	err := config.CreateDefaultConfig()
+	if err == nil {
+		fmt.Printf("Successfully created config file. Now edit it to add your sites / clients / others.\n")
+	}
+	return err
 }

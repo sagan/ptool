@@ -177,8 +177,8 @@ type ConfigStruct struct {
 	SiteImpersonate     string                     `yaml:"siteImpersonate"`
 	SiteHttpHeaders     [][]string                 `yaml:"siteHttpHeaders"`
 	SiteJa3             string                     `yaml:"siteJa3"`
-	SiteTimeout         int64                      `yaml:"siteTimeout"` // 访问网站超时时间(秒)
-	SiteSecure          bool                       `yaml:"siteSecure"`  // 强制开启所有站点 TLS 证书校验。
+	SiteTimeout         int64                      `yaml:"siteTimeout"`  // 访问网站超时时间(秒)
+	SiteInsecure        bool                       `yaml:"siteInsecure"` // 强制禁用所有站点 TLS 证书校验。
 	SiteH2Fingerprint   string                     `yaml:"siteH2Fingerprint"`
 	BrushEnableStats    bool                       `yaml:"brushEnableStats"`
 	Clients             []*ClientConfigStruct      `yaml:"clients"`
