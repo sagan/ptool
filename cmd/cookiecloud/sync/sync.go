@@ -24,7 +24,7 @@ type site_test_result struct {
 var (
 	profile  = ""
 	siteFlag = ""
-	doAction = false
+	force    = false
 )
 
 var command = &cobra.Command{
@@ -41,9 +41,12 @@ Be aware that all existing comments in config file will be LOST when updating co
 }
 
 func init() {
-	command.Flags().BoolVarP(&doAction, "do", "", false, "Do update the config file without confirm. Be aware that all existing comments in config file will be LOST")
-	command.Flags().StringVarP(&siteFlag, "site", "", "", "Comma-separated site or group names. If not set, All sites in config file will be checked and updated")
-	command.Flags().StringVarP(&profile, "profile", "", "", "Comma-separated cookiecloud profile names. If not set, All cookiecloud profiles in config file will be used")
+	command.Flags().BoolVarP(&force, "force", "", false,
+		"Do update the config file without confirm. Be aware that all existing comments in config file will be LOST")
+	command.Flags().StringVarP(&siteFlag, "site", "", "",
+		"Comma-separated site or group names. If not set, All sites in config file will be checked and updated")
+	command.Flags().StringVarP(&profile, "profile", "", "",
+		"Comma-separated cookiecloud profile names. If not set, All cookiecloud profiles in config file will be used")
 	cookiecloud.Command.AddCommand(command)
 }
 
@@ -80,7 +83,7 @@ func sync(cmd *cobra.Command, args []string) error {
 			sitenames = append(sitenames, site.GetName())
 		}
 	} else {
-		sitenames = config.ParseGroupAndOtherNames(strings.Split(siteFlag, ",")...)
+		sitenames = config.ParseGroupAndOtherNames(util.SplitCsv(siteFlag)...)
 	}
 
 	updatesites := []*config.SiteConfigStruct{}
@@ -232,7 +235,7 @@ func sync(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\n")
 	if len(updatesites) > 0 {
 		configFile := fmt.Sprintf("%s/%s", config.ConfigDir, config.ConfigFile)
-		if !doAction && !util.AskYesNoConfirm(fmt.Sprintf(
+		if !force && !util.AskYesNoConfirm(fmt.Sprintf(
 			"Will update the config file (%s). Be aware that all existing comments will be LOST", configFile)) {
 			return fmt.Errorf("abort")
 		}

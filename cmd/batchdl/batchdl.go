@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
@@ -81,7 +80,7 @@ func init() {
 	command.Flags().BoolVarP(&newestFlag, "newest", "n", false,
 		`Download newest torrents of site. Equivalent with "--sort time --order desc --one-page"`)
 	command.Flags().BoolVarP(&addRespectNoadd, "add-respect-noadd", "", false,
-		"Used with '--action add'. Check and respect _noadd flag in client")
+		`Used with "--action add". Check and respect _noadd flag in client`)
 	command.Flags().BoolVarP(&nohr, "no-hr", "", false,
 		"Skip torrent that has any type of HnR (Hit and Run) restriction")
 	command.Flags().BoolVarP(&allowBreak, "break", "", false,
@@ -114,17 +113,17 @@ func init() {
 	command.Flags().StringVarP(&startPage, "start-page", "", "",
 		"Start fetching torrents from here (should be the returned LastPage value last time you run this command)")
 	command.Flags().StringVarP(&downloadDir, "download-dir", "", ".",
-		"Used with '--action download'. Set the local dir of downloaded torrents. Default == current dir")
+		`Used with "--action download". Set the local dir of downloaded torrents. Default == current dir`)
 	command.Flags().StringVarP(&addClient, "add-client", "", "",
-		"Used with '--action add'. Set the client. Required in this action")
+		`Used with "--action add". Set the client. Required in this action`)
 	command.Flags().StringVarP(&addCategory, "add-category", "", "",
-		"Used with '--action add'. Set the category when adding torrent to client")
+		`Used with "--action add". Set the category when adding torrent to client`)
 	command.Flags().StringVarP(&addTags, "add-tags", "", "",
-		"Used with '--action add'. Set the tags when adding torrent to client (comma-separated)")
+		`Used with "--action add". Set the tags when adding torrent to client (comma-separated)`)
 	command.Flags().StringVarP(&savePath, "add-save-path", "", "",
 		"Set contents save path of added torrents")
 	command.Flags().StringVarP(&exportFile, "export-file", "", "",
-		"Used with '--action export|printid'. Set the output file. (If not set, will use stdout)")
+		`Used with "--action export|printid". Set the output file. (If not set, will use stdout)`)
 	command.Flags().StringVarP(&baseUrl, "base-url", "", "",
 		`Manually set the base url of torrents list page. e.g.: "special.php", "adult.php", "torrents.php?cat=100"`)
 	cmd.AddEnumFlagP(command, &action, "action", "", ActionEnumFlag)
@@ -155,10 +154,10 @@ func batchdl(command *cobra.Command, args []string) error {
 	var includesList [][]string
 	var excludesList []string
 	for _, include := range includes {
-		includesList = append(includesList, strings.Split(include, ","))
+		includesList = append(includesList, util.SplitCsv(include))
 	}
 	if excludes != "" {
-		excludesList = strings.Split(excludes, ",")
+		excludesList = util.SplitCsv(excludes)
 	}
 	minTorrentSize, _ := util.RAMInBytes(minTorrentSizeStr)
 	maxTorrentSize, _ := util.RAMInBytes(maxTorrentSizeStr)
@@ -208,7 +207,7 @@ func batchdl(command *cobra.Command, args []string) error {
 		}
 		clientAddFixedTags = []string{client.GenerateTorrentTagFromSite(siteInstance.GetName())}
 		if addTags != "" {
-			clientAddFixedTags = append(clientAddFixedTags, strings.Split(addTags, ",")...)
+			clientAddFixedTags = append(clientAddFixedTags, util.SplitCsv(addTags)...)
 		}
 	} else if action == "export" || action == "printid" {
 		if exportFile != "" {

@@ -219,7 +219,7 @@ func Parse(document *prompt.Document) *InputingCommand {
 }
 
 func parseFlag(arg string) (flag *InputFlag) {
-	// POSIX treat single '-' as NOT flag
+	// POSIX treat standalone "-" as NOT flag
 	if strings.HasPrefix(arg, "-") && len(arg) > 1 {
 		flag = &InputFlag{}
 		if i := strings.Index(arg, "="); i == -1 {

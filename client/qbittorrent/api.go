@@ -1,8 +1,6 @@
 package qbittorrent
 
 import (
-	"strings"
-
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/util"
 )
@@ -327,6 +325,7 @@ func (qbtorrent *apiTorrentInfo) ToTorrent() *client.Torrent {
 		LowLevelState:      qbtorrent.State,
 		Atime:              qbtorrent.Added_on,
 		Ctime:              qbtorrent.Completion_on,
+		ActivityTime:       qbtorrent.Last_activity,
 		Downloaded:         qbtorrent.Downloaded,
 		DownloadSpeed:      qbtorrent.Dlspeed,
 		DownloadSpeedLimit: qbtorrent.Dl_limit,
@@ -336,7 +335,7 @@ func (qbtorrent *apiTorrentInfo) ToTorrent() *client.Torrent {
 		Category:           qbtorrent.Category,
 		SavePath:           qbtorrent.Save_path,
 		ContentPath:        qbtorrent.Content_path,
-		Tags:               strings.Split(qbtorrent.Tags, ","),
+		Tags:               util.SplitCsv(qbtorrent.Tags),
 		Seeders:            qbtorrent.Num_complete,
 		Size:               qbtorrent.Size,
 		SizeCompleted:      qbtorrent.Completed,

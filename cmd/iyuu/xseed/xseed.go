@@ -92,12 +92,12 @@ func xseed(cmd *cobra.Command, args []string) error {
 	}
 	if includeSites != "" {
 		includeSitesMode = true
-		sites := config.ParseGroupAndOtherNames(strings.Split(includeSites, ",")...)
+		sites := config.ParseGroupAndOtherNames(util.SplitCsv(includeSites)...)
 		for _, site := range sites {
 			includeSitesFlag[site] = true
 		}
 	} else if excludeSites != "" {
-		sites := config.ParseGroupAndOtherNames(strings.Split(excludeSites, ",")...)
+		sites := config.ParseGroupAndOtherNames(util.SplitCsv(excludeSites)...)
 		for _, site := range sites {
 			excludeSitesFlag[site] = true
 		}
@@ -107,7 +107,7 @@ func xseed(cmd *cobra.Command, args []string) error {
 	filter = strings.ToLower(filter)
 	var fixedTags []string
 	if addTags != "" {
-		fixedTags = strings.Split(addTags, ",")
+		fixedTags = util.SplitCsv(addTags)
 	}
 
 	clientNames := args

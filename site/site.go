@@ -17,6 +17,7 @@ import (
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/util"
 	"github.com/sagan/ptool/util/crypto"
+	"github.com/sagan/ptool/util/impersonateutil"
 )
 
 type Torrent struct {
@@ -296,15 +297,15 @@ func GetConfigSiteNameByTypes(types ...string) (string, error) {
 func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, globalConfig *config.ConfigStruct) (
 	*azuretls.Session, [][]string, error) {
 	var impersonate string
-	var impersonateProfile *util.ImpersonateProfile
+	var impersonateProfile *impersonateutil.Profile
 	var httpHeaders [][]string
 	if siteConfig.Impersonate != "" {
 		impersonate = siteConfig.Impersonate
 	} else if globalConfig.SiteImpersonate != "" {
 		impersonate = globalConfig.SiteImpersonate
 	}
-	if impersonate != "" && impersonate != "none" {
-		if ip := util.ImpersonateProfiles[impersonate]; ip == nil {
+	if impersonate != config.NONE {
+		if ip := impersonateutil.GetProfile(impersonate); ip == nil {
 			return nil, nil, fmt.Errorf("impersonate '%s' not supported", impersonate)
 		} else {
 			impersonateProfile = ip
@@ -349,13 +350,13 @@ func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, globalConfig *con
 	} else if globalConfig.SiteTimeout > 0 {
 		timeout = globalConfig.SiteTimeout
 	}
-	if ja3 == "none" {
+	if ja3 == config.NONE {
 		ja3 = ""
 	}
-	if h2fingerprint == "none" {
+	if h2fingerprint == config.NONE {
 		h2fingerprint = ""
 	}
-	if proxy == "none" {
+	if proxy == config.NONE {
 		proxy = ""
 	}
 	sep := "\n"

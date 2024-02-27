@@ -24,7 +24,8 @@ var (
 )
 
 func init() {
-	command.Flags().StringVarP(&savePath, "save-path", "", "", `Set the save path of the category. Can use "none" to set it back to default empty value`)
+	command.Flags().StringVarP(&savePath, "save-path", "", "",
+		`Set the save path of the category. Can use "none" to set it back to default empty value`)
 	cmd.RootCmd.AddCommand(command)
 }
 

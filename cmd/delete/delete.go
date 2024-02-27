@@ -16,12 +16,12 @@ var command = &cobra.Command{
 	Aliases:     []string{"rm"},
 	Short:       "Delete torrents from client.",
 	Long: `Delete torrents from client.
-[infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
+[infoHash]...: infoHash list of torrents to delete. It's possible to use state filter to target multiple torrents:
 _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.
+Specially, use a single "-" as args to read infoHash list from stdin, delimited by blanks.
 
-It will ask for confirmation if used to delete torrents by any condition other than infoHash,
-unless --force-dangerous flag is set.`,
-	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
+It will ask for confirmation of deletion, unless --force flag is set.`,
+	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: delete,
 }
 
@@ -39,7 +39,7 @@ var (
 func init() {
 	command.Flags().BoolVarP(&preserve, "preserve", "p", false,
 		"Preserve (don't delete) torrent content files on the disk")
-	command.Flags().BoolVarP(&force, "force-dangerous", "", false, "Force deletion. Do NOT prompt for confirm")
+	command.Flags().BoolVarP(&force, "force", "", false, "Force deletion. Do NOT prompt for confirm")
 	command.Flags().StringVarP(&filter, "filter", "", "", "Filter torrents by name")
 	command.Flags().StringVarP(&category, "category", "", "", "Filter torrents by category")
 	command.Flags().StringVarP(&tag, "tag", "", "",
@@ -61,24 +61,38 @@ func delete(cmd *cobra.Command, args []string) error {
 	}
 	minTorrentSize, _ := util.RAMInBytes(minTorrentSizeStr)
 	maxTorrentSize, _ := util.RAMInBytes(maxTorrentSizeStr)
-	quickMode := true
+	infohashesOnly := true
 	if category != "" || tag != "" || filter != "" || tracker != "" || minTorrentSize >= 0 || maxTorrentSize >= 0 {
-		quickMode = false
+		infohashesOnly = false
 	} else {
+		// special case. read info hashes from stdin
+		if len(infoHashes) == 1 && infoHashes[0] == "-" {
+			if data, err := util.ReadArgsFromStdin(); err != nil {
+				return fmt.Errorf("failed to parse stdin to info hashes: %v", err)
+			} else if len(data) == 0 {
+				return nil
+			} else {
+				infoHashes = data
+			}
+		}
 		for _, infoHash := range infoHashes {
 			if !client.IsValidInfoHash(infoHash) {
-				quickMode = false
+				infohashesOnly = false
 				break
 			}
 		}
 	}
 
-	if quickMode {
-		err = clientInstance.DeleteTorrents(infoHashes, !preserve)
-		if err != nil {
-			return fmt.Errorf("failed to delete torrents: %v", err)
+	if infohashesOnly {
+		if len(infoHashes) == 0 {
+			return fmt.Errorf("no torrent to delete")
 		}
-		return nil
+		if force {
+			if err = clientInstance.DeleteTorrents(infoHashes, !preserve); err != nil {
+				return fmt.Errorf("failed to delete torrents: %v", err)
+			}
+			return nil
+		}
 	}
 	torrents, err := client.QueryTorrents(clientInstance, category, tag, filter, infoHashes...)
 	if err != nil {

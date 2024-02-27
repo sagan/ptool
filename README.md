@@ -242,7 +242,7 @@ ptool clientctl local global_upload_speed_limit=10M
 ptool <command> <client> [flags] [<infoHash>...]
 ```
 
-`<infoHash>` 参数为指定的 BT 客户端里需要操作的种子的 infoHash 列表。也可以使用以下特殊值参数操作多个种子（delete 命令根据除 infoHash 以外的条件删除种子时需要二次确认）：
+`<infoHash>` 参数为指定的 BT 客户端里需要操作的种子的 infoHash 列表。也可以使用以下特殊值参数操作多个种子：
 
 - `_all` : 所有种子
 - `_done` : 所有已下载完成的种子（无论是否正在做种）(`_seeding` | `_completed`)
@@ -269,11 +269,18 @@ ptool resume local _all
 # 暂停 abc 分类下的所有正在下载种子
 ptool pause local --category abc _downloading
 
-# 从客户端删除指定种子（默认同时删除文件）
+# 从客户端删除指定种子（默认同时删除文件）。默认会提示确认删除，除非指定 --force 参数
 ptool delete local 31a615d5984cb63c6f999f72bb3961dce49c194a
 
-# 特别的，如果 show 命令只提供一个 infoHash 参数，会显示该种子的所有详细信息。
+# 特别的，如果 show 命令只提供一个 infoHash 参数，会显示该种子的所有详细信息
 ptool show local 31a615d5984cb63c6f999f72bb3961dce49c194a
+```
+
+除 `show` 以外的命令可以只传入一个特殊的 `-` 作为参数，视为从 stdin 读取 infoHash 列表。而 `show` 命令提供很多参数可以用于筛选种子，并且可以使用 `--show-info-hash-only` 参数只输出匹配的种子的 infoHash。因此可以组合使用 `show` 命令和其它命令，例如：
+
+```
+# 删除 local 客户端里 "rss" 分类里已经下载完成超过5天的种子
+ptool show local --category rss --completed-before 5d --show-info-hash-only | ptool delete local --force -
 ```
 
 #### 管理 BT 客户端里的的种子分类 / 标签 / Trackers 等(getcategories / createcategory / removecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / renametag / edittracker / addtrackers / removetrackers / setsavepath)

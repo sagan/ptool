@@ -22,6 +22,7 @@ import (
 )
 
 const (
+	NONE                  = "none" // 如果字符串类型配置项值为空，使用系统默认值。使用 NONE 值显式设置该配置项为空值
 	BRUSH_CAT             = "_brush"
 	XSEED_TAG             = "_xseed"
 	NOADD_TAG             = "_noadd"

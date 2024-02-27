@@ -23,7 +23,7 @@ Example:
 ptool verifytorrent file1.torrent file2.torrent --save-path /root/Downloads
 ptool verifytorrent file.torrent --content-path /root/Downloads/TorrentContentFolder
 
-Exact one of the --save-path or --content-path (but not both) flag must be set.
+Exact one (but not both) of the --save-path or --content-path flag must be set.
 * --save-path dir : the parent folder of torrent content(s)
 * --content-path path : the torrent content(s) path, could be a folder or a single file
 

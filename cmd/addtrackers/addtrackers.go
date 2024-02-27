@@ -18,6 +18,7 @@ var command = &cobra.Command{
 	Long: `Add new trackers to torrents of client.
 [infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
 _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.
+Specially, use a single "-" as args to read infoHash list from stdin, delimited by blanks.
 
 Example:
 ptool addtrackers <client> <infoHashes...> --tracker "https://..."
@@ -51,9 +52,20 @@ func init() {
 
 func addtrackers(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
-	args = args[1:]
-	if category == "" && tag == "" && filter == "" && len(args) == 0 {
-		return fmt.Errorf("you must provide at least a condition flag or hashFilter")
+	infoHashes := args[1:]
+	if category == "" && tag == "" && filter == "" {
+		if len(infoHashes) == 0 {
+			return fmt.Errorf("you must provide at least a condition flag or hashFilter")
+		}
+		if len(infoHashes) == 1 && infoHashes[0] == "-" {
+			if data, err := util.ReadArgsFromStdin(); err != nil {
+				return fmt.Errorf("failed to parse stdin to info hashes: %v", err)
+			} else if len(data) == 0 {
+				return nil
+			} else {
+				infoHashes = data
+			}
+		}
 	}
 	if len(trackers) == 0 {
 		return fmt.Errorf("at least an --tracker MUST be provided")
@@ -68,7 +80,7 @@ func addtrackers(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to create client: %v", err)
 	}
 
-	torrents, err := client.QueryTorrents(clientInstance, category, tag, filter, args...)
+	torrents, err := client.QueryTorrents(clientInstance, category, tag, filter, infoHashes...)
 	if err != nil {
 		return err
 	}

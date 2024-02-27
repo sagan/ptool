@@ -2,7 +2,6 @@ package renametag
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -53,7 +52,7 @@ func renametag(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to create new-tag in client: %v", err)
 		}
 	}
-	err = clientInstance.DeleteTags(strings.Split(oldTag, ",")...)
+	err = clientInstance.DeleteTags(util.SplitCsv(oldTag)...)
 	if err != nil {
 		return fmt.Errorf("failed to delete old-tag(s) from client: %v", err)
 	}

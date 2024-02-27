@@ -19,6 +19,7 @@ var command = &cobra.Command{
 	Long: `Edit tracker of torrents in client, replace the old tracker url with the new one.
 [infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
 _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.
+Specially, use a single "-" as args to read infoHash list from stdin, delimited by blanks.
 
 A torrent will not be updated if old tracker does NOT exist in it's trackers list.
 It may return an error in such case or not, depending on specific client implementation.
@@ -60,19 +61,30 @@ func init() {
 
 func edittracker(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
-	args = args[1:]
+	infoHashes := args[1:]
 	if !replaceHost && (!util.IsUrl(oldTracker) || !util.IsUrl(newTracker)) {
 		return fmt.Errorf("both --old-tracker and --new-tracker MUST be valid URL ( 'http(s)://...' )")
 	}
-	if category == "" && tag == "" && filter == "" && len(args) == 0 {
-		return fmt.Errorf("you must provide at least a condition flag or hashFilter")
+	if category == "" && tag == "" && filter == "" {
+		if len(infoHashes) == 0 {
+			return fmt.Errorf("you must provide at least a condition flag or hashFilter")
+		}
+		if len(infoHashes) == 1 && infoHashes[0] == "-" {
+			if data, err := util.ReadArgsFromStdin(); err != nil {
+				return fmt.Errorf("failed to parse stdin to info hashes: %v", err)
+			} else if len(data) == 0 {
+				return nil
+			} else {
+				infoHashes = data
+			}
+		}
 	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
 		return fmt.Errorf("failed to create client: %v", err)
 	}
 
-	torrents, err := client.QueryTorrents(clientInstance, category, tag, filter, args...)
+	torrents, err := client.QueryTorrents(clientInstance, category, tag, filter, infoHashes...)
 	if err != nil {
 		return err
 	}

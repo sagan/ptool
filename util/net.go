@@ -7,40 +7,16 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"slices"
 	"strings"
 
 	"github.com/Noooste/azuretls-client"
 	log "github.com/sirupsen/logrus"
 )
 
-type ImpersonateProfile struct {
-	// "chrome", "firefox", "opera", "safari", "edge", "ios", "android"
-	Navigator     string
-	Ja3           string
-	H2fingerpring string
-	Headers       [][]string // use "\n" as placeholder for order; use "" (empty) to delete a header
-	Comment       string
-}
-
 const (
-	// 默认对站点的 http 请求模仿最新版 Chrome Windows 11 x64 en-US 环境
-	DEFAULT_IMPERSONATE = "chrome120"
 	// header 占位符。用于保证实际发送 headers 的顺序
 	HTTP_HEADER_PLACEHOLDER = "\n"
 )
-
-var (
-	// all supported impersonate names
-	Impersonates []string
-)
-
-func init() {
-	for key := range ImpersonateProfiles {
-		Impersonates = append(Impersonates, key)
-	}
-	slices.Sort(Impersonates)
-}
 
 func FetchJson(url string, v any, client *http.Client) error {
 	res, _, err := FetchUrl(url, client)

@@ -5,18 +5,28 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
 
+	"github.com/google/shlex"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/constraints"
 )
+
+var commaSeperatorRegexp = regexp.MustCompile(`,\s*`)
+
+// split a csv like line to values. "a, b, c" => [a,b,c]
+func SplitCsv(str string) []string {
+	return commaSeperatorRegexp.Split(str, -1)
+}
 
 func String2Any(value string) (any, reflect.Kind) {
 	if value == "true" {
@@ -291,4 +301,14 @@ func ParseProxyFromEnv(urlStr string) string {
 		return ""
 	}
 	return proxyUrl.String()
+}
+
+func ReadArgsFromStdin() ([]string, error) {
+	if stdin, err := io.ReadAll(os.Stdin); err != nil {
+		return nil, fmt.Errorf("failed to read stdin: %v", err)
+	} else if data, err := shlex.Split(string(stdin)); err != nil {
+		return nil, fmt.Errorf("failed to parse stdin to tokens: %v", err)
+	} else {
+		return data, nil
+	}
 }

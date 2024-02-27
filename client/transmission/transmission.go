@@ -915,6 +915,7 @@ func tr2Torrent(trtorrent *transmissionrpc.Torrent) *client.Torrent {
 		LowLevelState:      fmt.Sprint(trtorrent.Status),
 		Atime:              trtorrent.AddedDate.Unix(),
 		Ctime:              trtorrent.DoneDate.Unix(), // 0 if not completed
+		ActivityTime:       trtorrent.ActivityDate.Unix(),
 		Downloaded:         *trtorrent.DownloadedEver,
 		DownloadSpeed:      *trtorrent.RateDownload,
 		DownloadSpeedLimit: downloadSpeedLimit,

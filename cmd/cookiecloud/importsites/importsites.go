@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	doAction        = false
+	force           = false
 	noCheck         = false
 	profile         = ""
 	siteProxy       = ""
@@ -39,7 +39,7 @@ Be aware that all existing comments in config file will be LOST when updating co
 }
 
 func init() {
-	command.Flags().BoolVarP(&doAction, "do", "", false,
+	command.Flags().BoolVarP(&force, "force", "", false,
 		"Do update the config file without confirm. Be aware that all existing comments in config file will be LOST")
 	command.Flags().BoolVarP(&noCheck, "no-check", "", false,
 		"Do not check the cookies validity before importing new sites")
@@ -160,7 +160,7 @@ func importsites(cmd *cobra.Command, args []string) error {
 				return sitename
 			}), ", "))
 		configFile := fmt.Sprintf("%s/%s", config.ConfigDir, config.ConfigFile)
-		if !doAction && !util.AskYesNoConfirm(
+		if !force && !util.AskYesNoConfirm(
 			fmt.Sprintf("Will update the config file (%s). Be aware that all existing comments will be LOST",
 				configFile)) {
 			return fmt.Errorf("abort")

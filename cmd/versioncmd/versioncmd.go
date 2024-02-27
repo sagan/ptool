@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"path/filepath"
 	"runtime"
-	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/config"
-	"github.com/sagan/ptool/util"
+	"github.com/sagan/ptool/util/impersonateutil"
 	"github.com/sagan/ptool/version"
 )
 
@@ -33,23 +32,11 @@ func init() {
 
 func versioncmd(cmd *cobra.Command, args []string) error {
 	if impersonate != "" {
-		impersonateProfile := util.ImpersonateProfiles[impersonate]
+		impersonateProfile := impersonateutil.GetProfile(impersonate)
 		if impersonateProfile == nil {
 			return fmt.Errorf("impersonate '%s' not supported", impersonate)
 		}
-		fmt.Printf("Impersonate '%s'\n", impersonate)
-		fmt.Printf("- navigator: %s\n", impersonateProfile.Navigator)
-		fmt.Printf("- comment: %s\n", impersonateProfile.Comment)
-		fmt.Printf("- tls_ja3: %s\n", impersonateProfile.Ja3)
-		fmt.Printf("- h2_fingerprint: %s\n", impersonateProfile.H2fingerpring)
-		fmt.Printf("- http_request_headers:\n")
-		for _, header := range impersonateProfile.Headers {
-			value := header[1]
-			if value == util.HTTP_HEADER_PLACEHOLDER {
-				value = ""
-			}
-			fmt.Printf("  %s: %s\n", header[0], value)
-		}
+		impersonateProfile.Print()
 		return nil
 	}
 	fmt.Printf("ptool %s\n", version.Version)
@@ -60,7 +47,7 @@ func versioncmd(cmd *cobra.Command, args []string) error {
 	fmt.Printf("- go/version: %s\n", runtime.Version())
 	fmt.Printf("- config_file: %s%c%s\n", config.ConfigDir, filepath.Separator, config.ConfigFile)
 	fmt.Printf("- config_dir: %s\n", config.ConfigDir)
-	fmt.Printf("- config/default_impersonate: %s\n", util.DEFAULT_IMPERSONATE)
-	fmt.Printf("- config/supported_impersonates: %s, none\n", strings.Join(util.Impersonates, ", "))
+	fmt.Printf("- config/default_impersonate: %s\n", impersonateutil.DEFAULT_IMPERSONATE)
+	fmt.Printf("- config/supported_impersonates: %s, none\n", impersonateutil.GetAllProfileNames())
 	return nil
 }

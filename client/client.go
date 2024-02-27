@@ -25,6 +25,7 @@ type Torrent struct {
 	LowLevelState      string // original state value returned by bt client
 	Atime              int64  // timestamp torrent added
 	Ctime              int64  // timestamp torrent completed. <=0 if not completed.
+	ActivityTime       int64  // timestamp of torrent latest activity (a chunk being downloaded / uploaded)
 	Category           string
 	SavePath           string
 	ContentPath        string
@@ -386,31 +387,32 @@ func PrintTorrentFiles(files []TorrentContentFile, showRaw bool) {
 	}
 }
 
-func PrintTorrent(torrent *Torrent) {
+func (torrent *Torrent) Print() {
 	ctimeStr := "-"
 	if torrent.Ctime > 0 {
 		ctimeStr = util.FormatTime(torrent.Ctime)
 	}
 	fmt.Printf("Torrent name: %s\n", torrent.Name)
-	fmt.Printf("InfoHash: %s\n", torrent.InfoHash)
-	fmt.Printf("Size: %s (%d)\n", util.BytesSize(float64(torrent.Size)), torrent.Size)
-	fmt.Printf("Process: %d%%\n", int64(float64(torrent.SizeCompleted)*100/float64(torrent.Size)))
-	fmt.Printf("Total Size: %s (%d)\n", util.BytesSize(float64(torrent.SizeTotal)), torrent.SizeTotal)
-	fmt.Printf("State (LowLevelState): %s (%s)\n", torrent.State, torrent.LowLevelState)
-	fmt.Printf("Speeds: ↓S: %s/s | ↑S: %s/s\n",
+	fmt.Printf("- InfoHash: %s\n", torrent.InfoHash)
+	fmt.Printf("- Size: %s (%d)\n", util.BytesSize(float64(torrent.Size)), torrent.Size)
+	fmt.Printf("- Process: %d%%\n", int64(float64(torrent.SizeCompleted)*100/float64(torrent.Size)))
+	fmt.Printf("- Total Size: %s (%d)\n", util.BytesSize(float64(torrent.SizeTotal)), torrent.SizeTotal)
+	fmt.Printf("- State (LowLevelState): %s (%s)\n", torrent.State, torrent.LowLevelState)
+	fmt.Printf("- Speeds: ↓S: %s/s | ↑S: %s/s\n",
 		util.BytesSize(float64(torrent.DownloadSpeed)),
 		util.BytesSize(float64(torrent.UploadSpeed)),
 	)
-	fmt.Printf("Category: %s\n", torrent.Category)
-	fmt.Printf("Tags: %s\n", strings.Join(torrent.Tags, ","))
-	fmt.Printf("Meta: %v\n", torrent.Meta)
-	fmt.Printf("Add time: %s\n", util.FormatTime(torrent.Atime))
-	fmt.Printf("Completion time: %s\n", ctimeStr)
-	fmt.Printf("Tracker: %s\n", torrent.Tracker)
-	fmt.Printf("Seeders / Peers: %d / %d\n", torrent.Seeders, torrent.Leechers)
-	fmt.Printf("Save path: %s\n", torrent.SavePath)
-	fmt.Printf("Content path: %s\n", torrent.ContentPath)
-	fmt.Printf("Downloaded / Uploaded: %s / %s\n",
+	fmt.Printf("- Category: %s\n", torrent.Category)
+	fmt.Printf("- Tags: %s\n", strings.Join(torrent.Tags, ","))
+	fmt.Printf("- Meta: %v\n", torrent.Meta)
+	fmt.Printf("- Add time: %s\n", util.FormatTime(torrent.Atime))
+	fmt.Printf("- Completion time: %s\n", ctimeStr)
+	fmt.Printf("- Last activity time: %s\n", util.FormatTime(torrent.ActivityTime))
+	fmt.Printf("- Tracker: %s\n", torrent.Tracker)
+	fmt.Printf("- Seeders / Peers: %d / %d\n", torrent.Seeders, torrent.Leechers)
+	fmt.Printf("- Save path: %s\n", torrent.SavePath)
+	fmt.Printf("- Content path: %s\n", torrent.ContentPath)
+	fmt.Printf("- Downloaded / Uploaded: %s / %s\n",
 		util.BytesSize(float64(torrent.Downloaded)),
 		util.BytesSize(float64(torrent.Uploaded)),
 	)
@@ -506,7 +508,7 @@ func QueryTorrents(clientInstance Client, category string, tag string, filter st
 	}
 	var tags []string
 	if tag != "" {
-		tags = strings.Split(tag, ",")
+		tags = util.SplitCsv(tag)
 	}
 	torrents2 := []Torrent{}
 	for _, torrent := range torrents {
@@ -557,7 +559,7 @@ func SelectTorrents(clientInstance Client, category string, tag string, filter s
 	}
 	var tags []string
 	if tag != "" {
-		tags = strings.Split(tag, ",")
+		tags = util.SplitCsv(tag)
 	}
 	infoHashes := []string{}
 	for _, torrent := range torrents {

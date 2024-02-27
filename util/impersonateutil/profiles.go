@@ -1,6 +1,15 @@
-package util
+package impersonateutil
+
+import (
+	"github.com/sagan/ptool/util"
+)
 
 // may contain too long (width > 120) lines
+
+const (
+	// 默认对站点的 http 请求模仿最新版 Chrome Windows 11 x64 en-US 环境
+	DEFAULT_IMPERSONATE = "chrome120"
+)
 
 // 对站点的 http 请求模仿真实浏览器环境。包括：
 // TLS Ja3 指纹、http2 指纹、http headers。
@@ -8,8 +17,9 @@ package util
 // https://tls.peet.ws/api/all (该网站生成的ja3可能有问题),
 // https://tools.scrapfly.io/api/fp/anything ,
 // https://scrapfly.io/web-scraping-tools/ja3-fingerprint (建议用这个 ja3).
-var ImpersonateProfiles = map[string]*ImpersonateProfile{
-	"chrome120": {
+var profiles = []*Profile{
+	{
+		Name:      "chrome120",
 		Navigator: "chrome",
 		Comment:   "Chrome 120 on Windows 11 x64 en-US",
 		// TLS ja3 指纹。参考: https://scrapfly.io/blog/how-to-avoid-web-scraping-blocking-tls/ .
@@ -32,10 +42,11 @@ var ImpersonateProfiles = map[string]*ImpersonateProfile{
 			{"Sec-Fetch-Dest", `document`},
 			{"Accept-Encoding", "gzip, deflate, br"},
 			{"Accept-Language", "en-US,en;q=0.9"},
-			{"Cookie", HTTP_HEADER_PLACEHOLDER},
+			{"Cookie", util.HTTP_HEADER_PLACEHOLDER},
 		},
 	},
-	"firefox121": {
+	{
+		Name:      "firefox121",
 		Navigator: "firefox",
 		Comment:   "Firefox 121 on Windows 11 x64 en-US",
 		// Ja3:           "772,4865-4867-4866-49195-49199-52393-52392-49196-49200-49162-49161-49171-49172-156-157-47-53,0-23-65281-10-11-35-16-5-34-51-43-13-45-28-65037,29-23-24-25-256-257,0",
@@ -48,7 +59,7 @@ var ImpersonateProfiles = map[string]*ImpersonateProfile{
 			{"Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"},
 			{"Accept-Language", "en-US,en;q=0.5"},
 			{"Accept-Encoding", "gzip, deflate, br"},
-			{"Cookie", HTTP_HEADER_PLACEHOLDER},
+			{"Cookie", util.HTTP_HEADER_PLACEHOLDER},
 			{"Upgrade-Insecure-Requests", "1"},
 			{"Sec-Fetch-Dest", `document`},
 			{"Sec-Fetch-Mode", `navigate`},

@@ -92,7 +92,7 @@ func add(cmd *cobra.Command, args []string) error {
 	}
 	var fixedTags []string
 	if addTags != "" {
-		fixedTags = strings.Split(addTags, ",")
+		fixedTags = util.SplitCsv(addTags)
 	}
 	domainSiteMap := map[string]string{}
 	siteInstanceMap := map[string]site.Site{}

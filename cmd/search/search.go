@@ -64,7 +64,7 @@ func init() {
 func search(cmd *cobra.Command, args []string) error {
 	minTorrentSize, _ := util.RAMInBytes(minTorrentSizeStr)
 	maxTorrentSize, _ := util.RAMInBytes(maxTorrentSizeStr)
-	sitenames := config.ParseGroupAndOtherNames(strings.Split(args[0], ",")...)
+	sitenames := config.ParseGroupAndOtherNames(util.SplitCsv(args[0])...)
 	keyword := strings.Join(args[1:], " ")
 	siteInstancesMap := map[string]site.Site{}
 	for _, sitename := range sitenames {

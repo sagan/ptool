@@ -532,7 +532,7 @@ func (qbclient *Client) ModifyTorrent(infoHash string,
 	}
 
 	if len(option.Tags) > 0 || len(option.RemoveTags) > 0 {
-		qbTags := strings.Split(qbtorrent.Tags, ",")
+		qbTags := util.SplitCsv(qbtorrent.Tags)
 		addTags := []string{}
 		removeTags := []string{}
 		for _, addTag := range option.Tags {

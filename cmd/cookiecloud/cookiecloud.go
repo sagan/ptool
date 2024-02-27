@@ -1,12 +1,11 @@
 package cookiecloud
 
 import (
-	"strings"
-
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/util"
 )
 
 var Command = &cobra.Command{
@@ -43,7 +42,7 @@ func ParseProfile(profile string) []*config.CookiecloudConfigStruct {
 			cookiecloudProfiles = append(cookiecloudProfiles, profile)
 		}
 	} else {
-		names := strings.Split(profile, ",")
+		names := util.SplitCsv(profile)
 		for _, name := range names {
 			profile := config.GetCookiecloudConfig(name)
 			if profile != nil {
