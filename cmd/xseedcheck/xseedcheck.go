@@ -9,6 +9,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/util/torrentutil"
 )
 
@@ -41,7 +42,11 @@ func xseedcheck(cmd *cobra.Command, args []string) error {
 	}
 	var torrentContent []byte
 	if torrentFilename == "-" {
-		torrentContent, err = io.ReadAll(os.Stdin)
+		if config.InShell {
+			err = fmt.Errorf(`"-" arg can not be used in shell`)
+		} else {
+			torrentContent, err = io.ReadAll(os.Stdin)
+		}
 	} else {
 		torrentContent, err = os.ReadFile(torrentFilename)
 	}

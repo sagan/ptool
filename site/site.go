@@ -64,6 +64,7 @@ type Site interface {
 	// sort: size|name|none(or "")
 	GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (
 		torrents []Torrent, nextPageMarker string, err error)
+	// can use "%s" as keyword placeholder in baseUrl
 	SearchTorrents(keyword string, baseUrl string) ([]Torrent, error)
 	GetStatus() (*Status, error)
 	PurgeCache()
@@ -101,6 +102,19 @@ func (torrent *Torrent) MatchFiltersOr(filters []string) bool {
 	return slices.IndexFunc(filters, func(filter string) bool {
 		return torrent.MatchFilter(filter)
 	}) != -1
+}
+
+// Matches if every list of filtersArray is successed with MatchFiltersOr().
+// If filtersArray is empty, return true.
+func (torrent *Torrent) MatchFiltersAndOr(filtersArray [][]string) bool {
+	matched := true
+	for _, includes := range filtersArray {
+		if !torrent.MatchFiltersOr(includes) {
+			matched = false
+			break
+		}
+	}
+	return matched
 }
 
 func Register(regInfo *RegInfo) {
@@ -156,15 +170,17 @@ func PrintTorrents(torrents []Torrent, filter string, now int64,
 	}
 	widthExcludingName := 0
 	widthName := 0
-	if !noHeader {
-		if scores == nil {
-			widthExcludingName = 81 // 6+11+19+4+4+4+15+2+8*2
-			widthName = width - widthExcludingName
+	if scores == nil {
+		widthExcludingName = 81 // 6+11+19+4+4+4+15+2+8*2
+		widthName = width - widthExcludingName
+		if !noHeader {
 			fmt.Printf("%-*s  %6s  %-11s  %-19s  %4s  %4s  %4s  %-15s  %2s\n",
 				widthName, "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "P")
-		} else {
-			widthExcludingName = 88 // 6+11+19+4+4+4+15+5+2+9*2
-			widthName = width - widthExcludingName
+		}
+	} else {
+		widthExcludingName = 88 // 6+11+19+4+4+4+15+5+2+9*2
+		widthName = width - widthExcludingName
+		if !noHeader {
 			fmt.Printf("%-*s  %6s  %-11s  %-19s  %4s  %4s  %4s  %-15s  %5s  %2s\n",
 				widthName, "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "Score", "P")
 		}

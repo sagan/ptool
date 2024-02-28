@@ -1,17 +1,20 @@
 package add
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
 	"path"
 	"strings"
 
+	"github.com/google/shlex"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/site/tpl"
 	"github.com/sagan/ptool/util"
@@ -24,9 +27,10 @@ var command = &cobra.Command{
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "add"},
 	Short:       "Add torrents to client.",
 	Long: `Add torrents to client.
-Each arg could be a local filename (e.g. "*.torrent" or "[M-TEAM]CLANNAD (2007).torrent"),
+Args is torrent list that each one could be a local filename (e.g. "*.torrent" or "[M-TEAM]CLANNAD.torrent"),
 torrent id (e.g.: "mteam.488424"), or torrent url (e.g.: "https://kp.m-team.cc/details.php?id=488424").
-Use "-" as arg to read torrent content from stdin.
+Use a single "-" as args to read torrent list from stdin, delimited by blanks,
+as a special case, it also supports directly reading .torrent file contents from stdin.
 
 --rename <name> flag supports the following variable placeholders:
 * [size] : Torrent size
@@ -79,7 +83,25 @@ func add(cmd *cobra.Command, args []string) error {
 	if renameAdded && deleteAdded {
 		return fmt.Errorf("--rename-added and --delete-added flags are NOT compatible")
 	}
+	// directly read a torrent content from stdin.
+	var directTorrentContent []byte
 	torrents := util.ParseFilenameArgs(args[1:]...)
+	if len(torrents) == 1 && torrents[0] == "-" {
+		if config.InShell {
+			return fmt.Errorf(`"-" arg can not be used in shell`)
+		}
+		if stdin, err := io.ReadAll(os.Stdin); err != nil {
+			return fmt.Errorf("failed to read stdin: %v", err)
+		} else if bytes.HasPrefix(stdin, []byte("d8:announce")) {
+			// Matches with .torrent file magic number.
+			// See: https://en.wikipedia.org/wiki/Torrent_file , https://en.wikipedia.org/wiki/Bencode .
+			directTorrentContent = stdin
+		} else if data, err := shlex.Split(string(stdin)); err != nil {
+			return fmt.Errorf("failed to parse stdin to tokens: %v", err)
+		} else {
+			torrents = data
+		}
+	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
 		return fmt.Errorf("failed to create client: %v", err)
@@ -102,19 +124,16 @@ func add(cmd *cobra.Command, args []string) error {
 	cntAll := len(torrents)
 
 	for i, torrent := range torrents {
-		var isLocal bool
 		var siteName string
 		var filename string // original torrent filename
 		var content []byte
 		var id string // site torrent id
 		var err error
 		var hr bool
-		if forceLocal || torrent == "-" || !util.IsUrl(torrent) && strings.HasSuffix(torrent, ".torrent") {
-			isLocal = true
-		}
+		isLocal := forceLocal || torrent == "-" || !util.IsUrl(torrent) && strings.HasSuffix(torrent, ".torrent")
+
 		if !isLocal {
 			// site torrent
-			isLocal = false
 			siteName = defaultSite
 			if !util.IsUrl(torrent) {
 				i := strings.Index(torrent, ".")
@@ -159,14 +178,12 @@ func add(cmd *cobra.Command, args []string) error {
 			hr = siteInstance.GetSiteConfig().GlobalHnR
 			content, filename, id, err = siteInstance.DownloadTorrent(torrent)
 		} else {
-			isLocal = true
-			if strings.HasSuffix(torrent, ".added") {
-				fmt.Printf("-skip (%d/%d) %s\n", i+1, cntAll, torrent)
-				continue
-			}
 			if torrent == "-" {
 				filename = ""
-				content, err = io.ReadAll(os.Stdin)
+				content = directTorrentContent
+			} else if strings.HasSuffix(torrent, ".added") {
+				fmt.Printf("-skip (%d/%d) %s\n", i+1, cntAll, torrent)
+				continue
 			} else {
 				filename = path.Base(torrent)
 				content, err = os.ReadFile(torrent)
@@ -228,7 +245,7 @@ func add(cmd *cobra.Command, args []string) error {
 			errorCnt++
 			continue
 		}
-		if isLocal {
+		if isLocal && torrent != "-" {
 			if renameAdded {
 				if err := os.Rename(torrent, torrent+".added"); err != nil {
 					log.Debugf("Failed to rename %s to *.added: %v // %s", torrent, err, tinfo.ContentPath)

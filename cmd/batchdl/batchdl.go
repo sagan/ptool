@@ -104,12 +104,12 @@ func init() {
 	command.Flags().StringVarP(&freeTimeAtLeastStr, "free-time", "", "",
 		"Used with --free. Set the allowed minimal remaining torrent free time. e.g.: 12h, 1d")
 	command.Flags().StringVarP(&filter, "filter", "", "",
-		"If set, skip torrent which name does NOT contains this string")
+		"If set, skip torrent which title or subtitle does NOT contains this string")
 	command.Flags().StringArrayVarP(&includes, "includes", "", nil,
-		"Comma-separated list that ONLY torrent which name contains any one in the list will be downloaded. "+
+		"Comma-separated list that ONLY torrent which title or subtitle contains any one in the list will be downloaded. "+
 			"Can be provided multiple times, in which case every list MUST be matched")
 	command.Flags().StringVarP(&excludes, "excludes", "", "",
-		"Comma-separated list that torrent which name contains any one in the list will be skipped")
+		"Comma-separated list that torrent which title of subtitle contains any one in the list will be skipped")
 	command.Flags().StringVarP(&startPage, "start-page", "", "",
 		"Start fetching torrents from here (should be the returned LastPage value last time you run this command)")
 	command.Flags().StringVarP(&downloadDir, "download-dir", "", ".",
@@ -322,18 +322,9 @@ mainloop:
 				log.Tracef("Skip torrent %s due to excludes matches", torrent.Name)
 				continue
 			}
-			if len(includesList) > 0 {
-				matched := true
-				for _, includes := range includesList {
-					if !torrent.MatchFiltersOr(includes) {
-						matched = false
-						break
-					}
-				}
-				if !matched {
-					log.Tracef("Skip torrent %s due to includes does NOT match", torrent.Name)
-					continue
-				}
+			if !torrent.MatchFiltersAndOr(includesList) {
+				log.Tracef("Skip torrent %s due to includes does NOT match", torrent.Name)
+				continue
 			}
 			if freeOnly {
 				if torrent.DownloadMultiplier != 0 {
