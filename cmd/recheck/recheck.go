@@ -3,6 +3,7 @@ package recheck
 import (
 	"fmt"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
@@ -87,6 +88,7 @@ func recheck(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to fetch client torrents: %v", err)
 	}
 	if len(torrents) == 0 {
+		log.Infof("No matched torrents found")
 		return nil
 	}
 	if !force {

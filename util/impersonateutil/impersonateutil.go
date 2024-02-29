@@ -11,7 +11,7 @@ type Profile struct {
 	Name          string
 	Navigator     string
 	Ja3           string
-	H2fingerpring string
+	H2fingerprint string
 	Headers       [][]string // use "\n" as placeholder for order; use "" (empty) to delete a header
 	Comment       string
 }
@@ -51,7 +51,7 @@ func (p *Profile) Print() {
 	fmt.Printf("- navigator: %s\n", p.Navigator)
 	fmt.Printf("- comment: %s\n", p.Comment)
 	fmt.Printf("- tls_ja3: %s\n", p.Ja3)
-	fmt.Printf("- h2_fingerprint: %s\n", p.H2fingerpring)
+	fmt.Printf("- h2_fingerprint: %s\n", p.H2fingerprint)
 	fmt.Printf("- http_request_headers:\n")
 	for _, header := range p.Headers {
 		value := header[1]

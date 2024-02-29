@@ -21,11 +21,11 @@ var command = &cobra.Command{
 	Short:       "Download site torrents to local.",
 	Long: `Download site torrents to local.
 
---filename <name> flag supports the following variable placeholders:
+--rename <name> flag supports the following variable placeholders:
 * [size] : Torrent size
 * [id] :  Torrent id in site
 * [site] : Torrent site
-* [filename] : Original torrent filename, with ".torrent" extension removed
+* [filename] : Original torrent filename without ".torrent" extension
 * [name] : Torrent name`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: dltorrent,
@@ -33,15 +33,14 @@ var command = &cobra.Command{
 
 var (
 	downloadDir = ""
-	savename    = ""
+	rename      = ""
 	defaultSite = ""
 )
 
 func init() {
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of torrents")
 	command.Flags().StringVarP(&downloadDir, "dir", "", ".", `Set the dir of downloaded torrents`)
-	command.Flags().StringVarP(&savename, "filename", "", "",
-		"Set the filename of downloaded torrents (supports variables)")
+	command.Flags().StringVarP(&rename, "rename", "", "", "Rename downloaded torrents (supports variables)")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -107,19 +106,10 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 			continue
 		}
 		fileName := ""
-		if savename == "" {
+		if rename == "" {
 			fileName = filename
 		} else {
-			fileName = savename
-			basename := filename
-			if i := strings.LastIndex(basename, "."); i != -1 {
-				basename = basename[:i]
-			}
-			fileName = strings.ReplaceAll(fileName, "[size]", util.BytesSize(float64(tinfo.Size)))
-			fileName = strings.ReplaceAll(fileName, "[id]", id)
-			fileName = strings.ReplaceAll(fileName, "[site]", siteName)
-			fileName = strings.ReplaceAll(fileName, "[filename]", basename)
-			fileName = strings.ReplaceAll(fileName, "[name]", tinfo.Info.Name)
+			fileName = torrentutil.RenameTorrent(rename, siteName, id, filename, tinfo)
 		}
 		err = os.WriteFile(downloadDir+"/"+fileName, content, 0666)
 		if err != nil {

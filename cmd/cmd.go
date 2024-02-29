@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -69,6 +70,12 @@ func Execute() {
 		log.Debugf("ptool start: %v", os.Args)
 		log.Debugf("tty=%t, width=%d, height=%d", isTty, width, height)
 		log.Infof("config file: %s/%s", config.ConfigDir, config.ConfigFile)
+		if config.GlobalLock {
+			if config.LockFile != "" {
+				log.Fatalf("--lock and --global-lock flags are NOT compatible")
+			}
+			config.LockFile = path.Join(config.ConfigDir, config.GLOBAL_LOCK_FILE)
+		}
 		if config.LockFile != "" {
 			log.Debugf("Locking file: %s", config.LockFile)
 			lock := flock.New(config.LockFile)
@@ -134,6 +141,9 @@ func init() {
 			"It only works on Linux platform")
 	RootCmd.PersistentFlags().BoolVarP(&config.LockOrExit, "lock-or-exit", "", false,
 		"Used with --lock flag. If failed to acquire lock, exit 1 immediately instead of waiting")
+	RootCmd.PersistentFlags().BoolVarP(&config.GlobalLock, "global-lock", "", false,
+		"Similar to --lock but does NOT require a filename. "+
+			"All ptool instances which use the same config file share the lock")
 	RootCmd.PersistentFlags().StringVarP(&config.ConfigFile, "config", "", config.DefaultConfigFile,
 		"Config file ([ptool.toml])")
 	RootCmd.PersistentFlags().StringVarP(&config.LockFile, "lock", "", "",

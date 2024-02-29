@@ -19,6 +19,7 @@
 ptool.toml
 ptool.yaml
 ptool.lock
+ptool-global.lock
 ptool_history
 ptool_stats.txt
 iyuu.db

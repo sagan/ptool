@@ -36,7 +36,7 @@ as a special case, it also supports directly reading .torrent file contents from
 * [size] : Torrent size
 * [id] :  Torrent id in site
 * [site] : Torrent site
-* [filename] : Original torrent filename, with ".torrent" extension removed
+* [filename] : Original torrent filename without ".torrent" extension
 * [name] : Torrent name`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	RunE: add,
@@ -131,13 +131,11 @@ func add(cmd *cobra.Command, args []string) error {
 		var err error
 		var hr bool
 		isLocal := forceLocal || torrent == "-" || !util.IsUrl(torrent) && strings.HasSuffix(torrent, ".torrent")
-
 		if !isLocal {
 			// site torrent
 			siteName = defaultSite
 			if !util.IsUrl(torrent) {
-				i := strings.Index(torrent, ".")
-				if i != -1 && i < len(torrent)-1 {
+				if i := strings.Index(torrent, "."); i != -1 {
 					siteName = torrent[:i]
 				}
 			} else {
@@ -227,16 +225,7 @@ func add(cmd *cobra.Command, args []string) error {
 		}
 		option.Tags = append(option.Tags, fixedTags...)
 		if rename != "" {
-			basename := filename
-			if i := strings.LastIndex(basename, "."); i != -1 {
-				basename = basename[:i]
-			}
-			option.Name = rename
-			option.Name = strings.ReplaceAll(option.Name, "[size]", util.BytesSize(float64(tinfo.Size)))
-			option.Name = strings.ReplaceAll(option.Name, "[id]", id)
-			option.Name = strings.ReplaceAll(option.Name, "[site]", siteName)
-			option.Name = strings.ReplaceAll(option.Name, "[filename]", basename)
-			option.Name = strings.ReplaceAll(option.Name, "[name]", tinfo.Info.Name)
+			option.Name = torrentutil.RenameTorrent(rename, siteName, id, filename, tinfo)
 		}
 		err = clientInstance.AddTorrent(content, option, nil)
 		if err != nil {

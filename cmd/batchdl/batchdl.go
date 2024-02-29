@@ -18,6 +18,7 @@ import (
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/util"
+	"github.com/sagan/ptool/util/torrentutil"
 )
 
 var command = &cobra.Command{
@@ -25,12 +26,20 @@ var command = &cobra.Command{
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "batchdl"},
 	Aliases:     []string{"ebookgod"},
 	Short:       "Batch download the smallest (or by any other order) torrents from a site.",
-	Long:        `Batch download the smallest (or by any other order) torrents from a site.`,
-	Args:        cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
-	RunE:        batchdl,
+	Long: `Batch download the smallest (or by any other order) torrents from a site.
+
+--rename <name> flag supports the following variable placeholders:
+* [size] : Torrent size
+* [id] :  Torrent id in site
+* [site] : Torrent site
+* [filename] : Original torrent filename without ".torrent" extension
+* [name] : Torrent name`,
+	Args: cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
+	RunE: batchdl,
 }
 
 var (
+	downloadAll        = false
 	onePage            = false
 	addPaused          = false
 	dense              = false
@@ -51,7 +60,6 @@ var (
 	addClient          = ""
 	addTags            = ""
 	filter             = ""
-	includes           = []string{}
 	excludes           = ""
 	savePath           = ""
 	minTorrentSizeStr  = ""
@@ -62,12 +70,16 @@ var (
 	downloadDir        = ""
 	exportFile         = ""
 	baseUrl            = ""
-	action             string
-	sortFlag           string
-	orderFlag          string
+	rename             = ""
+	action             = ""
+	sortFlag           = ""
+	orderFlag          = ""
+	includes           = []string{}
 )
 
 func init() {
+	command.Flags().BoolVarP(&downloadAll, "all", "a", false,
+		`Download all torrents. Equivalent to "--include-downloaded --min-seeders -1"`)
 	command.Flags().BoolVarP(&onePage, "one-page", "", false, "Only fetch one page torrents")
 	command.Flags().BoolVarP(&addPaused, "add-paused", "", false, "Add torrents to client in paused state")
 	command.Flags().BoolVarP(&dense, "dense", "d", false, "Dense mode: show full torrent title & subtitle")
@@ -76,9 +88,9 @@ func init() {
 	command.Flags().BoolVarP(&noNeutral, "no-neutral", "", false,
 		"Skip neutral (do not count uploading & downloading & seeding bonus) torrent")
 	command.Flags().BoolVarP(&largestFlag, "largest", "l", false,
-		`Sort site torrents by size in desc order. Equivalent with "--sort size --order desc"`)
+		`Sort site torrents by size in desc order. Equivalent to "--sort size --order desc"`)
 	command.Flags().BoolVarP(&newestFlag, "newest", "n", false,
-		`Download newest torrents of site. Equivalent with "--sort time --order desc --one-page"`)
+		`Download newest torrents of site. Equivalent to "--sort time --order desc --one-page"`)
 	command.Flags().BoolVarP(&addRespectNoadd, "add-respect-noadd", "", false,
 		`Used with "--action add". Check and respect _noadd flag in client`)
 	command.Flags().BoolVarP(&nohr, "no-hr", "", false,
@@ -125,7 +137,8 @@ func init() {
 	command.Flags().StringVarP(&exportFile, "export-file", "", "",
 		`Used with "--action export|printid". Set the output file. (If not set, will use stdout)`)
 	command.Flags().StringVarP(&baseUrl, "base-url", "", "",
-		`Manually set the base url of torrents list page. e.g.: "special.php", "adult.php", "torrents.php?cat=100"`)
+		`Manually set the base url of torrents list page. e.g.: "special.php", "torrents.php?cat=100"`)
+	command.Flags().StringVarP(&rename, "rename", "", "", "Rename downloaded or added torrents (supports variables)")
 	cmd.AddEnumFlagP(command, &action, "action", "", ActionEnumFlag)
 	cmd.AddEnumFlagP(command, &sortFlag, "sort", "", common.SiteTorrentSortFlag)
 	cmd.AddEnumFlagP(command, &orderFlag, "order", "", common.OrderFlag)
@@ -139,6 +152,10 @@ func batchdl(command *cobra.Command, args []string) error {
 	siteInstance, err := site.CreateSite(sitename)
 	if err != nil {
 		return err
+	}
+	if downloadAll {
+		includeDownloaded = true
+		minSeeders = -1
 	}
 	if largestFlag && newestFlag {
 		return fmt.Errorf("--largest and --newest flags are NOT compatible")
@@ -376,14 +393,22 @@ mainloop:
 				}
 				if err != nil {
 					fmt.Printf("torrent %s (%s): failed to download: %v\n", torrent.Id, torrent.Name, err)
+				} else if tinfo, err := torrentutil.ParseTorrent(torrentContent, 99); err != nil {
+					fmt.Printf("torrent %s (%s): failed to parse: %v\n", torrent.Id, torrent.Name, err)
 				} else {
 					if action == "download" {
-						err = os.WriteFile(downloadDir+"/"+filename, torrentContent, 0666)
+						fileName := ""
+						if rename == "" {
+							fileName = filename
+						} else {
+							fileName = torrentutil.RenameTorrent(rename, sitename, torrent.Id, filename, tinfo)
+						}
+						err = os.WriteFile(downloadDir+"/"+fileName, torrentContent, 0666)
 						if err != nil {
 							fmt.Printf("torrent %s: failed to write to %s/file %s: %v\n", torrent.Id, downloadDir, filename, err)
 						} else {
 							fmt.Printf("torrent %s - %s (%s): downloaded to %s/%s\n", torrent.Id, torrent.Name,
-								util.BytesSize(float64(torrent.Size)), downloadDir, filename)
+								util.BytesSize(float64(torrent.Size)), downloadDir, fileName)
 						}
 					} else if action == "add" {
 						tags := []string{}
@@ -396,6 +421,9 @@ mainloop:
 							clientAddTorrentOption.Category = sitename
 						} else {
 							clientAddTorrentOption.Category = addCategory
+						}
+						if rename != "" {
+							clientAddTorrentOption.Name = torrentutil.RenameTorrent(rename, sitename, torrent.Id, filename, tinfo)
 						}
 						err = clientInstance.AddTorrent(torrentContent, clientAddTorrentOption, nil)
 						if err != nil {

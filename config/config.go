@@ -22,16 +22,17 @@ import (
 )
 
 const (
-	NONE                  = "none" // 如果字符串类型配置项值为空，使用系统默认值。使用 NONE 值显式设置该配置项为空值
-	BRUSH_CAT             = "_brush"
-	XSEED_TAG             = "_xseed"
-	NOADD_TAG             = "_noadd"
-	NOXSEED_TAG           = "noxseed" // BT 客户端里含有此 tag 的种子不会被辅种
-	STATS_FILENAME        = "ptool_stats.txt"
-	HISTORY_FILENAME      = "ptool_history"
-	SITE_TORRENTS_WIDTH   = 120 // min width for printing site torrents
-	CLIENT_TORRENTS_WIDTH = 120 // min width for printing client torrents
-	GLOBAL_LOCK_FILE      = "ptool.lock"
+	NONE                      = "none" // 如果字符串类型配置项值为空，使用系统默认值。使用 NONE 值显式设置该配置项为空值
+	BRUSH_CAT                 = "_brush"
+	XSEED_TAG                 = "_xseed"
+	NOADD_TAG                 = "_noadd"
+	NOXSEED_TAG               = "noxseed" // BT 客户端里含有此 tag 的种子不会被辅种
+	STATS_FILENAME            = "ptool_stats.txt"
+	HISTORY_FILENAME          = "ptool_history"
+	SITE_TORRENTS_WIDTH       = 120 // min width for printing site torrents
+	CLIENT_TORRENTS_WIDTH     = 120 // min width for printing client torrents
+	GLOBAL_INTERNAL_LOCK_FILE = "ptool.lock"
+	GLOBAL_LOCK_FILE          = "ptool-global.lock"
 
 	DEFAULT_IYUU_DOMAIN                             = "api.iyuu.cn"
 	DEFAULT_TIMEOUT                                 = int64(5)
@@ -46,7 +47,7 @@ const (
 	DEFAULT_CLIENT_BRUSH_DEFAULT_UPLOAD_SPEED_LIMIT = int64(10 * 1024 * 1024)
 	DEFAULT_SITE_TIMEOUT                            = DEFAULT_TIMEOUT
 	DEFAULT_SITE_BRUSH_TORRENT_MIN_SIZE_LIMIT       = int64(0)
-	DEFAULT_SITE_BRUSH_TORRENT_MAX_SIZE_LIMIT       = int64(1024 * 1024 * 1024 * 1024 * 1024) // 1PB, that's say, unlimited
+	DEFAULT_SITE_BRUSH_TORRENT_MAX_SIZE_LIMIT       = int64(1024 * 1024 * 1024 * 1024 * 1024) //1PB=effectively no limit
 	DEFAULT_SITE_TORRENT_UPLOAD_SPEED_LIMIT         = int64(10 * 1024 * 1024)
 	DEFAULT_SITE_FLOW_CONTROL_INTERVAL              = int64(3)
 	DEFAULT_SITE_MAX_REDIRECTS                      = int64(3)
@@ -155,16 +156,17 @@ type SiteConfigStruct struct {
 	TorrentDownloadUrl             string     `yaml:"torrentDownloadUrl"` // use {id} placeholders in url
 	TorrentDownloadUrlPrefix       string     `yaml:"torrentDownloadUrlPrefix"`
 	Passkey                        string     `yaml:"passkey"`
-	UseCuhash                      bool       `yaml:"useCuhash"`    // hdcity 使用机制。种子下载地址里必须有cuhash参数
-	UseDigitHash                   bool       `yaml:"useDigitHash"` // ttg 使用机制。种子下载地址末段必须有4位数字校验码或Passkey参数(即使有 Cookie)
-	TorrentUrlIdRegexp             string     `yaml:"torrentUrlIdRegexp"`
-	FlowControlInterval            int64      `yaml:"flowControlInterval"` // 暂定名。两次请求种子列表页间隔时间(秒)
-	NexusphpNoLetDown              bool       `yaml:"nexusphpNoLetDown"`
-	MaxRedirects                   int64      `yaml:"maxRedirects"`
-	TorrentUploadSpeedLimitValue   int64
-	BrushTorrentMinSizeLimitValue  int64
-	BrushTorrentMaxSizeLimitValue  int64
-	AutoComment                    string // 自动更新 ptool.toml 时系统生成的 comment。会被写入 Comment 字段
+	UseCuhash                      bool       `yaml:"useCuhash"` // hdcity 使用机制。种子下载地址里必须有cuhash参数
+	// ttg 使用机制。种子下载地址末段必须有4位数字校验码或Passkey参数(即使有 Cookie)
+	UseDigitHash                  bool   `yaml:"useDigitHash"`
+	TorrentUrlIdRegexp            string `yaml:"torrentUrlIdRegexp"`
+	FlowControlInterval           int64  `yaml:"flowControlInterval"` // 暂定名。两次请求种子列表页间隔时间(秒)
+	NexusphpNoLetDown             bool   `yaml:"nexusphpNoLetDown"`
+	MaxRedirects                  int64  `yaml:"maxRedirects"`
+	TorrentUploadSpeedLimitValue  int64
+	BrushTorrentMinSizeLimitValue int64
+	BrushTorrentMaxSizeLimitValue int64
+	AutoComment                   string // 自动更新 ptool.toml 时系统生成的 comment。会被写入 Comment 字段
 }
 
 type ConfigStruct struct {
@@ -206,6 +208,7 @@ var (
 	ConfigName            = "" // "ptool"
 	ConfigType            = "" // "toml"
 	LockFile              = ""
+	GlobalLock            = false
 	LockOrExit            = false
 	Fork                  = false
 	configData            *ConfigStruct
@@ -257,7 +260,7 @@ func UpdateSites(updatesites []*SiteConfigStruct) {
 // Due to technical limitations, all existing comments will be LOST.
 // For now, new config data will NOT take effect for current ptool process.
 func Set() error {
-	lock := flock.New(path.Join(ConfigDir, GLOBAL_LOCK_FILE))
+	lock := flock.New(path.Join(ConfigDir, GLOBAL_INTERNAL_LOCK_FILE))
 	if ok, err := lock.TryLock(); err != nil || !ok {
 		return fmt.Errorf("unable to acquire global lock: %v", err)
 	}
@@ -337,33 +340,28 @@ func Get() *ConfigStruct {
 				client.BrushMinRatio = DEFAULT_CLIENT_BRUSH_MIN_RATION
 			}
 
-			if client.Name == "" {
-				log.Fatalf("Invalid config file: client name can not be empty")
-			}
+			assertConfigItemNameIsValid("client", client.Name, client)
 			if clientsConfigMap[client.Name] != nil {
 				log.Fatalf("Invalid config file: duplicate client name %s found", client.Name)
 			}
 			clientsConfigMap[client.Name] = client
 		}
 		for _, site := range configData.Sites {
+			assertConfigItemNameIsValid("site", site.GetName(), site)
 			if sitesConfigMap[site.GetName()] != nil {
 				log.Fatalf("Invalid config file: duplicate site name %s found", site.GetName())
 			}
 			site.Register()
 		}
 		for _, group := range configData.Groups {
-			if group.Name == "" {
-				log.Fatalf("Invalid config file: group name can not be empty for %v", group)
-			}
+			assertConfigItemNameIsValid("group", group.Name, group)
 			if groupsConfigMap[group.Name] != nil {
 				log.Fatalf("Invalid config file: duplicate group name %s found", group.Name)
 			}
 			groupsConfigMap[group.Name] = group
 		}
 		for _, alias := range configData.Aliases {
-			if alias.Name == "" {
-				log.Fatalf("Invalid config file: alias name can not be empty for %v", alias)
-			}
+			assertConfigItemNameIsValid("alias", alias.Name, alias)
 			if alias.Name == "alias" {
 				log.Fatalf("Invalid config file: alias name can not be 'alias' itself")
 			}
@@ -461,7 +459,7 @@ func ParseGroupAndOtherNamesWithoutDeduplicate(names ...string) []string {
 	return names2
 }
 
-// parse an slice of groupOrOther names, expand group name to site names, return the final slice of names
+// Parse an slice of groupOrOther names, expand group name to site names, return the final slice of names
 func ParseGroupAndOtherNames(names ...string) []string {
 	names = ParseGroupAndOtherNamesWithoutDeduplicate(names...)
 	return util.UniqueSlice(names)
@@ -541,7 +539,7 @@ func (siteConfig *SiteConfigStruct) MatchFilter(filter string) bool {
 		util.ContainsI(siteConfig.Url, filter)
 }
 
-// parse a site internal url (e.g.: special.php), return absolute url
+// Parse a site internal url (e.g.: special.php), return absolute url
 func (siteConfig *SiteConfigStruct) ParseSiteUrl(siteUrl string, appendQueryStringDelimiter bool) string {
 	pageUrl := ""
 	if siteUrl != "" {
@@ -595,7 +593,7 @@ func (configData *ConfigStruct) GetIyuuDomain() string {
 }
 
 func CreateDefaultConfig() (err error) {
-	lock := flock.New(path.Join(ConfigDir, GLOBAL_LOCK_FILE))
+	lock := flock.New(path.Join(ConfigDir, GLOBAL_INTERNAL_LOCK_FILE))
 	if ok, err := lock.TryLock(); err != nil || !ok {
 		return fmt.Errorf("unable to acquire global lock: %v", err)
 	}
@@ -626,4 +624,14 @@ func CreateDefaultConfig() (err error) {
 		panic(err)
 	}
 	return os.WriteFile(configFile, contents, 0600)
+}
+
+// Assert name is neither empty nor contains invalid characters. If failed, exit the process
+func assertConfigItemNameIsValid(itemType string, name string, item any) {
+	if name == "" {
+		log.Fatalf("Invalid config: %s name can not be empty (item=%v)", itemType, item)
+	}
+	if strings.ContainsAny(name, `,.:;'"/\|`) {
+		log.Fatalf("Invalid config: %s name %s contains invalid characters (item=%v)", itemType, name, item)
+	}
 }

@@ -73,7 +73,7 @@ type TorrentTracker struct {
 type TorrentTrackers []TorrentTracker
 
 type TorrentOption struct {
-	Name               string
+	Name               string // if not empty, set name of torrent in client to this value
 	Category           string
 	SavePath           string
 	Tags               []string

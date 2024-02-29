@@ -56,7 +56,7 @@ type Site interface {
 	GetDefaultHttpHeaders() [][]string
 	GetSiteConfig() *config.SiteConfigStruct
 	// download torrent by id (e.g.: 12345), sitename.id (e.g.: mteam.12345),
-	// or absolute download url (e.g.: https://kp.m-team.cc/download.php?id=12345)
+	// or absolute download url (e.g.: https://kp.m-team.cc/download.php?id=12345).
 	DownloadTorrent(url string) (content []byte, filename string, id string, err error)
 	// download torrent by torrent id (e.g.: "12345")
 	DownloadTorrentById(id string) (content []byte, filename string, err error)
@@ -341,7 +341,7 @@ func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, globalConfig *con
 	} else if globalConfig.SiteH2Fingerprint != "" {
 		h2fingerprint = globalConfig.SiteH2Fingerprint
 	} else if impersonateProfile != nil {
-		h2fingerprint = impersonateProfile.H2fingerpring
+		h2fingerprint = impersonateProfile.H2fingerprint
 	}
 	if impersonateProfile != nil && impersonateProfile.Headers != nil {
 		httpHeaders = append(httpHeaders, impersonateProfile.Headers...)

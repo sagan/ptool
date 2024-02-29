@@ -434,7 +434,7 @@ ptool batchdl <site> --action add --add-client local
 - --free : 只下载免费种子。
 - --no-hr : 跳过存在 HR 的种子。
 - --no-paid : 跳过"付费"的种子。(部分站点存在"付费"种子，第一次下载或汇报时扣除积分)
-- --base-url : 手动指定种子列表页 URL，例如："special.php"、"adult.php"、"torrents.php?cat=100"。
+- --base-url : 手动指定种子列表页 URL，例如："special.php"、"torrents.php?cat=100"。
 
 ### 显示种子文件信息 (parsetorrent)
 

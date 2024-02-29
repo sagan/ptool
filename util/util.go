@@ -18,7 +18,6 @@ import (
 
 	"github.com/google/shlex"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/exp/constraints"
 )
 
 var commaSeperatorRegexp = regexp.MustCompile(`,\s*`)
@@ -137,26 +136,6 @@ func AssignMap[T1 comparable, T2 any](args ...map[T1]T2) map[T1]T2 {
 	return result
 }
 
-func Max[T constraints.Ordered](args ...T) T {
-	max := args[0]
-	for _, x := range args {
-		if x > max {
-			max = x
-		}
-	}
-	return max
-}
-
-func Min[T constraints.Ordered](args ...T) T {
-	min := args[0]
-	for _, x := range args {
-		if x < min {
-			min = x
-		}
-	}
-	return min
-}
-
 // https://stackoverflow.com/questions/18537257/how-to-get-the-directory-of-the-currently-running-file
 func SelfDir() string {
 	ex, err := os.Executable()
@@ -259,7 +238,7 @@ func ParseFilenameArgs(args ...string) []string {
 	return names
 }
 
-// Ask user to confirm an (dangerous) action via typing yes in stdin
+// Ask user to confirm an (dangerous) action via typing yes in tty
 func AskYesNoConfirm(prompt string) bool {
 	if prompt == "" {
 		prompt = "Will do the action"

@@ -60,10 +60,10 @@ func init() {
 		"Show at most this number of torrents. -1 == no limit")
 	command.Flags().BoolVarP(&dense, "dense", "d", false, "Dense mode: show full torrent title & subtitle")
 	command.Flags().BoolVarP(&largestFlag, "largest", "l", false,
-		`Show largest torrents first. Equivalent with "--sort size --order desc"`)
+		`Show largest torrents first. Equivalent to "--sort size --order desc"`)
 	command.Flags().BoolVarP(&newestFlag, "newest", "n", false,
-		`Show newest torrents first. Equivalent with "--sort time --order desc"`)
-	command.Flags().BoolVarP(&showAll, "all", "a", false, `Show all torrents. Equivalent with passing a "_all" arg`)
+		`Show newest torrents first. Equivalent to "--sort time --order desc"`)
+	command.Flags().BoolVarP(&showAll, "all", "a", false, `Show all torrents. Equivalent to passing a "_all" arg`)
 	command.Flags().BoolVarP(&showRaw, "raw", "", false, "Show torrent size in raw format")
 	command.Flags().BoolVarP(&showJson, "json", "", false, "Show output in json format")
 	command.Flags().BoolVarP(&showInfoHashOnly, "show-info-hash-only", "", false, "Output torrents info hash only")

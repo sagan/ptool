@@ -60,7 +60,8 @@ func init() {
 	command.Flags().Int64VarP(&perSiteMaxResults, "per-site-max-results", "", -1,
 		"Number limit of search result of any single site. -1 == no limit")
 	command.Flags().StringVarP(&baseUrl, "base-url", "", "",
-		"Manually set the base url of search page. e.g.: adult.php, special.php")
+		`Manually set the base url of search page. "%s" can be used as search keyboard placeholder. `+
+			`E.g.: "special.php", "adult.php?incldead=1&search=%s"`)
 	command.Flags().Int64VarP(&minSeeders, "min-seeders", "", 1,
 		"Skip torrent with seeders less than (<) this value. -1 == no limit")
 	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1",

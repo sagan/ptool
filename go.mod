@@ -1,6 +1,6 @@
 module github.com/sagan/ptool
 
-go 1.21
+go 1.22.0
 
 // workaround for some problem
 replace github.com/hekmon/transmissionrpc/v2 => ./transmissionrpc
@@ -14,7 +14,7 @@ replace github.com/stromland/cobra-prompt => ./cobra-prompt
 require (
 	github.com/Noooste/azuretls-client v1.2.12
 	github.com/PuerkitoBio/goquery v1.9.0
-	github.com/anacrolix/torrent v1.54.1
+	github.com/anacrolix/torrent v1.55.0
 	github.com/bradfitz/iter v0.0.0-20191230175014-e8f45d346db8
 	github.com/c-bata/go-prompt v0.2.6
 	github.com/ettle/strcase v0.2.0

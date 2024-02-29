@@ -3,6 +3,7 @@ package delete
 import (
 	"fmt"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
@@ -111,6 +112,10 @@ func delete(cmd *cobra.Command, args []string) error {
 			}
 			return true
 		})
+	}
+	if len(torrents) == 0 {
+		log.Infof("No matched torrents found")
+		return nil
 	}
 	if !force {
 		client.PrintTorrents(torrents, "", 1, false)

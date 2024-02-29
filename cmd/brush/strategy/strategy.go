@@ -147,8 +147,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	cntDownloadingTorrents := int64(0)
 	freespace := clientStatus.FreeSpaceOnDisk
 	freespaceChange := int64(0)
-	freespaceTarget := util.Min(clientOption.MinDiskSpace*2,
-		clientOption.MinDiskSpace+DELETE_TORRENTS_FREE_DISK_SPACE_TIER)
+	freespaceTarget := min(clientOption.MinDiskSpace*2, clientOption.MinDiskSpace+DELETE_TORRENTS_FREE_DISK_SPACE_TIER)
 	estimateUploadSpeed := clientStatus.UploadSpeed
 
 	var candidateTorrents []candidateTorrentStruct
@@ -420,7 +419,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	}
 
 	// mark torrents as resume
-	if freespace+freespaceChange >= util.Max(clientOption.MinDiskSpace, RESUME_TORRENTS_FREE_DISK_SPACE_TIER) {
+	if freespace+freespaceChange >= max(clientOption.MinDiskSpace, RESUME_TORRENTS_FREE_DISK_SPACE_TIER) {
 		for _, torrent := range clientTorrents {
 			if torrent.State != "error" || torrent.UploadSpeed < clientOption.SlowUploadSpeedTier*4 ||
 				isTorrentStalled(&torrent) || clientTorrentsMap[torrent.InfoHash].ResumeFlag {
