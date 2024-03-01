@@ -80,8 +80,7 @@ func (gpwsite *Site) DownloadTorrent(torrentUrl string) (content []byte, filenam
 		content, filename, err = gpwsite.DownloadTorrentById(id)
 		return
 	}
-	urlObj, err := url.Parse(torrentUrl)
-	if err == nil {
+	if urlObj, err := url.Parse(torrentUrl); err == nil {
 		id = urlObj.Query().Get("id")
 	}
 	content, filename, err = site.DownloadTorrentByUrl(gpwsite, gpwsite.HttpClient, torrentUrl, id)

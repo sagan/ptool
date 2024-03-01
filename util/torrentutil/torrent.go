@@ -94,7 +94,7 @@ func (meta *TorrentMeta) Print(name string, showAll bool) {
 	if sitenameStr != "" {
 		sitenameStr = fmt.Sprintf(" (site: %s)", sitenameStr)
 	}
-	fmt.Printf("%s: infohash = %s ; size = %s (%d) ; tracker = %s%s\n",
+	fmt.Printf("%s : infohash = %s ; size = %s (%d) ; tracker = %s%s\n",
 		name, meta.InfoHash, util.BytesSize(float64(meta.Size)), len(meta.Files), trackerUrl, sitenameStr)
 	if showAll {
 		if meta.SingleFileTorrent {

@@ -93,7 +93,7 @@ func GetUrlDocWithAzuretls(url string, client *azuretls.Session,
 	cookie string, ua string, headers [][]string) (*goquery.Document, *azuretls.Response, error) {
 	res, _, err := FetchUrlWithAzuretls(url, client, cookie, ua, headers)
 	if err != nil {
-		return nil, nil, fmt.Errorf("can not fetch site data %v", err)
+		return nil, nil, fmt.Errorf("failed to fetch page: %v", err)
 	}
 	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(res.Body))
 	if err != nil {

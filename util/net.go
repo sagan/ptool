@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime"
 	"net"
 	"net/http"
 	"net/url"
@@ -169,4 +170,15 @@ func MatchUrlWithHostOrUrl(urlStr string, hostOrUrl string) bool {
 		urlObj, err := url.Parse(urlStr)
 		return err == nil && urlObj.Host == hostOrUrl
 	}
+}
+
+// Extract filename from http response "Content-Disposition: attachment; filename=..." header
+func ExtractFilenameFromHttpHeader(header http.Header) (filename string) {
+	if _, params, err := mime.ParseMediaType(header.Get("content-disposition")); err == nil {
+		unescapedFilename, err := url.QueryUnescape(params["filename"])
+		if err == nil {
+			filename = unescapedFilename
+		}
+	}
+	return
 }

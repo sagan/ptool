@@ -33,6 +33,15 @@ func IsUrl(str string) bool {
 	return strings.HasPrefix(str, "http://") || strings.HasPrefix(str, "https://")
 }
 
+// Check whether str is a url of "magnet:" or "bc://bt/" schema.
+func IsPureTorrentUrl(str string) bool {
+	return strings.HasPrefix(str, "magnet:") || strings.HasPrefix(str, "bc://bt/")
+}
+
+func IsTorrentUrl(str string) bool {
+	return IsUrl(str) || IsPureTorrentUrl(str)
+}
+
 // Parse a baseUrl relative relativeUrl, return absolute url.
 // baseUrl could also be a host, in which case https schema is assumed.
 func ParseRelativeUrl(relativeUrl string, baseUrl string) string {

@@ -243,8 +243,9 @@ func sync(cmd *cobra.Command, args []string) error {
 		err := config.Set()
 		if err == nil {
 			fmt.Printf("Successfully update config file %s\n", configFile)
+			return nil
 		} else {
-			log.Fatalf("Failed to update config file %s : %v", configFile, err)
+			return fmt.Errorf("failed to update config file %s : %v", configFile, err)
 		}
 	} else {
 		fmt.Printf("!No new cookie found for any site\n")

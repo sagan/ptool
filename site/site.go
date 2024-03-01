@@ -3,7 +3,6 @@ package site
 import (
 	"fmt"
 	"mime"
-	"net/url"
 	"os"
 	"slices"
 	"strings"
@@ -432,19 +431,13 @@ func DownloadTorrentByUrl(siteInstance Site, httpClient *azuretls.Session, torre
 	res, header, err := util.FetchUrlWithAzuretls(torrentUrl, httpClient,
 		siteInstance.GetSiteConfig().Cookie, GetUa(siteInstance), siteInstance.GetDefaultHttpHeaders())
 	if err != nil {
-		return nil, "", fmt.Errorf("can not fetch torrents from site: %v", err)
+		return nil, "", fmt.Errorf("failed to fetch torrents from site: %v", err)
 	}
 	mimeType, _, _ := mime.ParseMediaType(header.Get("content-type"))
 	if mimeType != "" && mimeType != "application/octet-stream" && mimeType != "application/x-bittorrent" {
 		return nil, "", fmt.Errorf("server return invalid content-type: %s", mimeType)
 	}
-	filename := ""
-	if _, params, err := mime.ParseMediaType(header.Get("content-disposition")); err == nil {
-		unescapedFilename, err := url.QueryUnescape(params["filename"])
-		if err == nil {
-			filename = unescapedFilename
-		}
-	}
+	filename := util.ExtractFilenameFromHttpHeader(header)
 	filenamePrefix := siteInstance.GetName()
 	if torrentId != "" {
 		filenamePrefix += "." + torrentId

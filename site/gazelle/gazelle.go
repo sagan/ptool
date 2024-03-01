@@ -99,8 +99,7 @@ func (gzsite *Site) DownloadTorrent(torrentUrl string) (content []byte, filename
 		content, filename, err = gzsite.DownloadTorrentById(id)
 		return
 	}
-	urlObj, err := url.Parse(torrentUrl)
-	if err == nil {
+	if urlObj, err := url.Parse(torrentUrl); err == nil {
 		id = urlObj.Query().Get("id")
 	}
 	content, filename, err = site.DownloadTorrentByUrl(gzsite, gzsite.HttpClient, torrentUrl, id)

@@ -91,11 +91,12 @@ func (dzsite *Site) DownloadTorrent(torrentUrl string) (content []byte, filename
 		}
 		dlLink := doc.Find(`a[href^="download.php?id="]`).AttrOr("href", "")
 		idRegexp := regexp.MustCompile(`\bid=(?P<id>\d+)\b`)
-		m := idRegexp.FindStringSubmatch(dlLink)
-		if m == nil {
-			return nil, "", "", fmt.Errorf("no torrent download link found")
+		if m := idRegexp.FindStringSubmatch(dlLink); m == nil {
+			err = fmt.Errorf("no torrent download link found")
+		} else {
+			id = m[idRegexp.SubexpIndex("id")]
+			content, filename, err = dzsite.DownloadTorrentById(id)
 		}
-		content, filename, err = dzsite.DownloadTorrentById(m[idRegexp.SubexpIndex("id")])
 		return
 	}
 	urlObj, err := url.Parse(torrentUrl)

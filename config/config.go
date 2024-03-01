@@ -282,8 +282,8 @@ func Get() *ConfigStruct {
 		viper.SetConfigType(ConfigType)
 		viper.AddConfigPath(ConfigDir)
 		err := viper.ReadInConfig()
-		if err != nil {
-			log.Errorf("Fail to read config file: %v", err)
+		if err != nil { // file does NOT exists
+			log.Infof("Fail to read config file: %v", err)
 		} else {
 			err = viper.Unmarshal(&configData)
 			if err != nil {
@@ -603,17 +603,15 @@ func CreateDefaultConfig() (err error) {
 		if err == nil {
 			return fmt.Errorf("config file already exists")
 		}
-		return fmt.Errorf("config file can not be accessed: %v", err)
+		return fmt.Errorf("failed to access config file: %v", err)
 	}
 	var file fs.File
 	if ConfigType == "toml" {
-		file, err = defaultConfigFs.Open("ptool.example.toml")
-		if err != nil {
+		if file, err = defaultConfigFs.Open("ptool.example.toml"); err != nil {
 			panic(err)
 		}
 	} else if ConfigType == "yaml" {
-		file, err = defaultConfigFs.Open("ptool.example.yaml")
-		if err != nil {
+		if file, err = defaultConfigFs.Open("ptool.example.yaml"); err != nil {
 			panic(err)
 		}
 	} else {
@@ -631,7 +629,7 @@ func assertConfigItemNameIsValid(itemType string, name string, item any) {
 	if name == "" {
 		log.Fatalf("Invalid config: %s name can not be empty (item=%v)", itemType, item)
 	}
-	if strings.ContainsAny(name, `,.:;'"/\|`) {
+	if strings.ContainsAny(name, `,.:;'"/\<>[]{}|`) {
 		log.Fatalf("Invalid config: %s name %s contains invalid characters (item=%v)", itemType, name, item)
 	}
 }

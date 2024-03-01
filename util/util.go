@@ -136,15 +136,6 @@ func AssignMap[T1 comparable, T2 any](args ...map[T1]T2) map[T1]T2 {
 	return result
 }
 
-// https://stackoverflow.com/questions/18537257/how-to-get-the-directory-of-the-currently-running-file
-func SelfDir() string {
-	ex, err := os.Executable()
-	if err != nil {
-		panic(err)
-	}
-	return filepath.Dir(ex)
-}
-
 func Sha1(s []byte) string {
 	h := sha1.New()
 	h.Write(s)

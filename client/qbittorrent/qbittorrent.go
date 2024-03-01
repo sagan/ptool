@@ -113,21 +113,24 @@ func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 	if err != nil {
 		return fmt.Errorf("login error: %v", err)
 	}
-
 	name := client.GenerateNameWithMeta(option.Name, meta)
 	body := new(bytes.Buffer)
 	mp := multipart.NewWriter(body)
 	defer mp.Close()
-	// see https://stackoverflow.com/questions/21130566/how-to-set-content-type-for-a-form-filed-using-multipart-in-go
-	// torrentPartWriter, _ := mp.CreateFormField("torrents")
-	h := make(textproto.MIMEHeader)
-	h.Set("Content-Disposition", `form-data; name="torrents"; filename="file.torrent"`)
-	h.Set("Content-Type", "application/x-bittorrent")
-	torrentPartWriter, err := mp.CreatePart(h)
-	if err != nil {
-		return err
+	if util.IsTorrentUrl(string(torrentContent)) {
+		mp.WriteField("urls", string(torrentContent))
+	} else {
+		// see https://stackoverflow.com/questions/21130566/how-to-set-content-type-for-a-form-filed-using-multipart-in-go
+		// torrentPartWriter, _ := mp.CreateFormField("torrents")
+		h := make(textproto.MIMEHeader)
+		h.Set("Content-Disposition", `form-data; name="torrents"; filename="file.torrent"`)
+		h.Set("Content-Type", "application/x-bittorrent")
+		torrentPartWriter, err := mp.CreatePart(h)
+		if err != nil {
+			return err
+		}
+		torrentPartWriter.Write(torrentContent)
 	}
-	torrentPartWriter.Write(torrentContent)
 	mp.WriteField("rename", name)
 	mp.WriteField("root_folder", "true")
 	if option != nil {

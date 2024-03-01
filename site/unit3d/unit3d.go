@@ -99,15 +99,14 @@ func (usite *Site) DownloadTorrent(torrentUrl string) (content []byte, filename 
 	}
 	if !strings.Contains(torrentUrl, "/torrents/download/") {
 		idRegexp := regexp.MustCompile(`torrents/(?P<id>\d+)\b`)
-		m := idRegexp.FindStringSubmatch(torrentUrl)
-		if m != nil {
-			content, filename, err = usite.DownloadTorrentById(m[idRegexp.SubexpIndex("id")])
+		if m := idRegexp.FindStringSubmatch(torrentUrl); m != nil {
+			id = m[idRegexp.SubexpIndex("id")]
+			content, filename, err = usite.DownloadTorrentById(id)
 			return
 		}
 	}
 	idRegexp := regexp.MustCompile(`/download/(?P<id>\d+)\b`)
-	m := idRegexp.FindStringSubmatch(torrentUrl)
-	if m != nil {
+	if m := idRegexp.FindStringSubmatch(torrentUrl); m != nil {
 		id = m[idRegexp.SubexpIndex("id")]
 	}
 	content, filename, err = site.DownloadTorrentByUrl(usite, usite.HttpClient, torrentUrl, id)

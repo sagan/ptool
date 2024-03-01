@@ -175,17 +175,23 @@ func (trclient *Client) GetTorrents(stateFilter string, category string, showAll
 
 func (trclient *Client) AddTorrent(torrentContent []byte, option *client.TorrentOption, meta map[string]int64) error {
 	transmissionbt := trclient.client
-	torrentContentB64 := base64.StdEncoding.EncodeToString(torrentContent)
 	var downloadDir *string
 	if option.SavePath != "" {
 		downloadDir = &option.SavePath
 	}
-	// returned torrent will only have HashString, ID and Name fields set up.
-	torrent, err := transmissionbt.TorrentAdd(context.TODO(), transmissionrpc.TorrentAddPayload{
-		MetaInfo:    &torrentContentB64,
+	payload := transmissionrpc.TorrentAddPayload{
 		Paused:      &option.Pause,
 		DownloadDir: downloadDir,
-	})
+	}
+	if util.IsTorrentUrl(string(torrentContent)) {
+		url := string(torrentContent)
+		payload.Filename = &url
+	} else {
+		torrentContentB64 := base64.StdEncoding.EncodeToString(torrentContent)
+		payload.MetaInfo = &torrentContentB64
+	}
+	// returned torrent will only have HashString, ID and Name fields set up.
+	torrent, err := transmissionbt.TorrentAdd(context.TODO(), payload)
 	if err != nil {
 		return err
 	}

@@ -2,23 +2,26 @@ package verifytorrent
 
 import (
 	"fmt"
-	"io"
-	"os"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/cmd"
-	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/util"
-	"github.com/sagan/ptool/util/torrentutil"
+	"github.com/sagan/ptool/util/helper"
 )
 
 var command = &cobra.Command{
-	Use:         "verifytorrent {file.torrent}... {--save-path dir | --content-path path} [--check]",
+	Use: "verifytorrent {torrentFilename | torrentId | torrentUrl}... {--save-path dir | --content-path path} [--check]",
+
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "verifytorrent"},
 	Aliases:     []string{"verify"},
-	Short:       "Verify *.torrent file(s) are consistent with local disk files.",
-	Long: `Verify *.torrent file(s) are consistent with local disk files.
+	Short:       "Verify torrent file(s) are consistent with local disk content files.",
+	Long: `Verify torrent file(s) are consistent with local disk files.
+Args is torrent list that each one could be a local filename (e.g. "*.torrent" or "[M-TEAM]CLANNAD.torrent"),
+site torrent id (e.g.: "mteam.488424") or url (e.g.: "https://kp.m-team.cc/details.php?id=488424").
+Torrent url that does NOT belong to any site (e.g.: a public site url) is also supported.
+Use a single "-" to read .torrent file contents from stdin.
 
 Example:
 ptool verifytorrent file1.torrent file2.torrent --save-path /root/Downloads
@@ -37,17 +40,24 @@ If --check flag is set, it will also do the hash checking.`,
 }
 
 var (
-	savePath    = ""
-	contentPath = ""
 	checkHash   = false
+	forceLocal  = false
 	showAll     = false
+	contentPath = ""
+	defaultSite = ""
+	savePath    = ""
 )
 
 func init() {
 	command.Flags().BoolVarP(&checkHash, "check", "", false, "Do hash checking when verifying torrent files")
+	command.Flags().BoolVarP(&forceLocal, "force-local", "", false, "Force treat all arg as local torrent filename")
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all info")
-	command.Flags().StringVarP(&savePath, "save-path", "", "", "The parent folder path of torrent content(s). (Exact one of this and --content-path flag MUST be set)")
-	command.Flags().StringVarP(&contentPath, "content-path", "", "", "The path of torrent content. Can only be used with single torrent arg (Exact one of this and --save-path flag MUST be set)")
+	command.Flags().StringVarP(&contentPath, "content-path", "", "",
+		"The path of torrent content. Can only be used with single torrent arg "+
+			"(Exact one of this and --save-path flag MUST be set)")
+	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of torrent url")
+	command.Flags().StringVarP(&savePath, "save-path", "", "",
+		"The parent folder path of torrent content(s). (Exact one of this and --content-path flag MUST be set)")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -55,49 +65,34 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 	if savePath == "" && contentPath == "" || (savePath != "" && contentPath != "") {
 		return fmt.Errorf("exact one of the --save-path or --content-path (but not both) flag must be set")
 	}
-	torrentFilenames := util.ParseFilenameArgs(args...)
-	if len(torrentFilenames) > 1 && contentPath != "" {
+	torrents := util.ParseFilenameArgs(args...)
+	if len(torrents) > 1 && contentPath != "" {
 		return fmt.Errorf("you must use --save-path flag (instead of --content-path) when verifying multiple torrents")
 	}
 	errorCnt := int64(0)
 
-	for i, torrentFilename := range torrentFilenames {
+	for i, torrent := range torrents {
 		if showAll && i > 0 {
 			fmt.Printf("\n")
 		}
-		var torrentContent []byte
-		var err error
-		if torrentFilename == "-" {
-			if config.InShell {
-				err = fmt.Errorf(`"-" arg can not be used in shell`)
-			} else {
-				torrentContent, err = io.ReadAll(os.Stdin)
-			}
-		} else {
-			torrentContent, err = os.ReadFile(torrentFilename)
-		}
+		_, tinfo, _, _, _, _, err := helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, nil)
 		if err != nil {
-			fmt.Printf("X torrent %s: failed to read torrent file: %v\n", torrentFilename, err)
-			errorCnt++
-			continue
-		}
-		torrentMeta, err := torrentutil.ParseTorrent(torrentContent, 99)
-		if err != nil {
-			fmt.Printf("X torrent %s: failed to parse torrent file: %v\n", torrentFilename, err)
+			fmt.Printf("X torrent %s: failed to get: %v\n", torrent, err)
 			errorCnt++
 			continue
 		}
 		if showAll {
-			torrentMeta.Print(torrentFilename, true)
+			tinfo.Print(torrent, true)
 		}
-		err = torrentMeta.Verify(savePath, contentPath, checkHash)
+		log.Infof("Verifying %s (savepath=%s, contentpath=%s, checkhash=%t)", torrent, savePath, contentPath, checkHash)
+		err = tinfo.Verify(savePath, contentPath, checkHash)
 		if err != nil {
 			fmt.Printf("X torrent %s: contents do NOT match with disk content(s) (did hash check = %t): %v\n",
-				torrentFilename, checkHash, err)
+				torrent, checkHash, err)
 			errorCnt++
 		} else {
 			fmt.Printf("✓ torrent %s: contents match with disk content(s) (did hash check = %t)\n",
-				torrentFilename, checkHash)
+				torrent, checkHash)
 		}
 	}
 	if errorCnt > 0 {

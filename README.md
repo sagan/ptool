@@ -106,6 +106,7 @@ ptool <command> args... [flags]
 - parsetorrent : 显示种子(torrent)文件信息。
 - verifytorrent : 测试种子(torrent)文件与硬盘上的文件内容一致。
 - partialdownload : 拆包下载。
+- xseedadd : 手动添加辅种种子到客户端。
 - cookiecloud : 使用 [CookieCloud](https://github.com/easychen/CookieCloud) 同步站点的 Cookies 或导入站点。
 - sites : 显示本程序内置支持的所有 PT 站点列表。
 - config : 显示当前 ptool.toml 配置文件信息。
@@ -386,6 +387,8 @@ ptool add local "https://kp.m-team.cc/download.php?id=488424"
 
 以上几条命令均可以将 M-Team 站点上 ID 为 [488424](https://kp.m-team.cc/details.php?id=488424&hit=1) 的种子添加到 "local" BT 客户端。
 
+参数也支持传入公开 BT 网站的种子下载链接或 `magnet:` 磁力链接地址。
+
 ### 下载站点的种子
 
 ```
@@ -439,12 +442,16 @@ ptool batchdl <site> --action add --add-client local
 ### 显示种子文件信息 (parsetorrent)
 
 ```
-ptool parsetorrent file.torrent...
+ptool parsetorrent <torrentFileNameOrIdOrUrl>...
 ```
 
-显示本地硬盘里的种子文件的元信息。
+显示种子文件的元信息。参数是本地硬盘里的种子文件名，或站点的种子 id 或 url（参考 "add" 命令说明）。
 
 ### 校验种子文件与硬盘内容是否一致 (verifytorrent)
+
+```
+ptool verifytorrent <torrentFileNameOrIdOrUrl>...
+```
 
 示例：
 
@@ -457,7 +464,8 @@ ptool verifytorrent MyTorrent.torrent --content-path D:\Downloads\MyTorrent --ch
 参数
 
 - `--save-path` : 种子内容保存路径(下载文件夹)。可以用于校验多个 torrent 文件。
-- `--content-path` : 种子内容路径(root folder 或单文件种子的文件路径)。只能用于校验 1 个 torrent 文件。必须且只能提供 `--save-path` 和 `-content-path` 两者中的其中 1 个参数。
+- `--content-path` : 种子内容路径(root folder 或单文件种子的文件路径)。只能用于校验 1 个 torrent 文件。
+- 必须且只能提供 `--save-path` 和 `-content-path` 两者中的其中 1 个参数。
 - `--check` : 对硬盘上文件进行 hash 校验。如果不提供此参数，默认只对比文件元信息(文件名、文件大小)。
 
 ### 拆包下载 (partialdownload)
@@ -474,6 +482,14 @@ ptool partialdownload <client> <infoHash> --chunk-size 1TiB --chuck-index 0
 ```
 
 该命令的设计目的不是用于刷流。而是用于使用 VPS 等硬盘空间有限的云服务器(分多次)下载体积非常大的单个种子，然后配合 rclone 将下载的文件直接上传到云盘。
+
+### 手动添加辅种种子到客户端 (xseedadd)
+
+```
+ptool xseedadd <client> <torrentFileNameOrIdOrUrl>...
+```
+
+xseedadd 命令将提供的种子作为辅种种子添加到客户端。程序将在客户端里寻找与提供的种子元信息（文件名、文件大小）完全一致的目标种子，然后将提供的种子作为目标种子的辅种添加到客户端。如果客户端里没有找到匹配的目标种子，程序不会添加提供的种子到客户端。
 
 ### 同步 Cookies & 导入站点 (cookiecloud)
 

@@ -508,21 +508,18 @@ func parseCountString(str string) int64 {
 	return util.ParseInt(strings.TrimSuffix(str, "次"))
 }
 
-func parseTorrentIdFromUrl(torrentUrl string, idRegexp *regexp.Regexp) string {
-	id := ""
+func parseTorrentIdFromUrl(torrentUrl string, idRegexp *regexp.Regexp) (id string) {
 	if idRegexp != nil {
-		m := idRegexp.FindStringSubmatch(torrentUrl)
-		if m != nil {
+		if m := idRegexp.FindStringSubmatch(torrentUrl); m != nil {
 			id = m[idRegexp.SubexpIndex("id")]
 		}
 	}
 	if id == "" {
-		urlObj, err := url.Parse(torrentUrl)
-		if err == nil {
+		if urlObj, err := url.Parse(torrentUrl); err == nil {
 			id = urlObj.Query().Get("id")
 		}
 	}
-	return id
+	return
 }
 
 // return absolute or relative (without leading "/"") torrent download url

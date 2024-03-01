@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path"
-	"strings"
 
 	"github.com/google/shlex"
 	log "github.com/sirupsen/logrus"
@@ -15,9 +13,8 @@ import (
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/config"
-	"github.com/sagan/ptool/site"
-	"github.com/sagan/ptool/site/tpl"
 	"github.com/sagan/ptool/util"
+	"github.com/sagan/ptool/util/helper"
 	"github.com/sagan/ptool/util/torrentutil"
 )
 
@@ -28,7 +25,8 @@ var command = &cobra.Command{
 	Short:       "Add torrents to client.",
 	Long: `Add torrents to client.
 Args is torrent list that each one could be a local filename (e.g. "*.torrent" or "[M-TEAM]CLANNAD.torrent"),
-torrent id (e.g.: "mteam.488424"), or torrent url (e.g.: "https://kp.m-team.cc/details.php?id=488424").
+site torrent id (e.g.: "mteam.488424") or url (e.g.: "https://kp.m-team.cc/details.php?id=488424").
+Torrent url that does NOT belong to any site (e.g.: a public site url), as well as "magnet:" link, is also supported.
 Use a single "-" as args to read torrent list from stdin, delimited by blanks,
 as a special case, it also supports directly reading .torrent file contents from stdin.
 
@@ -84,7 +82,7 @@ func add(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("--rename-added and --delete-added flags are NOT compatible")
 	}
 	// directly read a torrent content from stdin.
-	var directTorrentContent []byte
+	stdinTorrentContents := []byte{}
 	torrents := util.ParseFilenameArgs(args[1:]...)
 	if len(torrents) == 1 && torrents[0] == "-" {
 		if config.InShell {
@@ -95,7 +93,7 @@ func add(cmd *cobra.Command, args []string) error {
 		} else if bytes.HasPrefix(stdin, []byte("d8:announce")) {
 			// Matches with .torrent file magic number.
 			// See: https://en.wikipedia.org/wiki/Torrent_file , https://en.wikipedia.org/wiki/Bencode .
-			directTorrentContent = stdin
+			stdinTorrentContents = stdin
 		} else if data, err := shlex.Split(string(stdin)); err != nil {
 			return fmt.Errorf("failed to parse stdin to tokens: %v", err)
 		} else {
@@ -116,95 +114,34 @@ func add(cmd *cobra.Command, args []string) error {
 	if addTags != "" {
 		fixedTags = util.SplitCsv(addTags)
 	}
-	domainSiteMap := map[string]string{}
-	siteInstanceMap := map[string]site.Site{}
 	errorCnt := int64(0)
 	cntAdded := int64(0)
 	sizeAdded := int64(0)
 	cntAll := len(torrents)
 
 	for i, torrent := range torrents {
-		var siteName string
-		var filename string // original torrent filename
-		var content []byte
-		var id string // site torrent id
-		var err error
-		var hr bool
-		isLocal := forceLocal || torrent == "-" || !util.IsUrl(torrent) && strings.HasSuffix(torrent, ".torrent")
-		if !isLocal {
-			// site torrent
-			siteName = defaultSite
-			if !util.IsUrl(torrent) {
-				if i := strings.Index(torrent, "."); i != -1 {
-					siteName = torrent[:i]
-				}
-			} else {
-				domain := util.GetUrlDomain(torrent)
-				if domain == "" {
-					fmt.Printf("✕add (%d/%d) %s: failed to parse domain", i+1, cntAll, torrent)
-					errorCnt++
-					continue
-				}
-				sitename := ""
-				ok := false
-				if sitename, ok = domainSiteMap[domain]; !ok {
-					domainSiteMap[domain], err = tpl.GuessSiteByDomain(domain, defaultSite)
-					if err != nil {
-						log.Warnf("Failed to find match site for %s: %v", domain, err)
-					}
-					sitename = domainSiteMap[domain]
-				}
-				if sitename == "" {
-					log.Warnf("Torrent %s: url does not match any site. will use provided default site", torrent)
-				} else {
-					siteName = sitename
-				}
-			}
-			if siteName == "" {
-				fmt.Printf("✕add (%d/%d) %s: no site found or provided\n", i+1, cntAll, torrent)
+		// handle as a special case
+		if util.IsPureTorrentUrl(torrent) {
+			option.Category = addCategory
+			option.Tags = fixedTags
+			if err = clientInstance.AddTorrent([]byte(torrent), option, nil); err != nil {
+				fmt.Printf("✕add (%d/%d) %s: failed to add to client: %v\n", i+1, cntAll, torrent, err)
 				errorCnt++
-				continue
+			} else {
+				fmt.Printf("✓add (%d/%d) %s\n", i+1, cntAll, torrent)
 			}
-			if siteInstanceMap[siteName] == nil {
-				siteInstance, err := site.CreateSite(siteName)
-				if err != nil {
-					return fmt.Errorf("failed to create site %s: %v", siteName, err)
-				}
-				siteInstanceMap[siteName] = siteInstance
-			}
-			siteInstance := siteInstanceMap[siteName]
+			continue
+		}
+		content, tinfo, siteInstance, siteName, filename, id, err :=
+			helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, stdinTorrentContents)
+		if err != nil {
+			fmt.Printf("✕add (%d/%d) %s: %v\n", i+1, cntAll, torrent, err)
+			errorCnt++
+			continue
+		}
+		hr := false
+		if siteInstance != nil {
 			hr = siteInstance.GetSiteConfig().GlobalHnR
-			content, filename, id, err = siteInstance.DownloadTorrent(torrent)
-		} else {
-			if torrent == "-" {
-				filename = ""
-				content = directTorrentContent
-			} else if strings.HasSuffix(torrent, ".added") {
-				fmt.Printf("-skip (%d/%d) %s\n", i+1, cntAll, torrent)
-				continue
-			} else {
-				filename = path.Base(torrent)
-				content, err = os.ReadFile(torrent)
-			}
-		}
-
-		if err != nil {
-			fmt.Printf("✕add (%d/%d) %s (site=%s): failed to fetch: %v\n", i+1, cntAll, torrent, siteName, err)
-			errorCnt++
-			continue
-		}
-		tinfo, err := torrentutil.ParseTorrent(content, 99)
-		if err != nil {
-			fmt.Printf("✕add (%d/%d) %s (site=%s): failed to parse torrent: %v\n", i+1, cntAll, torrent, siteName, err)
-			errorCnt++
-			continue
-		}
-		if siteName == "" {
-			if sitename, err := tpl.GuessSiteByTrackers(tinfo.Trackers, defaultSite); err != nil {
-				log.Warnf("Failed to find match site for %s by trackers: %v", torrent, err)
-			} else {
-				siteName = sitename
-			}
 		}
 		if addCategoryAuto {
 			if siteName != "" {
@@ -217,6 +154,7 @@ func add(cmd *cobra.Command, args []string) error {
 		} else {
 			option.Category = addCategory
 		}
+		option.Tags = nil
 		if siteName != "" {
 			option.Tags = append(option.Tags, client.GenerateTorrentTagFromSite(siteName))
 		}
@@ -234,7 +172,7 @@ func add(cmd *cobra.Command, args []string) error {
 			errorCnt++
 			continue
 		}
-		if isLocal && torrent != "-" {
+		if siteInstance == nil && torrent != "-" {
 			if renameAdded {
 				if err := os.Rename(torrent, torrent+".added"); err != nil {
 					log.Debugf("Failed to rename %s to *.added: %v // %s", torrent, err, tinfo.ContentPath)

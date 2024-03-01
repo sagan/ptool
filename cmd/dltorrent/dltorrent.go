@@ -3,15 +3,11 @@ package dltorrent
 import (
 	"fmt"
 	"os"
-	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/cmd"
-	"github.com/sagan/ptool/site"
-	"github.com/sagan/ptool/site/tpl"
-	"github.com/sagan/ptool/util"
+	"github.com/sagan/ptool/util/helper"
 	"github.com/sagan/ptool/util/torrentutil"
 )
 
@@ -20,6 +16,9 @@ var command = &cobra.Command{
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "dltorrent"},
 	Short:       "Download site torrents to local.",
 	Long: `Download site torrents to local.
+Args is torrent list that each one could be a site torrent id (e.g.: "mteam.488424")
+or url (e.g.: "https://kp.m-team.cc/details.php?id=488424").
+Torrent url that does NOT belong to any site (e.g.: a public site url) is also supported.
 
 --rename <name> flag supports the following variable placeholders:
 * [size] : Torrent size
@@ -46,62 +45,13 @@ func init() {
 
 func dltorrent(cmd *cobra.Command, args []string) error {
 	errorCnt := int64(0)
-	torrentIds := args
-	siteInstanceMap := map[string]site.Site{}
-	domainSiteMap := map[string]string{}
-	var err error
+	torrents := args
 
-	for _, torrentId := range torrentIds {
-		siteName := defaultSite
-		if !util.IsUrl(torrentId) {
-			i := strings.Index(torrentId, ".")
-			if i != -1 && i < len(torrentId)-1 {
-				siteName = torrentId[:i]
-				torrentId = torrentId[i+1:]
-			}
-		} else {
-			domain := util.GetUrlDomain(torrentId)
-			if domain == "" {
-				fmt.Printf("✕download %s: failed to parse domain", torrentId)
-				continue
-			}
-			sitename := ""
-			ok := false
-			if sitename, ok = domainSiteMap[domain]; !ok {
-				domainSiteMap[domain], err = tpl.GuessSiteByDomain(domain, defaultSite)
-				if err != nil {
-					log.Warnf("Failed to find match site for %s: %v", domain, err)
-				}
-				sitename = domainSiteMap[domain]
-			}
-			if sitename == "" {
-				log.Warnf("Torrent %s: url does not match any site. will use provided default site", torrentId)
-			} else {
-				siteName = sitename
-			}
-		}
-		if siteName == "" {
-			fmt.Printf("✕download %s: no site provided\n", torrentId)
-			errorCnt++
-			continue
-		}
-		if siteInstanceMap[siteName] == nil {
-			siteInstance, err := site.CreateSite(siteName)
-			if err != nil {
-				return fmt.Errorf("failed to create site %s: %v", siteName, err)
-			}
-			siteInstanceMap[siteName] = siteInstance
-		}
-		siteInstance := siteInstanceMap[siteName]
-		content, filename, id, err := siteInstance.DownloadTorrent(torrentId)
+	for _, torrent := range torrents {
+		content, tinfo, _, siteName, filename, id, err :=
+			helper.GetTorrentContent(torrent, defaultSite, false, true, nil)
 		if err != nil {
-			fmt.Printf("✕download %s (site=%s): failed to fetch: %v\n", torrentId, siteName, err)
-			errorCnt++
-			continue
-		}
-		tinfo, err := torrentutil.ParseTorrent(content, 99)
-		if err != nil {
-			fmt.Printf("✕download %s (site=%s): failed to parse torrent: %v\n", torrentId, siteName, err)
+			fmt.Printf("✕download %s (site=%s): %v\n", torrent, siteName, err)
 			errorCnt++
 			continue
 		}
