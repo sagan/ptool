@@ -122,13 +122,6 @@ var (
 			Url:     "https://www.dragonhd.xyz/",
 			Comment: "龍之家",
 		},
-		"eastgame": {
-			Type:              "nexusphp",
-			Aliases:           []string{"tlfbits", "tlf"},
-			Url:               "https://pt.eastgame.org/",
-			TorrentsExtraUrls: []string{"trls.php"},
-			Comment:           "吐鲁番",
-		},
 		// need heavy work to support it
 		// "filelist": {
 		// 	Type:              "nexusphp",
@@ -511,6 +504,13 @@ var (
 			Aliases: []string{"et8", "torrentccf"},
 			Url:     "https://et8.org/",
 			Comment: "精品论坛，他吹吹风",
+		},
+		"tlfbits": {
+			Type:              "nexusphp",
+			Aliases:           []string{"eastgame", "tlf"},
+			Url:               "https://pt.eastgame.org/",
+			TorrentsExtraUrls: []string{"trls.php"},
+			Comment:           "吐鲁番",
 		},
 		"totheglory": {
 			Type:              "nexusphp",

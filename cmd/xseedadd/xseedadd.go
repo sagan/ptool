@@ -41,6 +41,9 @@ var (
 	addCategory = ""
 	addTags     = ""
 	defaultSite = ""
+	category    = ""
+	tag         = ""
+	filter      = ""
 )
 
 func init() {
@@ -52,6 +55,9 @@ func init() {
 	command.Flags().StringVarP(&addCategory, "add-category", "", "",
 		"Manually set category of added xseed torrent. By Default it uses the original torrent's")
 	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Set tags of added xseed torrent (comma-separated)")
+	command.Flags().StringVarP(&category, "category", "", "", "Only xseed torrents that belongs to this category")
+	command.Flags().StringVarP(&tag, "tag", "", "", "Only xseed torrents that has this tag")
+	command.Flags().StringVarP(&filter, "filter", "", "", "Only xseed torrents which name contains this")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -62,7 +68,7 @@ func xseedadd(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create client: %v", err)
 	}
-	clientTorrents, err := clientInstance.GetTorrents("", "", true)
+	clientTorrents, err := clientInstance.GetTorrents("seeding", category, true)
 	if err != nil {
 		return fmt.Errorf("failed to get client torrents: %v", err)
 	}
@@ -71,7 +77,7 @@ func xseedadd(cmd *cobra.Command, args []string) error {
 		fixedTags = util.SplitCsv(addTags)
 	}
 	clientTorrents = util.Filter(clientTorrents, func(t client.Torrent) bool {
-		return t.IsFullComplete() && t.State == "seeding"
+		return t.IsFullComplete() && !t.HasTag(config.NOXSEED_TAG) && (tag == "" || t.HasTag(tag))
 	})
 	sort.Slice(clientTorrents, func(i, j int) bool {
 		if clientTorrents[i].Size != clientTorrents[j].Size {
@@ -84,7 +90,13 @@ func xseedadd(cmd *cobra.Command, args []string) error {
 		if clientTorrents[j].Category == config.XSEED_TAG || clientTorrents[j].HasTag(config.XSEED_TAG) {
 			b = 1
 		}
-		return a < b
+		if a != b {
+			return a < b
+		}
+		if clientTorrents[i].Name != clientTorrents[j].Name {
+			return clientTorrents[i].Name < clientTorrents[j].Name
+		}
+		return clientTorrents[i].InfoHash < clientTorrents[j].InfoHash
 	})
 	errorCnt := int64(0)
 	for _, torrent := range torrents {
