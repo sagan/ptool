@@ -1,63 +1,41 @@
 package helper
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
-	"regexp"
 	"strings"
 
 	"github.com/Noooste/azuretls-client"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/site"
+	"github.com/sagan/ptool/site/public"
 	"github.com/sagan/ptool/site/tpl"
 	"github.com/sagan/ptool/util"
 	"github.com/sagan/ptool/util/torrentutil"
 )
 
-type PublicBittorrentSite struct {
-	Name               string
-	Domains            []string       // first one of Domains is considered as primary domain
-	TorrentDownloadUrl string         // placeholders: {{origin}}, {{domain}}, {{id}}
-	TorrentUrlIdRegexp *regexp.Regexp // extract torrent id (in "id" subgroup) from url
-}
-
 var (
 	domainSiteMap = map[string]string{}
-
-	// 公开 BT 网站，支持直接从这些网站下载种子
-	knownPublicBittorrentSites = []*PublicBittorrentSite{
-		{
-			Name:               "nyaa",
-			Domains:            []string{"sukebei.nyaa.si", "nyaa.si"},
-			TorrentUrlIdRegexp: regexp.MustCompile(`\bview/(?P<id>\d+)\b`),
-			TorrentDownloadUrl: `{{origin}}/download/{{id}}.torrent`,
-		},
-	}
-	knownPublicBittorrentSitesMap = map[string]*PublicBittorrentSite{}
 )
-
-func init() {
-	for _, btsite := range knownPublicBittorrentSites {
-		for _, domain := range btsite.Domains {
-			knownPublicBittorrentSitesMap[domain] = btsite
-		}
-	}
-}
 
 // Read a torrent and return it's contents. torrent could be: local filename (e.g.: abc.torrent),
 // site torrent id (e.g.: mteam.1234) or url (e.g. https://kp.m-team.cc/details.php?id=488424),
 // or "-" to read torrent contents from os.Stdin.
-// isLocal: force treat torrent as local filename.
+// forceLocal: force treat torrent as local filename. forceRemote: force treat torrent as site torrent id or url.
+// ignoreParsingError: ignore torrent parsing error, in which case the returned tinfo may by nil.
 // stdin: if not nil, use it as torrent contents when torrent == "-" instead of reading from os.Stdin.
 // siteInstance : if torrent is a site torrent, the created corresponding site instance.
 // sitename & filename & id : if torrent is a site torrent, the downloaded torrent sitename & filename & id.
-func GetTorrentContent(torrent string, defaultSite string, forceLocal bool, forceRemote bool, stdin []byte) (
+func GetTorrentContent(torrent string, defaultSite string,
+	forceLocal bool, forceRemote bool, stdin []byte, ignoreParsingError bool) (
 	content []byte, tinfo *torrentutil.TorrentMeta, siteInstance site.Site, siteName string,
 	filename string, id string, err error) {
 	isLocal := !forceRemote && (forceLocal || torrent == "-" ||
@@ -76,11 +54,11 @@ func GetTorrentContent(torrent string, defaultSite string, forceLocal bool, forc
 			sitename := ""
 			ok := false
 			if sitename, ok = domainSiteMap[domain]; !ok {
-				domainSiteMap[domain], err = tpl.GuessSiteByDomain(domain, defaultSite)
-				if err != nil {
+				if domainSiteMap[domain], err = tpl.GuessSiteByDomain(domain, defaultSite); err == nil {
+					sitename = domainSiteMap[domain]
+				} else {
 					log.Tracef("Failed to find match site for %s: %v", domain, err)
 				}
-				sitename = domainSiteMap[domain]
 			}
 			if sitename == "" {
 				log.Tracef("Torrent %s: url does not match any site. will use provided default site", torrent)
@@ -100,7 +78,8 @@ func GetTorrentContent(torrent string, defaultSite string, forceLocal bool, forc
 				err = fmt.Errorf("%s: no site found and failed to create public http client", torrent)
 			} else {
 				downloadUrl := torrent
-				if btsite := knownPublicBittorrentSitesMap[urlObj.Hostname()]; btsite != nil {
+				if btsite := public.GetSiteByDomain(defaultSite, urlObj.Hostname()); btsite != nil {
+					siteName = btsite.Name
 					if btsite.TorrentUrlIdRegexp != nil {
 						if m := btsite.TorrentUrlIdRegexp.FindStringSubmatch(torrent); m != nil {
 							id = m[btsite.TorrentUrlIdRegexp.SubexpIndex("id")]
@@ -149,15 +128,27 @@ func GetTorrentContent(torrent string, defaultSite string, forceLocal bool, forc
 	if err != nil {
 		return
 	}
+	if !bytes.HasPrefix(content, []byte(constants.TORRENT_FILE_MAGIC_NUMBER)) {
+		err = fmt.Errorf("%s: content is NOT a valid .torrent file", torrent)
+		return
+	}
 	if tinfo, err = torrentutil.ParseTorrent(content, 99); err != nil {
-		err = fmt.Errorf("%s: failed to parse torrent: %v", torrent, err)
+		msg := fmt.Sprintf("%s: failed to parse torrent: %v", torrent, err)
+		if ignoreParsingError {
+			log.Debugf(msg)
+			err = nil
+		} else {
+			err = fmt.Errorf(msg)
+		}
 		return
 	}
 	if siteName == "" {
-		if sitename, err := tpl.GuessSiteByTrackers(tinfo.Trackers, defaultSite); err != nil {
-			log.Warnf("Failed to find match site for %s by trackers: %v", torrent, err)
-		} else {
+		if sitename, err := tpl.GuessSiteByTrackers(tinfo.Trackers, defaultSite); err == nil {
 			siteName = sitename
+		} else if site := public.GetSiteByDomain(defaultSite, tinfo.Trackers...); site != nil {
+			siteName = site.Name
+		} else {
+			log.Warnf("Failed to find match site for %s by trackers: %v", torrent, err)
 		}
 	}
 	return

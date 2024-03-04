@@ -75,7 +75,7 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 		if showAll && i > 0 {
 			fmt.Printf("\n")
 		}
-		_, tinfo, _, _, _, _, err := helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, nil)
+		_, tinfo, _, _, _, _, err := helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, nil, false)
 		if err != nil {
 			fmt.Printf("X torrent %s: failed to get: %v\n", torrent, err)
 			errorCnt++

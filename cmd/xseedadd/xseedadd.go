@@ -100,7 +100,8 @@ func xseedadd(cmd *cobra.Command, args []string) error {
 	})
 	errorCnt := int64(0)
 	for _, torrent := range torrents {
-		content, tinfo, _, sitename, _, _, err := helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, nil)
+		content, tinfo, _, sitename, _, _, err :=
+			helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, nil, false)
 		if err != nil {
 			fmt.Printf("X%s: failed to get: %v\n", torrent, err)
 			errorCnt++

@@ -13,6 +13,7 @@ import (
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/util"
 	"github.com/sagan/ptool/util/helper"
 	"github.com/sagan/ptool/util/torrentutil"
@@ -90,9 +91,7 @@ func add(cmd *cobra.Command, args []string) error {
 		}
 		if stdin, err := io.ReadAll(os.Stdin); err != nil {
 			return fmt.Errorf("failed to read stdin: %v", err)
-		} else if bytes.HasPrefix(stdin, []byte("d8:announce")) {
-			// Matches with .torrent file magic number.
-			// See: https://en.wikipedia.org/wiki/Torrent_file , https://en.wikipedia.org/wiki/Bencode .
+		} else if bytes.HasPrefix(stdin, []byte(constants.TORRENT_FILE_MAGIC_NUMBER)) {
 			stdinTorrentContents = stdin
 		} else if data, err := shlex.Split(string(stdin)); err != nil {
 			return fmt.Errorf("failed to parse stdin to tokens: %v", err)
@@ -133,11 +132,19 @@ func add(cmd *cobra.Command, args []string) error {
 			continue
 		}
 		content, tinfo, siteInstance, siteName, filename, id, err :=
-			helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, stdinTorrentContents)
+			helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, stdinTorrentContents, true)
 		if err != nil {
 			fmt.Printf("✕add (%d/%d) %s: %v\n", i+1, cntAll, torrent, err)
 			errorCnt++
 			continue
+		}
+		size := int64(0)
+		infoHash := ""
+		contentPath := ""
+		if tinfo != nil {
+			size = tinfo.Size
+			infoHash = tinfo.InfoHash
+			contentPath = tinfo.ContentPath
 		}
 		hr := false
 		if siteInstance != nil {
@@ -168,25 +175,24 @@ func add(cmd *cobra.Command, args []string) error {
 		err = clientInstance.AddTorrent(content, option, nil)
 		if err != nil {
 			fmt.Printf("✕add (%d/%d) %s (site=%s): failed to add torrent to client: %v // %s\n",
-				i+1, cntAll, torrent, siteName, err, tinfo.ContentPath)
+				i+1, cntAll, torrent, siteName, err, contentPath)
 			errorCnt++
 			continue
 		}
 		if siteInstance == nil && torrent != "-" {
 			if renameAdded {
 				if err := os.Rename(torrent, torrent+".added"); err != nil {
-					log.Debugf("Failed to rename %s to *.added: %v // %s", torrent, err, tinfo.ContentPath)
+					log.Debugf("Failed to rename %s to *.added: %v // %s", torrent, err, contentPath)
 				}
 			} else if deleteAdded {
 				if err := os.Remove(torrent); err != nil {
-					log.Debugf("Failed to delete %s: %v // %s", torrent, err, tinfo.ContentPath)
+					log.Debugf("Failed to delete %s: %v // %s", torrent, err, contentPath)
 				}
 			}
 		}
 		cntAdded++
-		sizeAdded += tinfo.Size
-		fmt.Printf("✓add (%d/%d) %s (site=%s). infoHash=%s // %s\n",
-			i+1, cntAll, torrent, siteName, tinfo.InfoHash, tinfo.ContentPath)
+		sizeAdded += size
+		fmt.Printf("✓add (%d/%d) %s (site=%s). infoHash=%s // %s\n", i+1, cntAll, torrent, siteName, infoHash, contentPath)
 	}
 	fmt.Printf("\nDone. Added torrent (Size/Cnt): %s / %d; ErrorCnt: %d\n",
 		util.BytesSize(float64(sizeAdded)), cntAdded, errorCnt)

@@ -276,6 +276,7 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash b
 // Rename torrent (downloaded filename or name of torrent added to client) according to rename template.
 // filename: original torrent filename (e.g. "abc.torrent").
 // available variable placeholders: [size], [id], [site], [filename], [name].
+// tinfo is optional could may be nil.
 func RenameTorrent(rename string, sitename string, id string, filename string, tinfo *TorrentMeta) string {
 	newname := rename
 	basename := filename
@@ -287,10 +288,13 @@ func RenameTorrent(rename string, sitename string, id string, filename string, t
 		sitename = id[:i]
 		id = id[i+1:]
 	}
-	newname = strings.ReplaceAll(newname, "[size]", util.BytesSize(float64(tinfo.Size)))
+
 	newname = strings.ReplaceAll(newname, "[id]", id)
 	newname = strings.ReplaceAll(newname, "[site]", sitename)
 	newname = strings.ReplaceAll(newname, "[filename]", basename)
-	newname = strings.ReplaceAll(newname, "[name]", tinfo.Info.Name)
+	if tinfo != nil {
+		newname = strings.ReplaceAll(newname, "[size]", util.BytesSize(float64(tinfo.Size)))
+		newname = strings.ReplaceAll(newname, "[name]", tinfo.Info.Name)
+	}
 	return newname
 }

@@ -49,7 +49,7 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 
 	for _, torrent := range torrents {
 		content, tinfo, _, siteName, filename, id, err :=
-			helper.GetTorrentContent(torrent, defaultSite, false, true, nil)
+			helper.GetTorrentContent(torrent, defaultSite, false, true, nil, true)
 		if err != nil {
 			fmt.Printf("✕download %s (site=%s): %v\n", torrent, siteName, err)
 			errorCnt++

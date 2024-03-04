@@ -8,6 +8,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/site/public"
 	"github.com/sagan/ptool/site/tpl"
 	"github.com/sagan/ptool/util"
 )
@@ -64,11 +65,13 @@ func tidyup(cmd *cobra.Command, args []string) error {
 			sitename := ""
 			ok := false
 			if sitename, ok = domainSiteMap[domain]; !ok {
-				domainSiteMap[domain], err = tpl.GuessSiteByDomain(domain, "")
-				if err != nil {
+				if domainSiteMap[domain], err = tpl.GuessSiteByDomain(domain, ""); err == nil {
+					sitename = domainSiteMap[domain]
+				} else if site := public.GetSiteByDomain(domain); site != nil {
+					sitename = site.Name
+				} else {
 					log.Warnf("Failed to find match site for %s: %v", domain, err)
 				}
-				sitename = domainSiteMap[domain]
 			}
 			if sitename != "" {
 				existingSitename := torrent.GetSiteFromTag()
