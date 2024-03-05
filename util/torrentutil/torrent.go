@@ -11,6 +11,7 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/bradfitz/iter"
 	"github.com/sagan/ptool/client"
+	"github.com/sagan/ptool/site/public"
 	"github.com/sagan/ptool/site/tpl"
 	"github.com/sagan/ptool/util"
 	log "github.com/sirupsen/logrus"
@@ -82,27 +83,53 @@ func ParseTorrent(torrentdata []byte, fields int64) (*TorrentMeta, error) {
 	return torrentMeta, nil
 }
 
+// Generate magnet: url of this torrent.
+// Must be used on meta parsed from ParseTorrent with fields >= 2
+func (meta *TorrentMeta) MagnetUrl() string {
+	return meta.MetaInfo.Magnet(nil, &meta.Info).String()
+}
+
 func (meta *TorrentMeta) Print(name string, showAll bool) {
 	trackerUrl := ""
 	if len(meta.Trackers) > 0 {
 		trackerUrl = meta.Trackers[0]
 	}
-	sitenameStr, err := tpl.GuessSiteByTrackers(meta.Trackers, "")
-	if err != nil {
-		log.Warnf("Failed to find match site for %s by trackers: %v", name, err)
-	}
-	if sitenameStr != "" {
+
+	sitenameStr := ""
+	var err error
+	if sitenameStr, err = tpl.GuessSiteByTrackers(meta.Trackers, ""); sitenameStr != "" {
 		sitenameStr = fmt.Sprintf(" (site: %s)", sitenameStr)
+	} else if err != nil {
+		log.Warnf("Failed to find match site for %s by trackers: %v", name, err)
+	} else if site := public.GetSiteByDomain("", meta.Trackers...); site != nil {
+		sitenameStr = fmt.Sprintf(" (site: %s)", site.Name)
 	}
 	fmt.Printf("%s : infohash = %s ; size = %s (%d) ; tracker = %s%s\n",
 		name, meta.InfoHash, util.BytesSize(float64(meta.Size)), len(meta.Files), trackerUrl, sitenameStr)
 	if showAll {
+		comments := []string{}
+		if meta.MetaInfo.Comment != "" {
+			comments = append(comments, meta.MetaInfo.Comment)
+		}
+		if meta.Info.Private != nil && *meta.Info.Private {
+			comments = append(comments, "private")
+		}
+		if meta.Info.Source != "" {
+			comments = append(comments, fmt.Sprintf("source:%s", meta.Info.Source))
+		}
+		comment := ""
+		if len(comments) > 0 {
+			comment = " // " + strings.Join(comments, ", ")
+		}
 		if meta.SingleFileTorrent {
-			fmt.Printf("-- RawSize = %d ; SingleFile = %s ; AllTrackers: %s ; // %s\n",
-				meta.Size, meta.Files[0].Path, strings.Join(meta.Trackers, " | "), meta.MetaInfo.Comment)
+			fmt.Printf("! RawSize = %d ; SingleFile = %s ; AllTrackers: %s ;%s\n",
+				meta.Size, meta.Files[0].Path, strings.Join(meta.Trackers, " | "), comment)
 		} else {
-			fmt.Printf("-- RawSize = %d ; RootDir = %s ; AllTrackers: %s ; // %s\n",
-				meta.Size, meta.RootDir, strings.Join(meta.Trackers, " | "), meta.MetaInfo.Comment)
+			fmt.Printf("! RawSize = %d ; RootDir = %s ; AllTrackers: %s ;%s\n",
+				meta.Size, meta.RootDir, strings.Join(meta.Trackers, " | "), comment)
+		}
+		if meta.Info.Private == nil || !*meta.Info.Private {
+			fmt.Printf("! MagnetURI: %s\n", meta.MagnetUrl())
 		}
 	}
 }

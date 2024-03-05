@@ -16,7 +16,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "xseedadd {client} {torrentFilename | torrentId | torrentUrl}...",
-	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "xseedcheck"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "xseedadd"},
 	Short:       "Add xseed torrents to client.",
 	Long: `Add xseed torrents to client.
 Args is torrent list that each one could be a local filename (e.g. "*.torrent" or "[M-TEAM]CLANNAD.torrent"),

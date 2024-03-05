@@ -51,7 +51,7 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 		content, tinfo, _, siteName, filename, id, err :=
 			helper.GetTorrentContent(torrent, defaultSite, false, true, nil, true)
 		if err != nil {
-			fmt.Printf("✕download %s (site=%s): %v\n", torrent, siteName, err)
+			fmt.Printf("✕ %s (site=%s): %v\n", torrent, siteName, err)
 			errorCnt++
 			continue
 		}
@@ -63,10 +63,10 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 		}
 		err = os.WriteFile(downloadDir+"/"+fileName, content, 0666)
 		if err != nil {
-			fmt.Printf("✕download %s (site=%s): failed to save to %s/: %v\n", fileName, siteName, downloadDir, err)
+			fmt.Printf("✕ %s (site=%s): failed to save to %s/: %v\n", fileName, siteName, downloadDir, err)
 			errorCnt++
 		} else {
-			fmt.Printf("✓download %s (site=%s): saved to %s/\n", fileName, siteName, downloadDir)
+			fmt.Printf("✓ %s (site=%s): saved to %s/\n", fileName, siteName, downloadDir)
 		}
 	}
 	if errorCnt > 0 {

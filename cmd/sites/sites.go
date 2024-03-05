@@ -31,14 +31,14 @@ func init() {
 
 func sites(cmd *cobra.Command, args []string) error {
 	fmt.Printf("<internal supported sites by this program. use --filter flag to find a specific site>\n")
-	fmt.Printf("%-15s  %-15s  %-30s  %10s  %s\n", "Type", "Aliases", "Url", "Schema", "Comment")
+	fmt.Printf("%-15s  %-15s  %-30s  %13s  %s\n", "Type", "Aliases", "Url", "Schema", "Comment")
 	for _, name := range tpl.SITENAMES {
 		siteInfo := tpl.SITES[name]
 		if filter != "" && (!util.ContainsI(siteInfo.GetName(), filter) &&
 			!util.ContainsI(siteInfo.Url, filter) && !util.ContainsI(siteInfo.Comment, filter)) {
 			continue
 		}
-		fmt.Printf("%-15s  %-15s  %-30s  %10s  %s\n",
+		fmt.Printf("%-15s  %-15s  %-30s  %13s  %s\n",
 			name, strings.Join(siteInfo.Aliases, ","), siteInfo.Url, siteInfo.Type, siteInfo.Comment)
 	}
 	return nil

@@ -40,8 +40,12 @@ func GetTorrentContent(torrent string, defaultSite string,
 	filename string, id string, err error) {
 	isLocal := !forceRemote && (forceLocal || torrent == "-" ||
 		!util.IsUrl(torrent) && strings.HasSuffix(torrent, ".torrent"))
+	// site torrent id or url
 	if !isLocal {
-		// site torrent
+		if util.IsTorrentUrl(torrent) {
+			err = fmt.Errorf("magnet or bt url is NOT supported")
+			return
+		}
 		siteName = defaultSite
 		if !util.IsUrl(torrent) {
 			if i := strings.Index(torrent, "."); i != -1 {

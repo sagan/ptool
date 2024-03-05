@@ -124,17 +124,17 @@ func add(cmd *cobra.Command, args []string) error {
 			option.Category = addCategory
 			option.Tags = fixedTags
 			if err = clientInstance.AddTorrent([]byte(torrent), option, nil); err != nil {
-				fmt.Printf("✕add (%d/%d) %s: failed to add to client: %v\n", i+1, cntAll, torrent, err)
+				fmt.Printf("✕ %s (%d/%d): failed to add to client: %v\n", torrent, i+1, cntAll, err)
 				errorCnt++
 			} else {
-				fmt.Printf("✓add (%d/%d) %s\n", i+1, cntAll, torrent)
+				fmt.Printf("✓ %s (%d/%d)\n", torrent, i+1, cntAll)
 			}
 			continue
 		}
 		content, tinfo, siteInstance, siteName, filename, id, err :=
 			helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, stdinTorrentContents, true)
 		if err != nil {
-			fmt.Printf("✕add (%d/%d) %s: %v\n", i+1, cntAll, torrent, err)
+			fmt.Printf("✕ %s (%d/%d): %v\n", torrent, i+1, cntAll, err)
 			errorCnt++
 			continue
 		}
@@ -174,8 +174,8 @@ func add(cmd *cobra.Command, args []string) error {
 		}
 		err = clientInstance.AddTorrent(content, option, nil)
 		if err != nil {
-			fmt.Printf("✕add (%d/%d) %s (site=%s): failed to add torrent to client: %v // %s\n",
-				i+1, cntAll, torrent, siteName, err, contentPath)
+			fmt.Printf("✕ %s (%d/%d) (site=%s): failed to add torrent to client: %v // %s\n",
+				torrent, i+1, cntAll, siteName, err, contentPath)
 			errorCnt++
 			continue
 		}
@@ -192,7 +192,7 @@ func add(cmd *cobra.Command, args []string) error {
 		}
 		cntAdded++
 		sizeAdded += size
-		fmt.Printf("✓add (%d/%d) %s (site=%s). infoHash=%s // %s\n", i+1, cntAll, torrent, siteName, infoHash, contentPath)
+		fmt.Printf("✓ %s (%d/%d) (site=%s). infoHash=%s // %s\n", torrent, i+1, cntAll, siteName, infoHash, contentPath)
 	}
 	fmt.Printf("\nDone. Added torrent (Size/Cnt): %s / %d; ErrorCnt: %d\n",
 		util.BytesSize(float64(sizeAdded)), cntAdded, errorCnt)

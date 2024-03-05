@@ -21,7 +21,6 @@ type StatusResponse struct {
 	Error             error
 }
 
-// side effect for now: close clientInstance before return
 func fetchClientStatus(clientInstance client.Client, showTorrents bool, showAllTorrents bool,
 	category string, ch chan *StatusResponse) {
 	response := &StatusResponse{Name: clientInstance.GetName(), Kind: 1}
