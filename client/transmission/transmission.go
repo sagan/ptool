@@ -468,7 +468,7 @@ func (trclient *Client) MakeCategory(category string, savePath string) error {
 	return fmt.Errorf("unsupported")
 }
 
-func (trclient *Client) RemoveCategories(categories []string) error {
+func (trclient *Client) DeleteCategories(categories []string) error {
 	return fmt.Errorf("unsupported")
 }
 

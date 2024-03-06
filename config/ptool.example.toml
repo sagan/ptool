@@ -70,7 +70,14 @@ name = 'acg'
 sites = ['u2', 'kamept']
 
 # 命令别名功能
-# 定义以下别名后，运行 "ptool st" 等效于运行 "ptool status local -t"
+# name (名称) & cmd (主命令行) 必需； minArgs (默认值为 0) & defaultArgs (默认值为空) 可选
+# minArgs 是执行别名时必须传入的额外参数数量， defaultArgs 是额外参数可选部分的默认值
+# 执行别名时，如果用户提供的额外参数数量 < minArgs ，程序会报错；如果用户提供的额外参数数量 == minArgs ，则 defaultArgs 会被追加到额外参数后面
+# 例如，定义以下别名后：
+# 运行 "ptool st" 等效于运行 "ptool status -t local"
+# 运行 "ptool st tr" 等效于运行 "ptool status -t tr"
 [[aliases]]
 name = "st"
-cmd = "status local -t"
+cmd = "status -t"
+minArgs = 0
+defaultArgs = "local"

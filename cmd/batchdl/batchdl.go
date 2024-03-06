@@ -143,8 +143,6 @@ func init() {
 	cmd.AddEnumFlagP(command, &sortFlag, "sort", "", common.SiteTorrentSortFlag)
 	cmd.AddEnumFlagP(command, &orderFlag, "order", "", common.OrderFlag)
 	cmd.RootCmd.AddCommand(command)
-	command2.Flags().AddFlagSet(command.Flags())
-	cmd.RootCmd.AddCommand(command2)
 }
 
 func batchdl(command *cobra.Command, args []string) error {
@@ -463,17 +461,4 @@ mainloop:
 	}
 	doneHandle()
 	return nil
-}
-
-var command2 = &cobra.Command{
-	Use:   "batchdl2 {client} [args]",
-	Short: `Alias of "batchdl --action=add --add-client={client} --add-category-auto [args]"`,
-	Args:  cobra.MatchAll(cobra.ExactArgs(2), cobra.OnlyValidArgs),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		action = "add"
-		addClient = args[0]
-		addCategoryAuto = true
-		args = args[1:]
-		return command.RunE(cmd, args)
-	},
 }

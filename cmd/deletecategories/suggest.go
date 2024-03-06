@@ -1,4 +1,4 @@
-package removecategories
+package deletecategories
 
 import (
 	"github.com/c-bata/go-prompt"
@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	cmd.AddShellCompletion("removecategories", func(document *prompt.Document) []prompt.Suggest {
+	cmd.AddShellCompletion("deletecategories", func(document *prompt.Document) []prompt.Suggest {
 		info := suggest.Parse(document)
 		if info.LastArgIndex < 1 {
 			return nil

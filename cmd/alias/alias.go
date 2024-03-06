@@ -17,6 +17,7 @@ var command = &cobra.Command{
 	Short:              "Run alias.",
 	Long:               `Run alias.`,
 	DisableFlagParsing: true,
+	Args:               cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE:               aliascmd,
 }
 
@@ -36,9 +37,6 @@ func aliascmd(_ *cobra.Command, args []string) error {
 	defer func() {
 		inAlias = false
 	}()
-	if len(args) == 0 {
-		return fmt.Errorf("alias name must be provided as the first arg")
-	}
 	aliasName := args[0]
 	args = args[1:]
 
@@ -52,10 +50,22 @@ func aliascmd(_ *cobra.Command, args []string) error {
 	}
 	aliasArgs, err := shlex.Split(argsCmd)
 	if err != nil {
-		return fmt.Errorf("failed to parse cmd of alias '%s': %v", aliasName, err)
+		return fmt.Errorf("failed to parse alias %s cmdline '%s': %v", aliasName, argsCmd, err)
+	}
+	if len(args) < int(aliasConfig.MinArgs) {
+		return fmt.Errorf("alias '%s' requires at least %d arg(s), only received %d",
+			aliasName, aliasConfig.MinArgs, len(args))
 	}
 	aliasArgs = append([]string{os.Args[0]}, aliasArgs...)
-	os.Args = append(aliasArgs, args...)
-	fmt.Printf("Run alias '%s': %v\n", aliasName, os.Args[1:])
+	aliasArgs = append(aliasArgs, args...)
+	if len(args) == int(aliasConfig.MinArgs) && aliasConfig.DefaultArgs != "" {
+		if aliasDefaultArgs, err := shlex.Split(aliasConfig.DefaultArgs); err != nil {
+			return fmt.Errorf("failed to parse alias '%s' defaultArgs '%s': %v", aliasName, aliasConfig.DefaultArgs, err)
+		} else {
+			aliasArgs = append(aliasArgs, aliasDefaultArgs...)
+		}
+	}
+	os.Args = aliasArgs
+	fmt.Fprintf(os.Stderr, "Run alias '%s': %v\n", aliasName, os.Args[1:])
 	return cmd.RootCmd.Execute()
 }

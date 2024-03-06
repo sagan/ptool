@@ -15,6 +15,7 @@ func CopyMap[T1 comparable, T2 any](m map[T1](T2)) map[T1](T2) {
 	return cp
 }
 
+// Shallow copy a slice
 func CopySlice[T any](src []T) []T {
 	dst := make([]T, len(src))
 	copy(dst, src)

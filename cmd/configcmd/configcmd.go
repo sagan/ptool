@@ -51,6 +51,7 @@ func configcmd(cmd *cobra.Command, args []string) error {
 	sites := util.CopySlice(config.Get().Sites)
 	groups := util.CopySlice(config.Get().Groups)
 	aliases := util.CopySlice(config.Get().Aliases)
+	aliases = append(aliases, config.InternalAliases...)
 	cookieclouds := util.CopySlice(config.Get().Cookieclouds)
 	sort.Slice(clients, func(i, j int) bool {
 		return clients[i].Name < clients[j].Name
@@ -170,15 +171,20 @@ func configcmd(cmd *cobra.Command, args []string) error {
 	}
 	fmt.Printf("\n")
 
-	fmt.Printf("Aliases:\n")
-	fmt.Printf("%-15s  %-s\n", "Name", "Cmd")
+	fmt.Printf("Aliases: (internal: *)\n")
+	fmt.Printf("%-15s  %-5s  %-7s  %-20s  %-s\n", "Name", "Flags", "MinArgs", "DefaultArgs", "Cmd")
 	emptyFlag = true
 	for _, aliasConfig := range aliases {
 		if filter != "" && !aliasConfig.MatchFilter(filter) {
 			continue
 		}
 		emptyFlag = false
-		fmt.Printf("%-15s  %-s\n", aliasConfig.Name, aliasConfig.Cmd)
+		flags := []string{}
+		if aliasConfig.Internal {
+			flags = append(flags, "*")
+		}
+		fmt.Printf("%-15s  %-5s  %-7d  %-20s  %-s\n",
+			aliasConfig.Name, strings.Join(flags, ", "), aliasConfig.MinArgs, aliasConfig.DefaultArgs, aliasConfig.Cmd)
 	}
 	if emptyFlag {
 		fmt.Print(emptyListPlaceholder)

@@ -73,8 +73,6 @@ func init() {
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of added torrents")
 	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Add tags to added torrent (comma-separated)")
 	cmd.RootCmd.AddCommand(command)
-	command2.Flags().AddFlagSet(command.Flags())
-	cmd.RootCmd.AddCommand(command2)
 }
 
 func add(cmd *cobra.Command, args []string) error {
@@ -200,14 +198,4 @@ func add(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("%d errors", errorCnt)
 	}
 	return nil
-}
-
-var command2 = &cobra.Command{
-	Use:   "add2 [args]",
-	Short: `Alias of "add --add-category-auto --sequential-download [args]"`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		addCategoryAuto = true
-		sequentialDownload = true
-		return command.RunE(cmd, args)
-	},
 }

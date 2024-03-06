@@ -1,4 +1,4 @@
-package removecategories
+package deletecategories
 
 import (
 	"fmt"
@@ -10,19 +10,20 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:         "removecategories {client} {category}...",
-	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "removecategories"},
-	Short:       "Remove categories from client.",
-	Long:        `Remove categories from client.`,
+	Use:         "deletecategories {client} {category}...",
+	Aliases:     []string{"delcats"},
+	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "deletecategories"},
+	Short:       "Delete categories from client.",
+	Long:        `Delete categories from client.`,
 	Args:        cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
-	RunE:        removecategories,
+	RunE:        deletecategories,
 }
 
 func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func removecategories(cmd *cobra.Command, args []string) error {
+func deletecategories(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
 	categories := args[1:]
 	clientInstance, err := client.CreateClient(clientName)
@@ -30,7 +31,7 @@ func removecategories(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to create client: %v", err)
 	}
 
-	err = clientInstance.RemoveCategories(categories)
+	err = clientInstance.DeleteCategories(categories)
 	if err != nil {
 		return err
 	}

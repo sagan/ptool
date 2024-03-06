@@ -117,7 +117,7 @@ type Client interface {
 	DeleteTags(tags ...string) error
 	// create category if not existed, edit category if already exists
 	MakeCategory(category string, savePath string) error
-	RemoveCategories(categories []string) error
+	DeleteCategories(categories []string) error
 	GetCategories() ([]TorrentCategory, error)
 	SetTorrentsCatetory(infoHashes []string, category string) error
 	SetAllTorrentsCatetory(category string) error

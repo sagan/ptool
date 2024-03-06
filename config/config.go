@@ -73,8 +73,11 @@ type GroupConfigStruct struct {
 }
 
 type AliasConfigStruct struct {
-	Name string `yaml:"name"`
-	Cmd  string `yaml:"cmd"`
+	Name        string `yaml:"name"`
+	Cmd         string `yaml:"cmd"`
+	DefaultArgs string `yaml:"defaultArgs"`
+	MinArgs     int64  `yaml:"minArgs"`
+	Internal    bool
 }
 
 type ClientConfigStruct struct {
@@ -217,10 +220,35 @@ var (
 	aliasesConfigMap      = map[string]*AliasConfigStruct{}
 	groupsConfigMap       = map[string]*GroupConfigStruct{}
 	cookiecloudsConfigMap = map[string]*CookiecloudConfigStruct{}
+	internalAliasesMap    = map[string]*AliasConfigStruct{}
 	once                  sync.Once
 )
 
+var InternalAliases = []*AliasConfigStruct{
+	{
+		Name:        "add2",
+		Cmd:         "add --add-category-auto --sequential-download",
+		DefaultArgs: "*.torrent",
+		MinArgs:     1,
+		Internal:    true,
+	},
+	{
+		Name:     "batchdl2",
+		Cmd:      "batchdl --action=add --add-category-auto --add-client",
+		MinArgs:  1,
+		Internal: true,
+	},
+	{
+		Name:     "parsetorrent2",
+		Cmd:      "parsetorrent *.torrent",
+		Internal: true,
+	},
+}
+
 func init() {
+	for _, aliasConfig := range InternalAliases {
+		internalAliasesMap[aliasConfig.Name] = aliasConfig
+	}
 }
 
 // Update configed sites in place, merge the provided (updated) sites with existing config.
@@ -416,7 +444,10 @@ func GetAliasConfig(name string) *AliasConfigStruct {
 	if name == "" {
 		return nil
 	}
-	return aliasesConfigMap[name]
+	if aliasesConfigMap[name] != nil {
+		return aliasesConfigMap[name]
+	}
+	return internalAliasesMap[name]
 }
 
 func GetCookiecloudConfig(name string) *CookiecloudConfigStruct {

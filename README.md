@@ -1,6 +1,6 @@
 # ptool
 
-自用的 PT (private tracker) 网站辅助工具([Github](https://github.com/sagan/ptool))。提供全自动刷流(brush)、自动辅种(使用 iyuu 接口)、BT 客户端控制等功能。
+自用的 PT (private tracker) 网站和 Bittorrent 客户端辅助工具([Github](https://github.com/sagan/ptool))。提供全自动刷流(brush)、自动辅种(使用 iyuu 接口)、BT 客户端控制等功能。
 
 主要特性：
 
@@ -102,7 +102,7 @@ ptool <command> args... [flags]
 - search : 在某个站点搜索指定关键词的种子。
 - add : 将种子添加到 BT 客户端。
 - dltorrent : 下载站点的种子。
-- BT 客户端控制命令集: clientctl / show / pause / resume / delete / reannounce / recheck / getcategories / createcategory / removecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / renametag / edittracker / addtrackers / removetrackers / setsavepath。
+- BT 客户端控制命令集: clientctl / show / pause / resume / delete / reannounce / recheck / getcategories / createcategory / deletecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / renametag / edittracker / addtrackers / removetrackers / setsavepath。
 - parsetorrent : 显示种子(torrent)文件信息。
 - verifytorrent : 测试种子(torrent)文件与硬盘上的文件内容一致。
 - partialdownload : 拆包下载。
@@ -284,7 +284,7 @@ ptool show local 31a615d5984cb63c6f999f72bb3961dce49c194a
 ptool show local --category rss --completed-before 5d --show-info-hash-only | ptool delete local --force -
 ```
 
-#### 管理 BT 客户端里的的种子分类 / 标签 / Trackers 等(getcategories / createcategory / removecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / renametag / edittracker / addtrackers / removetrackers / setsavepath)
+#### 管理 BT 客户端里的的种子分类 / 标签 / Trackers 等(getcategories / createcategory / deletecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / renametag / edittracker / addtrackers / removetrackers / setsavepath)
 
 ```
 # 获取所有分类
@@ -294,7 +294,7 @@ ptool getcategories <client>
 ptool createcategory <client> <category> --save-path "/root/downloads"
 
 # 删除分类
-ptool removecategories <client> <category>...
+ptool deletecategories <client> <category>...
 
 # 修改种子的所属分类
 ptool setcategory <client> <category> <infoHashes>...
@@ -615,7 +615,7 @@ ptool search acg clannad
 
 ### 命令别名 (Alias) 功能
 
-ptool.toml 里可以使用 `[[aliases]]` 区块自定义命令别名，例如：
+ptool.toml 里可以使用 `[[aliases]]` 区块自定义命令别名（定义的别名无法覆盖内置命令），例如：
 
 ```
 [[aliases]]
@@ -623,7 +623,22 @@ name = "st"
 cmd = "status local -t"
 ```
 
-然后可以直接运行 `ptool st`, 等效于运行 `ptool status local -t`。注：定义的别名无法覆盖内置命令。
+然后可以直接运行 `ptool st`, 等效于运行 `ptool status local -t`。
+
+运行别名时也可以传入额外参数，并且支持指定额外参数中可选部分的默认值。例如：
+
+```
+[[aliases]]
+name = "st"
+cmd = "status -t"
+minArgs = 0
+defaultArgs = "local"
+```
+
+minArgs 是执行别名时必须传入的额外参数数量， defaultArgs 是额外参数可选部分的默认值。执行别名时，如果用户提供的额外参数数量 < minArgs ，程序会报错；如果用户提供的额外参数数量 == minArgs ，则 defaultArgs 会被追加到额外参数后面。定义以上别名后：
+
+- 运行 `ptool st` 等效于运行 `ptool status -t local`
+- 运行 `ptool st tr` 等效于运行 `ptool status -t tr`
 
 ### 模仿浏览器 (impersonate)
 

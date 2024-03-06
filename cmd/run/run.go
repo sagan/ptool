@@ -30,6 +30,6 @@ func run(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to parse cmdline '%s': %v", cmdline, err)
 	}
 	os.Args = append([]string{os.Args[0]}, cmdlineArgs...)
-	fmt.Printf("Run cmdline: %v\n", os.Args[1:])
+	fmt.Fprintf(os.Stderr, "Run cmdline: %v\n", os.Args[1:])
 	return cmd.RootCmd.Execute()
 }

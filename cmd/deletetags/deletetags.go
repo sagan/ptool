@@ -11,6 +11,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "deletetags {client} {tags}...",
+	Aliases:     []string{"deltags"},
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "deletetags"},
 	Short:       "Delete tags from client.",
 	Long:        `Delete tags from client.`,

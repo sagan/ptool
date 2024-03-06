@@ -80,5 +80,8 @@ func xseedcheck(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Torrent file: %s\n", torrent)
 		tinfo.PrintFiles(true, true)
 	}
+	if compareResult < 0 {
+		return fmt.Errorf("not match")
+	}
 	return nil
 }

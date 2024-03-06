@@ -411,7 +411,7 @@ func (qbclient *Client) MakeCategory(category string, savePath string) error {
 	return err
 }
 
-func (qbclient *Client) RemoveCategories(categories []string) error {
+func (qbclient *Client) DeleteCategories(categories []string) error {
 	err := qbclient.login()
 	if err != nil {
 		return fmt.Errorf("login error: %v", err)
