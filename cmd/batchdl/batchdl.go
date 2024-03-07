@@ -33,7 +33,9 @@ var command = &cobra.Command{
 * [id] :  Torrent id in site
 * [site] : Torrent site
 * [filename] : Original torrent filename without ".torrent" extension
-* [name] : Torrent name`,
+* [filename128] : The prefix of [filename] which is at max 128 bytes
+* [name] : Torrent name
+* [name128] : The prefix of torrent name which is at max 128 bytes`,
 	Args: cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 	RunE: batchdl,
 }

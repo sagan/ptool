@@ -8,8 +8,8 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
-	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/util"
+	"github.com/sagan/ptool/util/helper"
 )
 
 var command = &cobra.Command{
@@ -57,10 +57,7 @@ func removetrackers(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("you must provide at least a condition flag or hashFilter")
 		}
 		if len(infoHashes) == 1 && infoHashes[0] == "-" {
-			if config.InShell {
-				return fmt.Errorf(`"-" arg can not be used in shell`)
-			}
-			if data, err := util.ReadArgsFromStdin(); err != nil {
+			if data, err := helper.ReadArgsFromStdin(); err != nil {
 				return fmt.Errorf("failed to parse stdin to info hashes: %v", err)
 			} else if len(data) == 0 {
 				return nil

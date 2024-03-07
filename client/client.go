@@ -92,6 +92,8 @@ type TorrentCategory struct {
 }
 
 type Client interface {
+	// download / export .torrent file for a torrent in client
+	ExportTorrentFile(infoHash string) ([]byte, error)
 	GetTorrent(infoHash string) (*Torrent, error)
 	// stateFilter: _all|_active|_done|_undone, or any state value (possibly with a _ prefix)
 	GetTorrents(stateFilter string, category string, showAll bool) ([]Torrent, error)

@@ -141,6 +141,10 @@ func (trclient *Client) syncMeta() error {
 	return nil
 }
 
+func (trclient *Client) ExportTorrentFile(infoHash string) ([]byte, error) {
+	return nil, fmt.Errorf("unsupported")
+}
+
 func (trclient *Client) GetTorrent(infoHash string) (*client.Torrent, error) {
 	if err := trclient.sync(); err != nil {
 		return nil, err

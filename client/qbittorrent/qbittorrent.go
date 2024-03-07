@@ -817,6 +817,19 @@ func (qbclient *Client) SetConfig(variable string, value string) error {
 	}
 }
 
+// The export API of qb exists but currently is not documented in
+// https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-4.1) .
+// See https://github.com/qbittorrent/qBittorrent/issues/18746 for more info.
+func (qbclient *Client) ExportTorrentFile(infoHash string) ([]byte, error) {
+	apiUrl := qbclient.ClientConfig.Url + "api/v2/torrents/export?hash=" + infoHash
+	res, _, err := util.FetchUrl(apiUrl, qbclient.HttpClient)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	return io.ReadAll(res.Body)
+}
+
 func (qbclient *Client) GetTorrent(infoHash string) (*client.Torrent, error) {
 	err := qbclient.sync()
 	if err != nil {

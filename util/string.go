@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/jpillora/go-tld"
 	runewidth "github.com/mattn/go-runewidth"
@@ -71,6 +72,21 @@ func ParseInt(str string) int64 {
 	str = strings.TrimSpace(strings.ReplaceAll(str, ",", ""))
 	v, _ := strconv.ParseInt(str, 10, 0)
 	return v
+}
+
+// Return prefix of str that is at most max bytes encoded in UTF-8
+func StringPrefixInBytes(str string, max int64) string {
+	length := 0
+	sb := &strings.Builder{}
+	for _, char := range str {
+		runeLength := utf8.RuneLen(char)
+		if length+runeLength > int(max) {
+			break
+		}
+		sb.WriteRune(char)
+		length += runeLength
+	}
+	return sb.String()
 }
 
 // Return prefix of string at most width and actual width.

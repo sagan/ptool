@@ -25,7 +25,9 @@ Torrent url that does NOT belong to any site (e.g.: a public site url) is also s
 * [id] :  Torrent id in site
 * [site] : Torrent site
 * [filename] : Original torrent filename without ".torrent" extension
-* [name] : Torrent name`,
+* [filename128] : The prefix of [filename] which is at max 128 bytes
+* [name] : Torrent name
+* [name128] : The prefix of torrent name which is at max 128 bytes`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: dltorrent,
 }
@@ -38,7 +40,7 @@ var (
 
 func init() {
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of torrents")
-	command.Flags().StringVarP(&downloadDir, "dir", "", ".", `Set the dir of downloaded torrents`)
+	command.Flags().StringVarP(&downloadDir, "download-dir", "", ".", `Set the dir of downloaded torrents`)
 	command.Flags().StringVarP(&rename, "rename", "", "", "Rename downloaded torrents (supports variables)")
 	cmd.RootCmd.AddCommand(command)
 }

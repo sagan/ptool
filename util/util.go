@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -16,7 +15,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/shlex"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -271,14 +269,4 @@ func ParseProxyFromEnv(urlStr string) string {
 		return ""
 	}
 	return proxyUrl.String()
-}
-
-func ReadArgsFromStdin() ([]string, error) {
-	if stdin, err := io.ReadAll(os.Stdin); err != nil {
-		return nil, fmt.Errorf("failed to read stdin: %v", err)
-	} else if data, err := shlex.Split(string(stdin)); err != nil {
-		return nil, fmt.Errorf("failed to parse stdin to tokens: %v", err)
-	} else {
-		return data, nil
-	}
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/bradfitz/iter"
 	"github.com/sagan/ptool/client"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/site/public"
 	"github.com/sagan/ptool/site/tpl"
 	"github.com/sagan/ptool/util"
@@ -302,7 +303,7 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash b
 
 // Rename torrent (downloaded filename or name of torrent added to client) according to rename template.
 // filename: original torrent filename (e.g. "abc.torrent").
-// available variable placeholders: [size], [id], [site], [filename], [name].
+// available variable placeholders: [size], [id], [site], [filename], [filename128], [name], [name128].
 // tinfo is optional could may be nil.
 func RenameTorrent(rename string, sitename string, id string, filename string, tinfo *TorrentMeta) string {
 	newname := rename
@@ -319,9 +320,26 @@ func RenameTorrent(rename string, sitename string, id string, filename string, t
 	newname = strings.ReplaceAll(newname, "[id]", id)
 	newname = strings.ReplaceAll(newname, "[site]", sitename)
 	newname = strings.ReplaceAll(newname, "[filename]", basename)
+	newname = strings.ReplaceAll(newname, "[filename128]", util.StringPrefixInBytes(basename, 128))
 	if tinfo != nil {
 		newname = strings.ReplaceAll(newname, "[size]", util.BytesSize(float64(tinfo.Size)))
 		newname = strings.ReplaceAll(newname, "[name]", tinfo.Info.Name)
+		newname = strings.ReplaceAll(newname, "[name128]", util.StringPrefixInBytes(tinfo.Info.Name, 128))
 	}
+	newname = constants.FilenameInvalidCharsRegex.ReplaceAllString(newname, "")
 	return newname
+}
+
+// Get appropriate filename for exported .torrent file.
+// available variable placeholders: [size], [infohash], [infohash16], [category], [name], [name128]
+func RenameExportedTorrent(torrent client.Torrent, rename string) string {
+	filename := rename
+	filename = strings.ReplaceAll(filename, "[size]", util.BytesSize(float64(torrent.Size)))
+	filename = strings.ReplaceAll(filename, "[infohash]", torrent.InfoHash)
+	filename = strings.ReplaceAll(filename, "[infohash16]", torrent.InfoHash[:16])
+	filename = strings.ReplaceAll(filename, "[category]", torrent.Category)
+	filename = strings.ReplaceAll(filename, "[name]", torrent.Name)
+	filename = strings.ReplaceAll(filename, "[name128]", util.StringPrefixInBytes(torrent.Name, 128))
+	filename = constants.FilenameInvalidCharsRegex.ReplaceAllString(filename, "")
+	return filename
 }

@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/Noooste/azuretls-client"
+	"github.com/google/shlex"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/sagan/ptool/config"
@@ -156,4 +157,17 @@ func GetTorrentContent(torrent string, defaultSite string,
 		}
 	}
 	return
+}
+
+// Read whitespace splitted tokens from stdin
+func ReadArgsFromStdin() ([]string, error) {
+	if config.InShell {
+		return nil, fmt.Errorf(`can NOT read args from stdin in shell mode`)
+	} else if stdin, err := io.ReadAll(os.Stdin); err != nil {
+		return nil, fmt.Errorf("failed to read stdin: %v", err)
+	} else if data, err := shlex.Split(string(stdin)); err != nil {
+		return nil, fmt.Errorf("failed to parse stdin to tokens: %v", err)
+	} else {
+		return data, nil
+	}
 }
