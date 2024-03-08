@@ -31,7 +31,7 @@ which supports the following variable placeholders:
 * [name] : Torrent name
 * [name128] : The prefix of torrent name which is at max 128 bytes
 
-Note it will overwrite any existing file on disk with the same name`,
+Note it will overwrite any existing file on disk with the same name.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: export,
 }

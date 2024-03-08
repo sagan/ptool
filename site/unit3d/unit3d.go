@@ -49,10 +49,13 @@ func (usite *Site) GetSiteConfig() *config.SiteConfigStruct {
 }
 
 func (usite *Site) GetStatus() (*site.Status, error) {
-	doc, _, err := util.GetUrlDocWithAzuretls(usite.SiteConfig.Url+"torrents", usite.HttpClient,
+	doc, res, err := util.GetUrlDocWithAzuretls(usite.SiteConfig.Url+"torrents", usite.HttpClient,
 		usite.GetSiteConfig().Cookie, site.GetUa(usite), usite.GetDefaultHttpHeaders())
 	if err != nil {
 		return nil, err
+	}
+	if strings.Contains(res.Request.Url, "/login") {
+		return nil, fmt.Errorf("not logined (cookie may has expired)")
 	}
 	userNameSelector := SELECTOR_USERNAME
 	userUploadedSelector := SELECTOR_USER_UPLOADED

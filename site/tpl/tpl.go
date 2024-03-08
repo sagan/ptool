@@ -401,7 +401,7 @@ var (
 			Comment:           "OKPT",
 		},
 		"oldtoons": {
-			Type:    "nexusphp",
+			Type:    "unit3d",
 			Aliases: []string{"oldtoonsworld"},
 			Url:     "https://oldtoons.world/",
 			Comment: "Old Toons World",
@@ -466,10 +466,11 @@ var (
 			Comment:                        "PTT",
 		},
 		"ptvicomo": {
-			Type:              "nexusphp",
-			Url:               "https://ptvicomo.net/",
-			TorrentsExtraUrls: []string{"special.php"},
-			Comment:           "象站",
+			Type:                     "nexusphp",
+			Url:                      "https://ptvicomo.net/",
+			TorrentsExtraUrls:        []string{"special.php"},
+			SelectorUserInfoUserName: `.User_Name`,
+			Comment:                  "象站",
 		},
 		"rousi": {
 			Type:              "nexusphp",

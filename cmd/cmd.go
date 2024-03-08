@@ -25,7 +25,8 @@ var RootCmd = &cobra.Command{
 	Use:   "ptool",
 	Short: "ptool is a command-line program which facilitates the use of private tracker sites and BitTorrent clients.",
 	Long: `ptool is a command-line program which facilitates the use of private tracker sites and BitTorrent clients.
-It's a free and open-source software, visit https://github.com/sagan/ptool for more infomation.`,
+It's a free and open-source software released under the AGPL-3.0 license,
+visit https://github.com/sagan/ptool for source codes and other infomation.`,
 	// Run: func(cmd *cobra.Command, args []string) { },
 	SilenceErrors:      true,
 	SilenceUsage:       true,

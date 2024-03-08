@@ -5,9 +5,12 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -269,4 +272,71 @@ func ParseProxyFromEnv(urlStr string) string {
 		return ""
 	}
 	return proxyUrl.String()
+}
+
+// From https://stackoverflow.com/questions/21060945/simple-way-to-copy-a-file .
+// Copy copies the contents of the file at srcpath to a regular file
+// at dstpath. If the file named by dstpath already exists, it is
+// truncated. The function does not copy the file mode, file
+// permission bits, or file attributes.
+func CopyFile(srcpath, dstpath string) (err error) {
+	r, err := os.Open(srcpath)
+	if err != nil {
+		return err
+	}
+	defer r.Close() // ignore error: file was opened read-only.
+
+	w, err := os.Create(dstpath)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		// Report the error, if any, from Close, but do so
+		// only if there isn't already an outgoing error.
+		if c := w.Close(); err == nil {
+			err = c
+		}
+	}()
+
+	_, err = io.Copy(w, r)
+	return err
+}
+
+// Create hardlink duplicate for source dir at dest. Recursively process all files and folders inside source.
+// Symbolinks are ignored.
+// For file with size < limit, create a copy instead.
+func LinkDir(source string, dest string, limit int64) error {
+	return filepath.WalkDir(source, func(sourcePath string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		relativePath, err := filepath.Rel(source, sourcePath)
+		if err != nil {
+			return err
+		}
+		destPath := path.Join(dest, relativePath)
+		if d.IsDir() {
+			log.Tracef("Create dir %s", destPath)
+			err := os.Mkdir(destPath, d.Type())
+			if err != nil && !os.IsExist(err) {
+				return err
+			}
+		} else if d.Type().IsRegular() {
+			if stat, err := os.Stat(sourcePath); err != nil {
+				return err
+			} else if limit >= 0 && stat.Size() < limit {
+				log.Tracef("Copy %s => %s", sourcePath, destPath)
+				if err := CopyFile(sourcePath, destPath); err != nil {
+					return err
+				}
+			} else {
+				log.Tracef("Link %s => %s", sourcePath, destPath)
+				if err := os.Link(sourcePath, destPath); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	})
 }

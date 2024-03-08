@@ -12,8 +12,8 @@ import (
 )
 
 var command = &cobra.Command{
-	Use: "verifytorrent {torrentFilename | torrentId | torrentUrl}... {--save-path dir | --content-path path} [--check]",
-
+	Use: "verifytorrent {torrentFilename | torrentId | torrentUrl}... " +
+		"{--save-path dir | --content-path path} [--check | --check-quick]",
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "verifytorrent"},
 	Aliases:     []string{"verify"},
 	Short:       "Verify torrent file(s) are consistent with local disk content files.",
@@ -41,6 +41,7 @@ If --check flag is set, it will also do the hash checking.`,
 
 var (
 	checkHash   = false
+	checkQuick  = false
 	forceLocal  = false
 	showAll     = false
 	contentPath = ""
@@ -50,6 +51,9 @@ var (
 
 func init() {
 	command.Flags().BoolVarP(&checkHash, "check", "", false, "Do hash checking when verifying torrent files")
+	command.Flags().BoolVarP(&checkQuick, "check-quick", "", false,
+		"Do quick hash checking when verifying torrent files, "+
+			"only the first and last piece of each file will do hash computing")
 	command.Flags().BoolVarP(&forceLocal, "force-local", "", false, "Force treat all arg as local torrent filename")
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all info")
 	command.Flags().StringVarP(&contentPath, "content-path", "", "",
@@ -65,11 +69,23 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 	if savePath == "" && contentPath == "" || (savePath != "" && contentPath != "") {
 		return fmt.Errorf("exact one of the --save-path or --content-path (but not both) flag must be set")
 	}
+	if checkHash && checkQuick {
+		return fmt.Errorf("--check and --check-quick flags are NOT compatible")
+	}
 	torrents := util.ParseFilenameArgs(args...)
 	if len(torrents) > 1 && contentPath != "" {
 		return fmt.Errorf("you must use --save-path flag (instead of --content-path) when verifying multiple torrents")
 	}
 	errorCnt := int64(0)
+	checkMode := int64(0)
+	checkModeStr := "none"
+	if checkQuick {
+		checkMode = 1
+		checkModeStr = "quick"
+	} else if checkHash {
+		checkMode = 99
+		checkModeStr = "full"
+	}
 
 	for i, torrent := range torrents {
 		if showAll && i > 0 {
@@ -85,14 +101,13 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 			tinfo.Print(torrent, true)
 		}
 		log.Infof("Verifying %s (savepath=%s, contentpath=%s, checkhash=%t)", torrent, savePath, contentPath, checkHash)
-		err = tinfo.Verify(savePath, contentPath, checkHash)
+		err = tinfo.Verify(savePath, contentPath, checkMode)
 		if err != nil {
-			fmt.Printf("X torrent %s: contents do NOT match with disk content(s) (did hash check = %t): %v\n",
-				torrent, checkHash, err)
+			fmt.Printf("X torrent %s: contents do NOT match with disk content(s) (hash check = %s): %v\n",
+				torrent, checkModeStr, err)
 			errorCnt++
 		} else {
-			fmt.Printf("✓ torrent %s: contents match with disk content(s) (did hash check = %t)\n",
-				torrent, checkHash)
+			fmt.Printf("✓ torrent %s: contents match with disk content(s) (hash check = %s)\n", torrent, checkModeStr)
 		}
 	}
 	if errorCnt > 0 {

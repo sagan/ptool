@@ -82,7 +82,11 @@ func FetchUrlWithAzuretls(url string, client *azuretls.Session,
 	cookie string, ua string, headers [][]string) (*azuretls.Response, http.Header, error) {
 	log.Tracef("FetchUrlWithAzuretls url=%s hasCookie=%t", url, cookie != "")
 	reqHeaders := GetHttpReqHeaders(headers, cookie, ua)
-	res, err := client.Get(url, reqHeaders)
+	res, err := client.Do(&azuretls.Request{
+		Method:   http.MethodGet,
+		Url:      url,
+		NoCookie: true, // disable azuretls internal cookie jar
+	}, reqHeaders)
 	if err != nil {
 		if _, ok := err.(net.Error); ok {
 			return nil, nil, fmt.Errorf("failed to fetch url: <network error>: %v", err)

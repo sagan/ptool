@@ -21,6 +21,7 @@ import (
 	_ "github.com/sagan/ptool/cmd/export"
 	_ "github.com/sagan/ptool/cmd/getcategories"
 	_ "github.com/sagan/ptool/cmd/gettags"
+	_ "github.com/sagan/ptool/cmd/hardlink/all"
 	_ "github.com/sagan/ptool/cmd/iyuu/all"
 	_ "github.com/sagan/ptool/cmd/parsetorrent"
 	_ "github.com/sagan/ptool/cmd/partialdownload"

@@ -32,7 +32,7 @@ func DomRemovedSpecialCharsTextPreservingTime(node *goquery.Selection) string {
 }
 
 func DomSanitizedText(el *goquery.Selection) string {
-	return SanitizeText(el.Text())
+	return SanitizeText(el.First().Text())
 }
 
 // DIY 了几个选择器语法（附加在标准CSS选择器字符串末尾）.

@@ -170,8 +170,8 @@ func xseedadd(cmd *cobra.Command, args []string) error {
 				torrent, matchClientTorrent.InfoHash, matchClientTorrent.Name, err)
 			errorCnt++
 		} else {
-			fmt.Printf("✓%s: matched with client torrent %s (%s), added to client\n",
-				torrent, matchClientTorrent.InfoHash, matchClientTorrent.Name)
+			fmt.Printf("✓%s: matched with client torrent %s (%s), added to client, save path: %s\n",
+				torrent, matchClientTorrent.InfoHash, matchClientTorrent.Name, matchClientTorrent.SavePath)
 		}
 	}
 	if errorCnt > 0 {

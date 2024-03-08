@@ -207,6 +207,7 @@ func sync(cmd *cobra.Command, args []string) error {
 				`cookie updated by "ptool cookiecloud sync" at %s from cookiecloud %s`,
 				nowStr, cookiecloudData.Label)
 			updatesites = append(updatesites, newsiteconfig)
+			break
 		}
 	}
 	sitesValid := []string{}

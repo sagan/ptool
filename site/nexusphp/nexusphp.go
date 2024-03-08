@@ -391,6 +391,7 @@ func (npclient *Site) sync() error {
 	} else {
 		siteStatus.UserName = doc.Find(`*[href*="userdetails.php?"]`).First().Text()
 	}
+	siteStatus.UserName = strings.TrimSpace(siteStatus.UserName)
 
 	// possibly parsing error or some problem
 	if !siteStatus.IsOk() {

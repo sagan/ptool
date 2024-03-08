@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/anacrolix/torrent/metainfo"
-	"github.com/bradfitz/iter"
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/site/public"
@@ -208,7 +207,8 @@ func (meta *TorrentMeta) XseedCheckWithClientTorrent(clientTorrentContents []cli
 	return 0
 }
 
-func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash bool) error {
+// checkHash: 0 - none; 1 - quick; 2+ - full.
+func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash int64) error {
 	var filenames []string
 	prefixPath := ""
 	if contentPath != "" {
@@ -233,18 +233,29 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash b
 		if stat.Size() != file.Size {
 			return fmt.Errorf("file %q has wrong length", filename)
 		}
-		if checkHash {
+		if checkHash > 0 {
 			filenames = append(filenames, filename)
 		}
 	}
-	if checkHash && len(meta.Files) > 0 {
+	if checkHash > 0 && len(meta.Files) > 0 {
 		piecesCnt := meta.Info.NumPieces()
 		var currentFileIndex = int64(0)
 		var currentFileOffset = int64(0)
 		var currentFileRemain = int64(0)
 		var currentFile *os.File
 		var err error
-		for i := range iter.N(piecesCnt) {
+		i := 0
+		for {
+			if i >= piecesCnt {
+				break
+			}
+			if checkHash == 1 && currentFile != nil && currentFileRemain > meta.Info.PieceLength {
+				skipPieces := currentFileRemain / meta.Info.PieceLength
+				skipLength := skipPieces * meta.Info.PieceLength
+				currentFileOffset += skipLength
+				currentFileRemain -= skipLength
+				i += int(skipPieces)
+			}
 			p := meta.Info.Piece(i)
 			hash := sha1.New()
 			len := p.Length()
@@ -252,9 +263,9 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash b
 				if currentFile == nil {
 					if currentFile, err = os.Open(filenames[currentFileIndex]); err != nil {
 						return fmt.Errorf("piece %d/%d: failed to open file %s: %v",
-							i, piecesCnt, filenames[currentFileIndex], err)
+							i, piecesCnt-1, filenames[currentFileIndex], err)
 					}
-					log.Tracef("piece %d/%d: open file %s", i, piecesCnt, filenames[currentFileIndex])
+					log.Tracef("piece %d/%d: open file %s", i, piecesCnt-1, filenames[currentFileIndex])
 					currentFileOffset = 0
 					currentFileRemain = meta.Files[currentFileIndex].Size
 				}
@@ -275,9 +286,10 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash b
 			}
 			good := bytes.Equal(hash.Sum(nil), p.Hash().Bytes())
 			if !good {
-				return fmt.Errorf("piece %d/%d: hash mismatch", i, piecesCnt)
+				return fmt.Errorf("piece %d/%d: hash mismatch", i, piecesCnt-1)
 			}
-			log.Tracef("piece %d/%d verify-hash %x: %v", i, piecesCnt, p.Hash(), good)
+			log.Tracef("piece %d/%d verify-hash %x: %v", i, piecesCnt-1, p.Hash(), good)
+			i++
 		}
 	}
 	if contentPath != "" {
@@ -285,15 +297,15 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash b
 		if err == nil {
 			if meta.SingleFileTorrent {
 				if fileStats.Name() != meta.Files[0].Path {
-					log.Warnf(`This is single-file torrent. The torrent file on disk "%s" has same content with torrent info, `+
-						"but they have DIFFERENT file name. Be careful if you would add this torrent to local client to xseed.",
-						contentPath)
+					log.Warnf(`This is single-file torrent. The torrent content file on disk "%s" `+
+						"has same content with torrent meta, but they have DIFFERENT file name. "+
+						"Be careful if you would add this torrent to client to xseed.", contentPath)
 				}
 			} else {
 				if fileStats.Name() != meta.RootDir {
-					log.Warnf(`This is multiple-file torrent. The torrent content folder on disk "%s" has same contents with torrent info, `+
-						"but they have DIFFERENT root folder name. Be careful if you would add this torrent to local client to xseed.",
-						contentPath)
+					log.Warnf(`This is multiple-file torrent. The torrent content folder on disk "%s" `+
+						"has same contents with torrent meta, but they have DIFFERENT root folder name. "+
+						"Be careful if you would add this torrent to client to xseed.", contentPath)
 				}
 			}
 		}
