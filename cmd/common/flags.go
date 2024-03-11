@@ -74,13 +74,13 @@ var pureFlags = []string{
 	"force",
 	"force-local",
 	"fork",
+	"free",
 	"help",
 	"include-downloaded",
 	"json",
 	"largest",
 	"lock-or-exit",
 	"newest",
-	"no-check",
 	"no-hr",
 	"no-paid",
 	"parameters",
@@ -99,6 +99,7 @@ var pureFlags = []string{
 	"sites",
 	"skip-check",
 	"sum",
+	"use-comment-meta",
 	"verbose",
 }
 

@@ -25,11 +25,11 @@ func FetchJson(url string, v any, client *http.Client) error {
 		return err
 	}
 	log.Tracef("FetchJson response: len=%d", res.ContentLength)
-	body, _ := io.ReadAll(res.Body)
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
 	err = json.Unmarshal(body, &v)
 	if err != nil {
 		log.Tracef("FetchJson failed to unmarshal, response body: %s", string(body))

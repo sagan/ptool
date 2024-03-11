@@ -3,8 +3,8 @@ package version
 import "strings"
 
 var (
-	VersionSuffix = "" // e.g.: DEV
-	VersionTag    = "v0.1.9"
+	VersionSuffix = "DEV" // e.g.: DEV
+	VersionTag    = "v0.1.10"
 	Version       = ""
 	Commit        = "none"
 	Date          = "unknown"

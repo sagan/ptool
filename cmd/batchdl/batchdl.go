@@ -413,8 +413,11 @@ mainloop:
 					} else if action == "add" {
 						tags := []string{}
 						tags = append(tags, clientAddFixedTags...)
+						if tinfo.IsPrivate() {
+							tags = append(tags, config.PRIVATE_TAG)
+						}
 						if torrent.HasHnR || siteInstance.GetSiteConfig().GlobalHnR {
-							tags = append(tags, "_hr")
+							tags = append(tags, config.HR_TAG)
 						}
 						clientAddTorrentOption.Tags = tags
 						if addCategoryAuto {

@@ -38,12 +38,17 @@ as a special case, it also supports directly reading .torrent file contents from
 * [filename] : Original torrent filename without ".torrent" extension
 * [filename128] : The prefix of [filename] which is at max 128 bytes
 * [name] : Torrent name
-* [name128] : The prefix of torrent name which is at max 128 bytes`,
+* [name128] : The prefix of torrent name which is at max 128 bytes
+
+If --use-comment-meta flag is set, ptool will extract torrent's category & tags & savePath meta info
+from the 'comment' field of .torrent file (parsed in json format: '{tags, category, save_path}').
+The "ptool export" command has the same flag that saves meta info to 'comment' field when exporting torrents.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	RunE: add,
 }
 
 var (
+	useComment         = false
 	addCategoryAuto    = false
 	addPaused          = false
 	skipCheck          = false
@@ -59,6 +64,8 @@ var (
 )
 
 func init() {
+	command.Flags().BoolVarP(&useComment, "use-comment-meta", "", false,
+		"Use 'comment' field of .torrent file to extract category, tags, savePath and other meta info and apply them")
 	command.Flags().BoolVarP(&skipCheck, "skip-check", "", false, "Skip hash checking when adding torrents")
 	command.Flags().BoolVarP(&addPaused, "add-paused", "", false, "Add torrents to client in paused state")
 	command.Flags().BoolVarP(&addCategoryAuto, "add-category-auto", "", false,
@@ -105,7 +112,6 @@ func add(cmd *cobra.Command, args []string) error {
 	}
 	option := &client.TorrentOption{
 		Pause:              addPaused,
-		SavePath:           savePath,
 		SkipChecking:       skipCheck,
 		SequentialDownload: sequentialDownload,
 	}
@@ -119,10 +125,14 @@ func add(cmd *cobra.Command, args []string) error {
 	cntAll := len(torrents)
 
 	for i, torrent := range torrents {
+		option.Category = ""
+		option.Tags = nil
+		option.SavePath = ""
 		// handle as a special case
 		if util.IsPureTorrentUrl(torrent) {
 			option.Category = addCategory
 			option.Tags = fixedTags
+			option.SavePath = savePath
 			if err = clientInstance.AddTorrent([]byte(torrent), option, nil); err != nil {
 				fmt.Printf("✕ %s (%d/%d): failed to add to client: %v\n", torrent, i+1, cntAll, err)
 				errorCnt++
@@ -150,27 +160,46 @@ func add(cmd *cobra.Command, args []string) error {
 		if siteInstance != nil {
 			hr = siteInstance.GetSiteConfig().GlobalHnR
 		}
-		if addCategoryAuto {
-			if siteName != "" {
-				option.Category = siteName
-			} else if addCategory != "" {
-				option.Category = addCategory
-			} else {
-				option.Category = "Others"
+		hasCommentMeta := false
+		if useComment {
+			if commentMeta := tinfo.DecodeComment(); commentMeta != nil {
+				hasCommentMeta = true
+				log.Debugf("Found and use torrent %s comment meta %v", torrent, commentMeta)
+				option.Category = commentMeta.Category
+				option.Tags = commentMeta.Tags
+				option.SavePath = commentMeta.SavePath
+				tinfo.MetaInfo.Comment = commentMeta.Comment
+				if data, err := tinfo.ToBytes(); err == nil {
+					content = data
+				}
 			}
-		} else {
-			option.Category = addCategory
 		}
-		option.Tags = nil
-		if siteName != "" {
-			option.Tags = append(option.Tags, client.GenerateTorrentTagFromSite(siteName))
-		}
-		if hr {
-			option.Tags = append(option.Tags, "_hr")
-		}
-		option.Tags = append(option.Tags, fixedTags...)
-		if rename != "" {
-			option.Name = torrentutil.RenameTorrent(rename, siteName, id, filename, tinfo)
+		if !hasCommentMeta {
+			if addCategoryAuto {
+				if siteName != "" {
+					option.Category = siteName
+				} else if addCategory != "" {
+					option.Category = addCategory
+				} else {
+					option.Category = "Others"
+				}
+			} else {
+				option.Category = addCategory
+			}
+			if tinfo.IsPrivate() {
+				option.Tags = append(option.Tags, config.PRIVATE_TAG)
+			}
+			if siteName != "" {
+				option.Tags = append(option.Tags, client.GenerateTorrentTagFromSite(siteName))
+			}
+			if hr {
+				option.Tags = append(option.Tags, config.HR_TAG)
+			}
+			option.Tags = append(option.Tags, fixedTags...)
+			if rename != "" {
+				option.Name = torrentutil.RenameTorrent(rename, siteName, id, filename, tinfo)
+			}
+			option.SavePath = savePath
 		}
 		err = clientInstance.AddTorrent(content, option, nil)
 		if err != nil {

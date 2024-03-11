@@ -39,6 +39,7 @@ func IsPureTorrentUrl(str string) bool {
 	return strings.HasPrefix(str, "magnet:") || strings.HasPrefix(str, "bc://bt/")
 }
 
+// Check whether str is a normal (http / https schema) or torrent (magnet / bt schema) url
 func IsTorrentUrl(str string) bool {
 	return IsUrl(str) || IsPureTorrentUrl(str)
 }

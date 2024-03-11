@@ -31,12 +31,17 @@ which supports the following variable placeholders:
 * [name] : Torrent name
 * [name128] : The prefix of torrent name which is at max 128 bytes
 
-Note it will overwrite any existing file on disk with the same name.`,
+If --use-comment-meta flag is set, ptool will export torrent's current category & tags & savePath meta info,
+and save them to the 'comment' field of exported .torrent file in JSON format ('{tags, category, save_path}').
+The "ptool add" command has the same flag that extracts and applies meta info from 'comment' when adding torrents.
+
+It will overwrite any existing file on disk with the same name.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: export,
 }
 
 var (
+	useComment  = false
 	category    = ""
 	tag         = ""
 	filter      = ""
@@ -45,6 +50,8 @@ var (
 )
 
 func init() {
+	command.Flags().BoolVarP(&useComment, "use-comment-meta", "", false,
+		"Export torrent category, tags, save path and other infos to 'comment' field of .torrent file")
 	command.Flags().StringVarP(&filter, "filter", "", "", "Filter torrents by name")
 	command.Flags().StringVarP(&category, "category", "", "", "Filter torrents by category")
 	command.Flags().StringVarP(&tag, "tag", "", "",
@@ -89,6 +96,27 @@ func export(cmd *cobra.Command, args []string) error {
 			fmt.Printf("✕ %s : failed to export %s: %v (%d/%d)\n", torrent.InfoHash, torrent.Name, err, i+1, cntAll)
 			errorCnt++
 			continue
+		}
+		if useComment {
+			var useCommentErr error
+			if tinfo, err := torrentutil.ParseTorrent(content, 99); err != nil {
+				useCommentErr = fmt.Errorf("failed to parse: %v", err)
+			} else if err := tinfo.EncodeComment(&torrentutil.TorrentCommentMeta{
+				Category: torrent.Category,
+				Tags:     torrent.Tags,
+				SavePath: torrent.SavePath,
+			}); err != nil {
+				useCommentErr = fmt.Errorf("failed to encode: %v", err)
+			} else if data, err := tinfo.ToBytes(); err != nil {
+				useCommentErr = fmt.Errorf("failed to re-generate torrent: %v", err)
+			} else {
+				content = data
+			}
+			if useCommentErr != nil {
+				fmt.Printf("✕ %s : %v (%d/%d)\n", torrent.InfoHash, useCommentErr, i+1, cntAll)
+				errorCnt++
+				continue
+			}
 		}
 		filepath := path.Join(downloadDir, torrentutil.RenameExportedTorrent(torrent, rename))
 		if err := os.WriteFile(filepath, content, 0600); err != nil {

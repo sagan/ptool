@@ -344,6 +344,8 @@ ptool export <client> <infoHash>...
 
 导出客户端里的种子为 .torrent 文件。
 
+该功能支持一个特殊的 `--use-comment-meta` 参数，会将客户端里种子的分类(category)、标签(tags)、保存路径(savePath)等元信息保存到导出的 .torrent 文件的 "comment" 字段里。`ptool add` 命令使用同样参数可以在添加种子时使用 .torrent 文件 "comment" 字段里的元信息。该功能的设计目的是在重装 qBittorrent 或重装操作系统后恢复种子，也可以用于转移种子做种客户端。
+
 ### 显示 BT 客户端或 PT 站点状态 (status)
 
 ```

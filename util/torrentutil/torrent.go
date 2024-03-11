@@ -3,6 +3,7 @@ package torrentutil
 import (
 	"bytes"
 	"crypto/sha1"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -16,6 +17,13 @@ import (
 	"github.com/sagan/ptool/util"
 	log "github.com/sirupsen/logrus"
 )
+
+type TorrentCommentMeta struct {
+	Category string   `json:"category,omitempty"`
+	Tags     []string `json:"tags,omitempty"`
+	Comment  string   `json:"comment,omitempty"`
+	SavePath string   `json:"save_path,omitempty"`
+}
 
 type TorrentMetaFile struct {
 	Path string // full path joined by '/'
@@ -83,6 +91,43 @@ func ParseTorrent(torrentdata []byte, fields int64) (*TorrentMeta, error) {
 	return torrentMeta, nil
 }
 
+// Encode torrent meta to 'comment' field
+func (meta *TorrentMeta) EncodeComment(commentMeta *TorrentCommentMeta) error {
+	comment := ""
+	if existingCommentMeta := meta.DecodeComment(); existingCommentMeta != nil {
+		comment = existingCommentMeta.Comment
+	} else {
+		comment = meta.MetaInfo.Comment
+	}
+	commentMeta.Comment = comment
+	data, err := json.Marshal(commentMeta)
+	if err != nil {
+		return err
+	}
+	meta.MetaInfo.Comment = string(data)
+	return nil
+}
+
+// Decode torrent meta from 'comment' field
+func (meta *TorrentMeta) DecodeComment() *TorrentCommentMeta {
+	var commentMeta *TorrentCommentMeta
+	json.Unmarshal([]byte(meta.MetaInfo.Comment), &commentMeta)
+	return commentMeta
+}
+
+func (meta *TorrentMeta) IsPrivate() bool {
+	return meta.Info.Private != nil && *meta.Info.Private
+}
+
+// Generate .torrent file from current content
+func (meta *TorrentMeta) ToBytes() ([]byte, error) {
+	buf := bytes.NewBuffer(nil)
+	if err := meta.MetaInfo.Write(buf); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
 // Generate magnet: url of this torrent.
 // Must be used on meta parsed from ParseTorrent with fields >= 2
 func (meta *TorrentMeta) MagnetUrl() string {
@@ -111,7 +156,7 @@ func (meta *TorrentMeta) Print(name string, showAll bool) {
 		if meta.MetaInfo.Comment != "" {
 			comments = append(comments, meta.MetaInfo.Comment)
 		}
-		if meta.Info.Private != nil && *meta.Info.Private {
+		if meta.IsPrivate() {
 			comments = append(comments, "private")
 		}
 		if meta.Info.Source != "" {
@@ -128,7 +173,7 @@ func (meta *TorrentMeta) Print(name string, showAll bool) {
 			fmt.Printf("! RawSize = %d ; RootDir = %s ; AllTrackers: %s ;%s\n",
 				meta.Size, meta.RootDir, strings.Join(meta.Trackers, " | "), comment)
 		}
-		if meta.Info.Private == nil || !*meta.Info.Private {
+		if !meta.IsPrivate() {
 			fmt.Printf("! MagnetURI: %s\n", meta.MagnetUrl())
 		}
 	}

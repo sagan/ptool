@@ -41,8 +41,7 @@ Be aware that all existing comments in config file will be LOST when updating co
 func init() {
 	command.Flags().BoolVarP(&force, "force", "", false,
 		"Do update the config file without confirm. Be aware that all existing comments in config file will be LOST")
-	command.Flags().BoolVarP(&noCheck, "no-check", "", false,
-		"Do not check the cookies validity before importing new sites")
+	command.Flags().BoolVarP(&noCheck, "skip-check", "", false, "Skip site cookie validity checking prior to importing")
 	command.Flags().StringVarP(&profile, "profile", "", "",
 		"Comma-separated, Set the used cookiecloud profile name(s). "+
 			"If not set, All cookiecloud profiles in config will be used")

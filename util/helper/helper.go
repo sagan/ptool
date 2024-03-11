@@ -43,7 +43,7 @@ func GetTorrentContent(torrent string, defaultSite string,
 		!util.IsUrl(torrent) && strings.HasSuffix(torrent, ".torrent"))
 	// site torrent id or url
 	if !isLocal {
-		if util.IsTorrentUrl(torrent) {
+		if util.IsPureTorrentUrl(torrent) {
 			err = fmt.Errorf("magnet or bt url is NOT supported")
 			return
 		}
