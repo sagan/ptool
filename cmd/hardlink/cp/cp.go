@@ -17,7 +17,9 @@ var command = &cobra.Command{
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "hardlinkcp"},
 	Short:       "Create hardlinked duplicate of source folder or file",
 	Long: `Create hardlinked duplicate of source folder or file
-Similar to what "cp -rl SOURCE DEST" in Linux does. It works in every platform.`,
+Similar to what "cp -rl SOURCE DEST" in Linux does. It works in every platform.
+
+For small file (defined by --hardlink-min-size), it will create a copy instead of a hardlink.`,
 	Args: cobra.MatchAll(cobra.ExactArgs(2), cobra.OnlyValidArgs),
 	RunE: hardlinkcp,
 }

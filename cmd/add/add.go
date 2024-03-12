@@ -31,7 +31,8 @@ Torrent url that does NOT belong to any site (e.g.: a public site url), as well 
 Use a single "-" as args to read torrent list from stdin, delimited by blanks,
 as a special case, it also supports directly reading .torrent file contents from stdin.
 
---rename <name> flag supports the following variable placeholders:
+To set the name of added torrent in client, use --rename <name> flag,
+which supports the following variable placeholders:
 * [size] : Torrent size
 * [id] :  Torrent id in site
 * [site] : Torrent site

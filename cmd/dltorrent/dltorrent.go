@@ -20,7 +20,8 @@ Args is torrent list that each one could be a site torrent id (e.g.: "mteam.4884
 or url (e.g.: "https://kp.m-team.cc/details.php?id=488424").
 Torrent url that does NOT belong to any site (e.g.: a public site url) is also supported.
 
---rename <name> flag supports the following variable placeholders:
+To set the filename of downloaded torrent, use --rename <name> flag,
+which supports the following variable placeholders:
 * [size] : Torrent size
 * [id] :  Torrent id in site
 * [site] : Torrent site

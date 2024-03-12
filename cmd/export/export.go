@@ -22,7 +22,7 @@ var command = &cobra.Command{
 _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.
 Specially, use a single "-" as args to read infoHash list from stdin, delimited by blanks.
 
-To set the filenames of downloaded torrents, use --rename <name> flag,
+To set the filename of downloaded torrent, use --rename <name> flag,
 which supports the following variable placeholders:
 * [size] : Torrent size
 * [infohash] :  Torrent infohash

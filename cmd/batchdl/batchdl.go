@@ -28,7 +28,8 @@ var command = &cobra.Command{
 	Short:       "Batch download the smallest (or by any other order) torrents from a site.",
 	Long: `Batch download the smallest (or by any other order) torrents from a site.
 
---rename <name> flag supports the following variable placeholders:
+To set the name of added torrent in client or filename of downloaded torrent, use --rename <name> flag,
+which supports the following variable placeholders:
 * [size] : Torrent size
 * [id] :  Torrent id in site
 * [site] : Torrent site
@@ -252,7 +253,8 @@ func batchdl(command *cobra.Command, args []string) error {
 	var marker = startPage
 	var lastMarker = ""
 	doneHandle := func() {
-		fmt.Printf("\nDone. Torrents(Size/Cnt) | AllTorrents(Size/Cnt) | LastPage: %s/%d | %s/%d | \"%s\"; ErrorCnt: %d\n",
+		fmt.Fprintf(os.Stderr,
+			"\nDone. Torrents(Size/Cnt) | AllTorrents(Size/Cnt) | LastPage: %s/%d | %s/%d | \"%s\"; ErrorCnt: %d\n",
 			util.BytesSize(float64(totalSize)),
 			cntTorrents,
 			util.BytesSize(float64(totalAllSize)),
@@ -296,7 +298,7 @@ mainloop:
 		for _, torrent := range torrents {
 			totalAllSize += torrent.Size
 			if minTorrentSize >= 0 && torrent.Size < minTorrentSize {
-				log.Tracef("Skip torrent %s due to size %d < minTorrentSize", torrent.Name, torrent.Size)
+				log.Debugf("Skip torrent %s due to size %d < minTorrentSize", torrent.Name, torrent.Size)
 				if sortFlag == "size" && desc {
 					break mainloop
 				} else {
@@ -304,7 +306,7 @@ mainloop:
 				}
 			}
 			if maxTorrentSize >= 0 && torrent.Size > maxTorrentSize {
-				log.Tracef("Skip torrent %s due to size %d > maxTorrentSize", torrent.Name, torrent.Size)
+				log.Debugf("Skip torrent %s due to size %d > maxTorrentSize", torrent.Name, torrent.Size)
 				if sortFlag == "size" && !desc {
 					break mainloop
 				} else {
@@ -312,11 +314,11 @@ mainloop:
 				}
 			}
 			if !includeDownloaded && torrent.IsActive {
-				log.Tracef("Skip active torrent %s", torrent.Name)
+				log.Debugf("Skip active torrent %s", torrent.Name)
 				continue
 			}
 			if minSeeders >= 0 && torrent.Seeders < minSeeders {
-				log.Tracef("Skip torrent %s due to too few seeders", torrent.Name)
+				log.Debugf("Skip torrent %s due to too few seeders", torrent.Name)
 				if sortFlag == "seeders" && desc {
 					break mainloop
 				} else {
@@ -324,7 +326,7 @@ mainloop:
 				}
 			}
 			if maxSeeders >= 0 && torrent.Seeders > maxSeeders {
-				log.Tracef("Skip torrent %s due to too more seeders", torrent.Name)
+				log.Debugf("Skip torrent %s due to too more seeders", torrent.Name)
 				if sortFlag == "seeders" && !desc {
 					break mainloop
 				} else {
@@ -332,41 +334,41 @@ mainloop:
 				}
 			}
 			if filter != "" && !torrent.MatchFilter(filter) {
-				log.Tracef("Skip torrent %s due to filter %s does NOT match", torrent.Name, filter)
+				log.Debugf("Skip torrent %s due to filter %s does NOT match", torrent.Name, filter)
 				continue
 			}
 			if torrent.MatchFiltersOr(excludesList) {
-				log.Tracef("Skip torrent %s due to excludes matches", torrent.Name)
+				log.Debugf("Skip torrent %s due to excludes matches", torrent.Name)
 				continue
 			}
 			if !torrent.MatchFiltersAndOr(includesList) {
-				log.Tracef("Skip torrent %s due to includes does NOT match", torrent.Name)
+				log.Debugf("Skip torrent %s due to includes does NOT match", torrent.Name)
 				continue
 			}
 			if freeOnly {
 				if torrent.DownloadMultiplier != 0 {
-					log.Tracef("Skip none-free torrent %s", torrent.Name)
+					log.Debugf("Skip none-free torrent %s", torrent.Name)
 					continue
 				}
 				if freeTimeAtLeast > 0 && torrent.DiscountEndTime > 0 && torrent.DiscountEndTime < now+freeTimeAtLeast {
-					log.Tracef("Skip torrent %s which remaining free time is too short", torrent.Name)
+					log.Debugf("Skip torrent %s which remaining free time is too short", torrent.Name)
 					continue
 				}
 			}
 			if nohr && torrent.HasHnR {
-				log.Tracef("Skip HR torrent %s", torrent.Name)
+				log.Debugf("Skip HR torrent %s", torrent.Name)
 				continue
 			}
 			if noPaid && torrent.Paid && !torrent.Bought {
-				log.Tracef("Skip paid torrent %s", torrent.Name)
+				log.Debugf("Skip paid torrent %s", torrent.Name)
 				continue
 			}
 			if noNeutral && torrent.Neutral {
-				log.Tracef("Skip neutral torrent %s", torrent.Name)
+				log.Debugf("Skip neutral torrent %s", torrent.Name)
 				continue
 			}
 			if maxTotalSize >= 0 && totalSize+torrent.Size > maxTotalSize {
-				log.Tracef("Skip torrent %s which would break max total size limit", torrent.Name)
+				log.Debugf("Skip torrent %s which would break max total size limit", torrent.Name)
 				if sortFlag == "size" && !desc {
 					break mainloop
 				} else {
