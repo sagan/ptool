@@ -31,6 +31,7 @@ import (
 	_ "github.com/sagan/ptool/cmd/removetags"
 	_ "github.com/sagan/ptool/cmd/removetrackers"
 	_ "github.com/sagan/ptool/cmd/renametag"
+	_ "github.com/sagan/ptool/cmd/reseed"
 	_ "github.com/sagan/ptool/cmd/resume"
 	_ "github.com/sagan/ptool/cmd/run"
 	_ "github.com/sagan/ptool/cmd/search"

@@ -47,12 +47,8 @@ var (
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	cobra.OnInitialize(func() {
-		// cobra-prompt will start a new cobra context each time executing a command
-		if config.Initialized {
-			return
-		}
-		config.Initialized = true
+	// cobra-prompt will start a new cobra context each time executing a command
+	cobra.OnInitialize(sync.OnceFunc(func() {
 		if config.Fork {
 			osutil.Fork("--fork")
 		}
@@ -97,7 +93,7 @@ func Execute() {
 			log.Infof("Lock acquired")
 		}
 		ShellHistory = &ShellHistoryStruct{filename: filepath.Join(config.ConfigDir, config.HISTORY_FILENAME)}
-	})
+	}))
 	// See https://github.com/spf13/cobra/issues/914 .
 	// Must use RunE to capture error.
 	// Returned errors:

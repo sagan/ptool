@@ -19,8 +19,8 @@ const (
 	HTTP_HEADER_PLACEHOLDER = "\n"
 )
 
-func FetchJson(url string, v any, client *http.Client) error {
-	res, _, err := FetchUrl(url, client)
+func FetchJson(url string, v any, client *http.Client, header http.Header) error {
+	res, _, err := FetchUrl(url, client, header)
 	if err != nil {
 		return err
 	}
@@ -37,12 +37,13 @@ func FetchJson(url string, v any, client *http.Client) error {
 	return err
 }
 
-func FetchUrl(url string, client *http.Client) (*http.Response, http.Header, error) {
+func FetchUrl(url string, client *http.Client, header http.Header) (*http.Response, http.Header, error) {
 	log.Tracef("FetchUrl url=%s", url)
 	if client == nil {
 		client = http.DefaultClient
 	}
 	req, err := http.NewRequest("GET", url, nil)
+	req.Header = header
 	if err != nil {
 		return nil, nil, err
 	}

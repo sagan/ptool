@@ -2,6 +2,9 @@ module github.com/sagan/ptool
 
 go 1.22.0
 
+// Change Client.Connect signature to func (c *Client) Connect(requestHeader http.Header)
+replace github.com/googollee/go-socket.io => ./go-socket.io
+
 // workaround for some problem
 replace github.com/hekmon/transmissionrpc/v2 => ./transmissionrpc
 
@@ -15,12 +18,12 @@ require (
 	github.com/Noooste/azuretls-client v1.2.12
 	github.com/PuerkitoBio/goquery v1.9.0
 	github.com/anacrolix/torrent v1.55.0
-	github.com/bradfitz/iter v0.0.0-20191230175014-e8f45d346db8
 	github.com/c-bata/go-prompt v0.2.6
 	github.com/ettle/strcase v0.2.0
 	github.com/glebarez/sqlite v1.10.0
 	github.com/gofrs/flock v0.8.1
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
+	github.com/googollee/go-socket.io v1.8.0-rc.1.0.20230904084053-b044011d047b
 	github.com/hekmon/transmissionrpc/v2 v2.0.1
 	github.com/jpillora/go-tld v1.2.1
 	github.com/mattn/go-runewidth v0.0.15
@@ -35,9 +38,13 @@ require (
 )
 
 require (
+	github.com/bradfitz/iter v0.0.0-20191230175014-e8f45d346db8 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fatih/color v1.16.0 // indirect
+	github.com/gofrs/uuid v4.4.0+incompatible // indirect
+	github.com/gomodule/redigo v1.8.9 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
 	github.com/refraction-networking/utls v1.6.3 // indirect

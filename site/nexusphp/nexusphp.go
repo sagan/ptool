@@ -149,7 +149,8 @@ func (npclient *Site) DownloadTorrentById(id string) ([]byte, string, error) {
 				log.Warnf("Failed to get site passkey. torrent download may fail")
 			} else {
 				passkey = npclient.digitHashPasskey
-				log.Infof(`Found site passkey. Add the passkey = "%s" line to site config block of ptool.toml to speed up the next visit`, passkey)
+				log.Infof(`Found site passkey. Add the passkey = "%s" line to site config block of ptool.toml `+
+					`to speed up the next visit`, passkey)
 			}
 		}
 		if passkey != "" {
@@ -217,7 +218,8 @@ func (npclient *Site) GetLatestTorrents(full bool) ([]site.Torrent, error) {
 	return latestTorrents, nil
 }
 
-func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (torrents []site.Torrent, nextPageMarker string, err error) {
+func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (
+	torrents []site.Torrent, nextPageMarker string, err error) {
 	if sort != "" && sort != "none" && sortFields[sort] == "" {
 		err = fmt.Errorf("unsupported sort field: %s", sort)
 		return

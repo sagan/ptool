@@ -822,7 +822,7 @@ func (qbclient *Client) SetConfig(variable string, value string) error {
 // See https://github.com/qbittorrent/qBittorrent/issues/18746 for more info.
 func (qbclient *Client) ExportTorrentFile(infoHash string) ([]byte, error) {
 	apiUrl := qbclient.ClientConfig.Url + "api/v2/torrents/export?hash=" + infoHash
-	res, _, err := util.FetchUrl(apiUrl, qbclient.HttpClient)
+	res, _, err := util.FetchUrl(apiUrl, qbclient.HttpClient, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -872,7 +872,7 @@ func (qbclient *Client) GetTorrentContents(infoHash string) ([]client.TorrentCon
 	}
 	apiUrl := qbclient.ClientConfig.Url + "api/v2/torrents/files?hash=" + infoHash
 	qbTorrentContents := []apiTorrentContent{}
-	err = util.FetchJson(apiUrl, &qbTorrentContents, qbclient.HttpClient)
+	err = util.FetchJson(apiUrl, &qbTorrentContents, qbclient.HttpClient, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -900,7 +900,7 @@ func (qbclient *Client) GetTorrentTrackers(infoHash string) (client.TorrentTrack
 	}
 	apiUrl := qbclient.ClientConfig.Url + "api/v2/torrents/trackers?hash=" + infoHash
 	qbTorrentTrackers := []apiTorrentTracker{}
-	err = util.FetchJson(apiUrl, &qbTorrentTrackers, qbclient.HttpClient)
+	err = util.FetchJson(apiUrl, &qbTorrentTrackers, qbclient.HttpClient, nil)
 	if err != nil {
 		return nil, err
 	}

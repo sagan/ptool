@@ -179,6 +179,7 @@ type ConfigStruct struct {
 	ShellMaxSuggestions int64                      `yaml:"shellMaxSuggestions"` // -1 禁用
 	ShellMaxHistory     int64                      `yaml:"shellMaxHistory"`     // -1 禁用
 	IyuuToken           string                     `yaml:"iyuuToken"`
+	ReseedToken         string                     `yaml:"reseedToken"`
 	IyuuDomain          string                     `yaml:"iyuuDomain"` // iyuu API 域名。默认使用 api.iyuu.cn
 	SiteProxy           string                     `yaml:"siteProxy"`
 	SiteUserAgent       string                     `yaml:"siteUserAgent"`
@@ -206,7 +207,6 @@ var defaultConfigFs embed.FS
 var (
 	VerboseLevel          = 0
 	InShell               = false
-	Initialized           = false
 	ConfigDir             = "" // "/root/.config/ptool"
 	ConfigFile            = "" // "ptool.toml"
 	DefaultConfigFile     = "" // set when start

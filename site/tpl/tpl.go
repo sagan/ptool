@@ -82,6 +82,7 @@ var (
 		},
 		"byr": {
 			Type:                "nexusphp",
+			Aliases:             []string{"byrbt"}, // reseed name
 			Url:                 "https://byr.pt/",
 			SelectorTorrentFree: `.pro_free, .pro_free2up`,
 			Comment:             "北邮人",
@@ -252,7 +253,7 @@ var (
 		},
 		"hdupt": {
 			Type:    "nexusphp",
-			Aliases: []string{"upxin"},
+			Aliases: []string{"upxin", "hdu"},
 			Url:     "https://pt.hdupt.com/",
 			Comment: "好多油",
 		},
