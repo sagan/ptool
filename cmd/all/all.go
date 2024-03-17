@@ -8,6 +8,7 @@ import (
 	_ "github.com/sagan/ptool/cmd/alias"
 	_ "github.com/sagan/ptool/cmd/batchdl"
 	_ "github.com/sagan/ptool/cmd/brush"
+	_ "github.com/sagan/ptool/cmd/checktag"
 	_ "github.com/sagan/ptool/cmd/clientctl"
 	_ "github.com/sagan/ptool/cmd/configcmd/all"
 	_ "github.com/sagan/ptool/cmd/cookiecloud/all"

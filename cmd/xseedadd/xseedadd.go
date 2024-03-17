@@ -2,6 +2,7 @@ package xseedadd
 
 import (
 	"fmt"
+	"os"
 	"sort"
 
 	log "github.com/sirupsen/logrus"
@@ -34,6 +35,8 @@ If no target torrent for a xseed torrent is found in the client, it will NOT add
 }
 
 var (
+	renameAdded = false
+	deleteAdded = false
 	addPaused   = false
 	check       = false
 	dryRun      = false
@@ -47,6 +50,9 @@ var (
 )
 
 func init() {
+	command.Flags().BoolVarP(&renameAdded, "rename-added", "", false,
+		"Rename successfully added *.torrent file to *.torrent.added")
+	command.Flags().BoolVarP(&deleteAdded, "delete-added", "", false, "Delete successfully added *.torrent file")
 	command.Flags().BoolVarP(&addPaused, "add-paused", "", false, "Add xseed torrents to client in paused state")
 	command.Flags().BoolVarP(&check, "check", "", false, "Let client do hash checking when adding xseed torrents")
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do NOT actually add xseed torrents to client")
@@ -62,8 +68,11 @@ func init() {
 }
 
 func xseedadd(cmd *cobra.Command, args []string) error {
+	if renameAdded && deleteAdded {
+		return fmt.Errorf("--rename-added and --delete-added flags are NOT compatible")
+	}
 	clientName := args[0]
-	torrents := args[1:]
+	torrents := util.ParseFilenameArgs(args[1:]...)
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
 		return fmt.Errorf("failed to create client: %v", err)
@@ -100,7 +109,7 @@ func xseedadd(cmd *cobra.Command, args []string) error {
 	})
 	errorCnt := int64(0)
 	for _, torrent := range torrents {
-		content, tinfo, _, sitename, _, _, err :=
+		content, tinfo, siteInstance, sitename, _, _, err :=
 			helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, nil, false)
 		if err != nil {
 			fmt.Printf("X%s: failed to get: %v\n", torrent, err)
@@ -172,6 +181,17 @@ func xseedadd(cmd *cobra.Command, args []string) error {
 		} else {
 			fmt.Printf("✓%s: matched with client torrent %s (%s), added to client, save path: %s\n",
 				torrent, matchClientTorrent.InfoHash, matchClientTorrent.Name, matchClientTorrent.SavePath)
+			if siteInstance == nil && torrent != "-" {
+				if renameAdded {
+					if err := os.Rename(torrent, torrent+".added"); err != nil {
+						log.Debugf("Failed to rename %s to *.added: %v", torrent, err)
+					}
+				} else if deleteAdded {
+					if err := os.Remove(torrent); err != nil {
+						log.Debugf("Failed to delete %s: %v", torrent, err)
+					}
+				}
+			}
 		}
 	}
 	if errorCnt > 0 {

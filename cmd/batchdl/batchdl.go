@@ -42,6 +42,7 @@ which supports the following variable placeholders:
 }
 
 var (
+	skipLocalExisting  = false
 	downloadAll        = false
 	onePage            = false
 	addPaused          = false

@@ -284,7 +284,7 @@ ptool show local 31a615d5984cb63c6f999f72bb3961dce49c194a
 ptool show local --category rss --completed-before 5d --show-info-hash-only | ptool delete local --force -
 ```
 
-#### 管理 BT 客户端里的的种子分类 / 标签 / Trackers 等(getcategories / createcategory / deletecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / renametag / edittracker / addtrackers / removetrackers / setsavepath)
+#### 管理 BT 客户端里的的种子分类 / 标签 / Trackers 等(getcategories / createcategory / deletecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / renametag / edittracker / addtrackers / removetrackers / setsavepath / checktag)
 
 ```
 # 获取所有分类
@@ -334,6 +334,9 @@ ptool removetrackers <client> <infoHashes...> --tracker "https://..."
 
 # 修改种子内容的保存路径
 ptool setsavepath <client> <savePath> [<infoHash>...]
+
+# 检测客户端里是否存在某个 tag。If exists, exit with 0。
+ptool checktag <client> <tag>
 ```
 
 #### 导出客户端种子 (export)
