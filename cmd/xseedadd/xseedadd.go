@@ -29,7 +29,9 @@ For every torrent in the list (the "xseed torrent"), it will try to find the exi
 and add this torrent to the client as the corresponding xseed torrent of the target torrent.
 To be qualified as the target torrent, the existing torrent must have the same contents (name & size of files)
 with this xseed torrent, is fullly completed downloaded, and is in seeding state currently.
-If no target torrent for a xseed torrent is found in the client, it will NOT add the xseed torrent to client.`,
+If no target torrent for a xseed torrent is found in the client, it will NOT add the xseed torrent to client.
+
+If a torrent of the list already exists in client, it will also be skipped.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	RunE: xseedadd,
 }

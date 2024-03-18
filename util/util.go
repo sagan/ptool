@@ -343,3 +343,11 @@ func LinkDir(source string, dest string, limit int64) error {
 		return nil
 	})
 }
+
+// Check whether a file (or dir) with name exists in file system
+func FileExists(name string) bool {
+	if _, err := os.Stat(name); err == nil || !os.IsNotExist(err) {
+		return true
+	}
+	return false
+}

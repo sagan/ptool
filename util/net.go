@@ -43,7 +43,9 @@ func FetchUrl(url string, client *http.Client, header http.Header) (*http.Respon
 		client = http.DefaultClient
 	}
 	req, err := http.NewRequest("GET", url, nil)
-	req.Header = header
+	if header != nil {
+		req.Header = header
+	}
 	if err != nil {
 		return nil, nil, err
 	}

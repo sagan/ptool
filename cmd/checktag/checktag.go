@@ -38,7 +38,7 @@ func checktag(cmd *cobra.Command, args []string) error {
 
 	clientTags, err := clientInstance.GetTags()
 	if err != nil {
-		return fmt.Errorf("failed to get tags: %v", err)
+		return fmt.Errorf("failed to get client %s tags: %v", clientName, err)
 	}
 	ok := false
 	for _, tag := range tags {

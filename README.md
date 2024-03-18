@@ -1,6 +1,6 @@
 # ptool
 
-自用的 PT (private tracker) 网站和 Bittorrent 客户端辅助工具([Github](https://github.com/sagan/ptool))。提供全自动刷流(brush)、自动辅种(使用 iyuu 接口)、BT 客户端控制等功能。
+自用的 PT (private tracker) 网站和 Bittorrent 客户端辅助工具([Github](https://github.com/sagan/ptool))。提供全自动刷流(brush)、自动辅种(使用 iyuu 或 Reseed 等接口)、BT 客户端控制等功能。
 
 主要特性：
 
@@ -95,7 +95,8 @@ ptool <command> args... [flags]
 所有可用的 `<command>` 包括:
 
 - brush : 自动刷流。
-- iyuu : 使用 iyuu 接口自动辅种。
+- iyuu : 使用 [iyuu](https://github.com/ledccn/IYUUAutoReseed) 接口自动辅种。
+- reseed : 使用 [Reseed](https://github.com/tongyifan/Reseed-backend) 接口自动辅种。
 - batchdl : 批量下载站点的种子。
 - status : 显示 BT 客户端或 PT 站点当前状态信息。
 - stats : 显示刷流任务流量统计。
@@ -196,11 +197,46 @@ ptool iyuu bind --site zhuque --uid 123456 --passkey 0123456789abcdef
 ptool iyuu xseed <client>...
 ```
 
-可以提供多个 client。程序会获取这些 client 里正在做种的种子信息，通过 iyuu 接口查询可以辅种的种子并将其自动添加到对应客户端里。注意只有在本程序的 ptool.toml 配置文件里添加的站点才会被辅种。
+可以提供多个 client。程序会获取这些 client 里正在做种的种子信息，通过 iyuu 接口查询可以辅种的种子并将其自动添加到对应客户端里。注意只有在本程序的 ptool.toml 配置文件里添加的站点的种子才会被辅种。
 
 iyuu xseed 子命令支持很多可选参数。运行 `ptool iyuu xseed -h` 查看所有可选参数使用说明。
 
 添加的辅种种子默认跳过客户端 hash 校验并立即开始做种。本程序会对客户端里目标种子和 iyuu 接口返回的候选辅种种子的文件列表进行比较（文件路径、大小），只有完全一致才会添加辅种种子。添加的辅种种子会打上 `_xseed` 标签。
+
+## 自动辅种 (reseed)
+
+reseed 命令使用 [Reseed](https://github.com/tongyifan/Reseed-backend) 提供的接口自动辅种。
+
+首先在 [Reseed 官网](https://reseed.tongyifan.me/) 注册（需要使用指定 PT 站点验证），然后在 ptool.toml 文件里配置 Reseed 的用户信息：
+
+```
+reseedUsername = 'username'
+reseedPassword = 'password'
+```
+
+Reseed 的辅种原理是扫描本地硬盘的“下载文件夹” (QB 的 save path)，然后自动找到匹配其中内容的站点种子：
+
+```
+ptool reseed match D:\Downloads --download
+```
+
+以上命令扫描 D:\Downloads 里的文件，通过 Reseed 查询匹配的站点种子，然后将找到的所有 .torrent 种子文件下载到本地（下载文件默认保存路径：ptool.toml 配置文件所在目录的 "reseed" 子文件夹里）。注意只有在本程序的 ptool.toml 配置文件里添加的站点的种子才会被下载。
+
+然后使用 ptool xseedadd 命令将所有下载的 Reseed 辅种种子添加到本地 BT 客户端：
+
+```
+ptool xseedadd local "C:\Users\<username>\.config\ptool\reseed\*.torrent"
+```
+
+其它功能：
+
+```
+# 查看 Reseed 账号状态
+ptool reseed status
+
+# 查看 Reseed 支持的所有可辅种 PT 站点列表
+ptool reseed sites
+```
 
 ### BT 客户端控制命令集
 

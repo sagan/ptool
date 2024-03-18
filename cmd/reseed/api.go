@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 	"unicode/utf16"
 
 	socketio "github.com/googollee/go-socket.io"
@@ -17,8 +19,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// backend: https://github.com/tongyifan/Reseed-backend .
-// It's using a sock.io server as API,
+// Reseed API backend: https://github.com/tongyifan/Reseed-backend , it's a sock.io server,
+// with the main websocket API and some additional RESTful APIs.
+// All APIs (except "login" API) use token authorization in header: "Authorization: Bearar <token>",
+// To acquire token: POST https://reseed-api.tongyifan.me/login with username & password,
+// receive json {msg, success: true, token}. token is ephemeral, expires in 1 day.
+// Note for websocket API, if token does NOT exists, server will return 500 error when connecting;
+// however, if token exists but is expired or invalid, server will just hang (do NOT response to any request).
+// The websocket API uses sock.io events:
+// "file" event: client -> server.
+// "reseed result" event: server -> client.
 // Note the websocket API ONLY accept frames that is pure ASCII,
 // all unicode characters in JSON must be encoded in '\uXXXX' format.
 const RESEED_API = "https://reseed-api.tongyifan.me/"
@@ -34,16 +44,19 @@ type Site struct {
 // the "file" event payload of Reseed sock.io API
 type File map[string]any
 
+type ReseedResultSite struct {
+	// reseed torrent id
+	Id int64 `json:"id,omitempty"`
+	// comma-separated site torrent ids, e.g.: NexusHD-123456,HDU-23456,TJUPT-34567
+	Sites string `json:"sites,omitempty"`
+}
+
 // the 'reseed result' event returned by Reseed backend
 // see https://github.com/tongyifan/Reseed-backend/blob/890dfcb20b98684bf315c8c9f5352c062ae93166/views/reseed.py#L57
 type ReseedResult struct {
-	Name       string `json:"name,omitempty"`
-	CmpSuccess struct {
-		Id int64 `json:"id,omitempty"`
-		// comma-separated site torrent ids, e.g.: NexusHD-123456,HDU-23456,TJUPT-34567
-		Sites string `json:"sites,omitempty"`
-	} `json:"cmp_success,omitempty"`
-	CmpWarning []string `json:"cmp_warning,omitempty"`
+	Name       string             `json:"name,omitempty"`
+	CmpSuccess []ReseedResultSite `json:"cmp_success,omitempty"`
+	CmpWarning []ReseedResultSite `json:"cmp_warning,omitempty"`
 }
 
 // It's performance is terrible, but who cares?
@@ -55,6 +68,7 @@ func (f File) MarshalJSON() ([]byte, error) {
 	}
 }
 
+// Escape all unicode (non-ASCII) characters to '\uXXXX' format.
 func Escape2Anscii(s string) string {
 	var sb strings.Builder
 	for _, r := range s {
@@ -71,26 +85,85 @@ func Escape2Anscii(s string) string {
 	return sb.String()
 }
 
-// return xseed torrent ids found by reseed backend.
-func GetReseedTorrents(token string, savePath ...string) ([]string, error) {
-	client, _ := socketio.NewClient(RESEED_API, nil)
-	header := http.Header{}
-	header.Set("Authorization", "Bearar "+token)
-	if err := client.Connect(header); err != nil {
-		return nil, fmt.Errorf("failed to connect to reseed backend: %v", err)
-	}
+// Request reseed API and return xseed torrent ids (full match & partial match results) found by reseed backend.
+func GetReseedTorrents(username string, password string, sites []*config.SiteConfigStruct, timeout int64,
+	savePath ...string) (results []string, results2 []string, err error) {
 	file, err := scan(savePath...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to scan savePath(s): %v", err)
+		err = fmt.Errorf("failed to scan savePath(s): %v", err)
+		return
 	}
-	client.Emit("file", file)
-	client.OnEvent("reseed result", func(conn socketio.Conn, message any) {
+	if len(file) == 0 {
+		log.Debugf("All savePath does NOT has any contents")
+		return
+	}
+	token, err := Login(username, password)
+	if err != nil {
+		err = fmt.Errorf("failed to login to reseed server: %v", err)
+		return
+	}
+	reseedSites, err := GetSites(token)
+	if err != nil {
+		err = fmt.Errorf("failed to get reseed sites: %v", err)
+		return
+	}
+	reseed2LocalMap := GenerateReseed2LocalSiteMap(reseedSites, sites)
+	client, err := socketio.NewClient(RESEED_API, nil)
+	if err != nil {
+		err = fmt.Errorf("failed to create sock.io client: %v", err)
+		return
+	}
+	// must provide a "reply" event listener
+	client.OnEvent("reply", func(s socketio.Conn, msg string) {
+		// log.Println("Receive Message /reply: ", "reply", msg)
+	})
+	header := http.Header{}
+	if token != "" {
+		header.Set("Authorization", "Bearar "+token)
+	}
+	if err = client.Connect(header); err != nil {
+		err = fmt.Errorf("failed to connect to reseed backend: %v", err)
+		return
+	}
+	timeoutPeriod := time.Second * time.Duration(timeout)
+	timeoutTicker := time.NewTicker(timeoutPeriod)
+	chResult := make(chan *ReseedResult, 1)
+	chErr := make(chan error, 1)
+	client.OnEvent("reseed result", func(conn socketio.Conn, message *ReseedResult) {
 		log.Tracef("reseed result: %v", message)
+		chResult <- message
 	})
 	client.OnError(func(c socketio.Conn, err error) {
 		log.Tracef("Server error: %v", err)
+		chErr <- err
 	})
-	return nil, nil
+	go client.Emit("file", file)
+	cntResult := 0
+loop:
+	for {
+		select {
+		case result := <-chResult:
+			log.Tracef("reseed result: %v", result)
+			cntResult++
+			results = append(results, parseReseedResult(reseed2LocalMap, result.CmpSuccess)...)
+			results2 = append(results2, parseReseedResult(reseed2LocalMap, result.CmpWarning)...)
+			timeoutTicker.Reset(timeoutPeriod)
+			if cntResult == len(file) {
+				break loop
+			}
+		case e := <-chErr:
+			err = e
+			break loop
+		case <-timeoutTicker.C: // the websocket API has no "end" event.
+			break loop
+		}
+	}
+	client.Close()
+	timeoutTicker.Stop()
+	if cntResult > 0 {
+		log.Debugf("server did not return any response")
+	}
+	return
 }
 
 // Scan top-level "Download" dirs and generate Reseed "file" request payload
@@ -99,12 +172,13 @@ func scan(dirs ...string) (file File, err error) {
 	for _, dir := range dirs {
 		err = filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
 			if err != nil {
+				if path != dir && info.IsDir() {
+					log.Errorf("Failed to access %s (dir=%t, err=%v), skip it", info.Name(), info.IsDir(), err)
+					return filepath.SkipDir
+				}
 				return err
 			}
 			if !info.Mode().IsRegular() && !info.IsDir() {
-				return nil
-			}
-			if !info.IsDir() && (strings.HasSuffix(path, ".torrent") || strings.HasSuffix(path, ".added")) {
 				return nil
 			}
 			relpath, err := filepath.Rel(dir, path)
@@ -112,6 +186,16 @@ func scan(dirs ...string) (file File, err error) {
 				return nil // just ignore it
 			}
 			relpath = strings.ReplaceAll(relpath, `/`, `\`)
+			inTopLevelDir := !strings.Contains(relpath, `\`)
+			if info.IsDir() {
+				if inTopLevelDir && (strings.HasPrefix(info.Name(), ".") || strings.HasPrefix(info.Name(), "$")) {
+					return filepath.SkipDir
+				}
+			} else {
+				if strings.HasSuffix(path, ".torrent") || strings.HasSuffix(path, ".added") {
+					return nil
+				}
+			}
 			if index := strings.Index(relpath, `\`); index == -1 {
 				if info.IsDir() {
 					file[relpath] = map[string]any{}
@@ -134,7 +218,7 @@ func scan(dirs ...string) (file File, err error) {
 // https://reseed-api.tongyifan.me/sites_info
 func GetSites(token string) ([]Site, error) {
 	var sites []Site
-	err := util.FetchJson(util.ParseRelativeUrl("sites_info", RESEED_API), &sites, nil, http.Header{
+	err := util.FetchJson(RESEED_API+"sites_info", &sites, nil, http.Header{
 		"Authorization": []string{"Bearar " + token},
 	})
 	if err != nil {
@@ -161,4 +245,45 @@ func GenerateReseed2LocalSiteMap(reseedSites []Site,
 		}
 	}
 	return iyuu2LocalSiteMap
+}
+
+type ReseedLoginResult struct {
+	Msg     string
+	Success bool
+	Token   string
+}
+
+func Login(username string, password string) (token string, err error) {
+	data := url.Values{
+		"username": []string{username},
+		"password": []string{password},
+	}
+	var result *ReseedLoginResult
+	if err = util.PostUrlForJson(RESEED_API+"login", data, &result, nil); err != nil {
+		return "", fmt.Errorf("failed to login: %v", err)
+	}
+	if !result.Success {
+		return "", fmt.Errorf("failed login: %s", result.Msg)
+	}
+	return result.Token, nil
+}
+
+func parseReseedResult(reseed2LocalMap map[string]string, sites []ReseedResultSite) (results []string) {
+	for _, successResult := range sites {
+		torrents := util.SplitCsv(successResult.Sites)
+		for _, torrent := range torrents {
+			info := strings.Split(torrent, "-")
+			if len(info) != 2 {
+				log.Tracef("invalid site torrent string %v", info)
+				continue
+			}
+			site := reseed2LocalMap[info[0]]
+			if site == "" {
+				log.Tracef("reseed site %s not found in local", info[0])
+				continue
+			}
+			results = append(results, site+"."+info[1])
+		}
+	}
+	return
 }

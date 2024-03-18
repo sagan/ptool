@@ -21,7 +21,6 @@ var command = &cobra.Command{
 
 var (
 	showBindable = false
-	showAll      = false
 	filter       = ""
 )
 
@@ -29,7 +28,6 @@ func init() {
 	command.Flags().BoolVarP(&showBindable, "bindable", "b", false, "Show bindable sites")
 	command.Flags().StringVarP(&filter, "filter", "", "",
 		"Filter sites. Only show sites which name / url / comment contain this string")
-	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all iyuu sites (instead of only owned sites)")
 	iyuu.Command.AddCommand(command)
 }
 
@@ -63,14 +61,13 @@ func sites(cmd *cobra.Command, args []string) error {
 	})
 	log.Printf("Iyuu sites: len(sites)=%v\n", len(iyuuSites))
 	iyuu2LocalSiteMap := iyuu.GenerateIyuu2LocalSiteMap(iyuuSites, config.Get().SitesEnabled)
-
-	if showAll {
-		fmt.Printf("<all iyuu supported sites>\n")
+	if filter == "" {
+		fmt.Printf("<all iyuu supported sites (%d). To narrow, use '--filter string' flag>\n", len(iyuuSites))
 	} else {
-		fmt.Printf("<local sites supported by iyuu> (add -a flag to show all iyuu sites)\n")
+		fmt.Printf("<iyuu supported sites. Applying '%s' filter>\n", filter)
 	}
-	fmt.Printf("%-10s  %-15s  %-6s  %-13s  %-30s  %-25s\n",
-		"Nickname", "SiteName", "SiteId", "LocalSite", "SiteUrl", "DlPage")
+	fmt.Printf("%-10s  %-15s  %-6s  %-15s  %-30s  %-25s\n",
+		"IyuuName", "IyuuSite", "IyuuId", "LocalSite", "IyuuSiteUrl", "IyuuDlPage")
 	for _, iyuuSite := range iyuuSites {
 		if iyuu2LocalSiteMap[iyuuSite.Sid] == "" {
 			continue
@@ -79,22 +76,19 @@ func sites(cmd *cobra.Command, args []string) error {
 			continue
 		}
 		util.PrintStringInWidth(iyuuSite.Nickname, 10, true)
-		fmt.Printf("  %-15s  %-6d  %-13s  %-30s  %-25s\n", iyuuSite.Name, iyuuSite.Sid,
+		fmt.Printf("  %-15s  %-6d  %-15s  %-30s  %-25s\n", iyuuSite.Name, iyuuSite.Sid,
 			iyuu2LocalSiteMap[iyuuSite.Sid], iyuuSite.Url, iyuuSite.DownloadPage)
 	}
-
-	if showAll {
-		for _, iyuuSite := range iyuuSites {
-			if iyuu2LocalSiteMap[iyuuSite.Sid] != "" {
-				continue
-			}
-			if filter != "" && !iyuuSite.MatchFilter(filter) {
-				continue
-			}
-			util.PrintStringInWidth(iyuuSite.Nickname, 10, true)
-			fmt.Printf("  %-15s  %-6d  %-13s  %-30s  %-25s\n", iyuuSite.Name, iyuuSite.Sid,
-				"X (None)", iyuuSite.Url, iyuuSite.DownloadPage)
+	for _, iyuuSite := range iyuuSites {
+		if iyuu2LocalSiteMap[iyuuSite.Sid] != "" {
+			continue
 		}
+		if filter != "" && !iyuuSite.MatchFilter(filter) {
+			continue
+		}
+		util.PrintStringInWidth(iyuuSite.Nickname, 10, true)
+		fmt.Printf("  %-15s  %-6d  %-15s  %-30s  %-25s\n", iyuuSite.Name, iyuuSite.Sid,
+			"X (None)", iyuuSite.Url, iyuuSite.DownloadPage)
 	}
 	return nil
 }

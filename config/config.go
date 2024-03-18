@@ -179,7 +179,8 @@ type ConfigStruct struct {
 	ShellMaxSuggestions int64                      `yaml:"shellMaxSuggestions"` // -1 禁用
 	ShellMaxHistory     int64                      `yaml:"shellMaxHistory"`     // -1 禁用
 	IyuuToken           string                     `yaml:"iyuuToken"`
-	ReseedToken         string                     `yaml:"reseedToken"`
+	ReseedUsername      string                     `yaml:"reseedUsername"`
+	ReseedPassword      string                     `yaml:"reseedPassword"`
 	IyuuDomain          string                     `yaml:"iyuuDomain"` // iyuu API 域名。默认使用 api.iyuu.cn
 	SiteProxy           string                     `yaml:"siteProxy"`
 	SiteUserAgent       string                     `yaml:"siteUserAgent"`
