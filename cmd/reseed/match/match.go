@@ -1,11 +1,13 @@
 package match
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
@@ -24,15 +26,15 @@ var command = &cobra.Command{
 <save-path>...: the "save path" (download location) of BitTorrent client, e.g. "./Downloads".
 
 If run without --download flag, it just prints found (xseed) torrent ids and exit.
+By default only full match (success) torrents will be included,
+use --all flag to include partial-match (warning) results.
 
 To download found torrents to local, use --download flag,
-by default only full match torrents will be downloaded,
-use --download-all flag to download ALL (include partial-match results).
 
-By default it downloads torrents to "<config_dir>/reseed", the <config_dir> is the folder
-where ptool.toml config file is located at.
+By default it downloads torrents to "<config_dir>/reseed" dir, where the <config_dir>
+is the folder that ptool.toml config file is located at. Use --download-dir to change it.
 
-Existing torrents in local (already downloaded before) will be skipped.
+Existing torrents in local disk (already downloaded before) will be skipped.
 
 To add downloaded torrents to local client as xseed torrents, use "ptool xseedadd" cmd.
 
@@ -46,19 +48,23 @@ as "xseedadd" cmd will fail to find matched target for such torrent in client.`,
 }
 
 var (
+	showJson    = false
+	showRaw     = false
 	useComment  = false
 	doDownload  = false
-	downloadAll = false
+	all         = false
 	timeout     = int64(0)
 	downloadDir = ""
 )
 
 func init() {
+	command.Flags().BoolVarP(&showJson, "json", "", false, "Show full info in json format for found torrents")
+	command.Flags().BoolVarP(&showRaw, "raw", "", false, "Show raw Reseed torrent id for found torrents")
 	command.Flags().BoolVarP(&useComment, "use-comment-meta", "", false,
 		"Use with --download. Use 'comment' field to export save path location to downloaded .torrent files")
 	command.Flags().BoolVarP(&doDownload, "download", "", false, "Download found xseed torrents to local")
-	command.Flags().BoolVarP(&downloadAll, "download-all", "", false,
-		"Use with --download. Download all found xseed torrents (include partial-match results)")
+	command.Flags().BoolVarP(&all, "all", "", false,
+		"Display or download all found xseed torrents (include partial-match results)")
 	command.Flags().Int64VarP(&timeout, "timeout", "", 15, "Timeout (seconds) for requesting Reseed API")
 	command.Flags().StringVarP(&downloadDir, "download-dir", "", "",
 		`Set the dir of downloaded .torrent files. By default it uses "<config_dir>/reseed"`)
@@ -70,11 +76,11 @@ func match(cmd *cobra.Command, args []string) error {
 	if config.Get().ReseedUsername == "" || config.Get().ReseedPassword == "" {
 		return fmt.Errorf("you must config reseedUsername & reseedPassword in ptool.toml to use reseed functions")
 	}
+	if util.CountNonZeroVariables(showJson, showRaw, doDownload) > 1 {
+		return fmt.Errorf("--json & --raw & --download flags are NOT compatible")
+	}
 	if timeout <= 0 {
 		return fmt.Errorf("timeout must be > 0")
-	}
-	if useComment && len(savePathes) > 1 {
-		return fmt.Errorf("--use-comment-meta flag must be used with only 1 <save-path> arg")
 	}
 	if downloadDir == "" {
 		downloadDir = filepath.Join(config.ConfigDir, "reseed")
@@ -89,34 +95,50 @@ func match(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get xseed torrents from reseed server: %v", err)
 	}
-	if !doDownload {
-		fmt.Fprintf(os.Stderr, "// full match (success) xseed torrents found by Reseed API\n")
-		fmt.Println(strings.Join(results, "  "))
-		fmt.Fprintf(os.Stderr, "// partial match (warning) xseed torrents found by Reseed API\n")
-		fmt.Fprintln(os.Stderr, strings.Join(results2, "  "))
-		fmt.Fprintf(os.Stderr, "// To download found torrents to local, run this command with --download flag,\n")
-		fmt.Fprintf(os.Stderr, "// only full match torrents will be downloaded, unless --download-all flag is set.\n")
+	var torrents []*reseed.Torrent
+	torrents = append(torrents, results...)
+	if all {
+		torrents = append(torrents, results2...)
+	}
+	if showJson {
+		if bytes, err := json.Marshal(torrents); err != nil {
+			return fmt.Errorf("failed to marshal json: %v", err)
+		} else {
+			fmt.Println(string(bytes))
+			return nil
+		}
+	} else if showRaw {
+		fmt.Println(strings.Join(util.Map(torrents, func(t *reseed.Torrent) string { return t.ReseedId }), "  "))
+	} else if !doDownload {
+		if all {
+			fmt.Fprintf(os.Stderr, "// All xseed (include partial match (warning)) torrents found by Reseed API\n")
+		} else {
+			fmt.Fprintf(os.Stderr, "// Full match (success) xseed torrents found by Reseed API\n")
+		}
+		fmt.Println(strings.Join(util.MapString(torrents), "  "))
+		fmt.Fprintf(os.Stderr, "// To download these torrents to local, run this command with --download flag,\n")
 		return nil
 	}
 
-	var torrents []string
-	torrents = append(torrents, results...)
-	if downloadAll {
-		torrents = append(torrents, results2...)
-	}
 	cntAll := len(torrents)
 	cntSuccess := int64(0)
 	cntSkip := int64(0)
 	errorCnt := int64(0)
 	for i, torrent := range torrents {
-		fileName := torrent + ".torrent"
-		if util.FileExists(filepath.Join(downloadDir, fileName)) ||
-			util.FileExists(filepath.Join(downloadDir, fileName, ".added")) {
-			fmt.Printf("! %s (%d/%d): already exists in %s , skip it.\n", torrent, i+1, cntAll, downloadDir)
+		if torrent.Id == "" {
+			log.Debugf("! ignore reseed torrent %s which site does NOT exists in local", torrent.ReseedId)
 			cntSkip++
 			continue
 		}
-		content, tinfo, _, sitename, _, _, err := helper.GetTorrentContent(torrent, "", false, true, nil, true)
+		fileName := torrent.Id + ".torrent"
+		if util.FileExists(filepath.Join(downloadDir, fileName)) ||
+			util.FileExists(filepath.Join(downloadDir, fileName, ".added")) ||
+			util.FileExists(filepath.Join(downloadDir, fileName, ".failed")) {
+			log.Debugf("! %s (%d/%d): already exists in %s , skip it.\n", torrent, i+1, cntAll, downloadDir)
+			cntSkip++
+			continue
+		}
+		content, tinfo, _, sitename, _, _, _, err := helper.GetTorrentContent(torrent.Id, "", false, true, nil, true)
 		if err != nil {
 			fmt.Printf("✕ download %s (%d/%d): %v\n", torrent, i+1, cntAll, err)
 			errorCnt++
@@ -131,7 +153,7 @@ func match(cmd *cobra.Command, args []string) error {
 			}
 			if err := tinfo.EncodeComment(&torrentutil.TorrentCommentMeta{
 				Tags:     tags,
-				SavePath: savePathes[0],
+				SavePath: torrent.SavePath,
 			}); err != nil {
 				useCommentErr = fmt.Errorf("failed to encode: %v", err)
 			} else if data, err := tinfo.ToBytes(); err != nil {
@@ -158,7 +180,7 @@ func match(cmd *cobra.Command, args []string) error {
 	if cntSuccess > 0 || cntSkip > 0 {
 		fmt.Printf(`Saved %d torrents to %s
 Error torrents (failed to download): %d
-Skipped torrents (already exists in local): %d
+Skipped torrents (local site does NOT exist, or already downloaded before): %d
 
 To add downloaded torrents to local client as xseed torrents, run following command:
     ptool xseedadd <client> "%s/*.torrent"

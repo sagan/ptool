@@ -2,6 +2,7 @@ package verifytorrent
 
 import (
 	"fmt"
+	"os"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -13,7 +14,7 @@ import (
 
 var command = &cobra.Command{
 	Use: "verifytorrent {torrentFilename | torrentId | torrentUrl}... " +
-		"{--save-path dir | --content-path path} [--check | --check-quick]",
+		"{--save-path dir | --content-path path | --use-comment-meta} [--check | --check-quick]",
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "verifytorrent"},
 	Aliases:     []string{"verify"},
 	Short:       "Verify torrent file(s) are consistent with local disk content files.",
@@ -27,9 +28,11 @@ Example:
 ptool verifytorrent file1.torrent file2.torrent --save-path /root/Downloads
 ptool verifytorrent file.torrent --content-path /root/Downloads/TorrentContentFolder
 
-Exact one (but not both) of the --save-path or --content-path flag must be set.
-* --save-path dir : the parent folder of torrent content(s)
-* --content-path path : the torrent content(s) path, could be a folder or a single file
+Exact one (but not more) of the --save-path, --content-path or --use-comment-meta flag must be set.
+* --save-path dir : the parent folder of torrent content(s).
+* --content-path path : the torrent content(s) path, could be a folder or a single file.
+* --use-comment-meta : extract save path from torrent's comment field and use it.
+The "ptool export" and some other cmds can use the same flag to write save path to generated torrent files.
 
 If you provide multiple {file.torrent} args, only --save-path flag can be used.
 
@@ -40,16 +43,22 @@ If --check flag is set, it will also do the hash checking.`,
 }
 
 var (
-	checkHash   = false
-	checkQuick  = false
-	forceLocal  = false
-	showAll     = false
-	contentPath = ""
-	defaultSite = ""
-	savePath    = ""
+	renameFailed = false
+	useComment   = false
+	checkHash    = false
+	checkQuick   = false
+	forceLocal   = false
+	showAll      = false
+	contentPath  = ""
+	defaultSite  = ""
+	savePath     = ""
 )
 
 func init() {
+	command.Flags().BoolVarP(&renameFailed, "rename-failed", "", false,
+		"Rename verification failed *.torrent file to *.torrent.failed")
+	command.Flags().BoolVarP(&useComment, "use-comment-meta", "", false,
+		"Use 'comment' field to extract save path from .torrent file and verify against it")
 	command.Flags().BoolVarP(&checkHash, "check", "", false, "Do hash checking when verifying torrent files")
 	command.Flags().BoolVarP(&checkQuick, "check-quick", "", false,
 		"Do quick hash checking when verifying torrent files, "+
@@ -66,15 +75,15 @@ func init() {
 }
 
 func verifytorrent(cmd *cobra.Command, args []string) error {
-	if savePath == "" && contentPath == "" || (savePath != "" && contentPath != "") {
-		return fmt.Errorf("exact one of the --save-path or --content-path (but not both) flag must be set")
+	if util.CountNonZeroVariables(useComment, savePath, contentPath) != 1 {
+		return fmt.Errorf("exact 1 of the --use-comment-meta & --save-path & --content-path flag must be set")
 	}
 	if checkHash && checkQuick {
 		return fmt.Errorf("--check and --check-quick flags are NOT compatible")
 	}
 	torrents := util.ParseFilenameArgs(args...)
 	if len(torrents) > 1 && contentPath != "" {
-		return fmt.Errorf("you must use --save-path flag (instead of --content-path) when verifying multiple torrents")
+		return fmt.Errorf("--content-path flag can only be used to verify single torrent")
 	}
 	errorCnt := int64(0)
 	checkMode := int64(0)
@@ -91,7 +100,7 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 		if showAll && i > 0 {
 			fmt.Printf("\n")
 		}
-		_, tinfo, _, _, _, _, err := helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, nil, false)
+		_, tinfo, _, _, _, _, isLocal, err := helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, nil, false)
 		if err != nil {
 			fmt.Printf("X torrent %s: failed to get: %v\n", torrent, err)
 			errorCnt++
@@ -100,14 +109,36 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 		if showAll {
 			tinfo.Print(torrent, true)
 		}
+		if useComment {
+			if commentMeta := tinfo.DecodeComment(); commentMeta == nil {
+				fmt.Printf("✕ %s : failed to parse comment meta\n", torrent)
+				errorCnt++
+				continue
+			} else if commentMeta.SavePath == "" {
+				fmt.Printf("✕ %s : comment meta has empty save_path\n", torrent)
+				errorCnt++
+				continue
+			} else {
+				log.Debugf("Found torrent %s comment meta %v", torrent, commentMeta)
+				savePath = commentMeta.SavePath
+			}
+		}
 		log.Infof("Verifying %s (savepath=%s, contentpath=%s, checkhash=%t)", torrent, savePath, contentPath, checkHash)
 		err = tinfo.Verify(savePath, contentPath, checkMode)
 		if err != nil {
 			fmt.Printf("X torrent %s: contents do NOT match with disk content(s) (hash check = %s): %v\n",
 				torrent, checkModeStr, err)
 			errorCnt++
+			if isLocal && torrent != "-" {
+				if renameFailed {
+					if err := os.Rename(torrent, torrent+".failed"); err != nil {
+						log.Debugf("Failed to rename %s to *.failed: %v", torrent, err)
+					}
+				}
+			}
 		} else {
-			fmt.Printf("✓ torrent %s: contents match with disk content(s) (hash check = %s)\n", torrent, checkModeStr)
+			fmt.Printf("✓ torrent %s: contents match with disk content(s) (hash check = %s). Save path: %v\n",
+				torrent, checkModeStr, savePath)
 		}
 	}
 	if errorCnt > 0 {

@@ -351,3 +351,30 @@ func FileExists(name string) bool {
 	}
 	return false
 }
+
+// Return count of variable in vars that fulfil the condition that variable is non-zero value
+func CountNonZeroVariables(vars ...any) (cnt int) {
+	for _, variable := range vars {
+		switch v := variable.(type) {
+		case string:
+			if v != "" {
+				cnt++
+			}
+		case int:
+			if v != 0 {
+				cnt++
+			}
+		case int64:
+			if v != 0 {
+				cnt++
+			}
+		case bool:
+			if v {
+				cnt++
+			}
+		default:
+			panic("unsupported type")
+		}
+	}
+	return
+}

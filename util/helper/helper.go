@@ -35,11 +35,12 @@ var (
 // stdin: if not nil, use it as torrent contents when torrent == "-" instead of reading from os.Stdin.
 // siteInstance : if torrent is a site torrent, the created corresponding site instance.
 // sitename & filename & id : if torrent is a site torrent, the downloaded torrent sitename & filename & id.
+// isLocal: whether torrent is a local or remote torrent.
 func GetTorrentContent(torrent string, defaultSite string,
 	forceLocal bool, forceRemote bool, stdin []byte, ignoreParsingError bool) (
 	content []byte, tinfo *torrentutil.TorrentMeta, siteInstance site.Site, siteName string,
-	filename string, id string, err error) {
-	isLocal := !forceRemote && (forceLocal || torrent == "-" ||
+	filename string, id string, isLocal bool, err error) {
+	isLocal = !forceRemote && (forceLocal || torrent == "-" ||
 		!util.IsUrl(torrent) && strings.HasSuffix(torrent, ".torrent"))
 	// site torrent id or url
 	if !isLocal {
@@ -123,8 +124,8 @@ func GetTorrentContent(torrent string, defaultSite string,
 			} else {
 				content, err = io.ReadAll(os.Stdin)
 			}
-		} else if strings.HasSuffix(torrent, ".added") {
-			err = fmt.Errorf(".added file is skipped")
+		} else if strings.HasSuffix(torrent, ".added") || strings.HasSuffix(torrent, ".failed") {
+			err = fmt.Errorf(".added or .failed file is skipped")
 		} else {
 			filename = path.Base(torrent)
 			content, err = os.ReadFile(torrent)

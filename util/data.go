@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"reflect"
 	"slices"
 
@@ -51,6 +52,13 @@ func FindInSlice[T any](slice []T, checker func(T) bool) *T {
 func Map[T1 any, T2 any](ss []T1, mapper func(T1) T2) (ret []T2) {
 	for _, s := range ss {
 		ret = append(ret, mapper(s))
+	}
+	return
+}
+
+func MapString[T fmt.Stringer](ss []T) (ret []string) {
+	for _, s := range ss {
+		ret = append(ret, s.String())
 	}
 	return
 }

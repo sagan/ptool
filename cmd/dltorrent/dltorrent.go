@@ -51,7 +51,7 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 	torrents := args
 
 	for _, torrent := range torrents {
-		content, tinfo, _, siteName, filename, id, err :=
+		content, tinfo, _, siteName, filename, id, _, err :=
 			helper.GetTorrentContent(torrent, defaultSite, false, true, nil, true)
 		if err != nil {
 			fmt.Printf("✕ %s (site=%s): %v\n", torrent, siteName, err)

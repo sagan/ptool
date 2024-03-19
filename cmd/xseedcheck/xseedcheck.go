@@ -46,7 +46,7 @@ func xseedcheck(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create client: %v", err)
 	}
-	_, tinfo, _, _, _, _, err := helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, nil, false)
+	_, tinfo, _, _, _, _, _, err := helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, nil, false)
 	if err != nil {
 		return fmt.Errorf("failed to get %s: %v", torrent, err)
 	}

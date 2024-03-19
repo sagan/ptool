@@ -90,6 +90,7 @@ var pureFlags = []string{
 	"preserve",
 	"raw",
 	"rename-added",
+	"rename-failed",
 	"one-page",
 	"sequential-download",
 	"show-files",

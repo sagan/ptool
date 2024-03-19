@@ -168,7 +168,7 @@ iyuu 命令通过 [iyuu 接口](https://api.iyuu.cn/docs.php) 提供自动辅种
 
 #### iyuu 配置
 
-如果是第一次使用 iyuu，首先需要在 [iyuu 网站](https://iyuu.cn/) 上微信扫码申请 IYUU 令牌（token）。在本程序的配置文件 ptool.toml 里配置 iyuu token：
+如果是第一次使用 iyuu，首先需要在 [iyuu 网站](https://iyuu.cn/) 上微信扫码申请 IYUU 令牌（token）。在 ptool.toml 配置文件里配置 iyuu token：
 
 ```
 iyuuToken = "IYUU0011223344..."
@@ -188,7 +188,7 @@ ptool iyuu bind --site zhuque --uid 123456 --passkey 0123456789abcdef
 
 其他说明：
 
-- 使用 `ptool iyuu sites -a` 查看 iyuu 支持的所有可辅种站点列表。
+- 使用 `ptool iyuu sites` 查看 iyuu 支持的所有可辅种站点列表。
 - 使用 `ptool iyuu status` 查询当前 iyuu token 的激活和绑定状态。
 
 #### 使用 iyuu 自动辅种
@@ -207,28 +207,47 @@ iyuu xseed 子命令支持很多可选参数。运行 `ptool iyuu xseed -h` 查�
 
 reseed 命令使用 [Reseed](https://github.com/tongyifan/Reseed-backend) 提供的接口自动辅种。
 
-首先在 [Reseed 官网](https://reseed.tongyifan.me/) 注册（需要使用指定 PT 站点验证），然后在 ptool.toml 文件里配置 Reseed 的用户信息：
+### reseed 配置
+
+首先在 [Reseed 官网](https://reseed.tongyifan.me/) 注册（需要使用指定 PT 站点验证），然后在 ptool.toml 配置文件里配置 Reseed 的用户信息：
 
 ```
 reseedUsername = 'username'
 reseedPassword = 'password'
 ```
 
-Reseed 的辅种原理是扫描本地硬盘的“下载文件夹” (QB 的 save path)，然后自动找到匹配其中内容的站点种子：
+### 使用 Reseed 辅种
+
+Reseed 的辅种原理是扫描本地硬盘的“下载文件夹” (QB 的 save path)生成其中所有内容的元信息索引（文件名 & 大小），然后上传索引到服务器并自动找到匹配内容元信息的站点种子：
+
+reseed 命令设计有两种使用方式：
+
+方式 1：
 
 ```
-ptool reseed match D:\Downloads --download
-```
-
-以上命令扫描 D:\Downloads 里的文件，通过 Reseed 查询匹配的站点种子，然后将找到的所有 .torrent 种子文件下载到本地（下载文件默认保存路径：ptool.toml 配置文件所在目录的 "reseed" 子文件夹里）。注意只有在本程序的 ptool.toml 配置文件里添加的站点的种子才会被下载。
-
-然后使用 ptool xseedadd 命令将所有下载的 Reseed 辅种种子添加到本地 BT 客户端：
-
-```
+ptool reseed match --download D:\Downloads
 ptool xseedadd local "C:\Users\<username>\.config\ptool\reseed\*.torrent"
 ```
 
-其它功能：
+首先扫描 D:\Downloads 里的文件，通过 Reseed 查询匹配的站点种子，将找到的所有 .torrent 种子文件下载到本地（下载文件默认保存路径：ptool.toml 配置文件所在目录的 "reseed" 子文件夹里）。注意只有在本程序的 ptool.toml 配置文件里添加的站点的种子才会被下载。
+
+然后使用 ptool xseedadd 命令将所有下载的 Reseed 辅种种子添加到本地 BT 客户端。
+
+方式 2：
+
+```
+ptool reseed match --download --use-comment-meta D:\Downloads
+ptool verifytorrent --check --rename-failed --use-comment-meta "C:\Users\root\.config\ptool\reseed/*.torrent"
+ptool add local --use-comment-meta --skip-check "C:\Users\<username>\.config\ptool\reseed\*.torrent"
+```
+
+这种方式指定了 --use-comment-meta 参数，在下载种子时将其内容在硬盘上的保存路径(save path) 写入 .torrent 文件的 comment 字段。
+
+（可选）然后使用 "ptool verifytorrent" 命令手动校验这些种子与硬盘上文件是否匹配，将校验失败的种子重命名为 ".torrent.failed"。
+
+最后使用 "ptool add" 命令并同样指定 --use-comment-meta 参数，直接将种子添加到 BT 客户端并从种子 comment 字段读取并应用保存路径。这种方式添加的种子在客户端里无需存在已有的内容完全相同的种子。
+
+### 其它功能
 
 ```
 # 查看 Reseed 账号状态
@@ -245,7 +264,9 @@ ptool reseed sites
 #### 读取/修改 BT 客户端配置 (clientctl)
 
 ```
+
 ptool clientctl <client> [<option>[=value] ...]
+
 ```
 
 clientctl 命令可以显示或修改指定 name 的 BT 客户端的配置参数。
@@ -264,11 +285,15 @@ clientctl 命令可以显示或修改指定 name 的 BT 客户端的配置参数
 示例：
 
 ```
+
 # 获取 local 客户端所有参数当前值
+
 ptool clientctl local
 
 # 设置 local 客户端的全局上传速度限制为 10MiB/s
+
 ptool clientctl local global_upload_speed_limit=10M
+
 ```
 
 #### 显示信息 / 暂停 / 恢复 / 删除 / 强制汇报 / 强制检测 Hash 客户端里种子 (show / pause / resume / delete / reannounce / recheck)
@@ -276,7 +301,9 @@ ptool clientctl local global_upload_speed_limit=10M
 命令格式均为：
 
 ```
+
 ptool <command> <client> [flags] [<infoHash>...]
+
 ```
 
 `<infoHash>` 参数为指定的 BT 客户端里需要操作的种子的 infoHash 列表。也可以使用以下特殊值参数操作多个种子：
@@ -297,88 +324,119 @@ ptool <command> <client> [flags] [<infoHash>...]
 示例：
 
 ```
+
 # 强制立即汇报所有种子
-ptool reannounce local _all
+
+ptool reannounce local \_all
 
 # 恢复下载/做种所有种子
-ptool resume local _all
+
+ptool resume local \_all
 
 # 暂停 abc 分类下的所有正在下载种子
-ptool pause local --category abc _downloading
+
+ptool pause local --category abc \_downloading
 
 # 从客户端删除指定种子（默认同时删除文件）。默认会提示确认删除，除非指定 --force 参数
+
 ptool delete local 31a615d5984cb63c6f999f72bb3961dce49c194a
 
 # 特别的，如果 show 命令只提供一个 infoHash 参数，会显示该种子的所有详细信息
+
 ptool show local 31a615d5984cb63c6f999f72bb3961dce49c194a
+
 ```
 
 除 `show` 以外的命令可以只传入一个特殊的 `-` 作为参数，视为从 stdin 读取 infoHash 列表。而 `show` 命令提供很多参数可以用于筛选种子，并且可以使用 `--show-info-hash-only` 参数只输出匹配的种子的 infoHash。因此可以组合使用 `show` 命令和其它命令，例如：
 
 ```
-# 删除 local 客户端里 "rss" 分类里已经下载完成超过5天的种子
+
+# 删除 local 客户端里 "rss" 分类里已经下载完成超过 5 天的种子
+
 ptool show local --category rss --completed-before 5d --show-info-hash-only | ptool delete local --force -
+
 ```
 
 #### 管理 BT 客户端里的的种子分类 / 标签 / Trackers 等(getcategories / createcategory / deletecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / renametag / edittracker / addtrackers / removetrackers / setsavepath / checktag)
 
 ```
+
 # 获取所有分类
+
 ptool getcategories <client>
 
 # 新增分类(也可用于修改已有分类的下载目录)
+
 ptool createcategory <client> <category> --save-path "/root/downloads"
 
 # 删除分类
+
 ptool deletecategories <client> <category>...
 
 # 修改种子的所属分类
+
 ptool setcategory <client> <category> <infoHashes>...
 
 # 获取所有标签(tag)
+
 ptool gettags <client>
 
 # 创建新的标签
+
 ptool createtags <client> <tags>...
 
 # 删除标签
+
 ptool deletetags <client> <tags>...
 
-# 为客户端里种子添加tag
+# 为客户端里种子添加 tag
+
 ptool addtags <client> <tags> <infoHashes>...
 
-# 为客户端里种子删除tag
+# 为客户端里种子删除 tag
+
 ptool removetags <client> <tags> <infoHashes>...
 
 # 重命名客户端里的 tag
+
 ptool renametag <client> <old-tag> <new-tag>
 
 # 修改种子的 tracker。只有 old tracker 存在的种子会被修改
-ptool edittracker <client> _all --old-tracker "https://..." --new-tracker "https://..."
+
+ptool edittracker <client> \_all --old-tracker "https://..." --new-tracker "https://..."
 
 # 只替换种子 tracker 的 host (域名)部分
-ptool edittracker <client> _all --old-tracker old-tracker.com --new-tracker new-tracker.com --replace-host
+
+ptool edittracker <client> \_all --old-tracker old-tracker.com --new-tracker new-tracker.com --replace-host
 
 # 将所有 host 相匹配的旧 Tracker 替换为提高的新的 Tracker 地址
-ptool edittracker <client> _all --old-tracker tracker.hdtime.org --new-tracker "https://tracker.hdtime.org/announce.php?passkey=123456" --replace-host
+
+ptool edittracker <client> \_all --old-tracker tracker.hdtime.org --new-tracker "https://tracker.hdtime.org/announce.php?passkey=123456" --replace-host
 
 # 为种子增加 tracker
+
 ptool addtrackers <client> <infoHashes...> --tracker "https://..."
 
 # 删除种子的 tracker
+
 ptool removetrackers <client> <infoHashes...> --tracker "https://..."
 
 # 修改种子内容的保存路径
+
 ptool setsavepath <client> <savePath> [<infoHash>...]
 
 # 检测客户端里是否存在某个 tag。If exists, exit with 0。
+
 ptool checktag <client> <tag>
+
 ```
 
 #### 导出客户端种子 (export)
 
 ```
+
 ptool export <client> <infoHash>...
+
 ```
 
 导出客户端里的种子为 .torrent 文件。
@@ -388,7 +446,9 @@ ptool export <client> <infoHash>...
 ### 显示 BT 客户端或 PT 站点状态 (status)
 
 ```
+
 ptool status <clientOrSite>...
+
 ```
 
 显示指定 name 的 BT 客户端或 PT 站点的当前状态信息。可以提供多个名称。
@@ -406,7 +466,9 @@ ptool status <clientOrSite>...
 ### 显示刷流任务流量统计 (stats)
 
 ```
+
 ptool stats [client...]
+
 ```
 
 显示 BT 客户端的刷流任务流量统计信息（下载流量、上传流量总和）。本功能默认不启用，如需启用，在 ptool.toml 配置文件的最上方里增加一行：`brushEnableStats = true` 配置项。启用刷流统计后，刷流任务会使用 ptool.toml 配置文件相同目录下的 "ptool_stats.txt" 文件存储所需保存的信息。
@@ -416,22 +478,28 @@ ptool stats [client...]
 ### 添加种子到 BT 客户端 (add)
 
 ```
+
 ptool add <client> <torrentFileNameOrIdOrUrl>...
+
 ```
 
 参数可以是本地硬盘里的种子文件名(支持 `*` 通配符)、站点的种子 id 或 url。例如：
 
 ```
-ptool add local *.torrent
+
+ptool add local \*.torrent
+
 ```
 
 以上命令将当前目录下所有 ".torrent" 种子文件添加到 "local" BT 客户端。
 
 ```
+
 ptool add local mteam.488424
 ptool add local --site mteam 488424
 ptool add local "https://kp.m-team.cc/details.php?id=488424"
 ptool add local "https://kp.m-team.cc/download.php?id=488424"
+
 ```
 
 以上几条命令均可以将 M-Team 站点上 ID 为 [488424](https://kp.m-team.cc/details.php?id=488424&hit=1) 的种子添加到 "local" BT 客户端。
@@ -441,7 +509,9 @@ ptool add local "https://kp.m-team.cc/download.php?id=488424"
 ### 下载站点的种子
 
 ```
+
 ptool dltorrent <torrentIdOrUrl>...
+
 ```
 
 将站点的种子文件下载到本地。参数是站点的种子 id 或 url（参考上面 "add" 命令）。
@@ -453,7 +523,9 @@ ptool dltorrent <torrentIdOrUrl>...
 ### 搜索 PT 站点种子 (search)
 
 ```
+
 ptool search <sites> <keyword>
+
 ```
 
 `<sites>` 参数为需要所搜索的 PT 站点，可以使用 "," 分割提供多个站点。可以使用 `_all` 搜索所有已配置的 PT 站点。
@@ -465,14 +537,19 @@ ptool search <sites> <keyword>
 提供一个 batchdl 命令用于批量下载 PT 网站的种子（别名：ebookgod）。默认按种子体积大小升序排序、跳过死种和已经下载过的种子。
 
 ```
+
 # 默认显示找到的种子列表
+
 ptool batchdl <site>
 
 # 下载找到的种子到当前目录
+
 ptool batchdl <site> --action download
 
 # 直接将种子添加到 "local" BT 客户端里
+
 ptool batchdl <site> --action add --add-client local
+
 ```
 
 此命令提供非常多的配置参数。部分常用参数：
@@ -491,7 +568,9 @@ ptool batchdl <site> --action add --add-client local
 ### 显示种子文件信息 (parsetorrent)
 
 ```
+
 ptool parsetorrent <torrentFileNameOrIdOrUrl>...
+
 ```
 
 显示种子文件的元信息。参数是本地硬盘里的种子文件名，或站点的种子 id 或 url（参考 "add" 命令说明）。
@@ -499,7 +578,9 @@ ptool parsetorrent <torrentFileNameOrIdOrUrl>...
 ### 校验种子文件与硬盘内容是否一致 (verifytorrent)
 
 ```
+
 ptool verifytorrent <torrentFileNameOrIdOrUrl>...
+
 ```
 
 默认只对比文件元信息(文件名、文件大小)。如果指定 --check 或 --check-quick 参数，会对硬盘上文件内容进行 hash 校验。
@@ -515,9 +596,11 @@ ptool verifytorrent <torrentFileNameOrIdOrUrl>...
 示例：
 
 ```
+
 ptool verifytorrent file.torrent --save-path D:\Downloads --check
 
 ptool verifytorrent MyTorrent.torrent --content-path D:\Downloads\MyTorrent --check
+
 ```
 
 ### 拆包下载 (partialdownload)
@@ -525,12 +608,17 @@ ptool verifytorrent MyTorrent.torrent --content-path D:\Downloads\MyTorrent --ch
 使用方法：
 
 ```
+
 # 使用本命令前，将种子以暂停状态添加到客户端里
+
 # 将客户端的某个种子内容的所有文件按 1TiB 切成几块，显示分片信息。
+
 ptool partialdownload <client> <infoHash> --chunk-size 1TiB -a
 
 # 设置客户端只下载该种子第 0 块切片(0-indexed)的内容。
+
 ptool partialdownload <client> <infoHash> --chunk-size 1TiB --chuck-index 0
+
 ```
 
 该命令的设计目的不是用于刷流。而是用于使用 VPS 等硬盘空间有限的云服务器(分多次)下载体积非常大的单个种子，然后配合 rclone 将下载的文件直接上传到云盘。
@@ -538,7 +626,9 @@ ptool partialdownload <client> <infoHash> --chunk-size 1TiB --chuck-index 0
 ### 手动添加辅种种子到客户端 (xseedadd)
 
 ```
+
 ptool xseedadd <client> <torrentFileNameOrIdOrUrl>...
+
 ```
 
 xseedadd 命令将提供的种子作为辅种种子添加到客户端。程序将在客户端里寻找与提供的种子元信息（文件名、文件大小）完全一致的目标种子，然后将提供的种子作为目标种子的辅种添加到客户端。如果客户端里没有找到匹配的目标种子，程序不会添加提供的种子到客户端。
@@ -550,11 +640,13 @@ xseedadd 命令将提供的种子作为辅种种子添加到客户端。程序�
 要使用此功能，在 ptool.toml 配置文件里添加 CookieCloud 服务器连接信息：
 
 ```
+
 [[cookieclouds]]
 #name = "" # 名称可选
 server = "https://cookiecloud.example.com"
 uuid = "uuid"
 password = "password"
+
 ```
 
 可以添加任意个 CookieCloud 连接信息。如果想要让某个 CookieCloud 连接信息仅用于同步特定站点 cookies，加上 `sites = ["sitename"]` 这行配置。
@@ -562,7 +654,9 @@ password = "password"
 #### 测试 CookieCloud 服务 (status)
 
 ```
+
 ptool cookiecloud status
+
 ```
 
 使用配置的 CookieCloud 连接信息连接服务器，测试配置正确性和当前服务器状态。
@@ -570,7 +664,9 @@ ptool cookiecloud status
 #### 同步站点 Cookies (sync)
 
 ```
+
 ptool cookiecloud sync
+
 ```
 
 程序会从 CookieCloud 服务器获取最新的 Cookies，并更新 ptool.toml 里已配置的站点的 Cookies。程序会对 ptool.toml 文件里的站点的当前 Cookie 和其从 CookieCloud 服务器获取的新版 Cookie 分别进行测试，只有在当前 Cookie 失效并且新版 Cookie 有效的情形才会更新 ptool.toml 里的站点 Cookie 字段值。
@@ -578,7 +674,9 @@ ptool cookiecloud sync
 #### 导入站点 (import)
 
 ```
+
 ptool cookiecloud import
+
 ```
 
 程序会从 CookieCloud 服务器获取最新的 Cookies，筛选出本程序内置支持的站点(`ptool sites`)中当前 ptool.toml 文件里未配置、并且 CookieCloud 服务器数据里存在对应网站有效 Cookie 的站点，然后添加这些站点的配置信息到 ptool.toml 文件里。
@@ -588,7 +686,9 @@ import 命令不会检测或更新 ptool.toml 里当前已存在相应配置的�
 #### 查看 CookieCloud 里的网站 Cookie (get)
 
 ```
+
 ptool cookiecloud get <site>...
+
 ```
 
 显示 CookieCloud 服务器数据里网站的最新 Cookies。参数可以是站点名、分组名、任意域名或 Url。
@@ -598,11 +698,15 @@ ptool cookiecloud get <site>...
 ### 查看内置支持站点信息 (sites)
 
 ```
+
 # 显示所有内置支持的站点列表。ptool.toml 配置文件里将 [[sites]] 配置块的 type 设为站点的 Type 或 Alias。
+
 ptool sites
 
 # 显示对应站点在本程序内部使用的详细配置参数。参数为站点的 Type 或 Alias。
+
 ptool sites show mteam
+
 ```
 
 ### 交互式终端 (shell)
@@ -616,12 +720,14 @@ ptool 也支持 bash、powershell 等操作系统 shell 环境下的命令自动
 status -t, batchdl, search 等命令会将找到的站点种子以列表形式显示，示例：
 
 ```
-Name                                          Size  Free           Time                   ↑S    ↓L    ✓C                    ID   P
-You Sheng Xiao Shuo He Ji Mp3 M4a         265.3GiB  ✓              2022-10-31 06:08:14    14     1    61          redleaves.21   -
-有声小说  大合集Ⅸ - M4A                   88.98GiB  ✕              2022-10-31 06:08:14     9     1    48          redleaves.20   -
-忘尘阁 - 海的温度 - 演播悦库时光 - 完结    2.47GiB  $✓(2d8h)       2023-08-21 14:37:14    36     0    53       redleaves.87849   -
+
+Name Size Free Time ↑S ↓L ✓C ID P
+You Sheng Xiao Shuo He Ji Mp3 M4a 265.3GiB ✓ 2022-10-31 06:08:14 14 1 61 redleaves.21 -
+有声小说 大合集 Ⅸ - M4A 88.98GiB ✕ 2022-10-31 06:08:14 9 1 48 redleaves.20 -
+忘尘阁 - 海的温度 - 演播悦库时光 - 完结 2.47GiB $✓(2d8h)       2023-08-21 14:37:14    36     0    53       redleaves.87849   -
 教父一 - 马里奥·普佐 - 演播读客熊猫君 -   534.4MiB  $✕             2023-04-28 06:08:14   111     0   211       redleaves.14459   -
-不灭龙帝 - 妖夜 - 演播何其 - 完结 - 2020  23.61GiB  2.0$✓(2d11h)   2023-08-14 18:08:14    89     2   110       redleaves.86125   -
+不灭龙帝 - 妖夜 - 演播何其 - 完结 - 2020  23.61GiB  2.0$✓(2d11h) 2023-08-14 18:08:14 89 2 110 redleaves.86125 -
+
 ```
 
 列表里包括以下字段：
@@ -651,16 +757,21 @@ You Sheng Xiao Shuo He Ji Mp3 M4a         265.3GiB  ✓              2022-10-31 
 在 ptool.toml 配置文件里可以定义站点分组，例如：
 
 ```
+
 [[groups]]
 name = "acg"
 sites = ["u2", "kamept"]
+
 ```
 
 定义分组后，大部分命令中 `<site>` 类型的参数可以使用分组名代替以指代多个站点，例如：
 
 ```
+
 # 在 acg 分组的所有站点中搜索 "clannad" 关键词的种子
+
 ptool search acg clannad
+
 ```
 
 预置的 `_all` 分组可以用来指代所有站点。
@@ -670,9 +781,11 @@ ptool search acg clannad
 ptool.toml 里可以使用 `[[aliases]]` 区块自定义命令别名，例如：
 
 ```
+
 [[aliases]]
 name = "st"
 cmd = "status local -t"
+
 ```
 
 然后可以直接运行 `ptool st`, 等效于运行 `ptool status local -t`。
@@ -680,11 +793,13 @@ cmd = "status local -t"
 运行别名时也可以传入额外参数，并且支持指定额外参数中可选部分的默认值。例如：
 
 ```
+
 [[aliases]]
 name = "st"
 cmd = "status -t"
 minArgs = 0
 defaultArgs = "local"
+
 ```
 
 minArgs 是执行别名时必须传入的额外参数数量， defaultArgs 是额外参数可选部分的默认值。执行别名时，如果用户提供的额外参数数量 < minArgs ，程序会报错；如果用户提供的额外参数数量 == minArgs ，则 defaultArgs 会被追加到额外参数后面。定义以上别名后：
@@ -702,3 +817,7 @@ minArgs 是执行别名时必须传入的额外参数数量， defaultArgs 是�
 ptool 会在访问站点时自动模拟浏览器环境（类似 [curl-impersonate](https://github.com/lwthiker/curl-impersonate)），会设置 TLS ja3 指纹、HTTP2 akamai_fingerprint 指纹、访问请求的 http headers 等。测试能够绕过大多数站点的 CF 盾。
 
 默认模仿最新稳定版 Chrome on Windows x64 en-US 环境。可以在 ptool.toml 里使用 `siteImpersonate = "chrome120"` 设置为想要模仿的浏览器。运行 `ptool version` 会列出所有支持模仿的浏览器环境列表。运行 `ptool version --show-impersonate chrome120` 查看对应模仿浏览器环境的详细参数。
+
+```
+
+```

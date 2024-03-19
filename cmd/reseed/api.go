@@ -51,12 +51,24 @@ type ReseedResultSite struct {
 	Sites string `json:"sites,omitempty"`
 }
 
+type Torrent struct {
+	Id       string
+	ReseedId string
+	SavePath string
+	Filename string
+	Flag     string
+}
+
 // the 'reseed result' event returned by Reseed backend
 // see https://github.com/tongyifan/Reseed-backend/blob/890dfcb20b98684bf315c8c9f5352c062ae93166/views/reseed.py#L57
 type ReseedResult struct {
 	Name       string             `json:"name,omitempty"`
 	CmpSuccess []ReseedResultSite `json:"cmp_success,omitempty"`
 	CmpWarning []ReseedResultSite `json:"cmp_warning,omitempty"`
+}
+
+func (t *Torrent) String() string {
+	return t.Id
 }
 
 // It's performance is terrible, but who cares?
@@ -85,10 +97,11 @@ func Escape2Anscii(s string) string {
 	return sb.String()
 }
 
-// Request reseed API and return xseed torrent ids (full match & partial match results) found by reseed backend.
+// Request Reseed API and return xseed torrents (full match (success) & partial match (warning) results)
+// found by Reseed backend.
 func GetReseedTorrents(username string, password string, sites []*config.SiteConfigStruct, timeout int64,
-	savePath ...string) (results []string, results2 []string, err error) {
-	file, err := scan(savePath...)
+	savePath ...string) (results []*Torrent, results2 []*Torrent, err error) {
+	file, savePathMap, err := scan(savePath...)
 	if err != nil {
 		err = fmt.Errorf("failed to scan savePath(s): %v", err)
 		return
@@ -145,8 +158,8 @@ loop:
 		case result := <-chResult:
 			log.Tracef("reseed result: %v", result)
 			cntResult++
-			results = append(results, parseReseedResult(reseed2LocalMap, result.CmpSuccess)...)
-			results2 = append(results2, parseReseedResult(reseed2LocalMap, result.CmpWarning)...)
+			results = append(results, parseReseedResult(reseed2LocalMap, savePathMap, result.Name, result.CmpSuccess)...)
+			results2 = append(results2, parseReseedResult(reseed2LocalMap, savePathMap, result.Name, result.CmpWarning)...)
 			timeoutTicker.Reset(timeoutPeriod)
 			if cntResult == len(file) {
 				break loop
@@ -160,15 +173,19 @@ loop:
 	}
 	client.Close()
 	timeoutTicker.Stop()
-	if cntResult > 0 {
+	if cntResult == 0 {
 		log.Debugf("server did not return any response")
+	}
+	for _, torrent := range results2 {
+		torrent.Flag = "warning"
 	}
 	return
 }
 
 // Scan top-level "Download" dirs and generate Reseed "file" request payload
-func scan(dirs ...string) (file File, err error) {
+func scan(dirs ...string) (file File, savePathMap map[string]string, err error) {
 	file = File{}
+	savePathMap = map[string]string{}
 	for _, dir := range dirs {
 		err = filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
 			if err != nil {
@@ -196,7 +213,8 @@ func scan(dirs ...string) (file File, err error) {
 					return nil
 				}
 			}
-			if index := strings.Index(relpath, `\`); index == -1 {
+			if index := strings.Index(relpath, `\`); index == -1 { // top-level item
+				savePathMap[relpath] = dir
 				if info.IsDir() {
 					file[relpath] = map[string]any{}
 				} else {
@@ -268,21 +286,22 @@ func Login(username string, password string) (token string, err error) {
 	return result.Token, nil
 }
 
-func parseReseedResult(reseed2LocalMap map[string]string, sites []ReseedResultSite) (results []string) {
+func parseReseedResult(reseed2LocalMap map[string]string, savePathMap map[string]string, name string,
+	sites []ReseedResultSite) (results []*Torrent) {
 	for _, successResult := range sites {
 		torrents := util.SplitCsv(successResult.Sites)
 		for _, torrent := range torrents {
+			id := ""
 			info := strings.Split(torrent, "-")
-			if len(info) != 2 {
-				log.Tracef("invalid site torrent string %v", info)
-				continue
+			if len(info) == 2 && reseed2LocalMap[info[0]] != "" {
+				id = reseed2LocalMap[info[0]] + "." + info[1]
 			}
-			site := reseed2LocalMap[info[0]]
-			if site == "" {
-				log.Tracef("reseed site %s not found in local", info[0])
-				continue
-			}
-			results = append(results, site+"."+info[1])
+			results = append(results, &Torrent{
+				Id:       id,
+				ReseedId: torrent,
+				SavePath: savePathMap[name],
+				Filename: name,
+			})
 		}
 	}
 	return

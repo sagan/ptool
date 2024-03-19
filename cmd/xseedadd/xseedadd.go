@@ -111,7 +111,7 @@ func xseedadd(cmd *cobra.Command, args []string) error {
 	})
 	errorCnt := int64(0)
 	for _, torrent := range torrents {
-		content, tinfo, siteInstance, sitename, _, _, err :=
+		content, tinfo, _, sitename, _, _, isLocal, err :=
 			helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, nil, false)
 		if err != nil {
 			fmt.Printf("X%s: failed to get: %v\n", torrent, err)
@@ -183,7 +183,7 @@ func xseedadd(cmd *cobra.Command, args []string) error {
 		} else {
 			fmt.Printf("✓%s: matched with client torrent %s (%s), added to client, save path: %s\n",
 				torrent, matchClientTorrent.InfoHash, matchClientTorrent.Name, matchClientTorrent.SavePath)
-			if siteInstance == nil && torrent != "-" {
+			if isLocal && torrent != "-" {
 				if renameAdded {
 					if err := os.Rename(torrent, torrent+".added"); err != nil {
 						log.Debugf("Failed to rename %s to *.added: %v", torrent, err)
