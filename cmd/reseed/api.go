@@ -21,7 +21,7 @@ import (
 
 // Reseed API backend: https://github.com/tongyifan/Reseed-backend , it's a sock.io server,
 // with the main websocket API and some additional RESTful APIs.
-// All APIs (except "login" API) use token authorization in header: "Authorization: Bearar <token>",
+// All APIs (except "login" API) requires authorization token in header: "Authorization: Bearar <token>".
 // To acquire token: POST https://reseed-api.tongyifan.me/login with username & password,
 // receive json {msg, success: true, token}. token is ephemeral, expires in 1 day.
 // Note for websocket API, if token does NOT exists, server will return 500 error when connecting;
@@ -52,11 +52,11 @@ type ReseedResultSite struct {
 }
 
 type Torrent struct {
-	Id       string
-	ReseedId string
-	SavePath string
-	Filename string
-	Flag     string
+	Id       string // local site torrent id, e.g.: hdupt.23456
+	ReseedId string // Reseed torrent id, e.g.: HDU-23456
+	SavePath string // Local path of torrent contents, e.g.: D:\Downloads
+	Filename string // Filename of torrent content file or root folder
+	Success  bool   // true: a full match (success). false: partial-match (warning)
 }
 
 // the 'reseed result' event returned by Reseed backend
@@ -158,8 +158,10 @@ loop:
 		case result := <-chResult:
 			log.Tracef("reseed result: %v", result)
 			cntResult++
-			results = append(results, parseReseedResult(reseed2LocalMap, savePathMap, result.Name, result.CmpSuccess)...)
-			results2 = append(results2, parseReseedResult(reseed2LocalMap, savePathMap, result.Name, result.CmpWarning)...)
+			results = append(results, parseReseedResult(reseed2LocalMap, savePathMap,
+				result.Name, true, result.CmpSuccess)...)
+			results2 = append(results2, parseReseedResult(reseed2LocalMap, savePathMap,
+				result.Name, false, result.CmpWarning)...)
 			timeoutTicker.Reset(timeoutPeriod)
 			if cntResult == len(file) {
 				break loop
@@ -175,9 +177,6 @@ loop:
 	timeoutTicker.Stop()
 	if cntResult == 0 {
 		log.Debugf("server did not return any response")
-	}
-	for _, torrent := range results2 {
-		torrent.Flag = "warning"
 	}
 	return
 }
@@ -286,7 +285,7 @@ func Login(username string, password string) (token string, err error) {
 	return result.Token, nil
 }
 
-func parseReseedResult(reseed2LocalMap map[string]string, savePathMap map[string]string, name string,
+func parseReseedResult(reseed2LocalMap map[string]string, savePathMap map[string]string, name string, success bool,
 	sites []ReseedResultSite) (results []*Torrent) {
 	for _, successResult := range sites {
 		torrents := util.SplitCsv(successResult.Sites)
@@ -301,6 +300,7 @@ func parseReseedResult(reseed2LocalMap map[string]string, savePathMap map[string
 				ReseedId: torrent,
 				SavePath: savePathMap[name],
 				Filename: name,
+				Success:  success,
 			})
 		}
 	}

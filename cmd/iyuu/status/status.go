@@ -29,6 +29,6 @@ func status(cmd *cobra.Command, args []string) error {
 	}
 
 	data, err := iyuu.IyuuApiGetUser(config.Get().IyuuToken)
-	fmt.Printf("Iyuu status: error=%v, user=%v", err, data)
+	fmt.Printf("Iyuu status: error=%v, user=%v\n", err, data)
 	return nil
 }

@@ -26,11 +26,12 @@ func status(cmd *cobra.Command, args []string) error {
 	if config.Get().ReseedUsername == "" || config.Get().ReseedPassword == "" {
 		return fmt.Errorf("you must config reseedUsername & reseedPassword in ptool.toml to use reseed functions")
 	}
-	log.Debugf("Login using reseed username=%s password=%s", config.Get().ReseedUsername, config.Get().ReseedPassword)
+	log.Debugf("Login to Reseed using username=%s password=%s", config.Get().ReseedUsername, config.Get().ReseedPassword)
 	token, err := reseed.Login(config.Get().ReseedUsername, config.Get().ReseedPassword)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("✓ success logined with username %s, acquired token: %s\n", config.Get().ReseedUsername, token)
+	fmt.Printf("✓ success logined to Reseed with username %s, acquired token: %s\n",
+		config.Get().ReseedUsername, token)
 	return nil
 }

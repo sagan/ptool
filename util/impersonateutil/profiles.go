@@ -7,7 +7,7 @@ import (
 // may contain too long (width > 120) lines
 
 const (
-	// 默认对站点的 http 请求模仿最新版 Chrome Windows 11 x64 en-US 环境
+	// 默认对站点的 http 请求模仿最新版 Chrome on Windows 11 x64 en-US 环境
 	DEFAULT_IMPERSONATE = "chrome122"
 )
 

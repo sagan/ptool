@@ -109,6 +109,7 @@ func match(cmd *cobra.Command, args []string) error {
 		}
 	} else if showRaw {
 		fmt.Println(strings.Join(util.Map(torrents, func(t *reseed.Torrent) string { return t.ReseedId }), "  "))
+		return nil
 	} else if !doDownload {
 		if all {
 			fmt.Fprintf(os.Stderr, "// All xseed (include partial match (warning)) torrents found by Reseed API\n")

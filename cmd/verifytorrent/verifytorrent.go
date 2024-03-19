@@ -28,9 +28,11 @@ Example:
 ptool verifytorrent file1.torrent file2.torrent --save-path /root/Downloads
 ptool verifytorrent file.torrent --content-path /root/Downloads/TorrentContentFolder
 
-Exact one (but not more) of the --save-path, --content-path or --use-comment-meta flag must be set.
+Exact one (not less or more) of the --save-path, --content-path or --use-comment-meta flag must be set.
 * --save-path dir : the parent folder of torrent content(s).
+It can be used with multiple torrent args.
 * --content-path path : the torrent content(s) path, could be a folder or a single file.
+It can only be used with single torrent arg.
 * --use-comment-meta : extract save path from torrent's comment field and use it.
 The "ptool export" and some other cmds can use the same flag to write save path to generated torrent files.
 
@@ -58,7 +60,7 @@ func init() {
 	command.Flags().BoolVarP(&renameFailed, "rename-failed", "", false,
 		"Rename verification failed *.torrent file to *.torrent.failed")
 	command.Flags().BoolVarP(&useComment, "use-comment-meta", "", false,
-		"Use 'comment' field to extract save path from .torrent file and verify against it")
+		"Extract save path from 'comment' field of .torrent file and verify against it")
 	command.Flags().BoolVarP(&checkHash, "check", "", false, "Do hash checking when verifying torrent files")
 	command.Flags().BoolVarP(&checkQuick, "check-quick", "", false,
 		"Do quick hash checking when verifying torrent files, "+
@@ -66,11 +68,9 @@ func init() {
 	command.Flags().BoolVarP(&forceLocal, "force-local", "", false, "Force treat all arg as local torrent filename")
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all info")
 	command.Flags().StringVarP(&contentPath, "content-path", "", "",
-		"The path of torrent content. Can only be used with single torrent arg "+
-			"(Exact one of this and --save-path flag MUST be set)")
+		"The path of torrent content. Can only be used with single torrent arg")
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of torrent url")
-	command.Flags().StringVarP(&savePath, "save-path", "", "",
-		"The parent folder path of torrent content(s). (Exact one of this and --content-path flag MUST be set)")
+	command.Flags().StringVarP(&savePath, "save-path", "", "", "The parent folder path of torrent content(s).")
 	cmd.RootCmd.AddCommand(command)
 }
 

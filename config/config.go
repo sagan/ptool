@@ -36,7 +36,10 @@ const (
 	GLOBAL_INTERNAL_LOCK_FILE = "ptool.lock"
 	GLOBAL_LOCK_FILE          = "ptool-global.lock"
 
-	DEFAULT_IYUU_DOMAIN                             = "api.iyuu.cn"
+	// Changed in Feb, 2024.
+	// See: https://github.com/ledccn/IYUUPlus/commit/04aef85b667bcc2f22975dd4c5c0e09e5bb2015d .
+	// Older values: "api.iyuu.cn", "hk.iyuu.cn".
+	DEFAULT_IYUU_DOMAIN                             = "http://api.bolahg.cn"
 	DEFAULT_TIMEOUT                                 = int64(5)
 	DEFAULT_SHELL_MAX_SUGGESTIONS                   = int64(5)
 	DEFAULT_SHELL_MAX_HISTORY                       = int64(500)

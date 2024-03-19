@@ -1,7 +1,7 @@
 iyuuToken = '' # iyuu token。用于自动辅种功能
 # 注释掉的配置项值为默认值
-#iyuuDomain = 'api.iyuu.cn' # 配置 iyuu api 服务器的镜像或代理 URL。例如 'http://ufhy.top'
-#siteSecure = false # 启用访问站点时的 TLS 证书校验
+#iyuuDomain = '' # 配置 iyuu api 服务器的镜像或代理 URL。例如 'http://ufhy.top'
+#siteInsecure = false # 禁用访问站点时的 TLS 证书校验
 #siteTimeout = 5 # 访问网站超时时间(秒)
 #siteImpersonate = "" # 设置访问站点时模仿的浏览器，ptool 会使用该浏览器的 TLS ja3 指纹、H2 指纹、http headers。默认模仿最新稳定版 Chrome on Windows x64 en-US
 #siteProxy = '' # 使用代理访问 PT 站点（不适用于访问 BT 客户端）。格式为 'http://127.0.0.1:1080'。所有支持的代理协议: https://github.com/Noooste/azuretls-client?tab=readme-ov-file#proxy . 也支持通过 HTTP_PROXY & HTTPS_PROXY 环境变量设置代理
