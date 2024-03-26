@@ -374,7 +374,7 @@ var (
 			Comment:             "柠檬",
 		},
 		"mteam": {
-			Type:                "nexusphp",
+			Type:                "mtorrent",
 			Aliases:             []string{"m-team", "mt"},
 			Url:                 "https://kp.m-team.cc/",
 			Domains:             []string{"m-team.io"},
