@@ -25,6 +25,19 @@ var (
 		"time": "CREATED_DATE",
 		"size": "SIZE",
 	}
+
+	downloadMultipliers = map[string]float64{
+		"FREE":           0,
+		"_2X_FREE":       0,
+		"PERCENT_50":     0.5,
+		"_2X_PERCENT_50": 0.5,
+		"PERCENT_70":     0.3,
+	}
+
+	uploadMultipliers = map[string]float64{
+		"_2X_FREE":       2,
+		"_2X_PERCENT_50": 2,
+	}
 )
 
 var _ site.Site = (*Site)(nil)
@@ -217,8 +230,8 @@ func (m *Site) convertTorrents(list *TorrentList) []site.Torrent {
 			Id:                 fmt.Sprintf("%s.%s", m.Name, torrent.Id),
 			InfoHash:           "",
 			DownloadUrl:        torrent.Id, // can't get download url in list, must call /api/torrent/genDlToken after
-			DownloadMultiplier: getDownloadMultiplier(torrent.Status.Discount),
-			UploadMultiplier:   1.0,
+			DownloadMultiplier: getMultiplier(downloadMultipliers, torrent.Status.Discount),
+			UploadMultiplier:   getMultiplier(uploadMultipliers, torrent.Status.Discount),
 			DiscountEndTime:    torrent.Status.DiscountEndTime.UnixWithDefault(-1),
 			Time:               torrent.CreateDate.Unix(),
 			Size:               torrent.Size.Value(),
@@ -237,17 +250,12 @@ func (m *Site) convertTorrents(list *TorrentList) []site.Torrent {
 	return torrents
 }
 
-func getDownloadMultiplier(discount string) float64 {
-	switch discount {
-	case TorrentDiscount_70Percent:
-		return 0.3
-	case TorrentDiscount_50Percent:
-		return 0.2
-	case TorrentDiscount_Free:
-		return 0
-	default:
-		return 1
+func getMultiplier(config map[string]float64, discount string) float64 {
+	if v, ok := config[discount]; ok {
+		return v
 	}
+	// default discount is 100%
+	return 1
 }
 
 func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.ConfigStruct) (site.Site, error) {
