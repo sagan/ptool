@@ -9,6 +9,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/util/helper"
 	"github.com/sagan/ptool/util/torrentutil"
 )
@@ -119,7 +120,7 @@ func export(cmd *cobra.Command, args []string) error {
 			}
 		}
 		filepath := path.Join(downloadDir, torrentutil.RenameExportedTorrent(torrent, rename))
-		if err := os.WriteFile(filepath, content, 0600); err != nil {
+		if err := os.WriteFile(filepath, content, constants.PERM); err != nil {
 			fmt.Printf("✕ %s : failed to save to %s: %v (%d/%d)\n", torrent.InfoHash, filepath, err, i+1, cntAll)
 			errorCnt++
 		} else {

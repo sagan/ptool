@@ -16,6 +16,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/util/osutil"
 )
@@ -71,6 +72,7 @@ func Execute() {
 			if config.LockFile != "" {
 				log.Fatalf("--lock and --global-lock flags are NOT compatible")
 			}
+			os.MkdirAll(config.ConfigDir, constants.PERM)
 			config.LockFile = path.Join(config.ConfigDir, config.GLOBAL_LOCK_FILE)
 		}
 		if config.LockFile != "" {

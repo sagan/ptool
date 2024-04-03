@@ -27,14 +27,16 @@ Use a single "-" to read .torrent file contents from stdin.`,
 }
 
 var (
-	showAll     = false
-	showJson    = false
-	forceLocal  = false
-	defaultSite = ""
+	showAll          = false
+	showInfoHashOnly = false
+	showJson         = false
+	forceLocal       = false
+	defaultSite      = ""
 )
 
 func init() {
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all info")
+	command.Flags().BoolVarP(&showInfoHashOnly, "show-info-hash-only", "", false, "Output torrents info hash only")
 	command.Flags().BoolVarP(&showJson, "json", "", false, "Show output in json format")
 	command.Flags().BoolVarP(&forceLocal, "force-local", "", false, "Force treat all arg as local torrent filename")
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of torrent url")
@@ -42,10 +44,13 @@ func init() {
 }
 
 func parsetorrent(cmd *cobra.Command, args []string) error {
+	if util.CountNonZeroVariables(showInfoHashOnly, showAll, showJson) > 1 {
+		return fmt.Errorf("--all, --show-info-hash-only and --json flags are NOT compatible")
+	}
 	torrents := util.ParseFilenameArgs(args...)
 	errorCnt := int64(0)
 
-	for i, torrent := range torrents {
+	for _, torrent := range torrents {
 		_, tinfo, _, _, _, _, _, err := helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, nil, false)
 		if err != nil {
 			log.Errorf("Failed to get %s: %v", torrent, err)
@@ -61,13 +66,14 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 			}
 			fmt.Println(string(bytes))
 			continue
+		} else if showInfoHashOnly {
+			fmt.Printf("%s\n", tinfo.InfoHash)
+			continue
 		}
 		tinfo.Print(torrent, showAll)
 		if showAll {
 			tinfo.PrintFiles(true, false)
-			if i < len(torrents)-1 {
-				fmt.Printf("\n")
-			}
+			fmt.Printf("\n")
 		}
 	}
 	if errorCnt > 0 {

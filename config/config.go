@@ -18,6 +18,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/util"
 )
 
@@ -171,6 +172,7 @@ type SiteConfigStruct struct {
 	FlowControlInterval           int64  `yaml:"flowControlInterval"` // 暂定名。两次请求种子列表页间隔时间(秒)
 	NexusphpNoLetDown             bool   `yaml:"nexusphpNoLetDown"`
 	MaxRedirects                  int64  `yaml:"maxRedirects"`
+	NoCookie                      bool   `yaml:"noCookie"` // true: 该站点不使用 cookie 鉴权方式
 	TorrentUploadSpeedLimitValue  int64
 	BrushTorrentMinSizeLimitValue int64
 	BrushTorrentMaxSizeLimitValue int64
@@ -294,6 +296,9 @@ func UpdateSites(updatesites []*SiteConfigStruct) {
 // Due to technical limitations, all existing comments will be LOST.
 // For now, new config data will NOT take effect for current ptool process.
 func Set() error {
+	if err := os.MkdirAll(ConfigDir, constants.PERM); err != nil {
+		return fmt.Errorf("config dir does NOT exists and can not be created: %v", err)
+	}
 	lock := flock.New(path.Join(ConfigDir, GLOBAL_INTERNAL_LOCK_FILE))
 	if ok, err := lock.TryLock(); err != nil || !ok {
 		return fmt.Errorf("unable to acquire global lock: %v", err)
@@ -630,6 +635,9 @@ func (configData *ConfigStruct) GetIyuuDomain() string {
 }
 
 func CreateDefaultConfig() (err error) {
+	if err := os.MkdirAll(ConfigDir, constants.PERM); err != nil {
+		return fmt.Errorf("failed to create config dir: %v", err)
+	}
 	lock := flock.New(path.Join(ConfigDir, GLOBAL_INTERNAL_LOCK_FILE))
 	if ok, err := lock.TryLock(); err != nil || !ok {
 		return fmt.Errorf("unable to acquire global lock: %v", err)
@@ -658,7 +666,7 @@ func CreateDefaultConfig() (err error) {
 	if err != nil {
 		panic(err)
 	}
-	return os.WriteFile(configFile, contents, 0600)
+	return os.WriteFile(configFile, contents, constants.PERM)
 }
 
 // Assert name is neither empty nor contains invalid characters. If failed, exit the process

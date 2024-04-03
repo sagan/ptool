@@ -33,7 +33,7 @@ var command = &cobra.Command{
 It will get latest cookies from cookiecloud servers, find sites that do NOT exist in config file currently,
 Test their cookies are valid, then add them to config file.
 
-It will ask for confirm before updating config file, unless --do flag is set.
+It will ask for confirm before updating config file, unless --force flag is set.
 Be aware that all existing comments in config file will be LOST when updating config file.`,
 	RunE: importsites,
 }
@@ -97,6 +97,10 @@ func importsites(cmd *cobra.Command, args []string) error {
 	for _, cookiecloudData := range cookiecloudDatas {
 		for _, tplname := range tpl.SITENAMES {
 			if tplExistingFlags[tplname] {
+				continue
+			}
+			if tpl.SITES[tplname].NoCookie {
+				log.Debugf("Internal site %s does NOT use cookie authorization, skip it", tplname)
 				continue
 			}
 			cookie, _ := cookiecloudData.Data.GetEffectiveCookie(tpl.SITES[tplname].Url, false, "http")

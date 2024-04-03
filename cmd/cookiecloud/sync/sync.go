@@ -35,7 +35,7 @@ var command = &cobra.Command{
 It will get latest cookies from cookiecloud servers. Then use them to update local sites in config file,
 Update site which current cookie is no longer valid with the new one.
 
-It will ask for confirm before updating config file, unless --do flag is set.
+It will ask for confirm before updating config file, unless --force flag is set.
 Be aware that all existing comments in config file will be LOST when updating config file.`,
 	RunE: sync,
 }
@@ -89,6 +89,7 @@ func sync(cmd *cobra.Command, args []string) error {
 	updatesites := []*config.SiteConfigStruct{}
 	// sitename => flag.
 	// flag: 0 - 初始；1 - 当前配置cookie有效；2 - 站点不存在或当前无法访问；3-当前配置cookie无效；4-已更新cookie;
+	// 5-该网站不使用 cookie 鉴权(跳过)。
 	var siteFlags = make(map[string]int)
 	var siteUrls = make(map[string]string)
 	ch := make(chan *site_test_result, len(sitenames))
@@ -100,6 +101,14 @@ func sync(cmd *cobra.Command, args []string) error {
 					sitename: sitename,
 					flag:     2,
 					msg:      "site not found in config",
+				}
+				return
+			}
+			if siteconfig.NoCookie {
+				ch <- &site_test_result{
+					sitename: sitename,
+					flag:     5,
+					msg:      "site does NOT use cookie",
 				}
 				return
 			}
@@ -157,6 +166,8 @@ func sync(cmd *cobra.Command, args []string) error {
 			symbol = "!"
 		case 3:
 			symbol = "✕"
+		case 5:
+			symbol = "-"
 		}
 		siteFlags[result.sitename] = result.flag
 		siteUrls[result.sitename] = result.url
@@ -214,6 +225,7 @@ func sync(cmd *cobra.Command, args []string) error {
 	sitesInaccessible := []string{}
 	sitesInvalid := []string{}
 	sitesUpdated := []string{}
+	sitesSkip := []string{}
 	for sitename, siteflag := range siteFlags {
 		switch siteflag {
 		case 1:
@@ -224,13 +236,17 @@ func sync(cmd *cobra.Command, args []string) error {
 			sitesInvalid = append(sitesInvalid, sitename)
 		case 4:
 			sitesUpdated = append(sitesUpdated, sitename)
+		case 5:
+			sitesSkip = append(sitesSkip, sitename)
 		}
 	}
 
 	fmt.Printf("Summary (all %d sites):\n", len(sitenames))
 	fmt.Printf("✓Sites current-cookie-valid (%d): %s\n", len(sitesValid), strings.Join(sitesValid, ", "))
 	fmt.Printf("!Sites inaccessible-now (%d): %s\n", len(sitesInaccessible), strings.Join(sitesInaccessible, ", "))
-	fmt.Printf("✕Sites invalid-cookie (no new valid cookie found) (%d): %s\n", len(sitesInvalid), strings.Join(sitesInvalid, ", "))
+	fmt.Printf("✕Sites invalid-cookie (no new valid cookie found) (%d): %s\n",
+		len(sitesInvalid), strings.Join(sitesInvalid, ", "))
+	fmt.Printf("-Sites skipped (%d): %s\n", len(sitesSkip), strings.Join(sitesSkip, ", "))
 	fmt.Printf("✓✓Sites success-with-new-cookie (%d): %s\n", len(sitesUpdated), strings.Join(sitesUpdated, ", "))
 
 	fmt.Printf("\n")

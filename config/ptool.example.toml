@@ -1,6 +1,8 @@
-iyuuToken = '' # iyuu token。用于自动辅种功能
+iyuuToken = '' # iyuu token。用于使用 Iyuu (https://github.com/ledccn/IYUUAutoReseed) 接口自动辅种
 # 注释掉的配置项值为默认值
 #iyuuDomain = '' # 配置 iyuu api 服务器的镜像或代理 URL。例如 'http://ufhy.top'
+#reseedUsername = '' # Reseed username & password
+#reseedPassword = '' # 用于使用 Reseed (https://github.com/tongyifan/Reseed-backend) 接口自动辅种
 #siteInsecure = false # 禁用访问站点时的 TLS 证书校验
 #siteTimeout = 5 # 访问网站超时时间(秒)
 #siteImpersonate = "" # 设置访问站点时模仿的浏览器，ptool 会使用该浏览器的 TLS ja3 指纹、H2 指纹、http headers。默认模仿最新稳定版 Chrome on Windows x64 en-US

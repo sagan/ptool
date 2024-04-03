@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/gofrs/flock"
+	"github.com/sagan/ptool/constants"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -31,7 +32,7 @@ func (sh *ShellHistoryStruct) reset() {
 func (sh *ShellHistoryStruct) openHistoryFile() {
 	if !sh.opened {
 		sh.opened = true
-		file, err := os.OpenFile(sh.filename, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0600)
+		file, err := os.OpenFile(sh.filename, os.O_RDWR|os.O_APPEND|os.O_CREATE, constants.PERM)
 		if err != nil {
 			log.Debugf("Failed to open history file %s: %v", sh.filename, err)
 		} else {
@@ -120,7 +121,7 @@ func (sh *ShellHistoryStruct) Truncate(max int) {
 		sh.reset()
 		history = history[len(history)-max:]
 		historyData := strings.Join(history, "\n")
-		os.WriteFile(sh.filename, []byte(historyData), 0600)
+		os.WriteFile(sh.filename, []byte(historyData), constants.PERM)
 		sh.cnt = len(history)
 	}
 }

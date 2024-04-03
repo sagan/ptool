@@ -327,15 +327,15 @@ ptool <command> <client> [flags] [<infoHash>...]
 
 # 强制立即汇报所有种子
 
-ptool reannounce local \_all
+ptool reannounce local _all
 
 # 恢复下载/做种所有种子
 
-ptool resume local \_all
+ptool resume local _all
 
 # 暂停 abc 分类下的所有正在下载种子
 
-ptool pause local --category abc \_downloading
+ptool pause local --category abc _downloading
 
 # 从客户端删除指定种子（默认同时删除文件）。默认会提示确认删除，除非指定 --force 参数
 
@@ -403,15 +403,15 @@ ptool renametag <client> <old-tag> <new-tag>
 
 # 修改种子的 tracker。只有 old tracker 存在的种子会被修改
 
-ptool edittracker <client> \_all --old-tracker "https://..." --new-tracker "https://..."
+ptool edittracker <client> _all --old-tracker "https://..." --new-tracker "https://..."
 
 # 只替换种子 tracker 的 host (域名)部分
 
-ptool edittracker <client> \_all --old-tracker old-tracker.com --new-tracker new-tracker.com --replace-host
+ptool edittracker <client> _all --old-tracker old-tracker.com --new-tracker new-tracker.com --replace-host
 
 # 将所有 host 相匹配的旧 Tracker 替换为提高的新的 Tracker 地址
 
-ptool edittracker <client> \_all --old-tracker tracker.hdtime.org --new-tracker "https://tracker.hdtime.org/announce.php?passkey=123456" --replace-host
+ptool edittracker <client> _all --old-tracker tracker.hdtime.org --new-tracker "https://tracker.hdtime.org/announce.php?passkey=123456" --replace-host
 
 # 为种子增加 tracker
 
@@ -617,7 +617,7 @@ ptool partialdownload <client> <infoHash> --chunk-size 1TiB -a
 
 # 设置客户端只下载该种子第 0 块切片(0-indexed)的内容。
 
-ptool partialdownload <client> <infoHash> --chunk-size 1TiB --chuck-index 0
+ptool partialdownload <client> <infoHash> --chunk-size 1TiB --chunk-index 0
 
 ```
 
