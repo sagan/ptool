@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -46,7 +47,7 @@ func GetCookiecloudData(server string, uuid string, password string,
 	if !strings.HasSuffix(server, "/") {
 		server += "/"
 	}
-	if proxy == "" {
+	if proxy == "" || proxy == "env" {
 		proxy = util.ParseProxyFromEnv(server)
 	}
 	if timeout == 0 {
@@ -86,19 +87,20 @@ func GetCookiecloudData(server string, uuid string, password string,
 // in the case of urlOrDomain being a domain, it's path is assumed to be "/".
 // If all is true, path check is skipped and all cookies which domain match will be included.
 // format: "http" - http request "Cookie" header; "js" - JavaScript document.cookie="" code snippet
-func (cookiecloudData *CookiecloudData) GetEffectiveCookie(urlOrDomain string, all bool, format string) (string, error) {
+func (cookiecloudData *CookiecloudData) GetEffectiveCookie(urlOrDomain string, all bool, format string) (
+	string, []*Cookie, error) {
 	hostname := urlOrDomain
 	path := "/"
 	if util.IsUrl(urlOrDomain) {
 		urlObj, err := url.Parse(urlOrDomain)
 		if err != nil {
-			return "", fmt.Errorf("arg is not a valid url: %v", err)
+			return "", nil, fmt.Errorf("arg is not a valid url: %v", err)
 		}
 		hostname = urlObj.Hostname()
 		path = urlObj.Path
 	}
 	if hostname == "" {
-		return "", fmt.Errorf("hostname can not be empty")
+		return "", nil, fmt.Errorf("hostname can not be empty")
 	}
 	effectiveCookies := []*Cookie{}
 	keys := []string{hostname, "." + hostname}
@@ -138,7 +140,7 @@ func (cookiecloudData *CookiecloudData) GetEffectiveCookie(urlOrDomain string, a
 		}
 	}
 	if len(effectiveCookies) == 0 {
-		return "", nil
+		return "", nil, nil
 	}
 	if !all {
 		sort.SliceStable(effectiveCookies, func(i, j int) bool {
@@ -171,7 +173,15 @@ func (cookiecloudData *CookiecloudData) GetEffectiveCookie(urlOrDomain string, a
 				"; path=" + cookie.Path + `; max-age=3153600000` + `';`
 		}
 	} else {
-		return "", fmt.Errorf("invalid format %s", format)
+		return "", nil, fmt.Errorf("invalid format %s", format)
 	}
-	return cookieStr, nil
+	return cookieStr, effectiveCookies, nil
+}
+
+var cdnCookies = []string{"cf_clearance"}
+
+// Check whether this cookie is set by the CDN or similar reverse-proxy services,
+// which is not associated with authentication & authorization.
+func (cookie *Cookie) IsCDN() bool {
+	return slices.Index(cdnCookies, cookie.Name) != -1
 }

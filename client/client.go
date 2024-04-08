@@ -320,9 +320,9 @@ func (torrent *Torrent) IsFull() bool {
 
 func (torrent *Torrent) HasTag(tag string) bool {
 	tag = strings.ToLower(tag)
-	return slices.IndexFunc(torrent.Tags, func(t string) bool {
+	return slices.ContainsFunc(torrent.Tags, func(t string) bool {
 		return strings.ToLower(t) == tag
-	}) != -1
+	})
 }
 
 // return index or -1
@@ -514,9 +514,9 @@ func QueryTorrents(clientInstance Client, category string, tag string, filter st
 	}
 	torrents2 := []Torrent{}
 	for _, torrent := range torrents {
-		if tags != nil && slices.IndexFunc(tags, func(tag string) bool {
+		if tags != nil && !slices.ContainsFunc(tags, func(tag string) bool {
 			return torrent.HasTag(tag)
-		}) == -1 {
+		}) {
 			continue
 		}
 		if filter != "" && !util.ContainsI(torrent.Name, filter) {
@@ -565,9 +565,9 @@ func SelectTorrents(clientInstance Client, category string, tag string, filter s
 	}
 	infoHashes := []string{}
 	for _, torrent := range torrents {
-		if tags != nil && slices.IndexFunc(tags, func(tag string) bool {
+		if tags != nil && !slices.ContainsFunc(tags, func(tag string) bool {
 			return torrent.HasTag(tag)
-		}) == -1 {
+		}) {
 			continue
 		}
 		if filter != "" && !util.ContainsI(torrent.Name, filter) {

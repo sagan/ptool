@@ -184,8 +184,10 @@ func sync(cmd *cobra.Command, args []string) error {
 				slices.Index(config.ParseGroupAndOtherNames(cookiecloudData.Sites...), sitename) == -1 {
 				continue
 			}
-			newcookie, err := cookiecloudData.Data.GetEffectiveCookie(siteUrls[sitename], false, "http")
-			if newcookie == "" {
+			newcookie, rawCookies, err := cookiecloudData.Data.GetEffectiveCookie(siteUrls[sitename], false, "http")
+			if newcookie == "" || !slices.ContainsFunc(rawCookies, func(rc *cookiecloud.Cookie) bool {
+				return !rc.IsCDN()
+			}) {
 				log.Debugf("No cookie found for %s site from cookiecloud %s (url=%s, error: %v)",
 					sitename, cookiecloudData.Label, siteUrls[sitename], err)
 				continue

@@ -70,7 +70,6 @@ func importsites(cmd *cobra.Command, args []string) error {
 				profile.Server, profile.Uuid, len(data.Cookie_data))
 			cookiecloudDatas = append(cookiecloudDatas, cookiecloud.Ccdata_struct{
 				Label: fmt.Sprintf("%s-%s", util.GetUrlDomain(profile.Server), profile.Uuid),
-				Sites: profile.Sites,
 				Data:  data,
 			})
 		}
@@ -103,8 +102,10 @@ func importsites(cmd *cobra.Command, args []string) error {
 				log.Debugf("Internal site %s does NOT use cookie authorization, skip it", tplname)
 				continue
 			}
-			cookie, _ := cookiecloudData.Data.GetEffectiveCookie(tpl.SITES[tplname].Url, false, "http")
-			if cookie == "" {
+			cookie, rawCookies, _ := cookiecloudData.Data.GetEffectiveCookie(tpl.SITES[tplname].Url, false, "http")
+			if cookie == "" || !slices.ContainsFunc(rawCookies, func(rc *cookiecloud.Cookie) bool {
+				return !rc.IsCDN()
+			}) {
 				continue
 			}
 			newsiteconfig := &config.SiteConfigStruct{Type: tplname, Cookie: cookie, Proxy: siteProxy,

@@ -509,9 +509,9 @@ func ParseGroupAndOtherNames(names ...string) []string {
 
 func (cookieCloudConfig *CookiecloudConfigStruct) MatchFilter(filter string) bool {
 	return util.ContainsI(cookieCloudConfig.Name, filter) || util.ContainsI(cookieCloudConfig.Uuid, filter) ||
-		slices.IndexFunc(cookieCloudConfig.Sites, func(s string) bool {
+		slices.ContainsFunc(cookieCloudConfig.Sites, func(s string) bool {
 			return strings.EqualFold(s, filter)
-		}) != -1
+		})
 }
 
 func (aliasConfig *AliasConfigStruct) MatchFilter(filter string) bool {
@@ -520,9 +520,9 @@ func (aliasConfig *AliasConfigStruct) MatchFilter(filter string) bool {
 
 func (groupConfig *GroupConfigStruct) MatchFilter(filter string) bool {
 	return util.ContainsI(groupConfig.Name, filter) ||
-		slices.IndexFunc(groupConfig.Sites, func(s string) bool {
+		slices.ContainsFunc(groupConfig.Sites, func(s string) bool {
 			return strings.EqualFold(s, filter)
-		}) != -1
+		})
 }
 
 func (clientConfig *ClientConfigStruct) MatchFilter(filter string) bool {

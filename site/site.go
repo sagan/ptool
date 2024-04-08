@@ -91,16 +91,16 @@ func (torrent *Torrent) MatchFilter(filter string) bool {
 	return false
 }
 
-// check if (seems) as a valid site status
+// Check if (seems) as a valid site status
 func (status *Status) IsOk() bool {
 	return status.UserName != "" || status.UserDownloaded > 0 || status.UserUploaded > 0
 }
 
-// matches if any filter in list matches
+// Matches if any filter in list matches
 func (torrent *Torrent) MatchFiltersOr(filters []string) bool {
-	return slices.IndexFunc(filters, func(filter string) bool {
+	return slices.ContainsFunc(filters, func(filter string) bool {
 		return torrent.MatchFilter(filter)
-	}) != -1
+	})
 }
 
 // Matches if every list of filtersArray is successed with MatchFiltersOr().
@@ -355,7 +355,7 @@ func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, globalConfig *con
 	if siteConfig.Proxy != "" {
 		proxy = siteConfig.Proxy
 	}
-	if proxy == "" {
+	if proxy == "" || proxy == "env" {
 		proxy = util.ParseProxyFromEnv(siteConfig.Url)
 	}
 	insecure := !siteConfig.Secure && (siteConfig.Insecure || globalConfig.SiteInsecure)

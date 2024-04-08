@@ -122,7 +122,7 @@ func get(cmd *cobra.Command, args []string) error {
 			cookieScope += " <all>"
 		}
 		for _, cookiecloudData := range cookiecloudDatas {
-			cookie, _ := cookiecloudData.Data.GetEffectiveCookie(domainOrUrl, showAll, format)
+			cookie, _, _ := cookiecloudData.Data.GetEffectiveCookie(domainOrUrl, showAll, format)
 			if cookie == "" {
 				log.Debugf("No cookie found for %s in cookiecloud %s", siteOrDomainOrUrl, cookiecloudData.Label)
 				continue

@@ -778,17 +778,16 @@ func (trclient *Client) AddTorrentTrackers(infoHash string, trackers []string, o
 		return err
 	}
 	if oldTracker != "" {
-		index := slices.IndexFunc(trtorrent.Trackers, func(trtracker *transmissionrpc.Tracker) bool {
+		if !slices.ContainsFunc(trtorrent.Trackers, func(trtracker *transmissionrpc.Tracker) bool {
 			return util.MatchUrlWithHostOrUrl(trtracker.Announce, oldTracker)
-		})
-		if index == -1 {
+		}) {
 			return nil
 		}
 	}
 	trackers = util.Filter(trackers, func(tracker string) bool {
-		return slices.IndexFunc(trtorrent.Trackers, func(trtracker *transmissionrpc.Tracker) bool {
+		return !slices.ContainsFunc(trtorrent.Trackers, func(trtracker *transmissionrpc.Tracker) bool {
 			return trtracker.Announce == tracker
-		}) == -1
+		})
 	})
 	if len(trackers) > 0 {
 		return trclient.client.TorrentSet(context.TODO(), transmissionrpc.TorrentSetPayload{

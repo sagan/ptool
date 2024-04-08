@@ -26,9 +26,9 @@ func (ev *EnumValue) String() string {
 }
 
 func (ev *EnumValue) Set(value string) error {
-	if slices.IndexFunc(ev.options, func(option [2]string) bool {
+	if !slices.ContainsFunc(ev.options, func(option [2]string) bool {
 		return option[0] == value
-	}) == -1 {
+	}) {
 		return errors.New("must be " + ev.tip())
 	}
 	*ev.value = value
