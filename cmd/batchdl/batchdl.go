@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
@@ -27,6 +28,7 @@ var command = &cobra.Command{
 	Aliases:     []string{"ebookgod"},
 	Short:       "Batch download the smallest (or by any other order) torrents from a site.",
 	Long: `Batch download the smallest (or by any other order) torrents from a site.
+It also supports directly adding downloaded torrent to a client.
 
 To set the name of added torrent in client or filename of downloaded torrent, use --rename <name> flag,
 which supports the following variable placeholders:
@@ -36,52 +38,64 @@ which supports the following variable placeholders:
 * [filename] : Original torrent filename without ".torrent" extension
 * [filename128] : The prefix of [filename] which is at max 128 bytes
 * [name] : Torrent name
-* [name128] : The prefix of torrent name which is at max 128 bytes`,
+* [name128] : The prefix of torrent name which is at max 128 bytes
+
+It will output the summary of downloads result in the end:
+* Torrents : Torrents downloaded
+* AllTorrents : All torrents fetched, including not-downloaded (skipped)
+* LastPage : The last processed site page. To continue (resume) downloading torrents from here,
+  run the same command again with "--start-page page" flag set to this value
+* ErrorCnt : Count of all types of errors (failed to download torrent or add torrent to client)`,
 	Args: cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 	RunE: batchdl,
 }
 
 var (
-	skipLocalExisting  = false
-	downloadAll        = false
-	onePage            = false
-	addPaused          = false
-	dense              = false
-	addRespectNoadd    = false
-	includeDownloaded  = false
-	freeOnly           = false
-	noPaid             = false
-	noNeutral          = false
-	nohr               = false
-	allowBreak         = false
-	addCategoryAuto    = false
-	largestFlag        = false
-	newestFlag         = false
-	maxTorrents        = int64(0)
-	minSeeders         = int64(0)
-	maxSeeders         = int64(0)
-	addCategory        = ""
-	addClient          = ""
-	addTags            = ""
-	filter             = ""
-	excludes           = ""
-	savePath           = ""
-	minTorrentSizeStr  = ""
-	maxTorrentSizeStr  = ""
-	maxTotalSizeStr    = ""
-	freeTimeAtLeastStr = ""
-	startPage          = ""
-	downloadDir        = ""
-	exportFile         = ""
-	baseUrl            = ""
-	rename             = ""
-	action             = ""
-	sortFlag           = ""
-	orderFlag          = ""
-	includes           = []string{}
+	downloadSkipExisting = false
+	downloadAll          = false
+	onePage              = false
+	addPaused            = false
+	dense                = false
+	addRespectNoadd      = false
+	includeDownloaded    = false
+	freeOnly             = false
+	noPaid               = false
+	noNeutral            = false
+	nohr                 = false
+	allowBreak           = false
+	addCategoryAuto      = false
+	largestFlag          = false
+	newestFlag           = false
+	maxTorrents          = int64(0)
+	minSeeders           = int64(0)
+	maxSeeders           = int64(0)
+	maxConsecutiveFail   = int64(0)
+	addCategory          = ""
+	addClient            = ""
+	addTags              = ""
+	filter               = ""
+	excludes             = ""
+	addSavePath          = ""
+	minTorrentSizeStr    = ""
+	maxTorrentSizeStr    = ""
+	maxTotalSizeStr      = ""
+	freeTimeAtLeastStr   = ""
+	startPage            = ""
+	downloadDir          = ""
+	exportFile           = ""
+	baseUrl              = ""
+	rename               = ""
+	action               = ""
+	sortFlag             = ""
+	orderFlag            = ""
+	includes             = []string{}
 )
 
 func init() {
+	command.Flags().BoolVarP(&downloadSkipExisting, "download-skip-existing", "", false,
+		`Used with "--action download". Do NOT re-download torrent that same name file already exists in local dir. `+
+			`If this flag is set, the download torrent filename ("--rename" flag) will be fixed to `+
+			`"[site].[id].torrent" (e.g.: "mteam.12345.torrent") format`)
 	command.Flags().BoolVarP(&downloadAll, "all", "a", false,
 		`Download all torrents. Equivalent to "--include-downloaded --min-seeders -1"`)
 	command.Flags().BoolVarP(&onePage, "one-page", "", false, "Only fetch one page torrents")
@@ -117,6 +131,8 @@ func init() {
 		"Skip torrent with seeders less than (<) this value. -1 == no limit")
 	command.Flags().Int64VarP(&maxSeeders, "max-seeders", "", -1,
 		"Skip torrent with seeders more than (>) this value. -1 == no limit")
+	command.Flags().Int64VarP(&maxConsecutiveFail, "max-consecutive-fail", "", 3,
+		"Stop after consecutive fails to download torrent from site of this times. -1 == no limit (never stop)")
 	command.Flags().StringVarP(&freeTimeAtLeastStr, "free-time", "", "",
 		"Used with --free. Set the allowed minimal remaining torrent free time. e.g.: 12h, 1d")
 	command.Flags().StringVarP(&filter, "filter", "", "",
@@ -136,8 +152,8 @@ func init() {
 		`Used with "--action add". Set the category when adding torrent to client`)
 	command.Flags().StringVarP(&addTags, "add-tags", "", "",
 		`Used with "--action add". Set the tags when adding torrent to client (comma-separated)`)
-	command.Flags().StringVarP(&savePath, "add-save-path", "", "",
-		"Set contents save path of added torrents")
+	command.Flags().StringVarP(&addSavePath, "add-save-path", "", "",
+		`Used with "--action add". Set contents save path of added torrents`)
 	command.Flags().StringVarP(&exportFile, "export-file", "", "",
 		`Used with "--action export|printid". Set the output file. (If not set, will use stdout)`)
 	command.Flags().StringVarP(&baseUrl, "base-url", "", "",
@@ -161,6 +177,15 @@ func batchdl(command *cobra.Command, args []string) error {
 	}
 	if largestFlag && newestFlag {
 		return fmt.Errorf("--largest and --newest flags are NOT compatible")
+	}
+	if action != "download" && util.CountNonZeroVariables(downloadSkipExisting, downloadDir) > 0 {
+		return fmt.Errorf(`found flags that are can only be used with "--action download"`)
+	} else if action != "add" && util.CountNonZeroVariables(
+		addCategoryAuto, addCategory, addClient, addPaused, addRespectNoadd, addSavePath) > 0 {
+		return fmt.Errorf(`found flags that are can only be used with "--action add"`)
+	}
+	if util.CountNonZeroVariables(downloadSkipExisting, rename) > 1 {
+		return fmt.Errorf("--download-skip-existing and --rename flags are NOT compatible")
 	}
 	if largestFlag {
 		sortFlag = "size"
@@ -222,7 +247,7 @@ func batchdl(command *cobra.Command, args []string) error {
 		}
 		clientAddTorrentOption = &client.TorrentOption{
 			Pause:    addPaused,
-			SavePath: savePath,
+			SavePath: addSavePath,
 		}
 		clientAddFixedTags = []string{client.GenerateTorrentTagFromSite(siteInstance.GetName())}
 		if addTags != "" {
@@ -250,12 +275,13 @@ func batchdl(command *cobra.Command, args []string) error {
 	totalSize := int64(0)
 	totalAllSize := int64(0)
 	errorCnt := int64(0)
+	consecutiveFail := int64(0)
 	var torrents []site.Torrent
 	var marker = startPage
 	var lastMarker = ""
 	doneHandle := func() {
 		fmt.Fprintf(os.Stderr,
-			"\nDone. Torrents(Size/Cnt) | AllTorrents(Size/Cnt) | LastPage: %s/%d | %s/%d | \"%s\"; ErrorCnt: %d\n",
+			"\n"+`Done. Torrents / AllTorrents / LastPage: %s (%d) / %s (%d) / "%s"; ErrorCnt: %d`+"\n",
 			util.BytesSize(float64(totalSize)),
 			cntTorrents,
 			util.BytesSize(float64(totalAllSize)),
@@ -387,6 +413,14 @@ mainloop:
 			} else if action == "printid" {
 				fmt.Fprintf(outputFileFd, "%s\n", torrent.Id)
 			} else {
+				fileName := ""
+				if action == "download" && downloadSkipExisting && torrent.Id != "" {
+					fileName = fmt.Sprintf("%s.%s.torrent", sitename, torrent.Id)
+					if util.FileExists(filepath.Join(downloadDir, fileName)) {
+						log.Debugf("Skip downloading local-existing torrent %s (%s)", torrent.Name, torrent.Id)
+						continue
+					}
+				}
 				var torrentContent []byte
 				var filename string
 				if torrent.DownloadUrl != "" {
@@ -396,47 +430,56 @@ mainloop:
 				}
 				if err != nil {
 					fmt.Printf("torrent %s (%s): failed to download: %v\n", torrent.Id, torrent.Name, err)
-				} else if tinfo, err := torrentutil.ParseTorrent(torrentContent, 99); err != nil {
-					fmt.Printf("torrent %s (%s): failed to parse: %v\n", torrent.Id, torrent.Name, err)
+					consecutiveFail++
+					if maxConsecutiveFail >= 0 && consecutiveFail > maxConsecutiveFail {
+						log.Errorf("Abort due to too many fails to download torrent from site")
+						break mainloop
+					}
 				} else {
-					if action == "download" {
-						fileName := ""
-						if rename == "" {
-							fileName = filename
-						} else {
-							fileName = torrentutil.RenameTorrent(rename, sitename, torrent.Id, filename, tinfo)
-						}
-						err = os.WriteFile(downloadDir+"/"+fileName, torrentContent, 0666)
-						if err != nil {
-							fmt.Printf("torrent %s: failed to write to %s/file %s: %v\n", torrent.Id, downloadDir, filename, err)
-						} else {
-							fmt.Printf("torrent %s - %s (%s): downloaded to %s/%s\n", torrent.Id, torrent.Name,
-								util.BytesSize(float64(torrent.Size)), downloadDir, fileName)
-						}
-					} else if action == "add" {
-						tags := []string{}
-						tags = append(tags, clientAddFixedTags...)
-						if tinfo.IsPrivate() {
-							tags = append(tags, config.PRIVATE_TAG)
-						}
-						if torrent.HasHnR || siteInstance.GetSiteConfig().GlobalHnR {
-							tags = append(tags, config.HR_TAG)
-						}
-						clientAddTorrentOption.Tags = tags
-						if addCategoryAuto {
-							clientAddTorrentOption.Category = sitename
-						} else {
-							clientAddTorrentOption.Category = addCategory
-						}
-						if rename != "" {
-							clientAddTorrentOption.Name = torrentutil.RenameTorrent(rename, sitename, torrent.Id, filename, tinfo)
-						}
-						err = clientInstance.AddTorrent(torrentContent, clientAddTorrentOption, nil)
-						if err != nil {
-							fmt.Printf("torrent %s (%s): failed to add to client: %v\n", torrent.Id, torrent.Name, err)
-						} else {
-							fmt.Printf("torrent %s - %s (%s) (seeders=%d, time=%s): added to client\n", torrent.Id, torrent.Name,
-								util.BytesSize(float64(torrent.Size)), torrent.Seeders, util.FormatDuration(now-torrent.Time))
+					consecutiveFail = 0
+					if tinfo, err := torrentutil.ParseTorrent(torrentContent, 99); err != nil {
+						fmt.Printf("torrent %s (%s): failed to parse: %v\n", torrent.Id, torrent.Name, err)
+					} else {
+						if action == "download" {
+							if fileName == "" {
+								if rename == "" {
+									fileName = filename
+								} else {
+									fileName = torrentutil.RenameTorrent(rename, sitename, torrent.Id, filename, tinfo)
+								}
+							}
+							err = os.WriteFile(filepath.Join(downloadDir, fileName), torrentContent, 0666)
+							if err != nil {
+								fmt.Printf("torrent %s: failed to write to %s/file %s: %v\n", torrent.Id, downloadDir, filename, err)
+							} else {
+								fmt.Printf("torrent %s - %s (%s): downloaded to %s/%s\n", torrent.Id, torrent.Name,
+									util.BytesSize(float64(torrent.Size)), downloadDir, fileName)
+							}
+						} else if action == "add" {
+							tags := []string{}
+							tags = append(tags, clientAddFixedTags...)
+							if tinfo.IsPrivate() {
+								tags = append(tags, config.PRIVATE_TAG)
+							}
+							if torrent.HasHnR || siteInstance.GetSiteConfig().GlobalHnR {
+								tags = append(tags, config.HR_TAG)
+							}
+							clientAddTorrentOption.Tags = tags
+							if addCategoryAuto {
+								clientAddTorrentOption.Category = sitename
+							} else {
+								clientAddTorrentOption.Category = addCategory
+							}
+							if rename != "" {
+								clientAddTorrentOption.Name = torrentutil.RenameTorrent(rename, sitename, torrent.Id, filename, tinfo)
+							}
+							err = clientInstance.AddTorrent(torrentContent, clientAddTorrentOption, nil)
+							if err != nil {
+								fmt.Printf("torrent %s (%s): failed to add to client: %v\n", torrent.Id, torrent.Name, err)
+							} else {
+								fmt.Printf("torrent %s - %s (%s) (seeders=%d, time=%s): added to client\n", torrent.Id, torrent.Name,
+									util.BytesSize(float64(torrent.Size)), torrent.Seeders, util.FormatDuration(now-torrent.Time))
+							}
 						}
 					}
 				}

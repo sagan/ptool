@@ -34,7 +34,7 @@ To download found torrents to local, use --download flag,
 By default it downloads torrents to "<config_dir>/reseed" dir, where the <config_dir>
 is the folder that ptool.toml config file is located at. Use --download-dir to change it.
 
-Existing torrents in local disk (already downloaded before) will be skipped.
+Existing torrents in local disk (already downloaded before) will be skipped (do NOT re-download it).
 
 To add downloaded torrents to local client as xseed torrents, use "ptool xseedadd" cmd.
 
@@ -48,13 +48,14 @@ as "xseedadd" cmd will fail to find matched target for such torrent in client.`,
 }
 
 var (
-	showJson    = false
-	showRaw     = false
-	useComment  = false
-	doDownload  = false
-	all         = false
-	timeout     = int64(0)
-	downloadDir = ""
+	showJson           = false
+	showRaw            = false
+	useComment         = false
+	doDownload         = false
+	all                = false
+	timeout            = int64(0)
+	maxConsecutiveFail = int64(0)
+	downloadDir        = ""
 )
 
 func init() {
@@ -66,6 +67,9 @@ func init() {
 	command.Flags().BoolVarP(&all, "all", "", false,
 		"Display or download all found xseed torrents (include partial-match results)")
 	command.Flags().Int64VarP(&timeout, "timeout", "", 15, "Timeout (seconds) for requesting Reseed API")
+	command.Flags().Int64VarP(&maxConsecutiveFail, "max-consecutive-fail", "", 3,
+		"After consecutive fails to download torrent from a site of this times, will skip that site afterwards. "+
+			"Note a 404 error does NOT count as a fail. -1 = no limit (never skip)")
 	command.Flags().StringVarP(&downloadDir, "download-dir", "", "",
 		`Set the dir of downloaded .torrent files. By default it uses "<config_dir>/reseed"`)
 	reseed.Command.AddCommand(command)
@@ -125,6 +129,7 @@ func match(cmd *cobra.Command, args []string) error {
 	cntSuccess := int64(0)
 	cntSkip := int64(0)
 	errorCnt := int64(0)
+	siteConsecutiveFails := map[string]int64{}
 	for i, torrent := range torrents {
 		if torrent.Id == "" {
 			log.Debugf("! ignore reseed torrent %s which site does NOT exists in local", torrent.ReseedId)
@@ -139,11 +144,26 @@ func match(cmd *cobra.Command, args []string) error {
 			cntSkip++
 			continue
 		}
+		sitename, _, found := strings.Cut(torrent.Id, ".")
+		if found && sitename != "" && maxConsecutiveFail >= 0 && siteConsecutiveFails[sitename] > maxConsecutiveFail {
+			log.Debugf("Skip site %s torrent %s as this site has failed too much times", sitename, torrent.Id)
+			continue
+		}
 		content, tinfo, _, sitename, _, _, _, err := helper.GetTorrentContent(torrent.Id, "", false, true, nil, true)
 		if err != nil {
 			fmt.Printf("✕ download %s (%d/%d): %v\n", torrent, i+1, cntAll, err)
 			errorCnt++
+			if sitename != "" {
+				if !strings.Contains(err.Error(), "status=404") {
+					siteConsecutiveFails[sitename]++
+				} else {
+					siteConsecutiveFails[sitename] = 0
+				}
+			}
 			continue
+		}
+		if sitename != "" {
+			siteConsecutiveFails[sitename] = 0
 		}
 		if useComment {
 			var useCommentErr error

@@ -80,6 +80,10 @@ func (f File) MarshalJSON() ([]byte, error) {
 	}
 }
 
+func (site *Site) MatchFilter(filter string) bool {
+	return filter == "" || util.ContainsI(site.Name, filter) || util.ContainsI(site.BaseUrl, filter)
+}
+
 // Escape all unicode (non-ASCII) characters to '\uXXXX' format.
 func Escape2Anscii(s string) string {
 	var sb strings.Builder

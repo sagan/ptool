@@ -8,6 +8,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/sagan/ptool/client"
@@ -37,6 +38,7 @@ var (
 	slowMode               = false
 	maxXseedTorrents       = int64(0)
 	iyuuRequestMaxTorrents = int64(0)
+	maxConsecutiveFail     = int64(0)
 	includeSites           = ""
 	excludeSites           = ""
 	category               = ""
@@ -59,6 +61,9 @@ func init() {
 		"Number limit of xseed torrents added. -1 == no limit")
 	command.Flags().Int64VarP(&iyuuRequestMaxTorrents, "max-request-torrents", "", 2000,
 		"Number limit of target torrents sent to iyuu server at once")
+	command.Flags().Int64VarP(&maxConsecutiveFail, "max-consecutive-fail", "", 3,
+		"After consecutive fails to download torrent from a site of this times, will skip that site afterwards. "+
+			"Note a 404 error does NOT count as a fail. -1 = no limit (never skip)")
 	command.Flags().StringVarP(&includeSites, "include-sites", "", "",
 		"Only add xseed torrents from these sites or groups (comma-separated)")
 	command.Flags().StringVarP(&excludeSites, "exclude-sites", "", "",
@@ -223,6 +228,7 @@ func xseed(cmd *cobra.Command, args []string) error {
 	}
 
 	siteInstancesMap := map[string]site.Site{}
+	siteConsecutiveFails := map[string]int64{}
 mainloop:
 	for i, clientName := range clientNames {
 		log.Printf("Start xseeding client (%d/%d) %s", i+1, len(clientName), clientName)
@@ -267,6 +273,10 @@ mainloop:
 					)
 					continue
 				}
+				if maxConsecutiveFail >= 0 && siteConsecutiveFails[sitename] > maxConsecutiveFail {
+					log.Debugf("Skip site %s torrent %s as this site has failed too much times", sitename, xseedTorrent.InfoHash)
+					continue
+				}
 				if clientExistingTorrent != nil {
 					log.Tracef("xseed candidate %s already existed in client", xseedTorrent.InfoHash)
 					if !dryRun {
@@ -308,7 +318,7 @@ mainloop:
 				log.Printf("Xseed torrent %s (target %s) from site %s (iyuu sid %d) / tid %d",
 					xseedTorrent.InfoHash,
 					targetTorrent.Name,
-					siteInstance.GetName(),
+					sitename,
 					xseedTorrent.Sid,
 					xseedTorrent.Tid,
 				)
@@ -318,8 +328,14 @@ mainloop:
 				xseedTorrentContent, _, err := siteInstance.DownloadTorrentById(fmt.Sprint(xseedTorrent.Tid))
 				if err != nil {
 					log.Errorf("Failed to download torrent from site: %v", err)
+					if !strings.Contains(err.Error(), "status=404") {
+						siteConsecutiveFails[sitename]++
+					} else {
+						siteConsecutiveFails[sitename] = 0
+					}
 					continue
 				}
+				siteConsecutiveFails[sitename] = 0
 				xseedTorrentInfo, err := torrentutil.ParseTorrent(xseedTorrentContent, 99)
 				if err != nil {
 					log.Errorf("Failed to parse xseed torrent contents: %v", err)
@@ -374,17 +390,20 @@ func updateIyuuDatabase(token string, infoHashes []string) error {
 	if err != nil {
 		log.Errorf("failed to get iyuu sites: %v", err)
 	} else {
-		iyuu.Db().Where("1 = 1").Delete(&iyuu.Site{})
-		iyuuSiteRecords := util.Map(iyuuSites, func(iyuuSite iyuu.IyuuApiSite) iyuu.Site {
-			return iyuu.Site{
-				Sid:          iyuuSite.Id,
-				Name:         iyuuSite.Site,
-				Nickname:     iyuuSite.Nickname,
-				Url:          iyuuSite.GetUrl(),
-				DownloadPage: iyuuSite.Download_page,
-			}
+		iyuu.Db().Transaction(func(tx *gorm.DB) error {
+			tx.Where("1 = 1").Delete(&iyuu.Site{})
+			iyuuSiteRecords := util.Map(iyuuSites, func(iyuuSite iyuu.IyuuApiSite) iyuu.Site {
+				return iyuu.Site{
+					Sid:          iyuuSite.Id,
+					Name:         iyuuSite.Site,
+					Nickname:     iyuuSite.Nickname,
+					Url:          iyuuSite.GetUrl(),
+					DownloadPage: iyuuSite.Download_page,
+				}
+			})
+			tx.Create(&iyuuSiteRecords)
+			return nil
 		})
-		iyuu.Db().Create(&iyuuSiteRecords)
 	}
 
 	// update xseed torrents data
@@ -393,29 +412,32 @@ func updateIyuuDatabase(token string, infoHashes []string) error {
 		log.Errorf("iyuu apiHash error: %v", err)
 	} else {
 		log.Debugf("iyuu data len(data)=%d\n", len(data))
-		for targetInfoHash, iyuuRecords := range data {
-			iyuu.Db().Where("target_info_hash = ?", targetInfoHash).Delete(&iyuu.Torrent{})
-			infoHashes := util.Map(iyuuRecords, func(record iyuu.IyuuTorrentInfoHash) string {
-				return record.Info_hash
-			})
-			iyuu.Db().Where("info_hash in ?", infoHashes).Delete(&iyuu.Torrent{})
-			iyuuTorrents := util.Map(iyuuRecords, func(iyuuRecord iyuu.IyuuTorrentInfoHash) iyuu.Torrent {
-				return iyuu.Torrent{
-					InfoHash:       iyuuRecord.Info_hash,
-					Sid:            iyuuRecord.Sid,
-					Tid:            iyuuRecord.Torrent_id,
-					TargetInfoHash: targetInfoHash,
-				}
-			})
-			iyuu.Db().Create(&iyuuTorrents)
-		}
+		iyuu.Db().Transaction(func(tx *gorm.DB) error {
+			for targetInfoHash, iyuuRecords := range data {
+				tx.Where("target_info_hash = ?", targetInfoHash).Delete(&iyuu.Torrent{})
+				infoHashes := util.Map(iyuuRecords, func(record iyuu.IyuuTorrentInfoHash) string {
+					return record.Info_hash
+				})
+				tx.Where("info_hash in ?", infoHashes).Delete(&iyuu.Torrent{})
+				iyuuTorrents := util.Map(iyuuRecords, func(iyuuRecord iyuu.IyuuTorrentInfoHash) iyuu.Torrent {
+					return iyuu.Torrent{
+						InfoHash:       iyuuRecord.Info_hash,
+						Sid:            iyuuRecord.Sid,
+						Tid:            iyuuRecord.Torrent_id,
+						TargetInfoHash: targetInfoHash,
+					}
+				})
+				tx.Create(&iyuuTorrents)
+			}
 
-		iyuu.Db().Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "key"}},
-			DoUpdates: clause.AssignmentColumns([]string{"value"}),
-		}).Create(&iyuu.Meta{
-			Key:   "lastUpdateTime",
-			Value: fmt.Sprint(util.Now()),
+			tx.Clauses(clause.OnConflict{
+				Columns:   []clause.Column{{Name: "key"}},
+				DoUpdates: clause.AssignmentColumns([]string{"value"}),
+			}).Create(&iyuu.Meta{
+				Key:   "lastUpdateTime",
+				Value: fmt.Sprint(util.Now()),
+			})
+			return nil
 		})
 	}
 

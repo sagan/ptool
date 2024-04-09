@@ -8,6 +8,7 @@ import (
 
 	"github.com/sagan/ptool/cmd/reseed"
 	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/util"
 )
 
 var command = &cobra.Command{
@@ -18,7 +19,13 @@ var command = &cobra.Command{
 	RunE:        sites,
 }
 
+var (
+	filter = ""
+)
+
 func init() {
+	command.Flags().StringVarP(&filter, "filter", "", "",
+		"Filter sites. Only show sites which name / url contain this string")
 	reseed.Command.AddCommand(command)
 }
 
@@ -45,9 +52,17 @@ func sites(cmd *cobra.Command, args []string) error {
 		return sites[i].Name < sites[j].Name
 	})
 
+	if filter == "" {
+		fmt.Printf("<all Reseed supported sites (%d). To narrow, use '--filter string' flag>\n", len(sites))
+	} else {
+		fmt.Printf("<Reseed supported sites. Applying '%s' filter>\n", filter)
+	}
 	fmt.Printf("%-15s  %-15s  %s\n", "ReseedSite", "LocalSite", "SiteUrl")
 	for _, site := range sites {
 		localsite := reseed2LocalMap[site.Name]
+		if filter != "" && !site.MatchFilter(filter) && !util.ContainsI(localsite, filter) {
+			continue
+		}
 		if localsite == "" {
 			localsite = "X (None)"
 		}

@@ -72,6 +72,7 @@ var pureFlags = []string{
 	"clients",
 	"delete-added",
 	"dense",
+	"download-skip-existing",
 	"dry-run",
 	"force",
 	"force-local",
