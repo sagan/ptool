@@ -49,6 +49,7 @@ The "ptool export" command has the same flag that saves meta info to 'comment' f
 }
 
 var (
+	slowMode           = false
 	useComment         = false
 	addCategoryAuto    = false
 	addPaused          = false
@@ -65,6 +66,7 @@ var (
 )
 
 func init() {
+	command.Flags().BoolVarP(&slowMode, "slow", "", false, "Slow mode. wait after adding each torrent")
 	command.Flags().BoolVarP(&useComment, "use-comment-meta", "", false,
 		"Use 'comment' field of .torrent file to extract category, tags, savePath and other meta info and apply them")
 	command.Flags().BoolVarP(&skipCheck, "skip-check", "", false, "Skip hash checking when adding torrents")
@@ -142,8 +144,11 @@ func add(cmd *cobra.Command, args []string) error {
 			}
 			continue
 		}
-		content, tinfo, siteInstance, siteName, filename, id, isLocal, err :=
-			helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, stdinTorrentContents, true)
+		if i > 0 && slowMode {
+			util.Sleep(3)
+		}
+		content, tinfo, siteInstance, sitename, filename, id, isLocal, err :=
+			helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, stdinTorrentContents, true, nil)
 		if err != nil {
 			fmt.Printf("✕ %s (%d/%d): %v\n", torrent, i+1, cntAll, err)
 			errorCnt++
@@ -179,8 +184,8 @@ func add(cmd *cobra.Command, args []string) error {
 		}
 		if !useComment {
 			if addCategoryAuto {
-				if siteName != "" {
-					option.Category = siteName
+				if sitename != "" {
+					option.Category = sitename
 				} else if addCategory != "" {
 					option.Category = addCategory
 				} else {
@@ -192,22 +197,22 @@ func add(cmd *cobra.Command, args []string) error {
 			if tinfo.IsPrivate() {
 				option.Tags = append(option.Tags, config.PRIVATE_TAG)
 			}
-			if siteName != "" {
-				option.Tags = append(option.Tags, client.GenerateTorrentTagFromSite(siteName))
+			if sitename != "" {
+				option.Tags = append(option.Tags, client.GenerateTorrentTagFromSite(sitename))
 			}
 			if hr {
 				option.Tags = append(option.Tags, config.HR_TAG)
 			}
 			option.Tags = append(option.Tags, fixedTags...)
 			if rename != "" {
-				option.Name = torrentutil.RenameTorrent(rename, siteName, id, filename, tinfo)
+				option.Name = torrentutil.RenameTorrent(rename, sitename, id, filename, tinfo)
 			}
 			option.SavePath = savePath
 		}
 		err = clientInstance.AddTorrent(content, option, nil)
 		if err != nil {
 			fmt.Printf("✕ %s (%d/%d) (site=%s): failed to add torrent to client: %v // %s\n",
-				torrent, i+1, cntAll, siteName, err, contentPath)
+				torrent, i+1, cntAll, sitename, err, contentPath)
 			errorCnt++
 			continue
 		}
@@ -224,7 +229,7 @@ func add(cmd *cobra.Command, args []string) error {
 		}
 		cntAdded++
 		sizeAdded += size
-		fmt.Printf("✓ %s (%d/%d) (site=%s). infoHash=%s // %s\n", torrent, i+1, cntAll, siteName, infoHash, contentPath)
+		fmt.Printf("✓ %s (%d/%d) (site=%s). infoHash=%s // %s\n", torrent, i+1, cntAll, sitename, infoHash, contentPath)
 	}
 	fmt.Fprintf(os.Stderr, "\n// Done. Added torrent (Size/Cnt): %s / %d; ErrorCnt: %d\n",
 		util.BytesSize(float64(sizeAdded)), cntAdded, errorCnt)

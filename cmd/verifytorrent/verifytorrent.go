@@ -17,8 +17,8 @@ var command = &cobra.Command{
 		"{--save-path dir | --content-path path | --use-comment-meta} [--check | --check-quick]",
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "verifytorrent"},
 	Aliases:     []string{"verify"},
-	Short:       "Verify torrent file(s) are consistent with local disk content files.",
-	Long: `Verify torrent file(s) are consistent with local disk files.
+	Short:       "Verify torrent file(s) are consistent with local disk contents.",
+	Long: `Verify torrent file(s) are consistent with local disk contents.
 Args is torrent list that each one could be a local filename (e.g. "*.torrent" or "[M-TEAM]CLANNAD.torrent"),
 site torrent id (e.g.: "mteam.488424") or url (e.g.: "https://kp.m-team.cc/details.php?id=488424").
 Torrent url that does NOT belong to any site (e.g.: a public site url) is also supported.
@@ -30,13 +30,11 @@ ptool verifytorrent file.torrent --content-path /root/Downloads/TorrentContentFo
 
 Exact one (not less or more) of the --save-path, --content-path or --use-comment-meta flag must be set.
 * --save-path dir : the parent folder of torrent content(s).
-It can be used with multiple torrent args.
+  It can be used with multiple torrent args.
 * --content-path path : the torrent content(s) path, could be a folder or a single file.
-It can only be used with single torrent arg.
+  It can only be used with single torrent arg.
 * --use-comment-meta : extract save path from torrent's comment field and use it.
-The "ptool export" and some other cmds can use the same flag to write save path to generated torrent files.
-
-If you provide multiple {file.torrent} args, only --save-path flag can be used.
+  The "ptool export" and some other cmds can use the same flag to write save path to generated torrent files.
 
 By default it will only examine file meta infos (file path & size).
 If --check flag is set, it will also do the hash checking.`,
@@ -100,7 +98,8 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 		if showAll && i > 0 {
 			fmt.Printf("\n")
 		}
-		_, tinfo, _, _, _, _, isLocal, err := helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, nil, false)
+		_, tinfo, _, _, _, _, isLocal, err :=
+			helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, nil, false, nil)
 		if err != nil {
 			fmt.Printf("X torrent %s: failed to get: %v\n", torrent, err)
 			errorCnt++

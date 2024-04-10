@@ -48,6 +48,7 @@ as "xseedadd" cmd will fail to find matched target for such torrent in client.`,
 }
 
 var (
+	slowMode           = false
 	showJson           = false
 	showRaw            = false
 	useComment         = false
@@ -59,6 +60,7 @@ var (
 )
 
 func init() {
+	command.Flags().BoolVarP(&slowMode, "slow", "", false, "Slow mode. wait after downloading each xseed torrent")
 	command.Flags().BoolVarP(&showJson, "json", "", false, "Show full info in json format for found torrents")
 	command.Flags().BoolVarP(&showRaw, "raw", "", false, "Show raw Reseed torrent id for found torrents")
 	command.Flags().BoolVarP(&useComment, "use-comment-meta", "", false,
@@ -136,10 +138,10 @@ func match(cmd *cobra.Command, args []string) error {
 			cntSkip++
 			continue
 		}
-		fileName := torrent.Id + ".torrent"
-		if util.FileExists(filepath.Join(downloadDir, fileName)) ||
-			util.FileExists(filepath.Join(downloadDir, fileName, ".added")) ||
-			util.FileExists(filepath.Join(downloadDir, fileName, ".failed")) {
+		filename := torrent.Id + ".torrent"
+		if util.FileExists(filepath.Join(downloadDir, filename)) ||
+			util.FileExists(filepath.Join(downloadDir, filename, ".added")) ||
+			util.FileExists(filepath.Join(downloadDir, filename, ".failed")) {
 			log.Debugf("! %s (%d/%d): already exists in %s , skip it.\n", torrent, i+1, cntAll, downloadDir)
 			cntSkip++
 			continue
@@ -149,13 +151,19 @@ func match(cmd *cobra.Command, args []string) error {
 			log.Debugf("Skip site %s torrent %s as this site has failed too much times", sitename, torrent.Id)
 			continue
 		}
-		content, tinfo, _, sitename, _, _, _, err := helper.GetTorrentContent(torrent.Id, "", false, true, nil, true)
+		if i > 0 && slowMode {
+			util.Sleep(3)
+		}
+		content, tinfo, _, sitename, _, _, _, err := helper.GetTorrentContent(torrent.Id, "", false, true, nil, true, nil)
 		if err != nil {
 			fmt.Printf("✕ download %s (%d/%d): %v\n", torrent, i+1, cntAll, err)
 			errorCnt++
 			if sitename != "" {
 				if !strings.Contains(err.Error(), "status=404") {
 					siteConsecutiveFails[sitename]++
+					if maxConsecutiveFail >= 0 && siteConsecutiveFails[sitename] == maxConsecutiveFail {
+						log.Errorf("Site %s has failed (to download torrent) too many times, skip it from now", sitename)
+					}
 				} else {
 					siteConsecutiveFails[sitename] = 0
 				}
@@ -188,7 +196,7 @@ func match(cmd *cobra.Command, args []string) error {
 				continue
 			}
 		}
-		err = os.WriteFile(filepath.Join(downloadDir, fileName), content, 0666)
+		err = os.WriteFile(filepath.Join(downloadDir, filename), content, 0666)
 		if err != nil {
 			fmt.Printf("✕ %s (%d/%d): failed to save to %s : %v\n", torrent, i+1, cntAll, downloadDir, err)
 			errorCnt++

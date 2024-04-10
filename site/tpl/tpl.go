@@ -663,6 +663,9 @@ func GuessSiteByDomain(domain string, defaultSite string) (string, error) {
 	return site.GetConfigSiteNameByTypes(siteTypes...)
 }
 
+// Try to match trackers of a torrent with a site in ptool.toml config file.
+// If trackers do NOT match any site in ptool.toml, return "",nil;
+// if trackers match with multiple sites in ptool.toml, return "" and an "ambiguous result" error.
 func GuessSiteByTrackers(trackers []string, defaultSite string) (string, error) {
 	for _, tracker := range trackers {
 		domain := util.GetUrlDomain(tracker)

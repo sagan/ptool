@@ -3,14 +3,16 @@ package mtorrent
 import (
 	"encoding/json"
 	"fmt"
+	"net"
+	"net/http"
+	neturl "net/url"
+	"strings"
+
 	"github.com/Noooste/azuretls-client"
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/util"
 	log "github.com/sirupsen/logrus"
-	"net"
-	"net/http"
-	neturl "net/url"
 )
 
 const (
@@ -66,7 +68,7 @@ func (m *Site) GetSiteConfig() *config.SiteConfigStruct {
 func (m *Site) DownloadTorrent(url string) (content []byte, filename string, id string, err error) {
 	if !util.IsUrl(url) {
 		// not url, try id
-		id = url
+		id = strings.TrimPrefix(url, m.GetName()+".")
 		content, filename, err = m.DownloadTorrentById(id)
 		return
 	}

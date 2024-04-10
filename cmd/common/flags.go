@@ -104,6 +104,7 @@ var pureFlags = []string{
 	"show-values-only",
 	"sites",
 	"skip-check",
+	"slow",
 	"strict",
 	"sum",
 	"use-comment-meta",

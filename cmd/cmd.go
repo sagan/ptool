@@ -142,7 +142,7 @@ func init() {
 		"Used with --lock flag. If failed to acquire lock, exit 1 immediately instead of waiting")
 	RootCmd.PersistentFlags().BoolVarP(&config.GlobalLock, "global-lock", "", false,
 		"Similar to --lock but does NOT require a filename. "+
-			"All ptool instances which use the same config file share the lock")
+			"All ptool instances which use the same config dir share the lock")
 	RootCmd.PersistentFlags().StringVarP(&config.ConfigFile, "config", "", config.DefaultConfigFile,
 		"Config file ([ptool.toml])")
 	RootCmd.PersistentFlags().StringVarP(&config.LockFile, "lock", "", "",

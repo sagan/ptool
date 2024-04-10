@@ -23,9 +23,28 @@ import (
 var Command = &cobra.Command{
 	Use:   "config",
 	Short: "Display or manage config file contents.",
-	Long:  `Display or manage config file contents.`,
-	Args:  cobra.MatchAll(cobra.ExactArgs(0), cobra.OnlyValidArgs),
-	RunE:  configcmd,
+	Long: `Display or manage config file contents.
+
+ptool use a single .toml or .yaml format config file to store user data (e.g.: clients & sites info).
+By default it tries to locate the config file in pre-defined pathes by order,
+use the first found one as the config file. The dir of the config file is used as config dir.
+Some ptool cmds may create & use additional files or folders inside the config dir.
+To manually select the config file path, use the global "--config string" flag.
+
+Pre-defined config file pathes list (by order):
+1. ~/.config/ptool/ptool.toml
+2. ~/.config/ptool/ptool.yaml
+3. ./ptool.toml
+4. ./ptool.yaml
+
+The "~" is the the home dir of current user in OS:
+on Linux & macOS, it's $HOME env; on Windows, it's %USERPROFILE%.
+The "." is the current working dir when running ptool.
+
+If no file in pre-defined pathes list exists and --config flag is not set,
+it use the first one of the pre-defined pathes list as the config file location.`,
+	Args: cobra.MatchAll(cobra.ExactArgs(0), cobra.OnlyValidArgs),
+	RunE: configcmd,
 }
 
 var (
@@ -39,6 +58,7 @@ func init() {
 
 func configcmd(cmd *cobra.Command, args []string) error {
 	fmt.Printf("Config file: %s%c%s\n", config.ConfigDir, filepath.Separator, config.ConfigFile)
+	fmt.Printf("Config dir: %s\n", config.ConfigDir)
 	if _, err := os.Stat(path.Join(config.ConfigDir, config.ConfigFile)); err != nil {
 		if os.IsNotExist(err) {
 			fmt.Printf(`<config file does NOT exist, run "ptool config create" to create it>` + "\n")

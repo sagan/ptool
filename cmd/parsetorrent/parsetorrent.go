@@ -51,7 +51,7 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 	errorCnt := int64(0)
 
 	for _, torrent := range torrents {
-		_, tinfo, _, _, _, _, _, err := helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, nil, false)
+		_, tinfo, _, _, _, _, _, err := helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, nil, false, nil)
 		if err != nil {
 			log.Errorf("Failed to get %s: %v", torrent, err)
 			errorCnt++

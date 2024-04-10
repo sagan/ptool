@@ -51,6 +51,7 @@ It will output the summary of downloads result in the end:
 }
 
 var (
+	slowMode             = false
 	downloadSkipExisting = false
 	downloadAll          = false
 	onePage              = false
@@ -92,6 +93,7 @@ var (
 )
 
 func init() {
+	command.Flags().BoolVarP(&slowMode, "slow", "", false, "Slow mode. wait after downloading each torrent")
 	command.Flags().BoolVarP(&downloadSkipExisting, "download-skip-existing", "", false,
 		`Used with "--action download". Do NOT re-download torrent that same name file already exists in local dir. `+
 			`If this flag is set, the download torrent filename ("--rename" flag) will be fixed to `+
@@ -322,7 +324,7 @@ mainloop:
 			break
 		}
 		cntAllTorrents += int64(len(torrents))
-		for _, torrent := range torrents {
+		for i, torrent := range torrents {
 			totalAllSize += torrent.Size
 			if minTorrentSize >= 0 && torrent.Size < minTorrentSize {
 				log.Debugf("Skip torrent %s due to size %d < minTorrentSize", torrent.Name, torrent.Size)
@@ -413,20 +415,23 @@ mainloop:
 			} else if action == "printid" {
 				fmt.Fprintf(outputFileFd, "%s\n", torrent.Id)
 			} else {
-				fileName := ""
+				filename := ""
 				if action == "download" && downloadSkipExisting && torrent.Id != "" {
-					fileName = fmt.Sprintf("%s.%s.torrent", sitename, torrent.Id)
-					if util.FileExists(filepath.Join(downloadDir, fileName)) {
+					filename = fmt.Sprintf("%s.%s.torrent", sitename, torrent.Id)
+					if util.FileExists(filepath.Join(downloadDir, filename)) {
 						log.Debugf("Skip downloading local-existing torrent %s (%s)", torrent.Name, torrent.Id)
 						continue
 					}
 				}
+				if i > 0 && slowMode {
+					util.Sleep(3)
+				}
 				var torrentContent []byte
-				var filename string
+				var _filename string
 				if torrent.DownloadUrl != "" {
-					torrentContent, filename, _, err = siteInstance.DownloadTorrent(torrent.DownloadUrl)
+					torrentContent, _filename, _, err = siteInstance.DownloadTorrent(torrent.DownloadUrl)
 				} else {
-					torrentContent, filename, _, err = siteInstance.DownloadTorrent(torrent.Id)
+					torrentContent, _filename, _, err = siteInstance.DownloadTorrent(torrent.Id)
 				}
 				if err != nil {
 					fmt.Printf("torrent %s (%s): failed to download: %v\n", torrent.Id, torrent.Name, err)
@@ -441,19 +446,19 @@ mainloop:
 						fmt.Printf("torrent %s (%s): failed to parse: %v\n", torrent.Id, torrent.Name, err)
 					} else {
 						if action == "download" {
-							if fileName == "" {
+							if filename == "" {
 								if rename == "" {
-									fileName = filename
+									filename = _filename
 								} else {
-									fileName = torrentutil.RenameTorrent(rename, sitename, torrent.Id, filename, tinfo)
+									filename = torrentutil.RenameTorrent(rename, sitename, torrent.Id, _filename, tinfo)
 								}
 							}
-							err = os.WriteFile(filepath.Join(downloadDir, fileName), torrentContent, 0666)
+							err = os.WriteFile(filepath.Join(downloadDir, filename), torrentContent, 0666)
 							if err != nil {
-								fmt.Printf("torrent %s: failed to write to %s/file %s: %v\n", torrent.Id, downloadDir, filename, err)
+								fmt.Printf("torrent %s: failed to write to %s/file %s: %v\n", torrent.Id, downloadDir, _filename, err)
 							} else {
 								fmt.Printf("torrent %s - %s (%s): downloaded to %s/%s\n", torrent.Id, torrent.Name,
-									util.BytesSize(float64(torrent.Size)), downloadDir, fileName)
+									util.BytesSize(float64(torrent.Size)), downloadDir, filename)
 							}
 						} else if action == "add" {
 							tags := []string{}
@@ -471,7 +476,7 @@ mainloop:
 								clientAddTorrentOption.Category = addCategory
 							}
 							if rename != "" {
-								clientAddTorrentOption.Name = torrentutil.RenameTorrent(rename, sitename, torrent.Id, filename, tinfo)
+								clientAddTorrentOption.Name = torrentutil.RenameTorrent(rename, sitename, torrent.Id, _filename, tinfo)
 							}
 							err = clientInstance.AddTorrent(torrentContent, clientAddTorrentOption, nil)
 							if err != nil {

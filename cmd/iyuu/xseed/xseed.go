@@ -52,8 +52,7 @@ var (
 )
 
 func init() {
-	command.Flags().BoolVarP(&slowMode, "slow", "", false,
-		"Slow mode. wait after handling each xseed torrent. For dev / test purpose")
+	command.Flags().BoolVarP(&slowMode, "slow", "", false, "Slow mode. wait after handling each xseed torrent")
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do NOT actually add xseed torrents to client")
 	command.Flags().BoolVarP(&addPaused, "add-paused", "", false, "Add xseed torrents to client in paused state")
 	command.Flags().BoolVarP(&check, "check", "", false, "Let client do hash checking when adding xseed torrents")
@@ -235,7 +234,7 @@ mainloop:
 		clientInstance := clientInstanceMap[clientName]
 		cnt := len(clientInfoHashesMap[clientName])
 		for i, infoHash := range clientInfoHashesMap[clientName] {
-			if slowMode {
+			if i > 0 && slowMode {
 				util.Sleep(3)
 			}
 			xseedTorrents := clientTorrentsMap[infoHash]
@@ -330,6 +329,9 @@ mainloop:
 					log.Errorf("Failed to download torrent from site: %v", err)
 					if !strings.Contains(err.Error(), "status=404") {
 						siteConsecutiveFails[sitename]++
+						if maxConsecutiveFail >= 0 && siteConsecutiveFails[sitename] == maxConsecutiveFail {
+							log.Errorf("Site %s has failed (to download torrent) too many times, skip it from now", sitename)
+						}
 					} else {
 						siteConsecutiveFails[sitename] = 0
 					}
@@ -371,7 +373,6 @@ mainloop:
 				if maxXseedTorrents >= 0 && cntXseedTorrents >= maxXseedTorrents {
 					break mainloop
 				}
-				util.Sleep(2)
 			}
 		}
 	}

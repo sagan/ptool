@@ -461,12 +461,12 @@ func Exit() {
 }
 
 // Purge site cache
-func Purge(siteName string) {
-	if siteName == "" {
+func Purge(sitename string) {
+	if sitename == "" {
 		for _, siteInstance := range sites {
 			siteInstance.PurgeCache()
 		}
-	} else if sites[siteName] != nil {
-		sites[siteName].PurgeCache()
+	} else if sites[sitename] != nil {
+		sites[sitename].PurgeCache()
 	}
 }
