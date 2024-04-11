@@ -19,7 +19,7 @@ var command = &cobra.Command{
 _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.
 Specially, use a single "-" as args to read infoHash list from stdin, delimited by blanks.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
-	RunE: createtags,
+	RunE: setcategory,
 }
 
 var (
@@ -36,7 +36,7 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func createtags(cmd *cobra.Command, args []string) error {
+func setcategory(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
 	cat := args[1]
 	infoHashes := args[2:]

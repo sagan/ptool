@@ -41,6 +41,9 @@ which supports the following variable placeholders:
 * [name] : Torrent name
 * [name128] : The prefix of torrent name which is at max 128 bytes
 
+Flags:
+* --ratio-limit & --seeding-time-limit : See help of "ptool setsharelimits" cmd for more info
+
 If --use-comment-meta flag is set, ptool will extract torrent's category & tags & savePath meta info
 from the 'comment' field of .torrent file (parsed in json format: '{tags, category, save_path}').
 The "ptool export" command has the same flag that saves meta info to 'comment' field when exporting torrents.`,
@@ -58,6 +61,8 @@ var (
 	renameAdded        = false
 	deleteAdded        = false
 	forceLocal         = false
+	ratioLimit         = float64(0)
+	seedingTimeLimit   = int64(0)
 	rename             = ""
 	addCategory        = ""
 	defaultSite        = ""
@@ -79,6 +84,10 @@ func init() {
 		"Rename successfully added *.torrent file to *.torrent.added")
 	command.Flags().BoolVarP(&deleteAdded, "delete-added", "", false, "Delete successfully added *.torrent file")
 	command.Flags().BoolVarP(&forceLocal, "force-local", "", false, "Force treat all arg as local torrent filename")
+	command.Flags().Int64VarP(&seedingTimeLimit, "seeding-time-limit", "", 0,
+		"If != 0, the max amount of time (seconds) the torrent should be seeded. Negative value has special meaning")
+	command.Flags().Float64VarP(&ratioLimit, "ratio-limit", "", 0,
+		"If != 0, the max ratio (Up/Dl) the torrent should be seeded until. Negative value has special meaning")
 	command.Flags().StringVarP(&rename, "rename", "", "", "Rename added torrents (supports variables)")
 	command.Flags().StringVarP(&addCategory, "add-category", "", "", "Set category of added torrents")
 	command.Flags().StringVarP(&savePath, "add-save-path", "", "", "Set save path of added torrents")
@@ -117,6 +126,8 @@ func add(cmd *cobra.Command, args []string) error {
 		Pause:              addPaused,
 		SkipChecking:       skipCheck,
 		SequentialDownload: sequentialDownload,
+		RatioLimit:         ratioLimit,
+		SeedingTimeLimit:   seedingTimeLimit,
 	}
 	var fixedTags []string
 	if addTags != "" {

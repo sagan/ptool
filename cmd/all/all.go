@@ -38,6 +38,7 @@ import (
 	_ "github.com/sagan/ptool/cmd/search"
 	_ "github.com/sagan/ptool/cmd/setcategory"
 	_ "github.com/sagan/ptool/cmd/setsavepath"
+	_ "github.com/sagan/ptool/cmd/setsharelimits"
 	_ "github.com/sagan/ptool/cmd/shell"
 	_ "github.com/sagan/ptool/cmd/show"
 	_ "github.com/sagan/ptool/cmd/sites/all"

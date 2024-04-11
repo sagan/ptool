@@ -2,6 +2,7 @@ package removetrackers
 
 import (
 	"fmt"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -14,6 +15,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "removetrackers {client} [--category category] [--tag tag] [--filter filter] [infoHash]...",
+	Aliases:     []string{"removetracker"},
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "removetrackers"},
 	Short:       "Remove trackers from torrents of client.",
 	Long: `Remove trackers from torrents of client.
@@ -23,14 +25,15 @@ Specially, use a single "-" as args to read infoHash list from stdin, delimited 
 
 Example:
 ptool removetrackers <client> <infoHashes...> --tracker "https://..."
---tracker flag can be set many times.
-`,
+The --tracker flag can be set many times.
+
+It will ask for confirmation, unless --force flag is set.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: removetrackers,
 }
 
 var (
-	dryRun   = false
+	force    = false
 	category = ""
 	tag      = ""
 	filter   = ""
@@ -38,7 +41,7 @@ var (
 )
 
 func init() {
-	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do NOT actually modify torrent trackers")
+	command.Flags().BoolVarP(&force, "force", "", false, "Force updating trackers. Do NOT prompt for confirm")
 	command.Flags().StringVarP(&filter, "filter", "", "", "Filter torrents by name")
 	command.Flags().StringVarP(&category, "category", "", "", "Filter torrents by category")
 	command.Flags().StringVarP(&tag, "tag", "", "",
@@ -67,7 +70,7 @@ func removetrackers(cmd *cobra.Command, args []string) error {
 		}
 	}
 	if len(trackers) == 0 {
-		return fmt.Errorf("at least an --tracker MUST be provided")
+		return fmt.Errorf("at least one --tracker flag must be set")
 	}
 	for _, tracker := range trackers {
 		if !util.IsUrl(tracker) {
@@ -87,17 +90,21 @@ func removetrackers(cmd *cobra.Command, args []string) error {
 		log.Infof("No matched torrents found")
 		return nil
 	}
-	if !dryRun {
-		log.Warnf("Found %d torrents, will remove %d trackers from them in few seconds. Press Ctrl+C to stop",
-			len(torrents), len(trackers))
+	if !force {
+		client.PrintTorrents(torrents, "", 1, false)
+		fmt.Printf("\n")
+		if !util.AskYesNoConfirm(fmt.Sprintf(
+			`Will update above %d torrents, remove the following trackers from them:
+-----
+%s
+-----
+`, len(torrents), strings.Join(trackers, "\n"))) {
+			return fmt.Errorf("abort")
+		}
 	}
-	util.Sleep(3)
 	errorCnt := int64(0)
 	for _, torrent := range torrents {
 		fmt.Printf("Remove trackers from torrent %s (%s)\n", torrent.InfoHash, torrent.Name)
-		if dryRun {
-			continue
-		}
 		err := clientInstance.RemoveTorrentTrackers(torrent.InfoHash, trackers)
 		if err != nil {
 			log.Errorf("Failed to remove trackers: %v\n", err)

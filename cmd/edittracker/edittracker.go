@@ -29,13 +29,14 @@ Examples:
 ptool edittracker <client> _all --old-tracker "https://..." --new-tracker "https://..."
 ptool edittracker <client> _all --old-tracker old-tracker.com --new-tracker new-tracker.com --replace-host
 ptool edittracker <client> _all --old-tracker old-tracker.com --new-tracker "https://..." --replace-host
-`,
+
+It will ask for confirmation, unless --force flag is set.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: edittracker,
 }
 
 var (
-	dryRun      = false
+	force       = false
 	replaceHost = false
 	category    = ""
 	tag         = ""
@@ -45,7 +46,7 @@ var (
 )
 
 func init() {
-	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do NOT actually modify torrent trackers")
+	command.Flags().BoolVarP(&force, "force", "", false, "Force updating trackers. Do NOT prompt for confirm")
 	command.Flags().BoolVarP(&replaceHost, "replace-host", "", false,
 		"Replace host mode. If set, --old-tracker should be the old host (hostname[:port]) instead of url, "+
 			"the --new-tracker can either be a host or url")
@@ -93,17 +94,24 @@ func edittracker(cmd *cobra.Command, args []string) error {
 		log.Infof("No matched torrents found")
 		return nil
 	}
-	if !dryRun {
-		log.Warnf("Found %d torrents, will edit their trackers (%s => %s, replaceHost=%t) in few seconds. "+
-			"Press Ctrl+C to stop", len(torrents), oldTracker, newTracker, replaceHost)
+	if !force {
+		client.PrintTorrents(torrents, "", 1, false)
+		fmt.Printf("\n")
+		if !util.AskYesNoConfirm(fmt.Sprintf(
+			`Will update above %d torrents, replace old tracker with new tracker:
+-----
+Old tracker: %s
+New tracker: %s
+ReplaceHost: %t
+-----
+If a torrent does NOT has the old tracker, it will NOT be updated`,
+			len(torrents), oldTracker, newTracker, replaceHost)) {
+			return fmt.Errorf("abort")
+		}
 	}
-	util.Sleep(3)
 	errorCnt := int64(0)
 	for _, torrent := range torrents {
 		fmt.Printf("Edit torrent %s (%s) tracker\n", torrent.InfoHash, torrent.Name)
-		if dryRun {
-			continue
-		}
 		err := clientInstance.EditTorrentTracker(torrent.InfoHash, oldTracker, newTracker, replaceHost)
 		if err != nil {
 			log.Errorf("Failed to edit tracker: %v\n", err)

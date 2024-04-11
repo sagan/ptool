@@ -6,6 +6,7 @@ package transmission
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/url"
 	"reflect"
@@ -34,6 +35,20 @@ type Client struct {
 	unfinishedSize            int64
 	unfinishedDownloadingSize int64
 	lastTorrent               *transmissionrpc.Torrent // a **really** simple cache with capacity of only one
+}
+
+var (
+	ErrNotImplemented = errors.New("not implemented yet")
+)
+
+// SetAllTorrentsShareLimits implements client.Client.
+func (trclient *Client) SetAllTorrentsShareLimits(ratioLimit float64, seedingTimeLimit int64) error {
+	return ErrNotImplemented
+}
+
+// SetTorrentsShareLimits implements client.Client.
+func (trclient *Client) SetTorrentsShareLimits(infoHashes []string, ratioLimit float64, seedingTimeLimit int64) error {
+	return ErrNotImplemented
 }
 
 // get a torrent info from rpc. return error if torrent not found
@@ -819,7 +834,7 @@ func (trclient *Client) RemoveTorrentTrackers(infoHash string, trackers []string
 }
 
 func (trclient *Client) SetFilePriority(infoHash string, fileIndexes []int64, priority int64) error {
-	return fmt.Errorf("not implemented yet")
+	return ErrNotImplemented
 }
 
 func (trclient *Client) Close() {

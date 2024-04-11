@@ -103,7 +103,7 @@ ptool <command> args... [flags]
 - search : 在某个站点搜索指定关键词的种子。
 - add : 将种子添加到 BT 客户端。
 - dltorrent : 下载站点的种子。
-- BT 客户端控制命令集: clientctl / show / pause / resume / delete / reannounce / recheck / getcategories / createcategory / deletecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / renametag / edittracker / addtrackers / removetrackers / setsavepath / export 。
+- BT 客户端控制命令集: clientctl / show / pause / resume / delete / reannounce / recheck / getcategories / createcategory / deletecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / renametag / edittracker / addtrackers / removetrackers / setsavepath / setsharelimits / checktag / export 。
 - parsetorrent : 显示种子(torrent)文件信息。
 - verifytorrent : 测试种子(torrent)文件与硬盘上的文件内容一致。
 - partialdownload : 拆包下载。
@@ -357,7 +357,7 @@ ptool show local --category rss --completed-before 5d --show-info-hash-only | pt
 
 ```
 
-#### 管理 BT 客户端里的的种子分类 / 标签 / Trackers 等(getcategories / createcategory / deletecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / renametag / edittracker / addtrackers / removetrackers / setsavepath / checktag)
+#### 管理 BT 客户端里的的种子分类 / 标签 / Trackers 等(getcategories / createcategory / deletecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / renametag / edittracker / addtrackers / removetrackers / setsavepath / setsharelimits / checktag)
 
 ```
 
@@ -424,6 +424,10 @@ ptool removetrackers <client> <infoHashes...> --tracker "https://..."
 # 修改种子内容的保存路径
 
 ptool setsavepath <client> <savePath> [<infoHash>...]
+
+# (qbittorrent only) 设置种子最大分享比例(Up/Dl)、最长做种时间(秒)等。
+# 使用 "ptool add" 命令添加种子时也可以设置同样参数。
+ptool setsharelimits <client> [<infoHash>...] --ratio-limit 2 --seeding-time-limit 86400
 
 # 检测客户端里是否存在某个 tag。If exists, exit with 0。
 

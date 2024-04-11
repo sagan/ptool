@@ -368,6 +368,10 @@ func CountNonZeroVariables(vars ...any) (cnt int) {
 			if v != 0 {
 				cnt++
 			}
+		case float64:
+			if v != 0 {
+				cnt++
+			}
 		case bool:
 			if v {
 				cnt++

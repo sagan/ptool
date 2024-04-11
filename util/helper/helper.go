@@ -183,12 +183,12 @@ func GetTorrentContent(torrent string, defaultSite string,
 		return
 	}
 	if sitename == "" {
-		if _sitename, err := tpl.GuessSiteByTrackers(tinfo.Trackers, defaultSite); _sitename != "" {
+		if _sitename, err := tpl.GuessSiteByTrackers(tinfo.Trackers, defaultSite); err != nil {
+			log.Warnf("Failed to find match site for %s by trackers: %v", torrent, err)
+		} else if _sitename != "" {
 			sitename = _sitename
 		} else if site := public.GetSiteByDomain(defaultSite, tinfo.Trackers...); site != nil {
 			sitename = site.Name
-		} else {
-			log.Warnf("Failed to find match site for %s by trackers: %v", torrent, err)
 		}
 	}
 	return

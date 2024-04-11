@@ -28,7 +28,7 @@ Example:
 ptool verifytorrent file1.torrent file2.torrent --save-path /root/Downloads
 ptool verifytorrent file.torrent --content-path /root/Downloads/TorrentContentFolder
 
-Exact one (not less or more) of the --save-path, --content-path or --use-comment-meta flag must be set.
+Exact one (not less or more) of the --save-path, --content-path and --use-comment-meta flags must be set.
 * --save-path dir : the parent folder of torrent content(s).
   It can be used with multiple torrent args.
 * --content-path path : the torrent content(s) path, could be a folder or a single file.
@@ -74,7 +74,7 @@ func init() {
 
 func verifytorrent(cmd *cobra.Command, args []string) error {
 	if util.CountNonZeroVariables(useComment, savePath, contentPath) != 1 {
-		return fmt.Errorf("exact 1 of the --use-comment-meta & --save-path & --content-path flag must be set")
+		return fmt.Errorf("exact one of the --use-comment-meta, --save-path and --content-path flags must be set")
 	}
 	if checkHash && checkQuick {
 		return fmt.Errorf("--check and --check-quick flags are NOT compatible")

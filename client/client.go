@@ -80,6 +80,8 @@ type TorrentOption struct {
 	RemoveTags         []string // used only in ModifyTorrent
 	DownloadSpeedLimit int64
 	UploadSpeedLimit   int64
+	RatioLimit         float64 // If > 0, will stop seeding after ratio (up/dl) exceeds this value
+	SeedingTimeLimit   int64   // If > 0, will stop seeding after be seeded for this time (seconds)
 	SkipChecking       bool
 	Pause              bool
 	Resume             bool // use only in ModifyTorrent, to start a paused torrent
@@ -123,6 +125,8 @@ type Client interface {
 	GetCategories() ([]TorrentCategory, error)
 	SetTorrentsCatetory(infoHashes []string, category string) error
 	SetAllTorrentsCatetory(category string) error
+	SetTorrentsShareLimits(infoHashes []string, ratioLimit float64, seedingTimeLimit int64) error
+	SetAllTorrentsShareLimits(ratioLimit float64, seedingTimeLimit int64) error
 	TorrentRootPathExists(rootFolder string) bool
 	GetTorrentContents(infoHash string) ([]TorrentContentFile, error)
 	PurgeCache()
