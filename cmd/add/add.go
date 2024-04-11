@@ -110,7 +110,8 @@ func add(cmd *cobra.Command, args []string) error {
 		}
 		if stdin, err := io.ReadAll(os.Stdin); err != nil {
 			return fmt.Errorf("failed to read stdin: %v", err)
-		} else if bytes.HasPrefix(stdin, []byte(constants.TORRENT_FILE_MAGIC_NUMBER)) {
+		} else if bytes.HasPrefix(stdin, []byte(constants.TORRENT_FILE_MAGIC_NUMBER)) ||
+			bytes.HasPrefix(stdin, []byte(constants.TORRENT_FILE_MAGIC_NUMBER2)) {
 			stdinTorrentContents = stdin
 		} else if data, err := shlex.Split(string(stdin)); err != nil {
 			return fmt.Errorf("failed to parse stdin to tokens: %v", err)

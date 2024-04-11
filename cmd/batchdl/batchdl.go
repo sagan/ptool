@@ -180,7 +180,7 @@ func batchdl(command *cobra.Command, args []string) error {
 	if largestFlag && newestFlag {
 		return fmt.Errorf("--largest and --newest flags are NOT compatible")
 	}
-	if action != "download" && util.CountNonZeroVariables(downloadSkipExisting, downloadDir) > 0 {
+	if action != "download" && (downloadSkipExisting || downloadDir != ".") {
 		return fmt.Errorf(`found flags that are can only be used with "--action download"`)
 	} else if action != "add" && util.CountNonZeroVariables(
 		addCategoryAuto, addCategory, addClient, addPaused, addRespectNoadd, addSavePath) > 0 {

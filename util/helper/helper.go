@@ -168,7 +168,8 @@ func GetTorrentContent(torrent string, defaultSite string,
 	if err != nil {
 		return
 	}
-	if !bytes.HasPrefix(content, []byte(constants.TORRENT_FILE_MAGIC_NUMBER)) {
+	if !bytes.HasPrefix(content, []byte(constants.TORRENT_FILE_MAGIC_NUMBER)) &&
+		!bytes.HasPrefix(content, []byte(constants.TORRENT_FILE_MAGIC_NUMBER2)) {
 		err = fmt.Errorf("%s: content is NOT a valid .torrent file", torrent)
 		return
 	}
