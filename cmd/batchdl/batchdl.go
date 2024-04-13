@@ -59,6 +59,7 @@ var (
 	dense                = false
 	addRespectNoadd      = false
 	includeDownloaded    = false
+	onlyDownloaded       = false
 	freeOnly             = false
 	noPaid               = false
 	noNeutral            = false
@@ -118,7 +119,9 @@ func init() {
 	command.Flags().BoolVarP(&allowBreak, "break", "", false,
 		"Break (stop finding more torrents) if all torrents of current page do not meet criterion")
 	command.Flags().BoolVarP(&includeDownloaded, "include-downloaded", "", false,
-		"Do NOT skip torrent that has been downloaded before")
+		"Do NOT skip torrent that had been downloaded before")
+	command.Flags().BoolVarP(&onlyDownloaded, "only-downloaded", "", false,
+		"Only include torrent that had been downloaded before")
 	command.Flags().BoolVarP(&addCategoryAuto, "add-category-auto", "", false,
 		"Automatically set category of added torrent to corresponding sitename")
 	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "", -1,
@@ -175,10 +178,14 @@ func batchdl(command *cobra.Command, args []string) error {
 	}
 	if downloadAll {
 		includeDownloaded = true
+		onlyDownloaded = false
 		minSeeders = -1
 	}
 	if largestFlag && newestFlag {
 		return fmt.Errorf("--largest and --newest flags are NOT compatible")
+	}
+	if onlyDownloaded && includeDownloaded {
+		return fmt.Errorf("--only-downloaded and --include-downloaded flags are NOT compatible")
 	}
 	if action != "download" && (downloadSkipExisting || downloadDir != ".") {
 		return fmt.Errorf(`found flags that are can only be used with "--action download"`)
@@ -344,6 +351,10 @@ mainloop:
 			}
 			if !includeDownloaded && torrent.IsActive {
 				log.Debugf("Skip active torrent %s", torrent.Name)
+				continue
+			}
+			if onlyDownloaded && !torrent.IsActive {
+				log.Debugf("Skip non-active torrent %s", torrent.Name)
 				continue
 			}
 			if minSeeders >= 0 && torrent.Seeders < minSeeders {

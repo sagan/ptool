@@ -11,6 +11,7 @@ import (
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/util"
 	"github.com/sagan/ptool/util/helper"
 )
@@ -64,7 +65,8 @@ func init() {
 		"Manually set category of added xseed torrent. By Default it uses the original torrent's")
 	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Set tags of added xseed torrent (comma-separated)")
 	command.Flags().StringVarP(&category, "category", "", "", "Only xseed torrents that belongs to this category")
-	command.Flags().StringVarP(&tag, "tag", "", "", "Only xseed torrents that has this tag")
+	command.Flags().StringVarP(&tag, "tag", "", "",
+		"Comma-separated list. Only xseed torrents which tags contain any one in the list")
 	command.Flags().StringVarP(&filter, "filter", "", "", "Only xseed torrents which name contains this")
 	cmd.RootCmd.AddCommand(command)
 }
@@ -88,7 +90,7 @@ func xseedadd(cmd *cobra.Command, args []string) error {
 		fixedTags = util.SplitCsv(addTags)
 	}
 	clientTorrents = util.Filter(clientTorrents, func(t client.Torrent) bool {
-		return t.IsFullComplete() && !t.HasTag(config.NOXSEED_TAG) && (tag == "" || t.HasTag(tag))
+		return t.IsFullComplete() && !t.HasTag(config.NOXSEED_TAG) && (tag == "" || t.HasAnyTag(tag))
 	})
 	sort.Slice(clientTorrents, func(i, j int) bool {
 		if clientTorrents[i].Size != clientTorrents[j].Size {
@@ -185,8 +187,8 @@ func xseedadd(cmd *cobra.Command, args []string) error {
 				torrent, matchClientTorrent.InfoHash, matchClientTorrent.Name, matchClientTorrent.SavePath)
 			if isLocal && torrent != "-" {
 				if renameAdded {
-					if err := os.Rename(torrent, torrent+".added"); err != nil {
-						log.Debugf("Failed to rename %s to *.added: %v", torrent, err)
+					if err := os.Rename(torrent, torrent+constants.FILENAME_SUFFIX_ADDED); err != nil {
+						log.Debugf("Failed to rename %s to *%s: %v", torrent, constants.FILENAME_SUFFIX_ADDED, err)
 					}
 				} else if deleteAdded {
 					if err := os.Remove(torrent); err != nil {

@@ -323,9 +323,19 @@ func (torrent *Torrent) IsFull() bool {
 }
 
 func (torrent *Torrent) HasTag(tag string) bool {
-	tag = strings.ToLower(tag)
 	return slices.ContainsFunc(torrent.Tags, func(t string) bool {
-		return strings.ToLower(t) == tag
+		return strings.EqualFold(tag, t)
+	})
+}
+
+// Return true if torrent has any tag in the tags.
+// tags: comma-separated tag list.
+func (torrent *Torrent) HasAnyTag(tags string) bool {
+	if tags == "" {
+		return false
+	}
+	return slices.ContainsFunc(util.SplitCsv(tags), func(tag string) bool {
+		return torrent.HasTag(tag)
 	})
 }
 
@@ -512,15 +522,9 @@ func QueryTorrents(clientInstance Client, category string, tag string, filter st
 	if category == "" && tag == "" && filter == "" && isAll {
 		return torrents, nil
 	}
-	var tags []string
-	if tag != "" {
-		tags = util.SplitCsv(tag)
-	}
 	torrents2 := []Torrent{}
 	for _, torrent := range torrents {
-		if tags != nil && !slices.ContainsFunc(tags, func(tag string) bool {
-			return torrent.HasTag(tag)
-		}) {
+		if tag != "" && !torrent.HasAnyTag(tag) {
 			continue
 		}
 		if filter != "" && !util.ContainsI(torrent.Name, filter) {
@@ -543,35 +547,41 @@ func QueryTorrents(clientInstance Client, category string, tag string, filter st
 	return torrents2, nil
 }
 
-// query torrents that meet criterion and return infoHashes. specially, return nil slice if all torrents selected.
-// tag: comma-separated list, a torrent matches if it has any tag that in the list
+// Query torrents that meet criterion and return infoHashes. Specially, return nil slice if all torrents selected.
+// If all hashOrStateFilters is plain info-hash and all other conditions empty, just return hashOrStateFilters,nil.
+// tag: comma-separated list, a torrent matches if it has any tag that in the list.
 func SelectTorrents(clientInstance Client, category string, tag string, filter string,
 	hashOrStateFilters ...string) ([]string, error) {
+	noCondition := category == "" && tag == "" && filter == ""
 	isAll := len(hashOrStateFilters) == 0
+	isPlainInfoHashes := true
 	for _, arg := range hashOrStateFilters {
-		if !IsValidInfoHashOrStateFilter(arg) {
+		if IsValidInfoHash(arg) {
+			continue
+		}
+		if !IsValidStateFilter(arg) {
 			return nil, fmt.Errorf("%s is not a valid infoHash nor stateFilter", arg)
 		}
+		isPlainInfoHashes = false
 		if arg == "_all" {
 			isAll = true
 		}
 	}
-	if category == "" && tag == "" && filter == "" && isAll {
-		return nil, nil
+	if noCondition {
+		if isAll {
+			return nil, nil
+		}
+		if isPlainInfoHashes {
+			return hashOrStateFilters, nil
+		}
 	}
 	torrents, err := clientInstance.GetTorrents("", category, true)
 	if err != nil {
 		return nil, err
 	}
-	var tags []string
-	if tag != "" {
-		tags = util.SplitCsv(tag)
-	}
 	infoHashes := []string{}
 	for _, torrent := range torrents {
-		if tags != nil && !slices.ContainsFunc(tags, func(tag string) bool {
-			return torrent.HasTag(tag)
-		}) {
+		if tag != "" && !torrent.HasAnyTag(tag) {
 			continue
 		}
 		if filter != "" && !util.ContainsI(torrent.Name, filter) {
@@ -620,7 +630,7 @@ func IsValidInfoHash(infoHash string) bool {
 	return infoHashV1Regex.MatchString(infoHash) || infoHashV2Regex.MatchString(infoHash)
 }
 
-func IsValidInfoHashOrStateFilter(stateFilter string) bool {
+func IsValidStateFilter(stateFilter string) bool {
 	if strings.HasPrefix(stateFilter, "_") {
 		if slices.Index(STATE_FILTERS, stateFilter) != -1 {
 			return true
@@ -628,7 +638,11 @@ func IsValidInfoHashOrStateFilter(stateFilter string) bool {
 		stateFilter = stateFilter[1:]
 		return slices.Index(STATES, stateFilter) != -1
 	}
-	return IsValidInfoHash(stateFilter)
+	return false
+}
+
+func IsValidInfoHashOrStateFilter(stateFilter string) bool {
+	return IsValidInfoHash(stateFilter) || IsValidStateFilter(stateFilter)
 }
 
 func init() {

@@ -158,7 +158,7 @@ func GetTorrentContent(torrent string, defaultSite string,
 			} else {
 				content, err = io.ReadAll(os.Stdin)
 			}
-		} else if strings.HasSuffix(torrent, ".added") || strings.HasSuffix(torrent, ".failed") {
+		} else if util.StringHasAnySuffix(torrent, constants.ProcessedTorrentFilenameSuffixes...) {
 			err = ErrGetTorrentSkipped
 		} else {
 			filename = path.Base(torrent)

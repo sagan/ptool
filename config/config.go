@@ -25,6 +25,7 @@ import (
 const (
 	NONE                      = "none" // 如果字符串类型配置项值为空，使用系统默认值。使用 NONE 值显式设置该配置项为空值
 	BRUSH_CAT                 = "_brush"
+	FALLBACK_CAT              = "Others" // --add-category-auto fallback category if does NOT match with any site
 	XSEED_TAG                 = "_xseed"
 	NOADD_TAG                 = "_noadd"
 	NOXSEED_TAG               = "noxseed" // BT 客户端里含有此 tag 的种子不会被辅种

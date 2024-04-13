@@ -193,15 +193,14 @@ func add(cmd *cobra.Command, args []string) error {
 					content = data
 				}
 			}
-		}
-		if !useComment {
+		} else {
 			if addCategoryAuto {
 				if sitename != "" {
 					option.Category = sitename
 				} else if addCategory != "" {
 					option.Category = addCategory
 				} else {
-					option.Category = "Others"
+					option.Category = config.FALLBACK_CAT
 				}
 			} else {
 				option.Category = addCategory
@@ -230,8 +229,8 @@ func add(cmd *cobra.Command, args []string) error {
 		}
 		if isLocal && torrent != "-" {
 			if renameAdded {
-				if err := os.Rename(torrent, torrent+".added"); err != nil {
-					log.Debugf("Failed to rename %s to *.added: %v", torrent, err)
+				if err := os.Rename(torrent, torrent+constants.FILENAME_SUFFIX_ADDED); err != nil {
+					log.Debugf("Failed to rename %s to *%s: %v", torrent, constants.FILENAME_SUFFIX_ADDED, err)
 				}
 			} else if deleteAdded {
 				if err := os.Remove(torrent); err != nil {

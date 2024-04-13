@@ -14,6 +14,7 @@ import (
 
 	socketio "github.com/googollee/go-socket.io"
 	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/util"
 	log "github.com/sirupsen/logrus"
@@ -212,7 +213,8 @@ func scan(dirs ...string) (file File, savePathMap map[string]string, err error) 
 					return filepath.SkipDir
 				}
 			} else {
-				if strings.HasSuffix(path, ".torrent") || strings.HasSuffix(path, ".added") {
+				if strings.HasSuffix(path, ".torrent") ||
+					util.StringHasAnySuffix(path, constants.ProcessedTorrentFilenameSuffixes...) {
 					return nil
 				}
 			}

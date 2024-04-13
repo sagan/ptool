@@ -13,6 +13,7 @@ import (
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd/reseed"
 	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/util"
 	"github.com/sagan/ptool/util/helper"
 	"github.com/sagan/ptool/util/torrentutil"
@@ -139,9 +140,8 @@ func match(cmd *cobra.Command, args []string) error {
 			continue
 		}
 		filename := torrent.Id + ".torrent"
-		if util.FileExists(filepath.Join(downloadDir, filename)) ||
-			util.FileExists(filepath.Join(downloadDir, filename, ".added")) ||
-			util.FileExists(filepath.Join(downloadDir, filename, ".failed")) {
+		if util.First(util.FileExistsWithOptionalSuffix(
+			filepath.Join(downloadDir, filename), constants.ProcessedTorrentFilenameSuffixes...)) {
 			log.Debugf("! %s (%d/%d): already exists in %s , skip it.\n", torrent, i+1, cntAll, downloadDir)
 			cntSkip++
 			continue

@@ -179,3 +179,12 @@ func QuoteFilename(str string) string {
 	}
 	return str
 }
+
+func StringHasAnySuffix(str string, suffixes ...string) bool {
+	for _, suffix := range suffixes {
+		if strings.HasSuffix(str, suffix) {
+			return true
+		}
+	}
+	return false
+}

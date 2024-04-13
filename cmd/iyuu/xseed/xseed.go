@@ -68,7 +68,8 @@ func init() {
 	command.Flags().StringVarP(&excludeSites, "exclude-sites", "", "",
 		"Do NOT add xseed torrents from these sites or groups (comma-separated)")
 	command.Flags().StringVarP(&category, "category", "", "", "Only xseed torrents that belongs to this category")
-	command.Flags().StringVarP(&tag, "tag", "", "", "Only xseed torrents that has this tag")
+	command.Flags().StringVarP(&tag, "tag", "", "",
+		"Comma-separated list. Only xseed torrents which tags contain any one in the list")
 	command.Flags().StringVarP(&filter, "filter", "", "", "Only xseed torrents which name contains this")
 	command.Flags().StringVarP(&addCategory, "add-category", "", "",
 		"Manually set category of added xseed torrent. By Default it uses the original torrent's")
@@ -171,7 +172,7 @@ func xseed(cmd *cobra.Command, args []string) error {
 			} else if strings.HasPrefix(torrent.Category, "_") {
 				continue
 			}
-			if tag != "" && !torrent.HasTag(tag) {
+			if tag != "" && !torrent.HasAnyTag(tag) {
 				continue
 			}
 			if torrent.State != "seeding" || !torrent.IsFullComplete() ||
@@ -359,6 +360,9 @@ mainloop:
 				}
 				tags := []string{config.XSEED_TAG, client.GenerateTorrentTagFromSite(sitename)}
 				tags = append(tags, fixedTags...)
+				if xseedTorrentInfo.IsPrivate() {
+					tags = append(tags, config.PRIVATE_TAG)
+				}
 				err = clientInstance.AddTorrent(xseedTorrentContent, &client.TorrentOption{
 					SavePath:     targetTorrent.SavePath,
 					Category:     xseedTorrentCategory,
