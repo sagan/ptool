@@ -17,6 +17,7 @@ import (
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/cmd/common"
 	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/util"
 	"github.com/sagan/ptool/util/torrentutil"
@@ -90,6 +91,9 @@ var (
 	action               = ""
 	sortFlag             = ""
 	orderFlag            = ""
+	saveFilename         = ""
+	saveOkFilename       = ""
+	saveFailFilename     = ""
 	includes             = []string{}
 )
 
@@ -164,6 +168,12 @@ func init() {
 	command.Flags().StringVarP(&baseUrl, "base-url", "", "",
 		`Manually set the base url of torrents list page. e.g.: "special.php", "torrents.php?cat=100"`)
 	command.Flags().StringVarP(&rename, "rename", "", "", "Rename downloaded or added torrents (supports variables)")
+	command.Flags().StringVarP(&saveFilename, "save-torrent-list", "", "",
+		"Filename. Write the list of torrent ids to it (File will be truncated)")
+	command.Flags().StringVarP(&saveOkFilename, "save-torrent-ok-list", "", "",
+		"Filename. Write the list of success torrent ids to it (File will be truncated)")
+	command.Flags().StringVarP(&saveFailFilename, "save-torrent-fail-list", "", "",
+		"Filename. Write the list of failed torrent ids to it (File will be truncated)")
 	cmd.AddEnumFlagP(command, &action, "action", "", ActionEnumFlag)
 	cmd.AddEnumFlagP(command, &sortFlag, "sort", "", common.SiteTorrentSortFlag)
 	cmd.AddEnumFlagP(command, &orderFlag, "order", "", common.OrderFlag)
@@ -192,6 +202,9 @@ func batchdl(command *cobra.Command, args []string) error {
 	} else if action != "add" && util.CountNonZeroVariables(
 		addCategoryAuto, addCategory, addClient, addPaused, addRespectNoadd, addSavePath) > 0 {
 		return fmt.Errorf(`found flags that are can only be used with "--action add"`)
+	}
+	if action != "download" && action != "add" && (saveOkFilename != "" || saveFailFilename != "") {
+		return fmt.Errorf(`found flags that are can only be used with "--action download" or "--action add"`)
 	}
 	if util.CountNonZeroVariables(downloadSkipExisting, rename) > 1 {
 		return fmt.Errorf("--download-skip-existing and --rename flags are NOT compatible")
@@ -264,7 +277,7 @@ func batchdl(command *cobra.Command, args []string) error {
 		}
 	} else if action == "export" || action == "printid" {
 		if exportFile != "" {
-			outputFileFd, err = os.OpenFile(exportFile, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
+			outputFileFd, err = os.OpenFile(exportFile, os.O_RDWR|os.O_APPEND|os.O_CREATE, constants.PERM)
 			if err != nil {
 				return fmt.Errorf("failed to create output file %s: %v", exportFile, err)
 			}
@@ -277,6 +290,16 @@ func batchdl(command *cobra.Command, args []string) error {
 	flowControlInterval := config.DEFAULT_SITE_FLOW_CONTROL_INTERVAL
 	if siteInstance.GetSiteConfig().FlowControlInterval > 0 {
 		flowControlInterval = siteInstance.GetSiteConfig().FlowControlInterval
+	}
+	var saveFile, saveOkFile, saveFailFile *os.File
+	var saveFiles = []**os.File{&saveFile, &saveOkFile, &saveFailFile}
+	for i, filename := range []string{saveFilename, saveOkFilename, saveFailFilename} {
+		if filename != "" {
+			*saveFiles[i], err = os.OpenFile(filename, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, constants.PERM)
+			if err != nil {
+				return fmt.Errorf("failed to create save file %s: %v", filename, err)
+			}
+		}
 	}
 
 	cntTorrents := int64(0)
@@ -300,6 +323,11 @@ func batchdl(command *cobra.Command, args []string) error {
 		)
 		if csvWriter != nil {
 			csvWriter.Flush()
+		}
+		for _, file := range saveFiles {
+			if *file != nil {
+				(*file).Close()
+			}
 		}
 	}
 	sigs := make(chan os.Signal, 1)
@@ -415,6 +443,9 @@ mainloop:
 					continue
 				}
 			}
+			if saveFile != nil {
+				saveFile.WriteString(torrent.Id + "\n")
+			}
 			cntTorrents++
 			cntTorrentsThisPage++
 			totalSize += torrent.Size
@@ -464,7 +495,7 @@ mainloop:
 									filename = torrentutil.RenameTorrent(rename, sitename, torrent.Id, _filename, tinfo)
 								}
 							}
-							err = os.WriteFile(filepath.Join(downloadDir, filename), torrentContent, 0666)
+							err = os.WriteFile(filepath.Join(downloadDir, filename), torrentContent, constants.PERM)
 							if err != nil {
 								fmt.Printf("torrent %s: failed to write to %s/file %s: %v\n", torrent.Id, downloadDir, _filename, err)
 							} else {
@@ -502,6 +533,13 @@ mainloop:
 			}
 			if err != nil {
 				errorCnt++
+				if saveFailFile != nil {
+					saveFailFile.WriteString(torrent.Id + "\n")
+				}
+			} else {
+				if saveOkFile != nil {
+					saveOkFile.WriteString(torrent.Id + "\n")
+				}
 			}
 			if maxTorrents >= 0 && cntTorrents >= maxTorrents {
 				break mainloop

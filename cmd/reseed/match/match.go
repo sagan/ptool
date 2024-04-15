@@ -93,7 +93,7 @@ func match(cmd *cobra.Command, args []string) error {
 		downloadDir = filepath.Join(config.ConfigDir, "reseed")
 	}
 	if doDownload {
-		if err := os.MkdirAll(downloadDir, 0666); err != nil {
+		if err := os.MkdirAll(downloadDir, constants.PERM); err != nil {
 			return fmt.Errorf("failed to create download-dir %s: %v", downloadDir, err)
 		}
 	}
@@ -196,7 +196,7 @@ func match(cmd *cobra.Command, args []string) error {
 				continue
 			}
 		}
-		err = os.WriteFile(filepath.Join(downloadDir, filename), content, 0666)
+		err = os.WriteFile(filepath.Join(downloadDir, filename), content, constants.PERM)
 		if err != nil {
 			fmt.Printf("✕ %s (%d/%d): failed to save to %s : %v\n", torrent, i+1, cntAll, downloadDir, err)
 			errorCnt++

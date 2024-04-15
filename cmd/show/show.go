@@ -46,6 +46,7 @@ var (
 	tracker            = ""
 	minTorrentSizeStr  = ""
 	maxTorrentSizeStr  = ""
+	maxTotalSizeStr    = ""
 	dense              = false
 	showAll            = false
 	showRaw            = false
@@ -72,6 +73,8 @@ func init() {
 	command.Flags().BoolVarP(&showFiles, "show-files", "", false, "Show torrent content files info")
 	command.Flags().BoolVarP(&partial, "partial", "", false,
 		"Only showing torrents that are partially selected for downloading")
+	command.Flags().StringVarP(&maxTotalSizeStr, "max-total-size", "", "-1",
+		"Show at most torrents with total contents size of this value. -1 == no limit")
 	command.Flags().StringVarP(&addedInStr, "added-in", "", "",
 		`Time duration. Only showing torrent that was added to client in the past time of this value. E.g.: "5d"`)
 	command.Flags().StringVarP(&completedBeforeStr, "completed-before", "", "",
@@ -123,6 +126,7 @@ func show(cmd *cobra.Command, args []string) error {
 	}
 	minTorrentSize, _ := util.RAMInBytes(minTorrentSizeStr)
 	maxTorrentSize, _ := util.RAMInBytes(maxTorrentSizeStr)
+	maxTotalSize, _ := util.RAMInBytes(maxTotalSizeStr)
 	addedIn, _ := util.ParseTimeDuration(addedInStr)
 	completedBefore, _ := util.ParseTimeDuration(completedBeforeStr)
 	activeIn, _ := util.ParseTimeDuration(activeInStr)
@@ -236,6 +240,18 @@ func show(cmd *cobra.Command, args []string) error {
 	}
 	if maxTorrents >= 0 && len(torrents) > int(maxTorrents) {
 		torrents = torrents[:maxTorrents]
+	}
+	if maxTotalSize >= 0 {
+		i := 0
+		size := int64(0)
+		for _, torrent := range torrents {
+			if size+torrent.Size > maxTotalSize {
+				break
+			}
+			i++
+			size += torrent.Size
+		}
+		torrents = torrents[:i]
 	}
 
 	if !showInfoHashOnly {

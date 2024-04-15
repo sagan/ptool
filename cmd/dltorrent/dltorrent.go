@@ -11,6 +11,7 @@ import (
 	"golang.org/x/term"
 
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/util"
 	"github.com/sagan/ptool/util/helper"
 	"github.com/sagan/ptool/util/torrentutil"
@@ -24,6 +25,7 @@ var command = &cobra.Command{
 Args is torrent list that each one could be a site torrent id (e.g.: "mteam.488424")
 or url (e.g.: "https://kp.m-team.cc/details.php?id=488424").
 Torrent url that does NOT belong to any site (e.g.: a public site url) is also supported.
+Use a single "-" as args to read torrent (id or url) list from stdin, delimited by blanks.
 
 To set the filename of downloaded torrent, use --rename <name> flag,
 which supports the following variable placeholders:
@@ -65,6 +67,15 @@ func init() {
 func dltorrent(cmd *cobra.Command, args []string) error {
 	errorCnt := int64(0)
 	torrents := args
+	if len(torrents) == 1 && torrents[0] == "-" {
+		if data, err := helper.ReadArgsFromStdin(); err != nil {
+			return fmt.Errorf("failed to parse stdin to info torrent ids: %v", err)
+		} else if len(data) == 0 {
+			return nil
+		} else {
+			torrents = data
+		}
+	}
 	outputToStdout := false
 	if downloadDir == "-" {
 		if len(torrents) > 1 {
@@ -129,7 +140,7 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 		} else {
 			filename = torrentutil.RenameTorrent(rename, sitename, id, _filename, tinfo)
 		}
-		err = os.WriteFile(filepath.Join(downloadDir, filename), content, 0666)
+		err = os.WriteFile(filepath.Join(downloadDir, filename), content, constants.PERM)
 		if err != nil {
 			fmt.Printf("✕ %s (site=%s): failed to save to %s/: %v\n", filename, sitename, downloadDir, err)
 			errorCnt++

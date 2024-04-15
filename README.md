@@ -464,13 +464,15 @@ ptool add local "https://kp.m-team.cc/download.php?id=488424"
 
 参数也支持传入公开 BT 网站的种子下载链接或 `magnet:` 磁力链接地址。
 
+特别的，如果参数只有 1 个 "-"，视为从 stdin 读取种子列表；也支持直接从 stdin 传入 .torrent 文件内容。
+
 ### 下载站点的种子
 
 ```
 ptool dltorrent <torrentIdOrUrl>...
 ```
 
-将站点的种子文件下载到本地。参数是站点的种子 id 或 url（参考上面 "add" 命令）。
+参数与 "add" 命令相似（不支持本地文件名）。将站点的种子文件下载到本地。
 
 可选参数：
 

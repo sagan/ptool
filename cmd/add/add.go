@@ -26,10 +26,11 @@ var command = &cobra.Command{
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "add"},
 	Short:       "Add torrents to client.",
 	Long: `Add torrents to client.
-Args is torrent list that each one could be a local filename (e.g. "*.torrent" or "[M-TEAM]CLANNAD.torrent"),
+First arg is client. The following args is torrent list that each one could be
+a local filename (e.g. "*.torrent" or "[M-TEAM]CLANNAD.torrent"),
 site torrent id (e.g.: "mteam.488424") or url (e.g.: "https://kp.m-team.cc/details.php?id=488424").
 Torrent url that does NOT belong to any site (e.g.: a public site url), as well as "magnet:" link, is also supported.
-Use a single "-" as args to read torrent list from stdin, delimited by blanks,
+Use a single "-" as args to read torrent (id or url) list from stdin, delimited by blanks,
 as a special case, it also supports directly reading .torrent file contents from stdin.
 
 To set the name of added torrent in client, use --rename <name> flag,

@@ -259,7 +259,7 @@ func brush(cmd *cobra.Command, args []string) error {
 				UploadSpeedLimit: siteInstance.GetSiteConfig().TorrentUploadSpeedLimitValue,
 			}
 			// torrentname := fmt.Sprint(torrent.Name, "_", i, ".torrent")
-			// os.WriteFile(tmpdir+"/"+torrentname, torrentdata, 0666)
+			// os.WriteFile(tmpdir+"/"+torrentname, torrentdata, constants.PERM)
 			if !dryRun {
 				err = clientInstance.AddTorrent(torrentdata, torrentOption, torrent.Meta)
 				log.Printf("Add torrent result: error=%v", err)

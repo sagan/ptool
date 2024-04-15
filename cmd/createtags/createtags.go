@@ -11,6 +11,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "createtags {client} {tags}...",
+	Aliases:     []string{"createtag"},
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "createtags"},
 	Short:       "Create tags in client.",
 	Long:        `Create tags in client.`,
