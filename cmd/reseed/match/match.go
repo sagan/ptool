@@ -141,7 +141,7 @@ func match(cmd *cobra.Command, args []string) error {
 		}
 		filename := torrent.Id + ".torrent"
 		if util.First(util.FileExistsWithOptionalSuffix(
-			filepath.Join(downloadDir, filename), constants.ProcessedTorrentFilenameSuffixes...)) {
+			filepath.Join(downloadDir, filename), constants.ProcessedFilenameSuffixes...)) {
 			log.Debugf("! %s (%d/%d): already exists in %s , skip it.\n", torrent, i+1, cntAll, downloadDir)
 			cntSkip++
 			continue

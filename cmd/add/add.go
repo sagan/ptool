@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/google/shlex"
 	log "github.com/sirupsen/logrus"
@@ -81,7 +82,7 @@ func init() {
 	command.Flags().BoolVarP(&sequentialDownload, "sequential-download", "", false,
 		"(qbittorrent only) Enable sequential download")
 	command.Flags().BoolVarP(&renameAdded, "rename-added", "", false,
-		"Rename successfully added *.torrent file to *.torrent.added")
+		"Rename successfully added torrent file to *"+constants.FILENAME_SUFFIX_ADDED)
 	command.Flags().BoolVarP(&deleteAdded, "delete-added", "", false, "Delete successfully added *.torrent file")
 	command.Flags().BoolVarP(&forceLocal, "force-local", "", false, "Force treat all arg as local torrent filename")
 	command.Flags().Int64VarP(&seedingTimeLimit, "seeding-time-limit", "", 0,
@@ -228,8 +229,9 @@ func add(cmd *cobra.Command, args []string) error {
 			continue
 		}
 		if isLocal && torrent != "-" {
-			if renameAdded {
-				if err := os.Rename(torrent, torrent+constants.FILENAME_SUFFIX_ADDED); err != nil {
+			if renameAdded && !strings.HasSuffix(torrent, constants.FILENAME_SUFFIX_ADDED) {
+				if err := os.Rename(torrent, util.TrimAnySuffix(torrent,
+					constants.ProcessedFilenameSuffixes...)+constants.FILENAME_SUFFIX_ADDED); err != nil {
 					log.Debugf("Failed to rename %s to *%s: %v", torrent, constants.FILENAME_SUFFIX_ADDED, err)
 				}
 			} else if deleteAdded {

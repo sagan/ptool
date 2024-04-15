@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -54,8 +55,8 @@ var (
 
 func init() {
 	command.Flags().BoolVarP(&renameAdded, "rename-added", "", false,
-		"Rename successfully added *.torrent file to *.torrent.added")
-	command.Flags().BoolVarP(&deleteAdded, "delete-added", "", false, "Delete successfully added *.torrent file")
+		"Rename successfully added torrent file to *"+constants.FILENAME_SUFFIX_ADDED)
+	command.Flags().BoolVarP(&deleteAdded, "delete-added", "", false, "Delete successfully added torrent file")
 	command.Flags().BoolVarP(&addPaused, "add-paused", "", false, "Add xseed torrents to client in paused state")
 	command.Flags().BoolVarP(&check, "check", "", false, "Let client do hash checking when adding xseed torrents")
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do NOT actually add xseed torrents to client")
@@ -186,8 +187,9 @@ func xseedadd(cmd *cobra.Command, args []string) error {
 			fmt.Printf("✓%s: matched with client torrent %s (%s), added to client, save path: %s\n",
 				torrent, matchClientTorrent.InfoHash, matchClientTorrent.Name, matchClientTorrent.SavePath)
 			if isLocal && torrent != "-" {
-				if renameAdded {
-					if err := os.Rename(torrent, torrent+constants.FILENAME_SUFFIX_ADDED); err != nil {
+				if renameAdded && !strings.HasSuffix(torrent, constants.FILENAME_SUFFIX_ADDED) {
+					if err := os.Rename(torrent, util.TrimAnySuffix(torrent,
+						constants.ProcessedFilenameSuffixes...)+constants.FILENAME_SUFFIX_ADDED); err != nil {
 						log.Debugf("Failed to rename %s to *%s: %v", torrent, constants.FILENAME_SUFFIX_ADDED, err)
 					}
 				} else if deleteAdded {

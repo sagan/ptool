@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"strings"
 
@@ -252,6 +253,29 @@ func (meta *TorrentMeta) XseedCheckWithClientTorrent(clientTorrentContents []cli
 	return 0
 }
 
+// Verify against a fs.FS of save path (e.g.: os.DirFS("D:\Downloads")). It does no hash checking for now.
+func (meta *TorrentMeta) VerifyAgaintSavePathFs(savePathFs fs.FS) error {
+	relativePath := ""
+	if meta.RootDir != "" {
+		relativePath = meta.RootDir + "/"
+	}
+	for _, file := range meta.Files {
+		filename := relativePath + file.Path
+		f, err := savePathFs.Open(filename)
+		if err != nil {
+			return fmt.Errorf("failed to access file %q: %v", file.Path, err)
+		}
+		stat, err := f.Stat()
+		if err != nil {
+			return fmt.Errorf("failed to get file %q stat: %v", file.Path, err)
+		}
+		if stat.Size() != file.Size {
+			return fmt.Errorf("file %q has wrong length: expect=%d, actual=%d", file.Path, file.Size, stat.Size())
+		}
+	}
+	return nil
+}
+
 // checkHash: 0 - none; 1 - quick; 2+ - full.
 func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash int64) error {
 	var filenames []string
@@ -273,10 +297,10 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash i
 		}
 		stat, err := os.Stat(filename)
 		if err != nil {
-			return fmt.Errorf("failed to get file %s stat: %v", file.Path, err)
+			return fmt.Errorf("failed to get file %q stat: %v", file.Path, err)
 		}
 		if stat.Size() != file.Size {
-			return fmt.Errorf("file %q has wrong length", filename)
+			return fmt.Errorf("file %q has wrong length: expect=%d, actual=%d", file.Path, file.Size, stat.Size())
 		}
 		if checkHash > 0 {
 			filenames = append(filenames, filename)

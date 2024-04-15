@@ -236,7 +236,7 @@ var (
 var InternalAliases = []*AliasConfigStruct{
 	{
 		Name:        "add2",
-		Cmd:         "add --add-category-auto --sequential-download",
+		Cmd:         "add --add-category-auto --sequential-download --rename-added",
 		DefaultArgs: "*.torrent",
 		MinArgs:     1,
 		Internal:    true,
@@ -251,6 +251,13 @@ var InternalAliases = []*AliasConfigStruct{
 		Name:     "parsetorrent2",
 		Cmd:      "parsetorrent *.torrent",
 		Internal: true,
+	},
+	{
+		Name:        "verifytorrent2",
+		Cmd:         "verifytorrent2 --rename-fail",
+		DefaultArgs: "*.torrent",
+		MinArgs:     1,
+		Internal:    true,
 	},
 }
 

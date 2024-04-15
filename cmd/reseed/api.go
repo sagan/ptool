@@ -214,7 +214,7 @@ func scan(dirs ...string) (file File, savePathMap map[string]string, err error) 
 				}
 			} else {
 				if strings.HasSuffix(path, ".torrent") ||
-					util.StringHasAnySuffix(path, constants.ProcessedTorrentFilenameSuffixes...) {
+					util.HasAnySuffix(path, constants.ProcessedFilenameSuffixes...) {
 					return nil
 				}
 			}

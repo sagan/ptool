@@ -30,7 +30,6 @@ var (
 	siteDownloadTimeMap                        = map[string]int64{}
 	ErrGetTorrentUrlIsMegnet                   = fmt.Errorf("magnet or bt url is NOT supported")
 	ErrGetTorrentUrlParseFail                  = fmt.Errorf("failed to parse torrent domain")
-	ErrGetTorrentSkipped                       = fmt.Errorf(".added or .failed file is skipped")
 	ErrGetTorrentStdoutOutputNotSupportInShell = fmt.Errorf(`"-" arg can not be used in shell`)
 )
 
@@ -53,7 +52,8 @@ func GetTorrentContent(torrent string, defaultSite string,
 	content []byte, tinfo *torrentutil.TorrentMeta, siteInstance site.Site, sitename string,
 	filename string, id string, isLocal bool, err error) {
 	isLocal = !forceRemote && (forceLocal || torrent == "-" ||
-		!util.IsUrl(torrent) && strings.HasSuffix(torrent, ".torrent"))
+		!util.IsUrl(torrent) && (strings.HasSuffix(torrent, ".torrent") ||
+			util.HasAnySuffix(torrent, constants.ProcessedFilenameSuffixes...)))
 	// site torrent id or url
 	if !isLocal {
 		if util.IsPureTorrentUrl(torrent) {
@@ -158,8 +158,6 @@ func GetTorrentContent(torrent string, defaultSite string,
 			} else {
 				content, err = io.ReadAll(os.Stdin)
 			}
-		} else if util.StringHasAnySuffix(torrent, constants.ProcessedTorrentFilenameSuffixes...) {
-			err = ErrGetTorrentSkipped
 		} else {
 			filename = path.Base(torrent)
 			content, err = os.ReadFile(torrent)
