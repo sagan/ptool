@@ -38,6 +38,7 @@ const (
 	GLOBAL_INTERNAL_LOCK_FILE = "ptool.lock"
 	GLOBAL_LOCK_FILE          = "ptool-global.lock"
 
+	DEFAULT_EXPORT_TORRENT_RENAME = "[name128].[infohash16].torrent"
 	// Changed in Feb, 2024.
 	// See: https://github.com/ledccn/IYUUPlus/commit/04aef85b667bcc2f22975dd4c5c0e09e5bb2015d .
 	// Older values: "api.iyuu.cn", "hk.iyuu.cn".

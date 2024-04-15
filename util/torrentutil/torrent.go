@@ -412,9 +412,10 @@ func RenameTorrent(rename string, sitename string, id string, filename string, t
 }
 
 // Get appropriate filename for exported .torrent file.
-// available variable placeholders: [size], [infohash], [infohash16], [category], [name], [name128]
-func RenameExportedTorrent(torrent client.Torrent, rename string) string {
+// available variable placeholders: [client], [size], [infohash], [infohash16], [category], [name], [name128]
+func RenameExportedTorrent(client string, torrent client.Torrent, rename string) string {
 	filename := rename
+	filename = strings.ReplaceAll(filename, "[client]", client)
 	filename = strings.ReplaceAll(filename, "[size]", util.BytesSize(float64(torrent.Size)))
 	filename = strings.ReplaceAll(filename, "[infohash]", torrent.InfoHash)
 	filename = strings.ReplaceAll(filename, "[infohash16]", torrent.InfoHash[:16])

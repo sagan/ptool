@@ -354,16 +354,16 @@ func FileExists(name string) bool {
 
 // Check whether a file (or dir) with name or name + suffix exists in file system.
 // suffix could be any one in suffixes.
-func FileExistsWithOptionalSuffix(name string, suffixes ...string) (bool, string) {
+func FileExistsWithOptionalSuffix(name string, suffixes ...string) bool {
 	if FileExists(name) {
-		return true, name
+		return true
 	}
 	for _, suffix := range suffixes {
 		if FileExists(name + suffix) {
-			return true, name + suffix
+			return true
 		}
 	}
-	return false, ""
+	return false
 }
 
 // Return count of variable in vars that fulfil the condition that variable is non-zero value

@@ -246,6 +246,11 @@ var (
 			Url:     "https://pt.hdpost.top/",
 			Comment: "普斯特",
 		},
+		"hdpt": {
+			Type:    "nexusphp",
+			Url:     "https://hdpt.xyz/",
+			Comment: "明教",
+		},
 		"hdtime": {
 			Type:    "nexusphp",
 			Url:     "https://hdtime.org/",

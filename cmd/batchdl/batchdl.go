@@ -460,7 +460,8 @@ mainloop:
 				filename := ""
 				if action == "download" && downloadSkipExisting && torrent.Id != "" {
 					filename = fmt.Sprintf("%s.%s.torrent", sitename, torrent.Id)
-					if util.FileExists(filepath.Join(downloadDir, filename)) {
+					if util.FileExistsWithOptionalSuffix(filepath.Join(downloadDir, filename),
+						constants.ProcessedFilenameSuffixes...) {
 						log.Debugf("Skip downloading local-existing torrent %s (%s)", torrent.Name, torrent.Id)
 						continue
 					}

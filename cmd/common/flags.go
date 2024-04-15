@@ -74,6 +74,7 @@ var pureFlags = []string{
 	"dense",
 	"download-skip-existing",
 	"dry-run",
+	"export-skip-existing",
 	"force",
 	"force-local",
 	"fork",

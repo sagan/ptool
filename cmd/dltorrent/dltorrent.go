@@ -95,7 +95,8 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 		beforeDownload = func(sitename, id string) error {
 			if sitename != "" && id != "" {
 				filename := fmt.Sprintf("%s.%s.torrent", sitename, id)
-				if util.FileExists(filepath.Join(downloadDir, filename)) {
+				if util.FileExistsWithOptionalSuffix(filepath.Join(downloadDir, filename),
+					constants.ProcessedFilenameSuffixes...) {
 					log.Debugf("Skip downloading local-existing torrent %s.%s", sitename, id)
 					return errSkipExisting
 				}

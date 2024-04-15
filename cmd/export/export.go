@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/constants"
+	"github.com/sagan/ptool/util"
 	"github.com/sagan/ptool/util/helper"
 	"github.com/sagan/ptool/util/torrentutil"
 )
@@ -25,6 +28,7 @@ Specially, use a single "-" as args to read infoHash list from stdin, delimited 
 
 To set the filename of downloaded torrent, use --rename <name> flag,
 which supports the following variable placeholders:
+* [client] : Client name
 * [size] : Torrent size
 * [infohash] :  Torrent infohash
 * [infohash16] :  The first 16 chars of torrent infohash
@@ -42,15 +46,20 @@ It will overwrite any existing file on disk with the same name.`,
 }
 
 var (
-	useComment  = false
-	category    = ""
-	tag         = ""
-	filter      = ""
-	downloadDir = ""
-	rename      = ""
+	exportSkipExisting = false
+	useComment         = false
+	category           = ""
+	tag                = ""
+	filter             = ""
+	downloadDir        = ""
+	rename             = ""
 )
 
 func init() {
+	command.Flags().BoolVarP(&exportSkipExisting, "export-skip-existing", "", false,
+		`Do NOT re-export torrent that same name file already exists in local dir. `+
+			`If this flag is set, the exported torrent filename ("--rename" flag) will be fixed to `+
+			`"[client].[infohash].torrent" (e.g.: "local.293235f712652df08a8665ec2ca118d7e0615c3f.torrent") format`)
 	command.Flags().BoolVarP(&useComment, "use-comment-meta", "", false,
 		"Export torrent category, tags, save path and other infos to 'comment' field of .torrent file")
 	command.Flags().StringVarP(&filter, "filter", "", "", "Filter torrents by name")
@@ -58,7 +67,7 @@ func init() {
 	command.Flags().StringVarP(&tag, "tag", "", "",
 		"Filter torrents by tag. Comma-separated list. Torrent which tags contain any one in the list matches")
 	command.Flags().StringVarP(&downloadDir, "download-dir", "", ".", `Set the download dir of exported torrents`)
-	command.Flags().StringVarP(&rename, "rename", "", "[name128].[infohash16].torrent",
+	command.Flags().StringVarP(&rename, "rename", "", config.DEFAULT_EXPORT_TORRENT_RENAME,
 		"Set the name of downloaded torrents (supports variables)")
 	cmd.RootCmd.AddCommand(command)
 }
@@ -80,6 +89,9 @@ func export(cmd *cobra.Command, args []string) error {
 			}
 		}
 	}
+	if exportSkipExisting && rename != config.DEFAULT_EXPORT_TORRENT_RENAME {
+		return fmt.Errorf("--export-skip-existing and --rename flags are NOT compatible")
+	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
 		return fmt.Errorf("failed to create client: %v", err)
@@ -92,6 +104,15 @@ func export(cmd *cobra.Command, args []string) error {
 	errorCnt := int64(0)
 	cntAll := len(torrents)
 	for i, torrent := range torrents {
+		filename := ""
+		if exportSkipExisting {
+			filename = fmt.Sprintf("%s.%s.torrent", clientName, torrent.InfoHash)
+			if util.FileExistsWithOptionalSuffix(filepath.Join(downloadDir, filename),
+				constants.ProcessedFilenameSuffixes...) {
+				fmt.Printf("- %s : skip local existing torrent (%d/%d)\n", torrent.InfoHash, i+1, cntAll)
+				continue
+			}
+		}
 		content, err := clientInstance.ExportTorrentFile(torrent.InfoHash)
 		if err != nil {
 			fmt.Printf("✕ %s : failed to export %s: %v (%d/%d)\n", torrent.InfoHash, torrent.Name, err, i+1, cntAll)
@@ -119,7 +140,10 @@ func export(cmd *cobra.Command, args []string) error {
 				continue
 			}
 		}
-		filepath := path.Join(downloadDir, torrentutil.RenameExportedTorrent(torrent, rename))
+		if filename == "" {
+			filename = torrentutil.RenameExportedTorrent(clientName, torrent, rename)
+		}
+		filepath := path.Join(downloadDir, filename)
 		if err := os.WriteFile(filepath, content, constants.PERM); err != nil {
 			fmt.Printf("✕ %s : failed to save to %s: %v (%d/%d)\n", torrent.InfoHash, filepath, err, i+1, cntAll)
 			errorCnt++
