@@ -12,6 +12,7 @@ import (
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/util"
+	"github.com/sagan/ptool/util/helper"
 )
 
 type site_test_result struct {
@@ -59,7 +60,7 @@ func sync(cmd *cobra.Command, args []string) error {
 	cookiecloudDatas := []cookiecloud.Ccdata_struct{}
 	for _, profile := range cookiecloudProfiles {
 		data, err := cookiecloud.GetCookiecloudData(profile.Server, profile.Uuid, profile.Password,
-			profile.Proxy, profile.Timeoout)
+			profile.Proxy, profile.Timeout)
 		if err != nil {
 			log.Errorf("Cookiecloud server %s (uuid %s) connection failed: %v\n", profile.Server, profile.Uuid, err)
 			errorCnt++
@@ -104,11 +105,11 @@ func sync(cmd *cobra.Command, args []string) error {
 				}
 				return
 			}
-			if siteconfig.NoCookie {
+			if siteconfig.Dead || siteconfig.NoCookie {
 				ch <- &site_test_result{
 					sitename: sitename,
 					flag:     5,
-					msg:      "site does NOT use cookie",
+					msg:      "site is dead or does not use cookie",
 				}
 				return
 			}
@@ -254,7 +255,7 @@ func sync(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\n")
 	if len(updatesites) > 0 {
 		configFile := fmt.Sprintf("%s/%s", config.ConfigDir, config.ConfigFile)
-		if !force && !util.AskYesNoConfirm(fmt.Sprintf(
+		if !force && !helper.AskYesNoConfirm(fmt.Sprintf(
 			"Will update the config file (%s). Be aware that all existing comments will be LOST", configFile)) {
 			return fmt.Errorf("abort")
 		}

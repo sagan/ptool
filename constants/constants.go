@@ -21,6 +21,9 @@ const FILENAME_SUFFIX_ADDED = ".added"
 const FILENAME_SUFFIX_OK = ".ok"
 const FILENAME_SUFFIX_FAIL = ".fail"
 
+// Some funcs require a (positive) timeout parameter. Use a very long value to emulate infinite. (Seconds)
+const INFINITE_TIMEOUT = 86400 * 365 * 100
+
 var FilenameInvalidCharsRegex = regexp.MustCompile(FILENAME_INVALID_CHARS_REGEX)
 
 // Some ptool cmds could add a suffix to processed (torrent) filenames.

@@ -8,6 +8,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/util"
 	"github.com/sagan/ptool/util/helper"
 )
@@ -17,12 +18,10 @@ var command = &cobra.Command{
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "delete"},
 	Aliases:     []string{"rm"},
 	Short:       "Delete torrents from client.",
-	Long: `Delete torrents from client.
-[infoHash]...: infoHash list of torrents to delete. It's possible to use state filter to target multiple torrents:
-_all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.
-Specially, use a single "-" as args to read infoHash list from stdin, delimited by blanks.
+	Long: fmt.Sprintf(`Delete torrents from client.
+%s.
 
-It will ask for confirmation of deletion, unless --force flag is set.`,
+It will ask for confirmation of deletion, unless --force flag is set.`, constants.HELP_INFOHASH_ARGS),
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: delete,
 }
@@ -67,15 +66,10 @@ func delete(cmd *cobra.Command, args []string) error {
 	if category != "" || tag != "" || filter != "" || tracker != "" || minTorrentSize >= 0 || maxTorrentSize >= 0 {
 		infohashesOnly = false
 	} else {
-		// special case. read info hashes from stdin
-		if len(infoHashes) == 1 && infoHashes[0] == "-" {
-			if data, err := helper.ReadArgsFromStdin(); err != nil {
-				return fmt.Errorf("failed to parse stdin to info hashes: %v", err)
-			} else if len(data) == 0 {
-				return nil
-			} else {
-				infoHashes = data
-			}
+		if _infoHashes, err := helper.ParseInfoHashesFromArgs(infoHashes); err != nil {
+			return err
+		} else {
+			infoHashes = _infoHashes
 		}
 		for _, infoHash := range infoHashes {
 			if !client.IsValidInfoHash(infoHash) {
@@ -117,7 +111,7 @@ func delete(cmd *cobra.Command, args []string) error {
 	if !force {
 		client.PrintTorrents(torrents, "", 1, false)
 		fmt.Printf("\n")
-		if !util.AskYesNoConfirm(fmt.Sprintf("Above %d torrents will be deteled (Preserve disk files = %t)",
+		if !helper.AskYesNoConfirm(fmt.Sprintf("Above %d torrents will be deteled (Preserve disk files = %t)",
 			len(torrents), preserve)) {
 			return fmt.Errorf("abort")
 		}

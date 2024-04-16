@@ -18,25 +18,23 @@ import (
 // Some fields that rclone outputs are commented out as ptool does NOT use them.
 // *LsjsonItem implements: fs.DirEntry, fs.FileInfo, fs.ReadDirFS, fs.File.
 // The fs.File implementation only supports Stat() action.
+// Some json field names (e.g. "Size") are used by DirEntry / FileInfo /... interfaces,
+// so they are renamed to with "Item" prefix.
 type LsjsonItem struct {
-	ID string `json:"ID,omitempty"`
-	// "IsDir" is used by fs.DirEntry interface, so changed it to "ItemIsDir".
-	ItemIsDir bool   `json:"IsDir,omitempty"`
-	MimeType  string `json:"MimeType,omitempty"`
-	// "ModTime" is used by fs.FileInfo interface, so changed it to "ItemModTime".
-	// E.g.: "2017-05-31T16:15:57.034468261+01:00".
-	ItemModTime string `json:"ModTime,omitempty"`
-	// "Name" is used by fs.DirEntry interface, so changed it to "ItemName". E.g.: "file.txt"
-	ItemName string                 `json:"Name,omitempty"`
-	Path     string                 `json:"Path,omitempty"` //"full/path/goes/here/file.txt". Relative to <root_path>
-	ItemSize int64                  `json:"Size,omitempty"`
-	children map[string]*LsjsonItem // set by ptool
+	ItemIsDir   bool                   `json:"IsDir,omitempty"`
+	ItemModTime string                 `json:"ModTime,omitempty"` // "2017-05-31T16:15:57.034468261+01:00"
+	ItemName    string                 `json:"Name,omitempty"`    // "file.txt"
+	Path        string                 `json:"Path,omitempty"`    //"full/path/file.txt". Relative to <root_path>
+	ItemSize    int64                  `json:"Size,omitempty"`
+	children    map[string]*LsjsonItem // set by ptool
 
-	// hashes   map[string]string `json:"Hashes,omitempty"` // key: "SHA-1", "MD5".... value: hex string
-	// isBucket bool              `json:"IsBucket,omitempty"`
-	// encrypted     string        `json:"Encrypted,omitempty"`     // encrypted Name
-	// encryptedPath string        `json:"EncryptedPath,omitempty"` // encrypted Path
-	// tier     string        `json:"Tier,omitempty"` // "hot"
+	// ID            string            `json:"ID,omitempty"`
+	// MimeType      string            `json:"MimeType,omitempty"`
+	// hashes        map[string]string `json:"Hashes,omitempty"` // key: "SHA-1", "MD5".... value: hex string
+	// isBucket      bool              `json:"IsBucket,omitempty"`
+	// encrypted     string            `json:"Encrypted,omitempty"`     // encrypted Name
+	// encryptedPath string            `json:"EncryptedPath,omitempty"` // encrypted Path
+	// tier          string            `json:"Tier,omitempty"`          // "hot"
 }
 
 // Close implements fs.File.

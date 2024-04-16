@@ -3,11 +3,12 @@ package batchdl
 // 批量下载站点的种子
 
 import (
-	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
@@ -24,12 +25,14 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:         "batchdl {site} [--action add|download|...] [--base-url torrents_page_url]",
+	Use:         "batchdl {site} [--download | --add-client client] [--base-url torrents_page_url]",
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "batchdl"},
 	Aliases:     []string{"ebookgod"},
 	Short:       "Batch download the smallest (or by any other order) torrents from a site.",
 	Long: `Batch download the smallest (or by any other order) torrents from a site.
-It also supports directly adding downloaded torrent to a client.
+By default it will display the list of found torrents.
+If --download flag is set, it will download found torrents to dir specified by --download dir (default ".").
+If --add-client flag is set, it will directly add found torrents to the specified client.
 
 To set the name of added torrent in client or filename of downloaded torrent, use --rename <name> flag,
 which supports the following variable placeholders:
@@ -52,6 +55,7 @@ It will output the summary of downloads result in the end:
 }
 
 var (
+	doDownload           = false
 	slowMode             = false
 	downloadSkipExisting = false
 	downloadAll          = false
@@ -69,6 +73,7 @@ var (
 	addCategoryAuto      = false
 	largestFlag          = false
 	newestFlag           = false
+	saveAppend           = false
 	maxTorrents          = int64(0)
 	minSeeders           = int64(0)
 	maxSeeders           = int64(0)
@@ -85,22 +90,22 @@ var (
 	freeTimeAtLeastStr   = ""
 	startPage            = ""
 	downloadDir          = ""
-	exportFile           = ""
 	baseUrl              = ""
 	rename               = ""
-	action               = ""
 	sortFlag             = ""
 	orderFlag            = ""
 	saveFilename         = ""
 	saveOkFilename       = ""
 	saveFailFilename     = ""
+	saveJsonFilename     = ""
 	includes             = []string{}
 )
 
 func init() {
+	command.Flags().BoolVarP(&doDownload, "download", "", false, "Download found torrents to local")
 	command.Flags().BoolVarP(&slowMode, "slow", "", false, "Slow mode. wait after downloading each torrent")
 	command.Flags().BoolVarP(&downloadSkipExisting, "download-skip-existing", "", false,
-		`Used with "--action download". Do NOT re-download torrent that same name file already exists in local dir. `+
+		`Used with "--download". Do NOT re-download torrent that same name file already exists in local dir. `+
 			`If this flag is set, the download torrent filename ("--rename" flag) will be fixed to `+
 			`"[site].[id].torrent" (e.g.: "mteam.12345.torrent") format`)
 	command.Flags().BoolVarP(&downloadAll, "all", "a", false,
@@ -117,7 +122,7 @@ func init() {
 	command.Flags().BoolVarP(&newestFlag, "newest", "n", false,
 		`Download newest torrents of site. Equivalent to "--sort time --order desc --one-page"`)
 	command.Flags().BoolVarP(&addRespectNoadd, "add-respect-noadd", "", false,
-		`Used with "--action add". Check and respect _noadd flag in client`)
+		`Used with "--add-client". Check and respect _noadd flag in client`)
 	command.Flags().BoolVarP(&nohr, "no-hr", "", false,
 		"Skip torrent that has any type of HnR (Hit and Run) restriction")
 	command.Flags().BoolVarP(&allowBreak, "break", "", false,
@@ -128,6 +133,8 @@ func init() {
 		"Only include torrent that had been downloaded before")
 	command.Flags().BoolVarP(&addCategoryAuto, "add-category-auto", "", false,
 		"Automatically set category of added torrent to corresponding sitename")
+	command.Flags().BoolVarP(&saveAppend, "save-append", "", false,
+		`Used with "--save-*" flags, write to those files in append mode`)
 	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "", -1,
 		"Number limit of torrents handled. -1 == no limit (Press Ctrl+C to stop)")
 	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1",
@@ -154,27 +161,28 @@ func init() {
 	command.Flags().StringVarP(&startPage, "start-page", "", "",
 		"Start fetching torrents from here (should be the returned LastPage value last time you run this command)")
 	command.Flags().StringVarP(&downloadDir, "download-dir", "", ".",
-		`Used with "--action download". Set the local dir of downloaded torrents. Default == current dir`)
-	command.Flags().StringVarP(&addClient, "add-client", "", "",
-		`Used with "--action add". Set the client. Required in this action`)
+		`Used with "--download". Set the local dir of downloaded torrents. Default == current dir`)
+	command.Flags().StringVarP(&addClient, "add-client", "", "", `Add found torrents to this client`)
 	command.Flags().StringVarP(&addCategory, "add-category", "", "",
-		`Used with "--action add". Set the category when adding torrent to client`)
+		`Used with "--add-client". Set the category when adding torrent to client`)
 	command.Flags().StringVarP(&addTags, "add-tags", "", "",
-		`Used with "--action add". Set the tags when adding torrent to client (comma-separated)`)
+		`Used with "--add-client". Set the tags when adding torrent to client (comma-separated)`)
 	command.Flags().StringVarP(&addSavePath, "add-save-path", "", "",
-		`Used with "--action add". Set contents save path of added torrents`)
-	command.Flags().StringVarP(&exportFile, "export-file", "", "",
-		`Used with "--action export|printid". Set the output file. (If not set, will use stdout)`)
+		`Used with "--add-client". Set contents save path of added torrents`)
 	command.Flags().StringVarP(&baseUrl, "base-url", "", "",
 		`Manually set the base url of torrents list page. e.g.: "special.php", "torrents.php?cat=100"`)
 	command.Flags().StringVarP(&rename, "rename", "", "", "Rename downloaded or added torrents (supports variables)")
-	command.Flags().StringVarP(&saveFilename, "save-torrent-list", "", "",
-		"Filename. Write the list of torrent ids to it (File will be truncated)")
-	command.Flags().StringVarP(&saveOkFilename, "save-torrent-ok-list", "", "",
-		"Filename. Write the list of success torrent ids to it (File will be truncated)")
-	command.Flags().StringVarP(&saveFailFilename, "save-torrent-fail-list", "", "",
-		"Filename. Write the list of failed torrent ids to it (File will be truncated)")
-	cmd.AddEnumFlagP(command, &action, "action", "", ActionEnumFlag)
+	command.Flags().StringVarP(&saveFilename, "save-list-file", "", "",
+		"Filename. Write the id list of found torrents to it. File will be truncated unless --save-apend flag is set")
+	command.Flags().StringVarP(&saveOkFilename, "save-ok-list-file", "", "",
+		"Filename. Write the id list of success torrents to it. File will be truncated unless --save-apend flag is set")
+	command.Flags().StringVarP(&saveFailFilename, "save-fail-list-file", "", "",
+		"Filename. Write the id list of failed torrents to it. File will be truncated unless --save-apend flag is set")
+	command.Flags().StringVarP(&saveJsonFilename, "save-json-file", "", "",
+		"Filename. Write the full info of found torrents to it in json format. "+
+			"If --save-append flag is not set, file will be truncated and the whole contents of it will be "+
+			"valid json of array of torrent objects; If --save-append flag is set, each line of the file will be "+
+			"json of torrent object")
 	cmd.AddEnumFlagP(command, &sortFlag, "sort", "", common.SiteTorrentSortFlag)
 	cmd.AddEnumFlagP(command, &orderFlag, "order", "", common.OrderFlag)
 	cmd.RootCmd.AddCommand(command)
@@ -197,14 +205,17 @@ func batchdl(command *cobra.Command, args []string) error {
 	if onlyDownloaded && includeDownloaded {
 		return fmt.Errorf("--only-downloaded and --include-downloaded flags are NOT compatible")
 	}
-	if action != "download" && (downloadSkipExisting || downloadDir != ".") {
-		return fmt.Errorf(`found flags that are can only be used with "--action download"`)
-	} else if action != "add" && util.CountNonZeroVariables(
-		addCategoryAuto, addCategory, addClient, addPaused, addRespectNoadd, addSavePath) > 0 {
-		return fmt.Errorf(`found flags that are can only be used with "--action add"`)
+	if util.CountNonZeroVariables(doDownload, addClient) > 1 {
+		return fmt.Errorf("--download and --add-client flags are NOT compatible")
 	}
-	if action != "download" && action != "add" && (saveOkFilename != "" || saveFailFilename != "") {
-		return fmt.Errorf(`found flags that are can only be used with "--action download" or "--action add"`)
+	if !doDownload && (downloadSkipExisting || downloadDir != ".") {
+		return fmt.Errorf(`found flags that are can only be used with "--download"`)
+	} else if addClient == "" && util.CountNonZeroVariables(
+		addCategoryAuto, addCategory, addClient, addPaused, addRespectNoadd, addSavePath) > 0 {
+		return fmt.Errorf(`found flags that are can only be used with "--add-client"`)
+	}
+	if !doDownload && addClient == "" && (saveOkFilename != "" || saveFailFilename != "") {
+		return fmt.Errorf(`found flags that are can only be used with "--download" or "--add-client"`)
 	}
 	if util.CountNonZeroVariables(downloadSkipExisting, rename) > 1 {
 		return fmt.Errorf("--download-skip-existing and --rename flags are NOT compatible")
@@ -249,12 +260,7 @@ func batchdl(command *cobra.Command, args []string) error {
 	var clientInstance client.Client
 	var clientAddTorrentOption *client.TorrentOption
 	var clientAddFixedTags []string
-	var outputFileFd *os.File = os.Stdout
-	var csvWriter *csv.Writer
-	if action == "add" {
-		if addClient == "" {
-			return fmt.Errorf("you much specify the client used to add torrents to via --add-client flag")
-		}
+	if addClient != "" {
 		clientInstance, err = client.CreateClient(addClient)
 		if err != nil {
 			return fmt.Errorf("failed to create client %s: %v", addClient, err)
@@ -275,31 +281,27 @@ func batchdl(command *cobra.Command, args []string) error {
 		if addTags != "" {
 			clientAddFixedTags = append(clientAddFixedTags, util.SplitCsv(addTags)...)
 		}
-	} else if action == "export" || action == "printid" {
-		if exportFile != "" {
-			outputFileFd, err = os.OpenFile(exportFile, os.O_RDWR|os.O_APPEND|os.O_CREATE, constants.PERM)
-			if err != nil {
-				return fmt.Errorf("failed to create output file %s: %v", exportFile, err)
-			}
-		}
-		if action == "export" {
-			csvWriter = csv.NewWriter(outputFileFd)
-			csvWriter.Write([]string{"name", "size", "time", "id"})
-		}
 	}
 	flowControlInterval := config.DEFAULT_SITE_FLOW_CONTROL_INTERVAL
 	if siteInstance.GetSiteConfig().FlowControlInterval > 0 {
 		flowControlInterval = siteInstance.GetSiteConfig().FlowControlInterval
 	}
-	var saveFile, saveOkFile, saveFailFile *os.File
-	var saveFiles = []**os.File{&saveFile, &saveOkFile, &saveFailFile}
-	for i, filename := range []string{saveFilename, saveOkFilename, saveFailFilename} {
+	var saveFile, saveOkFile, saveFailFile, saveJsonFile *os.File
+	var saveFiles = []**os.File{&saveFile, &saveOkFile, &saveFailFile, &saveJsonFile}
+	for i, filename := range []string{saveFilename, saveOkFilename, saveFailFilename, saveJsonFilename} {
 		if filename != "" {
-			*saveFiles[i], err = os.OpenFile(filename, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, constants.PERM)
+			if saveAppend {
+				*saveFiles[i], err = os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, constants.PERM)
+			} else {
+				*saveFiles[i], err = os.OpenFile(filename, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, constants.PERM)
+			}
 			if err != nil {
 				return fmt.Errorf("failed to create save file %s: %v", filename, err)
 			}
 		}
+	}
+	if saveJsonFile != nil && !saveAppend {
+		saveJsonFile.WriteString("[\n")
 	}
 
 	cntTorrents := int64(0)
@@ -321,8 +323,8 @@ func batchdl(command *cobra.Command, args []string) error {
 			lastMarker,
 			errorCnt,
 		)
-		if csvWriter != nil {
-			csvWriter.Flush()
+		if saveJsonFile != nil && !saveAppend {
+			saveJsonFile.WriteString("]\n")
 		}
 		for _, file := range saveFiles {
 			if *file != nil {
@@ -377,7 +379,7 @@ mainloop:
 					continue
 				}
 			}
-			if !includeDownloaded && torrent.IsActive {
+			if !onlyDownloaded && !includeDownloaded && torrent.IsActive {
 				log.Debugf("Skip active torrent %s", torrent.Name)
 				continue
 			}
@@ -443,91 +445,104 @@ mainloop:
 					continue
 				}
 			}
+			if maxTorrents >= 0 && cntTorrents+1 > maxTorrents {
+				break mainloop
+			}
+			if maxTotalSize >= 0 && totalSize+torrent.Size > maxTotalSize {
+				break mainloop
+			}
 			if saveFile != nil {
 				saveFile.WriteString(torrent.Id + "\n")
+			}
+			if saveJsonFile != nil {
+				if !saveAppend && cntTorrents > 0 {
+					saveJsonFile.WriteString(",")
+				}
+				if data, err := json.Marshal(&torrent); err != nil {
+					log.Errorf("Failed to marshal json of torrent %v", torrent)
+				} else {
+					saveJsonFile.Write(data)
+					saveJsonFile.WriteString("\n")
+				}
 			}
 			cntTorrents++
 			cntTorrentsThisPage++
 			totalSize += torrent.Size
-			var err error
-			if action == "show" {
+			if !doDownload && addClient == "" {
 				site.PrintTorrents([]site.Torrent{torrent}, "", now, cntTorrents != 1, dense, nil)
-			} else if action == "export" {
-				csvWriter.Write([]string{torrent.Name, fmt.Sprint(torrent.Size), fmt.Sprint(torrent.Time), torrent.Id})
-			} else if action == "printid" {
-				fmt.Fprintf(outputFileFd, "%s\n", torrent.Id)
+				continue
+			}
+			var err error
+			filename := ""
+			if doDownload && downloadSkipExisting && torrent.Id != "" {
+				filename = fmt.Sprintf("%s.%s.torrent", sitename, strings.TrimPrefix(torrent.Id, sitename+"."))
+				if util.FileExistsWithOptionalSuffix(filepath.Join(downloadDir, filename),
+					constants.ProcessedFilenameSuffixes...) {
+					log.Debugf("Skip downloading local-existing torrent %s (%s)", torrent.Name, torrent.Id)
+					continue
+				}
+			}
+			if i > 0 && slowMode {
+				util.Sleep(3)
+			}
+			var torrentContent []byte
+			var _filename string
+			if torrent.DownloadUrl != "" {
+				torrentContent, _filename, _, err = siteInstance.DownloadTorrent(torrent.DownloadUrl)
 			} else {
-				filename := ""
-				if action == "download" && downloadSkipExisting && torrent.Id != "" {
-					filename = fmt.Sprintf("%s.%s.torrent", sitename, torrent.Id)
-					if util.FileExistsWithOptionalSuffix(filepath.Join(downloadDir, filename),
-						constants.ProcessedFilenameSuffixes...) {
-						log.Debugf("Skip downloading local-existing torrent %s (%s)", torrent.Name, torrent.Id)
-						continue
-					}
+				torrentContent, _filename, _, err = siteInstance.DownloadTorrent(torrent.Id)
+			}
+			if err != nil {
+				fmt.Printf("torrent %s (%s): failed to download: %v\n", torrent.Id, torrent.Name, err)
+				consecutiveFail++
+				if maxConsecutiveFail >= 0 && consecutiveFail > maxConsecutiveFail {
+					log.Errorf("Abort due to too many fails to download torrent from site")
+					break mainloop
 				}
-				if i > 0 && slowMode {
-					util.Sleep(3)
-				}
-				var torrentContent []byte
-				var _filename string
-				if torrent.DownloadUrl != "" {
-					torrentContent, _filename, _, err = siteInstance.DownloadTorrent(torrent.DownloadUrl)
+			} else {
+				consecutiveFail = 0
+				if tinfo, err := torrentutil.ParseTorrent(torrentContent, 99); err != nil {
+					fmt.Printf("torrent %s (%s): failed to parse: %v\n", torrent.Id, torrent.Name, err)
 				} else {
-					torrentContent, _filename, _, err = siteInstance.DownloadTorrent(torrent.Id)
-				}
-				if err != nil {
-					fmt.Printf("torrent %s (%s): failed to download: %v\n", torrent.Id, torrent.Name, err)
-					consecutiveFail++
-					if maxConsecutiveFail >= 0 && consecutiveFail > maxConsecutiveFail {
-						log.Errorf("Abort due to too many fails to download torrent from site")
-						break mainloop
-					}
-				} else {
-					consecutiveFail = 0
-					if tinfo, err := torrentutil.ParseTorrent(torrentContent, 99); err != nil {
-						fmt.Printf("torrent %s (%s): failed to parse: %v\n", torrent.Id, torrent.Name, err)
-					} else {
-						if action == "download" {
-							if filename == "" {
-								if rename == "" {
-									filename = _filename
-								} else {
-									filename = torrentutil.RenameTorrent(rename, sitename, torrent.Id, _filename, tinfo)
-								}
-							}
-							err = os.WriteFile(filepath.Join(downloadDir, filename), torrentContent, constants.PERM)
-							if err != nil {
-								fmt.Printf("torrent %s: failed to write to %s/file %s: %v\n", torrent.Id, downloadDir, _filename, err)
+					if doDownload {
+						if filename == "" {
+							if rename == "" {
+								filename = _filename
 							} else {
-								fmt.Printf("torrent %s - %s (%s): downloaded to %s/%s\n", torrent.Id, torrent.Name,
-									util.BytesSize(float64(torrent.Size)), downloadDir, filename)
+								filename = torrentutil.RenameTorrent(rename, sitename, torrent.Id, _filename, tinfo)
 							}
-						} else if action == "add" {
-							tags := []string{}
-							tags = append(tags, clientAddFixedTags...)
-							if tinfo.IsPrivate() {
-								tags = append(tags, config.PRIVATE_TAG)
-							}
-							if torrent.HasHnR || siteInstance.GetSiteConfig().GlobalHnR {
-								tags = append(tags, config.HR_TAG)
-							}
-							clientAddTorrentOption.Tags = tags
-							if addCategoryAuto {
-								clientAddTorrentOption.Category = sitename
-							} else {
-								clientAddTorrentOption.Category = addCategory
-							}
-							if rename != "" {
-								clientAddTorrentOption.Name = torrentutil.RenameTorrent(rename, sitename, torrent.Id, _filename, tinfo)
-							}
-							err = clientInstance.AddTorrent(torrentContent, clientAddTorrentOption, nil)
-							if err != nil {
-								fmt.Printf("torrent %s (%s): failed to add to client: %v\n", torrent.Id, torrent.Name, err)
-							} else {
-								fmt.Printf("torrent %s - %s (%s) (seeders=%d, time=%s): added to client\n", torrent.Id, torrent.Name,
-									util.BytesSize(float64(torrent.Size)), torrent.Seeders, util.FormatDuration(now-torrent.Time))
-							}
+						}
+						err = os.WriteFile(filepath.Join(downloadDir, filename), torrentContent, constants.PERM)
+						if err != nil {
+							fmt.Printf("torrent %s: failed to write to %s/file %s: %v\n", torrent.Id, downloadDir, _filename, err)
+						} else {
+							fmt.Printf("torrent %s - %s (%s): downloaded to %s/%s\n", torrent.Id, torrent.Name,
+								util.BytesSize(float64(torrent.Size)), downloadDir, filename)
+						}
+					} else if addClient != "" {
+						tags := []string{}
+						tags = append(tags, clientAddFixedTags...)
+						if tinfo.IsPrivate() {
+							tags = append(tags, config.PRIVATE_TAG)
+						}
+						if torrent.HasHnR || siteInstance.GetSiteConfig().GlobalHnR {
+							tags = append(tags, config.HR_TAG)
+						}
+						clientAddTorrentOption.Tags = tags
+						if addCategoryAuto {
+							clientAddTorrentOption.Category = sitename
+						} else {
+							clientAddTorrentOption.Category = addCategory
+						}
+						if rename != "" {
+							clientAddTorrentOption.Name = torrentutil.RenameTorrent(rename, sitename, torrent.Id, _filename, tinfo)
+						}
+						err = clientInstance.AddTorrent(torrentContent, clientAddTorrentOption, nil)
+						if err != nil {
+							fmt.Printf("torrent %s (%s): failed to add to client: %v\n", torrent.Id, torrent.Name, err)
+						} else {
+							fmt.Printf("torrent %s - %s (%s) (seeders=%d, time=%s): added to client\n", torrent.Id, torrent.Name,
+								util.BytesSize(float64(torrent.Size)), torrent.Seeders, util.FormatDuration(now-torrent.Time))
 						}
 					}
 				}
@@ -542,13 +557,7 @@ mainloop:
 					saveOkFile.WriteString(torrent.Id + "\n")
 				}
 			}
-			if maxTorrents >= 0 && cntTorrents >= maxTorrents {
-				break mainloop
-			}
-			if maxTotalSize >= 0 && maxTotalSize-totalSize <= maxTotalSize/100 {
-				break mainloop
-			}
-		}
+		} // current page torrents loop
 		if onePage || marker == "" {
 			break
 		}
@@ -564,7 +573,7 @@ mainloop:
 			lastMarker, util.BytesSize(float64(totalSize)), cntTorrents,
 			util.BytesSize(float64(totalAllSize)), cntAllTorrents, marker, flowControlInterval)
 		util.Sleep(flowControlInterval)
-	}
+	} // main loop
 	doneHandle()
 	return nil
 }

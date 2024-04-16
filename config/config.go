@@ -14,7 +14,6 @@ import (
 	"sync"
 
 	"github.com/gofrs/flock"
-	"github.com/jpillora/go-tld"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
@@ -70,7 +69,7 @@ type CookiecloudConfigStruct struct {
 	Password string   `yaml:"password"`
 	Proxy    string   `yaml:"proxy"`
 	Sites    []string `yaml:"sites"`
-	Timeoout int64    `yaml:"timeout"`
+	Timeout  int64    `yaml:"timeout"`
 	Comment  string   `yaml:"comment"`
 }
 
@@ -116,6 +115,7 @@ type SiteConfigStruct struct {
 	Comment                        string     `yaml:"comment"`
 	Disabled                       bool       `yaml:"disabled"`
 	Hidden                         bool       `yaml:"hidden"` // exclude from default groups (like "_all")
+	Dead                           bool       `yaml:"dead"`   // site is (currently) dead.
 	Url                            string     `yaml:"url"`
 	Domains                        []string   `yaml:"domains"` // other site domains (do not include subdomain part)
 	TorrentsUrl                    string     `yaml:"torrentsUrl"`
@@ -127,7 +127,7 @@ type SiteConfigStruct struct {
 	Impersonate                    string     `yaml:"impersonate"`
 	HttpHeaders                    [][]string `yaml:"httpHeaders"`
 	Ja3                            string     `yaml:"ja3"`
-	Timeoout                       int64      `yaml:"timeout"`
+	Timeout                        int64      `yaml:"timeout"`
 	H2Fingerprint                  string     `yaml:"h2Fingerprint"`
 	Proxy                          string     `yaml:"proxy"`
 	Insecure                       bool       `yaml:"insecure"` // 访问站点时强制跳过TLS证书安全校验
@@ -483,7 +483,7 @@ func GetGroupSites(name string) []string {
 	if name == "_all" { // special group of all sites
 		sitenames := []string{}
 		for _, siteConfig := range Get().SitesEnabled {
-			if siteConfig.Hidden {
+			if siteConfig.Dead || siteConfig.Hidden {
 				continue
 			}
 			sitenames = append(sitenames, siteConfig.GetName())
@@ -613,11 +613,7 @@ func MatchSite(domain string, siteConfig *SiteConfigStruct) bool {
 		return false
 	}
 	if siteConfig.Url != "" {
-		u, err := tld.Parse(siteConfig.Url)
-		if err != nil {
-			return false
-		}
-		siteDomain := u.Domain + "." + u.TLD
+		siteDomain := util.GetUrlDomain(siteConfig.Url)
 		if domain == siteDomain {
 			return true
 		}

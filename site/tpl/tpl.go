@@ -38,6 +38,7 @@ var (
 			Type:    "nexusphp",
 			Url:     "https://www.3wmg.com/",
 			Comment: "芒果",
+			Dead:    true,
 		},
 		"52pt": {
 			Type:      "nexusphp",
@@ -47,7 +48,7 @@ var (
 		},
 		"aidoru-online": {
 			Type:    "torrenttrader",
-			Aliases: []string{"aidoru", "ao"},
+			Aliases: []string{"aidoruonline", "aidoru", "ao"},
 			Domains: []string{"aidoru-online.org"},
 			Url:     "https://aidoru-online.me/",
 			Comment: "Aidoru!Online",
@@ -94,6 +95,13 @@ var (
 			GlobalHnR: true,
 			Comment:   "CarPT (小车站)",
 		},
+		"crabpt": {
+			Type:              "nexusphp",
+			Url:               "https://crabpt.vip/",
+			TorrentsExtraUrls: []string{"special.php"},
+			GlobalHnR:         true,
+			Comment:           "蟹黄堡",
+		},
 		"cyanbug": {
 			Type:    "nexusphp",
 			Url:     "https://cyanbug.net/",
@@ -125,6 +133,14 @@ var (
 			Type:    "nexusphp",
 			Url:     "https://www.dragonhd.xyz/",
 			Comment: "龍之家",
+		},
+		"ecust": {
+			Type:              "nexusphp",
+			Aliases:           []string{"ecustpt"},
+			Domains:           []string{"ecustpt.eu.org"},
+			Url:               "https://pt.ecust.pp.ua/",
+			TorrentsExtraUrls: []string{"special.php"},
+			Comment:           "ECUST PT (华东理工大学)",
 		},
 		// need heavy work to support it
 		// "filelist": {
@@ -200,6 +216,7 @@ var (
 			Type:    "nexusphp",
 			Url:     "https://www.hddolby.com/",
 			Comment: "杜比",
+			Dead:    true,
 		},
 		"hdfans": {
 			Type:    "nexusphp",
@@ -377,6 +394,7 @@ var (
 			TorrentsUrl:         "torrents_new.php",
 			SelectorTorrentFree: `div:contains("免費")`,
 			Comment:             "柠檬",
+			Dead:                true,
 		},
 		"mteam": {
 			Type:                "mtorrent",
@@ -573,6 +591,7 @@ var (
 			Type:    "nexusphp",
 			Url:     "http://uploads.ltd/",
 			Comment: "Uploads 上传 | LTD 无限",
+			Dead:    true,
 		},
 		"wintersakura": {
 			Type:    "nexusphp",

@@ -75,7 +75,7 @@ func status(cmd *cobra.Command, args []string) error {
 		}
 		if showAll || showAllSites {
 			for _, site := range config.Get().SitesEnabled {
-				if site.Hidden {
+				if site.Dead || site.Hidden {
 					continue
 				}
 				names = append(names, site.GetName())

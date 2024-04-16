@@ -497,10 +497,10 @@ ptool search <sites> <keyword>
 ptool batchdl <site>
 
 # 下载找到的种子到当前目录
-ptool batchdl <site> --action download
+ptool batchdl <site> --download
 
 # 直接将种子添加到 "local" BT 客户端里
-ptool batchdl <site> --action add --add-client local
+ptool batchdl <site> --add-client local
 ```
 
 此命令提供非常多的配置参数。部分常用参数：
@@ -537,10 +537,10 @@ ptool verifytorrent <torrentFileNameOrIdOrUrl>...
 - `--save-path` : 种子内容保存路径(下载文件夹)。可以用于校验多个 torrent 文件。
 - `--content-path` : 种子内容路径(root folder 或单文件种子的文件路径)。只能用于校验 1 个 torrent 文件。
 - `--use-comment-meta` : 读取并使用种子 .torrent 文件的 comment 字段里存储的 save_path 信息。设计用于配合其它命令(例如 `ptool export`)使用。
-- `--rclone-lsjson-filename` : 元信息索引文件名，其内容为 [rclone][] 的 `rclone lsjson --recursive <path>` 命令输出。rclone 的 `<path>` 被认为是种子内容的保存路径。参考 [rclone lsjson][] 命令的文档。
-- `--rclone-save-path` : 类似 `--rclone-lsjson-filename`，但直接指定 `<path>` 路径。ptool 将运行 `rclone lsjson` 并读取其输出。E.g.: "remote:Downloads"。
+- `--rclone-lsjson-file` : 元信息索引文件名，其内容为 [rclone][] 的 `rclone lsjson --recursive <path>` 命令输出。rclone 的 `<path>` 被认为是种子内容的保存路径。参考 [rclone lsjson][] 命令的文档。
+- `--rclone-save-path` : 类似 `--rclone-lsjson-file`，但直接指定 `<path>` 路径。ptool 将运行 `rclone lsjson` 并读取其输出。E.g.: "remote:Downloads"。
 
-`--rclone-lsjson-filename` 和 `--rclone-save-path` 参数的设计目的是用于检测种子的内容文件在云存储上是否存在。
+`--rclone-lsjson-file` 和 `--rclone-save-path` 参数的设计目的是用于检测种子的内容文件在云存储上是否存在。
 
 其它参数：
 

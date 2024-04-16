@@ -127,7 +127,7 @@ func configcmd(cmd *cobra.Command, args []string) error {
 	}
 	fmt.Printf("\n")
 
-	fmt.Printf(`Sites: (internal: *) (test: "ptool status <name> -t")` + "\n")
+	fmt.Printf(`Sites: (internal: *; hidden: _) (test: "ptool status <name> -t")` + "\n")
 	fmt.Printf("%-15s  %-15s  %-15s  %-s\n", "Name", "Type", "Flags", "Note")
 	emptyFlag = true
 	for _, siteConfig := range sites {
@@ -140,9 +140,12 @@ func configcmd(cmd *cobra.Command, args []string) error {
 				break
 			}
 		}
+		if siteConfig.Hidden {
+			flags = append(flags, "_")
+		}
 		if siteInstance, err := site.CreateSite(siteConfig.GetName()); err != nil {
 			flags = append(flags, "<error>")
-			note = fmt.Sprintf("%v", err)
+			note = fmt.Sprintf("! %v", err)
 		} else {
 			note = siteInstance.GetSiteConfig().Url
 			if util.ContainsI(note, filter) {
@@ -211,6 +214,8 @@ func configcmd(cmd *cobra.Command, args []string) error {
 	}
 	fmt.Printf("\n")
 
-	fmt.Printf(`To display effective config of a site / client / other..., run "ptool config show <name>"` + "\n\n")
+	fmt.Printf(`// To display effective config of a site / client / other..., run "ptool config show <name>"` + "\n")
+	fmt.Printf(`// To display default config of a internal (*) site, run "ptool sites show <type>"` + "\n")
+	fmt.Printf("\n")
 	return nil
 }

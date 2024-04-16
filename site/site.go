@@ -14,6 +14,7 @@ import (
 	"golang.org/x/term"
 
 	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/util"
 	"github.com/sagan/ptool/util/crypto"
 	"github.com/sagan/ptool/util/impersonateutil"
@@ -359,11 +360,16 @@ func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, globalConfig *con
 		proxy = util.ParseProxyFromEnv(siteConfig.Url)
 	}
 	insecure := !siteConfig.Secure && (siteConfig.Insecure || globalConfig.SiteInsecure)
-	timeout := config.DEFAULT_SITE_TIMEOUT
-	if siteConfig.Timeoout > 0 {
-		timeout = siteConfig.Timeoout
-	} else if globalConfig.SiteTimeout > 0 {
+	timeout := int64(0)
+	if siteConfig.Timeout != 0 {
+		timeout = siteConfig.Timeout
+	} else if globalConfig.SiteTimeout != 0 {
 		timeout = globalConfig.SiteTimeout
+	}
+	if timeout == 0 {
+		timeout = config.DEFAULT_SITE_TIMEOUT
+	} else if timeout < 0 {
+		timeout = constants.INFINITE_TIMEOUT
 	}
 	if ja3 == config.NONE {
 		ja3 = ""

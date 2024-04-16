@@ -1,13 +1,10 @@
 package add
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"os"
 	"strings"
 
-	"github.com/google/shlex"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -25,13 +22,9 @@ var command = &cobra.Command{
 	Aliases:     []string{"addlocal"},
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "add"},
 	Short:       "Add torrents to client.",
-	Long: `Add torrents to client.
-First arg is client. The following args is torrent list that each one could be
-a local filename (e.g. "*.torrent" or "[M-TEAM]CLANNAD.torrent"),
-site torrent id (e.g.: "mteam.488424") or url (e.g.: "https://kp.m-team.cc/details.php?id=488424").
-Torrent url that does NOT belong to any site (e.g.: a public site url), as well as "magnet:" link, is also supported.
-Use a single "-" as args to read torrent (id or url) list from stdin, delimited by blanks,
-as a special case, it also supports directly reading .torrent file contents from stdin.
+	Long: fmt.Sprintf(`Add torrents to client.
+First arg is client. The following args is the args list.
+%s.
 
 To set the name of added torrent in client, use --rename <name> flag,
 which supports the following variable placeholders:
@@ -49,6 +42,7 @@ Flags:
 If --use-comment-meta flag is set, ptool will extract torrent's category & tags & savePath meta info
 from the 'comment' field of .torrent file (parsed in json format: '{tags, category, save_path}').
 The "ptool export" command has the same flag that saves meta info to 'comment' field when exporting torrents.`,
+		constants.HELP_TORRENT_ARGS),
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	RunE: add,
 }
@@ -103,23 +97,9 @@ func add(cmd *cobra.Command, args []string) error {
 	if renameAdded && deleteAdded {
 		return fmt.Errorf("--rename-added and --delete-added flags are NOT compatible")
 	}
-	// directly read a torrent content from stdin.
-	stdinTorrentContents := []byte{}
-	torrents := util.ParseFilenameArgs(args[1:]...)
-	if len(torrents) == 1 && torrents[0] == "-" {
-		if config.InShell {
-			return fmt.Errorf(`"-" arg can not be used in shell`)
-		}
-		if stdin, err := io.ReadAll(os.Stdin); err != nil {
-			return fmt.Errorf("failed to read stdin: %v", err)
-		} else if bytes.HasPrefix(stdin, []byte(constants.TORRENT_FILE_MAGIC_NUMBER)) ||
-			bytes.HasPrefix(stdin, []byte(constants.TORRENT_FILE_MAGIC_NUMBER2)) {
-			stdinTorrentContents = stdin
-		} else if data, err := shlex.Split(string(stdin)); err != nil {
-			return fmt.Errorf("failed to parse stdin to tokens: %v", err)
-		} else {
-			torrents = data
-		}
+	torrents, stdinTorrentContents, err := helper.ParseTorrentsFromArgs(args)
+	if err != nil {
+		return err
 	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {

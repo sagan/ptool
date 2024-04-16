@@ -16,8 +16,6 @@ func init() {
 		}
 		if info.LastArgIsFlag {
 			switch info.LastArgFlag {
-			case "action":
-				return suggest.EnumFlagArg(info.MatchingPrefix, ActionEnumFlag)
 			case "add-client":
 				return suggest.ClientArg(info.MatchingPrefix)
 			case "order":

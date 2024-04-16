@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -145,16 +146,33 @@ func AppendUrlQueryString(url string, qs string) string {
 	return url + qs
 }
 
-// return (top-level) domain of a url. e.g.: https://www.google.com/ => google.com
-func GetUrlDomain(url string) string {
-	if url == "" {
+var nonTldSiteDomains = map[string][]string{
+	"eu.org": {"ecustpt.eu.org"},
+	"pp.ua":  {"ecust.pp.ua"},
+}
+
+// Return (top-level) domain of a url. e.g.: https://www.google.com/ => google.com.
+// Very few PT sites do NOT use top-level domain, url of those sites are handled specially,
+// with their (second level) site domain returned.
+func GetUrlDomain(urlStr string) string {
+	if urlStr == "" {
 		return ""
 	}
-	u, err := tld.Parse(url)
+	u, err := tld.Parse(urlStr)
 	if err != nil {
 		return ""
 	}
-	return u.Domain + "." + u.TLD
+	domain := u.Domain + "." + u.TLD
+	if nonTldSiteDomains[domain] != nil {
+		if urlObj, err := url.Parse(urlStr); err == nil {
+			for _, domain := range nonTldSiteDomains[domain] {
+				if urlObj.Hostname() == domain || strings.HasSuffix(urlObj.Hostname(), "."+domain) {
+					return domain
+				}
+			}
+		}
+	}
+	return domain
 }
 
 var sizeStrRegex = regexp.MustCompile(`(?P<size>[0-9,]{1,}(.[0-9,]{1,})?\s*[kbgtpeKMGTPE][iI]?[bB]+)`)

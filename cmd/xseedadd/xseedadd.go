@@ -21,11 +21,9 @@ var command = &cobra.Command{
 	Use:         "xseedadd {client} {torrentFilename | torrentId | torrentUrl}...",
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "xseedadd"},
 	Short:       "Add xseed torrents to client.",
-	Long: `Add xseed torrents to client.
-Args is torrent list that each one could be a local filename (e.g. "*.torrent" or "[M-TEAM]CLANNAD.torrent"),
-site torrent id (e.g.: "mteam.488424") or url (e.g.: "https://kp.m-team.cc/details.php?id=488424").
-Torrent url that does NOT belong to any site (e.g.: a public site url) is also supported.
-Use a single "-" to read .torrent file contents from stdin.
+	Long: fmt.Sprintf(`Add xseed torrents to client.
+First arg is client. The following args is the args list.
+%s.
 
 For every torrent in the list (the "xseed torrent"), it will try to find the existing target torrent in the client,
 and add this torrent to the client as the corresponding xseed torrent of the target torrent.
@@ -33,7 +31,7 @@ To be qualified as the target torrent, the existing torrent must have the same c
 with this xseed torrent, is fullly completed downloaded, and is in seeding state currently.
 If no target torrent for a xseed torrent is found in the client, it will NOT add the xseed torrent to client.
 
-If a torrent of the list already exists in client, it will also be skipped.`,
+If a torrent of the list already exists in client, it will also be skipped.`, constants.HELP_TORRENT_ARGS),
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	RunE: xseedadd,
 }
@@ -77,7 +75,10 @@ func xseedadd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("--rename-added and --delete-added flags are NOT compatible")
 	}
 	clientName := args[0]
-	torrents := util.ParseFilenameArgs(args[1:]...)
+	torrents, stdinTorrentContents, err := helper.ParseTorrentsFromArgs(args[1:])
+	if err != nil {
+		return err
+	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
 		return fmt.Errorf("failed to create client: %v", err)
@@ -115,7 +116,7 @@ func xseedadd(cmd *cobra.Command, args []string) error {
 	errorCnt := int64(0)
 	for _, torrent := range torrents {
 		content, tinfo, _, sitename, _, _, isLocal, err :=
-			helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, nil, false, nil)
+			helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, stdinTorrentContents, false, nil)
 		if err != nil {
 			fmt.Printf("X%s: failed to get: %v\n", torrent, err)
 			errorCnt++

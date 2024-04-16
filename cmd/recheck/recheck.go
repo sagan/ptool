@@ -8,6 +8,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/util"
 	"github.com/sagan/ptool/util/helper"
 )
@@ -16,10 +17,8 @@ var command = &cobra.Command{
 	Use:         "recheck {client} [--category category] [--tag tag] [--filter filter] [infoHash]...",
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "recheck"},
 	Short:       "Recheck torrents of client.",
-	Long: `Recheck torrents of client.
-[infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
-_all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.
-Specially, use a single "-" as args to read infoHash list from stdin, delimited by blanks.`,
+	Long: fmt.Sprintf(`Recheck torrents of client.
+%s.`, constants.HELP_INFOHASH_ARGS),
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: recheck,
 }
@@ -47,15 +46,10 @@ func recheck(cmd *cobra.Command, args []string) error {
 	if category != "" || tag != "" || filter != "" {
 		infohashesOnly = false
 	} else {
-		// special case. read info hashes from stdin
-		if len(infoHashes) == 1 && infoHashes[0] == "-" {
-			if data, err := helper.ReadArgsFromStdin(); err != nil {
-				return fmt.Errorf("failed to parse stdin to info hashes: %v", err)
-			} else if len(data) == 0 {
-				return nil
-			} else {
-				infoHashes = data
-			}
+		if _infoHashes, err := helper.ParseInfoHashesFromArgs(infoHashes); err != nil {
+			return err
+		} else {
+			infoHashes = _infoHashes
 		}
 		for _, infoHash := range infoHashes {
 			if !client.IsValidInfoHash(infoHash) {
@@ -93,7 +87,7 @@ func recheck(cmd *cobra.Command, args []string) error {
 		for _, torrent := range torrents {
 			size += torrent.Size
 		}
-		if !util.AskYesNoConfirm(fmt.Sprintf(
+		if !helper.AskYesNoConfirm(fmt.Sprintf(
 			"Will recheck %d (%s) torrents. Note the checking process can NOT be stopped once started",
 			len(torrents), util.BytesSizeAround(float64(size)))) {
 			return fmt.Errorf("abort")

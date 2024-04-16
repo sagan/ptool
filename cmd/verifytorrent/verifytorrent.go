@@ -20,15 +20,13 @@ import (
 
 var command = &cobra.Command{
 	Use: "verifytorrent {torrentFilename | torrentId | torrentUrl}... " +
-		"{--save-path dir | --content-path path | --use-comment-meta} [--check | --check-quick]",
+		"{--save-path dir | --content-path path | --use-comment-meta | --rclone-lsjson-file file | " +
+		"--rclone-save-path path} [--check | --check-quick]",
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "verifytorrent"},
 	Aliases:     []string{"verify"},
 	Short:       "Verify torrent file(s) are consistent with local disk contents.",
-	Long: `Verify torrent file(s) are consistent with local disk contents.
-Args is torrent list that each one could be a local filename (e.g. "*.torrent" or "[M-TEAM]CLANNAD.torrent"),
-site torrent id (e.g.: "mteam.488424") or url (e.g.: "https://kp.m-team.cc/details.php?id=488424").
-Torrent url that does NOT belong to any site (e.g.: a public site url) is also supported.
-Use a single "-" to read .torrent file contents from stdin.
+	Long: fmt.Sprintf(`Verify torrent file(s) are consistent with local disk contents.
+%s.
 
 Example:
 ptool verifytorrent file1.torrent file2.torrent --save-path /root/Downloads
@@ -42,22 +40,22 @@ Exact one (not less or more) of the following flags must be set.
   It can only be used with single torrent arg.
 * --use-comment-meta : extract save path from torrent's comment field and use it.
   The "ptool export" and some other cmds can use the same flag to write save path to generated torrent files.
-* --rclone-lsjson-filename : The filename of index contents that "rclone lsjson --recursive <path>" outputs
-  ptool treat <path> as the save path of torrent contents and verify torrents against the index contents.
+* --rclone-lsjson-file : The filename of index contents that "rclone lsjson --recursive <path>" outputs
+  ptool treats <path> as the save path of torrent contents and verify torrents against the index contents.
   For more, see https://github.com/rclone/rclone and https://rclone.org/commands/rclone_lsjson/ .
-* --rclone-save-path : The rclone "save path". Instead of reading from --rclone-lsjson-filename file, 
+* --rclone-save-path : The rclone "save path". Instead of reading from --rclone-lsjson-file file, 
   ptool will directly execute "rclone lsjson --recursive <rclone-save-path>"
   and use it's output as index contents. E.g. "remote:Downloads".
 
 By default it will only examine file meta infos (file path & size).
-If --check flag is set, it will also do the hash checking.`,
+If --check flag is set, it will also do the hash checking.`, constants.HELP_TORRENT_ARGS),
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: verifytorrent,
 }
 
 var (
 	renameOk             = false
-	renameFailed         = false
+	renameFail           = false
 	useComment           = false
 	checkHash            = false
 	checkQuick           = false
@@ -75,7 +73,7 @@ var (
 func init() {
 	command.Flags().BoolVarP(&renameOk, "rename-ok", "", false,
 		"Rename verification successed torrent file to *"+constants.FILENAME_SUFFIX_OK)
-	command.Flags().BoolVarP(&renameFailed, "rename-fail", "", false,
+	command.Flags().BoolVarP(&renameFail, "rename-fail", "", false,
 		"Rename verification failed torrent file to *"+constants.FILENAME_SUFFIX_FAIL)
 	command.Flags().BoolVarP(&useComment, "use-comment-meta", "", false,
 		"Extract save path from 'comment' field of .torrent file and verify against it")
@@ -89,8 +87,8 @@ func init() {
 		"The path of torrent content. Can only be used with single torrent arg")
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of torrent url")
 	command.Flags().StringVarP(&savePath, "save-path", "", "", `The "Downloads" folder, save path of torrent contents.`)
-	command.Flags().StringVarP(&rcloneLsjsonFilename, "rclone-lsjson-filename", "", "",
-		`The "rclone lsjson --recursive <path>" output filename, ptool treat <path> as the save path of torrent contents`)
+	command.Flags().StringVarP(&rcloneLsjsonFilename, "rclone-lsjson-file", "", "",
+		`The "rclone lsjson --recursive <path>" output filename, ptool treats <path> as the save path of torrent contents`)
 	command.Flags().StringVarP(&rcloneSavePath, "rclone-save-path", "", "",
 		`The rclone save path of "Downloads" folder, ptool will execute "rclone lsjson --recursive <rclone-save-path>" `+
 			`and read it's output. E.g. "remote:Downloads"`)
@@ -104,7 +102,7 @@ func init() {
 func verifytorrent(cmd *cobra.Command, args []string) error {
 	if util.CountNonZeroVariables(useComment, savePath, contentPath, rcloneSavePath, rcloneLsjsonFilename) != 1 {
 		return fmt.Errorf("exact one (not less or more) of the --use-comment-meta, --save-path, --content-path, " +
-			"--rclone-save-path and --rclone-lsjson-filename flags must be set")
+			"--rclone-save-path and --rclone-lsjson-file flags must be set")
 	}
 	if rcloneSavePath != "" || rcloneLsjsonFilename != "" {
 		if checkHash || checkQuick {
@@ -115,8 +113,10 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("--check and --check-quick flags are NOT compatible")
 		}
 	}
-
-	torrents := util.ParseFilenameArgs(args...)
+	torrents, stdinTorrentContents, err := helper.ParseTorrentsFromArgs(args)
+	if err != nil {
+		return err
+	}
 	if len(torrents) > 1 && contentPath != "" {
 		return fmt.Errorf("--content-path flag can only be used to verify single torrent")
 	}
@@ -165,7 +165,7 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 			fmt.Printf("\n")
 		}
 		_, tinfo, _, _, _, _, isLocal, err :=
-			helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, nil, false, nil)
+			helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, stdinTorrentContents, false, nil)
 		if err != nil {
 			fmt.Printf("X torrent %s: failed to get: %v\n", torrent, err)
 			errorCnt++
@@ -199,21 +199,17 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 			fmt.Printf("X torrent %s: contents do NOT match with disk content(s) (hash check = %s): %v\n",
 				torrent, checkModeStr, err)
 			errorCnt++
-			if isLocal && torrent != "-" {
-				if renameFailed && !strings.HasSuffix(torrent, constants.FILENAME_SUFFIX_FAIL) {
-					if err := os.Rename(torrent, util.TrimAnySuffix(torrent,
-						constants.ProcessedFilenameSuffixes...)+constants.FILENAME_SUFFIX_FAIL); err != nil {
-						log.Debugf("Failed to rename %s to *%s: %v", torrent, constants.FILENAME_SUFFIX_FAIL, err)
-					}
+			if isLocal && torrent != "-" && renameFail && !strings.HasSuffix(torrent, constants.FILENAME_SUFFIX_FAIL) {
+				if err := os.Rename(torrent, util.TrimAnySuffix(torrent,
+					constants.ProcessedFilenameSuffixes...)+constants.FILENAME_SUFFIX_FAIL); err != nil {
+					log.Debugf("Failed to rename %s to *%s: %v", torrent, constants.FILENAME_SUFFIX_FAIL, err)
 				}
 			}
 		} else {
-			if isLocal && torrent != "-" {
-				if renameOk && !strings.HasSuffix(torrent, constants.FILENAME_SUFFIX_OK) {
-					if err := os.Rename(torrent, util.TrimAnySuffix(torrent,
-						constants.ProcessedFilenameSuffixes...)+constants.FILENAME_SUFFIX_OK); err != nil {
-						log.Debugf("Failed to rename %s to *%s: %v", torrent, constants.FILENAME_SUFFIX_OK, err)
-					}
+			if isLocal && torrent != "-" && renameOk && !strings.HasSuffix(torrent, constants.FILENAME_SUFFIX_OK) {
+				if err := os.Rename(torrent, util.TrimAnySuffix(torrent,
+					constants.ProcessedFilenameSuffixes...)+constants.FILENAME_SUFFIX_OK); err != nil {
+					log.Debugf("Failed to rename %s to *%s: %v", torrent, constants.FILENAME_SUFFIX_OK, err)
 				}
 			}
 			fmt.Printf("✓ torrent %s: contents match with disk content(s) (hash check = %s)\n", torrent, checkModeStr)

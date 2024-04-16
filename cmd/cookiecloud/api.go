@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/util"
 	"github.com/sagan/ptool/util/crypto"
 )
@@ -52,6 +53,8 @@ func GetCookiecloudData(server string, uuid string, password string,
 	}
 	if timeout == 0 {
 		timeout = config.DEFAULT_COOKIECLOUD_TIMEOUT
+	} else if timeout < 0 {
+		timeout = constants.INFINITE_TIMEOUT
 	}
 	httpClient := &http.Client{
 		Timeout: time.Duration(timeout) * time.Second,

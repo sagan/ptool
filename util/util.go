@@ -15,7 +15,6 @@ import (
 	"reflect"
 	"regexp"
 	"slices"
-	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -165,94 +164,6 @@ func GetNewFilename(filename string) string {
 		filenameWithId := fmt.Sprintf("%s (%d)", filename, id)
 		if _, err := os.Stat(filenameWithId); errors.Is(err, os.ErrNotExist) {
 			return filenameWithId
-		}
-	}
-}
-
-// "*.torrent" => ["a.torrent", "b.torrent"...].
-// Return filestr untouched if it does not contains wildcard char.
-// Windows cmd / powershell 均不支持命令行 *.torrent 参数扩展。必须应用自己实现。做个简易版的
-func GetWildcardFilenames(filestr string) []string {
-	if !strings.ContainsAny(filestr, "*") {
-		return nil
-	}
-	dir := filepath.Dir(filestr)
-	name := filepath.Base(filestr)
-	ext := filepath.Ext(name)
-	if ext != "" {
-		name = name[:len(name)-len(ext)]
-	}
-	prefix := ""
-	suffix := ""
-	exact := ""
-	index := strings.Index(name, "*")
-	if index != -1 {
-		prefix = name[:index]
-		suffix = name[index+1:]
-	} else {
-		exact = name
-	}
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return nil
-	}
-	filenames := []string{}
-	for _, entry := range entries {
-		entryName := entry.Name()
-		entryExt := filepath.Ext(entryName)
-		if ext != "" {
-			if entryExt == "" || (entryExt != ext && ext != ".*") {
-				continue
-			}
-			entryName = entryName[:len(entryName)-len(entryExt)]
-		}
-		if exact != "" && entryName != exact {
-			continue
-		}
-		if prefix != "" && !strings.HasPrefix(entryName, prefix) {
-			continue
-		}
-		if suffix != "" && !strings.HasSuffix(entryName, suffix) {
-			continue
-		}
-		filenames = append(filenames, dir+"/"+entry.Name())
-	}
-	return filenames
-}
-
-func ParseFilenameArgs(args ...string) []string {
-	names := []string{}
-	for _, arg := range args {
-		filenames := GetWildcardFilenames(arg)
-		if filenames == nil {
-			names = append(names, arg)
-		} else {
-			names = append(names, filenames...)
-		}
-	}
-	return names
-}
-
-// Ask user to confirm an (dangerous) action via typing yes in tty
-func AskYesNoConfirm(prompt string) bool {
-	if prompt == "" {
-		prompt = "Will do the action"
-	}
-	fmt.Printf("%s, are you sure? (yes/no): ", prompt)
-	for {
-		input := ""
-		fmt.Scanf("%s\n", &input)
-		switch input {
-		case "yes", "YES", "Yes":
-			return true
-		case "n", "N", "no", "NO", "No":
-			return false
-		default:
-			if len(input) > 0 {
-				fmt.Printf("Respond with yes or no (Or use Ctrl+C to abort): ")
-			} else {
-				return false
-			}
 		}
 	}
 }

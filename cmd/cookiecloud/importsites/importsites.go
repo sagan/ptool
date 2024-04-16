@@ -13,6 +13,7 @@ import (
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/site/tpl"
 	"github.com/sagan/ptool/util"
+	"github.com/sagan/ptool/util/helper"
 )
 
 var (
@@ -61,7 +62,7 @@ func importsites(cmd *cobra.Command, args []string) error {
 	cookiecloudDatas := []cookiecloud.Ccdata_struct{}
 	for _, profile := range cookiecloudProfiles {
 		data, err := cookiecloud.GetCookiecloudData(profile.Server, profile.Uuid, profile.Password,
-			profile.Proxy, profile.Timeoout)
+			profile.Proxy, profile.Timeout)
 		if err != nil {
 			log.Errorf("Cookiecloud server %s (uuid %s) connection failed: %v\n", profile.Server, profile.Uuid, err)
 			errorCnt++
@@ -98,8 +99,8 @@ func importsites(cmd *cobra.Command, args []string) error {
 			if tplExistingFlags[tplname] {
 				continue
 			}
-			if tpl.SITES[tplname].NoCookie {
-				log.Debugf("Internal site %s does NOT use cookie authorization, skip it", tplname)
+			if tpl.SITES[tplname].Dead || tpl.SITES[tplname].NoCookie {
+				log.Debugf("Internal site %s is dead or does not use cookie authorization, skip it", tplname)
 				continue
 			}
 			cookie, rawCookies, _ := cookiecloudData.Data.GetEffectiveCookie(tpl.SITES[tplname].Url, false, "http")
@@ -147,7 +148,7 @@ func importsites(cmd *cobra.Command, args []string) error {
 				Name:   sitename,
 				Type:   tplname,
 				Cookie: cookie,
-				AutoComment: fmt.Sprintf(`imported by "ptool cookiecloue import" at %s from cookiecloud %s`,
+				AutoComment: fmt.Sprintf(`imported by "ptool cookiecloud import" at %s from cookiecloud %s`,
 					nowStr, cookiecloudData.Label),
 			})
 			tplExistingFlags[tplname] = true
@@ -164,7 +165,7 @@ func importsites(cmd *cobra.Command, args []string) error {
 				return sitename
 			}), ", "))
 		configFile := fmt.Sprintf("%s/%s", config.ConfigDir, config.ConfigFile)
-		if !force && !util.AskYesNoConfirm(
+		if !force && !helper.AskYesNoConfirm(
 			fmt.Sprintf("Will update the config file (%s). Be aware that all existing comments will be LOST",
 				configFile)) {
 			return fmt.Errorf("abort")

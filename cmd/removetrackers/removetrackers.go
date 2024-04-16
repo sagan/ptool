@@ -9,6 +9,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/util"
 	"github.com/sagan/ptool/util/helper"
 )
@@ -18,16 +19,14 @@ var command = &cobra.Command{
 	Aliases:     []string{"removetracker"},
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "removetrackers"},
 	Short:       "Remove trackers from torrents of client.",
-	Long: `Remove trackers from torrents of client.
-[infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
-_all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.
-Specially, use a single "-" as args to read infoHash list from stdin, delimited by blanks.
+	Long: fmt.Sprintf(`Remove trackers from torrents of client.
+%s.
 
 Example:
 ptool removetrackers <client> <infoHashes...> --tracker "https://..."
 The --tracker flag can be set many times.
 
-It will ask for confirmation, unless --force flag is set.`,
+It will ask for confirmation, unless --force flag is set.`, constants.HELP_INFOHASH_ARGS),
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: removetrackers,
 }
@@ -56,17 +55,10 @@ func removetrackers(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
 	infoHashes := args[1:]
 	if category == "" && tag == "" && filter == "" {
-		if len(infoHashes) == 0 {
-			return fmt.Errorf("you must provide at least a condition flag or hashFilter")
-		}
-		if len(infoHashes) == 1 && infoHashes[0] == "-" {
-			if data, err := helper.ReadArgsFromStdin(); err != nil {
-				return fmt.Errorf("failed to parse stdin to info hashes: %v", err)
-			} else if len(data) == 0 {
-				return nil
-			} else {
-				infoHashes = data
-			}
+		if _infoHashes, err := helper.ParseInfoHashesFromArgs(infoHashes); err != nil {
+			return err
+		} else {
+			infoHashes = _infoHashes
 		}
 	}
 	if len(trackers) == 0 {
@@ -93,7 +85,7 @@ func removetrackers(cmd *cobra.Command, args []string) error {
 	if !force {
 		client.PrintTorrents(torrents, "", 1, false)
 		fmt.Printf("\n")
-		if !util.AskYesNoConfirm(fmt.Sprintf(
+		if !helper.AskYesNoConfirm(fmt.Sprintf(
 			`Will update above %d torrents, remove the following trackers from them:
 -----
 %s

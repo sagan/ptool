@@ -57,7 +57,11 @@ func fetchClientStatus(clientInstance client.Client, showTorrents bool, showAllT
 
 func fetchSiteStatus(siteInstance site.Site, showTorrents bool, full bool, showScore bool, ch chan *StatusResponse) {
 	response := &StatusResponse{Name: siteInstance.GetName(), Kind: 2}
-
+	// if siteInstance.GetSiteConfig().Dead {
+	// 	response.Error = fmt.Errorf("skip site %s: site is dead", siteInstance.GetName())
+	// 	ch <- response
+	// 	return
+	// }
 	SiteStatus, err := siteInstance.GetStatus()
 	response.SiteStatus = SiteStatus
 	if err != nil {

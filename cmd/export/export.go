@@ -21,10 +21,8 @@ var command = &cobra.Command{
 	Use:         "export {client} [--category category] [--tag tag] [--filter filter] [infoHash]...",
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "export"},
 	Short:       "Export and download torrents of client to .torrent files.",
-	Long: `Export and download torrents of client to .torrent files.
-[infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
-_all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.
-Specially, use a single "-" as args to read infoHash list from stdin, delimited by blanks.
+	Long: fmt.Sprintf(`Export and download torrents of client to .torrent files.
+%s.
 
 To set the filename of downloaded torrent, use --rename <name> flag,
 which supports the following variable placeholders:
@@ -40,7 +38,7 @@ If --use-comment-meta flag is set, ptool will export torrent's current category 
 and save them to the 'comment' field of exported .torrent file in JSON format ('{tags, category, save_path}').
 The "ptool add" command has the same flag that extracts and applies meta info from 'comment' when adding torrents.
 
-It will overwrite any existing file on disk with the same name.`,
+It will overwrite any existing file on disk with the same name.`, constants.HELP_INFOHASH_ARGS),
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: export,
 }
@@ -76,17 +74,10 @@ func export(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
 	infoHashes := args[1:]
 	if category == "" && tag == "" && filter == "" {
-		if len(infoHashes) == 0 {
-			return fmt.Errorf("you must provide at least a condition flag or hashFilter")
-		}
-		if len(infoHashes) == 1 && infoHashes[0] == "-" {
-			if data, err := helper.ReadArgsFromStdin(); err != nil {
-				return fmt.Errorf("failed to parse stdin to info hashes: %v", err)
-			} else if len(data) == 0 {
-				return nil
-			} else {
-				infoHashes = data
-			}
+		if _infoHashes, err := helper.ParseInfoHashesFromArgs(infoHashes); err != nil {
+			return err
+		} else {
+			infoHashes = _infoHashes
 		}
 	}
 	if exportSkipExisting && rename != config.DEFAULT_EXPORT_TORRENT_RENAME {

@@ -150,8 +150,14 @@ func (meta *TorrentMeta) Print(name string, showAll bool) {
 	} else if site := public.GetSiteByDomain("", meta.Trackers...); site != nil {
 		sitenameStr = fmt.Sprintf(" (site: %s)", site.Name)
 	}
-	fmt.Printf("%s : infohash = %s ; size = %s (%d) ; tracker = %s%s\n",
-		name, meta.InfoHash, util.BytesSize(float64(meta.Size)), len(meta.Files), trackerUrl, sitenameStr)
+	rootFile := "" // root folder or single content file
+	if meta.SingleFileTorrent {
+		rootFile = meta.Files[0].Path
+	} else if meta.RootDir != "" {
+		rootFile = meta.RootDir + "/"
+	}
+	fmt.Printf("%s : infohash = %s ; size = %s (%d) ; root = %q ; tracker = %s%s\n", name, meta.InfoHash,
+		util.BytesSize(float64(meta.Size)), len(meta.Files), rootFile, trackerUrl, sitenameStr)
 	if showAll {
 		comments := []string{}
 		if meta.MetaInfo.Comment != "" {

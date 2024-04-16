@@ -97,6 +97,7 @@ var pureFlags = []string{
 	"rename-ok",
 	"one-page",
 	"original-order",
+	"save-append",
 	"sequential-download",
 	"show-files",
 	"show-id-only",

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -135,7 +136,7 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 		}
 		filename := ""
 		if downloadSkipExisting && sitename != "" && id != "" {
-			filename = fmt.Sprintf("%s.%s.torrent", sitename, id)
+			filename = fmt.Sprintf("%s.%s.torrent", sitename, strings.TrimPrefix(id, sitename+"."))
 		} else if rename == "" {
 			filename = _filename
 		} else {

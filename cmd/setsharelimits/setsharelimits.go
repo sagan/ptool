@@ -7,6 +7,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/util"
 	"github.com/sagan/ptool/util/helper"
 )
@@ -16,15 +17,13 @@ var command = &cobra.Command{
 		"{--ratio-limit limit} {--seeding-time-limit limit} [infoHash]...",
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "setcategory"},
 	Short:       "Set share limits of torrents in client.",
-	Long: `Set share limits of torrents in client.
-[infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
-_all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.
-Specially, use a single "-" as args to read infoHash list from stdin, delimited by blanks.
+	Long: fmt.Sprintf(`Set share limits of torrents in client.
+%s.
 
 At least one of the following flags must be set:
 * --ratio-limit : qb ratioLimit. For now, -2 means the global limit should be used, -1 means no limit.
 * --seeding-time-limit : qb seedingTimeLimit (but in seconds instead of minutes).
-  For now, -2 means the global limit should be used, -1 means no limit.`,
+  For now, -2 means the global limit should be used, -1 means no limit.`, constants.HELP_INFOHASH_ARGS),
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	RunE: setsharelimits,
 }
@@ -56,17 +55,10 @@ func setsharelimits(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf(`at least one of --ratio-limit and --seeding-time-limit flags must be set`)
 	}
 	if category == "" && tag == "" && filter == "" {
-		if len(infoHashes) == 0 {
-			return fmt.Errorf("you must provide at least a condition flag or hashFilter")
-		}
-		if len(infoHashes) == 1 && infoHashes[0] == "-" {
-			if data, err := helper.ReadArgsFromStdin(); err != nil {
-				return fmt.Errorf("failed to parse stdin to info hashes: %v", err)
-			} else if len(data) == 0 {
-				return nil
-			} else {
-				infoHashes = data
-			}
+		if _infoHashes, err := helper.ParseInfoHashesFromArgs(infoHashes); err != nil {
+			return err
+		} else {
+			infoHashes = _infoHashes
 		}
 	}
 	clientInstance, err := client.CreateClient(clientName)
