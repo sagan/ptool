@@ -1,6 +1,7 @@
 package util
 
 import (
+	"bytes"
 	"crypto/sha1"
 	"encoding/hex"
 	"errors"
@@ -306,4 +307,13 @@ func CountNonZeroVariables(vars ...any) (cnt int) {
 		}
 	}
 	return
+}
+
+func BytesHasAnyStringPrefix(data []byte, prefixes ...string) bool {
+	for _, prefix := range prefixes {
+		if bytes.HasPrefix(data, []byte(prefix)) {
+			return true
+		}
+	}
+	return false
 }

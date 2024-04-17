@@ -40,7 +40,7 @@ Flags:
 * --ratio-limit & --seeding-time-limit : See help of "ptool setsharelimits" cmd for more info
 
 If --use-comment-meta flag is set, ptool will extract torrent's category & tags & savePath meta info
-from the 'comment' field of .torrent file (parsed in json format: '{tags, category, save_path}').
+from the 'comment' field of .torrent file (parsed in json '{tags, category, save_path, comment}' format).
 The "ptool export" command has the same flag that saves meta info to 'comment' field when exporting torrents.`,
 		constants.HELP_TORRENT_ARGS),
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
@@ -69,7 +69,7 @@ var (
 func init() {
 	command.Flags().BoolVarP(&slowMode, "slow", "", false, "Slow mode. wait after adding each torrent")
 	command.Flags().BoolVarP(&useComment, "use-comment-meta", "", false,
-		"Use 'comment' field of .torrent file to extract category, tags, savePath and other meta info and apply them")
+		`Use "comment" field of .torrent file to extract category, tags, savePath and other meta info and apply them`)
 	command.Flags().BoolVarP(&skipCheck, "skip-check", "", false, "Skip hash checking when adding torrents")
 	command.Flags().BoolVarP(&addPaused, "add-paused", "", false, "Add torrents to client in paused state")
 	command.Flags().BoolVarP(&addCategoryAuto, "add-category-auto", "", false,

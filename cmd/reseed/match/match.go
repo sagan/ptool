@@ -52,7 +52,7 @@ var (
 	slowMode           = false
 	showJson           = false
 	showRaw            = false
-	useComment         = false
+	useCommentMeta     = false
 	doDownload         = false
 	all                = false
 	timeout            = int64(0)
@@ -64,8 +64,8 @@ func init() {
 	command.Flags().BoolVarP(&slowMode, "slow", "", false, "Slow mode. wait after downloading each xseed torrent")
 	command.Flags().BoolVarP(&showJson, "json", "", false, "Show full info in json format for found torrents")
 	command.Flags().BoolVarP(&showRaw, "raw", "", false, "Show raw Reseed torrent id for found torrents")
-	command.Flags().BoolVarP(&useComment, "use-comment-meta", "", false,
-		"Use with --download. Use 'comment' field to export save path location to downloaded .torrent files")
+	command.Flags().BoolVarP(&useCommentMeta, "use-comment-meta", "", false,
+		`Use with --download. Use "comment" field to export save path location to downloaded .torrent files`)
 	command.Flags().BoolVarP(&doDownload, "download", "", false, "Download found xseed torrents to local")
 	command.Flags().BoolVarP(&all, "all", "", false,
 		"Display or download all found xseed torrents (include partial-match results)")
@@ -174,7 +174,7 @@ func match(cmd *cobra.Command, args []string) error {
 		if sitename != "" {
 			siteConsecutiveFails[sitename] = 0
 		}
-		if useComment {
+		if useCommentMeta {
 			var useCommentErr error
 			var tags []string
 			tags = append(tags, config.XSEED_TAG)

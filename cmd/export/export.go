@@ -35,7 +35,7 @@ which supports the following variable placeholders:
 * [name128] : The prefix of torrent name which is at max 128 bytes
 
 If --use-comment-meta flag is set, ptool will export torrent's current category & tags & savePath meta info,
-and save them to the 'comment' field of exported .torrent file in JSON format ('{tags, category, save_path}').
+and save them to the 'comment' field of exported .torrent file in JSON '{tags, category, save_path, comment}' format.
 The "ptool add" command has the same flag that extracts and applies meta info from 'comment' when adding torrents.
 
 It will overwrite any existing file on disk with the same name.`, constants.HELP_INFOHASH_ARGS),
@@ -45,7 +45,7 @@ It will overwrite any existing file on disk with the same name.`, constants.HELP
 
 var (
 	exportSkipExisting = false
-	useComment         = false
+	useCommentMeta     = false
 	category           = ""
 	tag                = ""
 	filter             = ""
@@ -58,8 +58,8 @@ func init() {
 		`Do NOT re-export torrent that same name file already exists in local dir. `+
 			`If this flag is set, the exported torrent filename ("--rename" flag) will be fixed to `+
 			`"[client].[infohash].torrent" (e.g.: "local.293235f712652df08a8665ec2ca118d7e0615c3f.torrent") format`)
-	command.Flags().BoolVarP(&useComment, "use-comment-meta", "", false,
-		"Export torrent category, tags, save path and other infos to 'comment' field of .torrent file")
+	command.Flags().BoolVarP(&useCommentMeta, "use-comment-meta", "", false,
+		`Export torrent category, tags, save path and other infos to "comment" field of .torrent file`)
 	command.Flags().StringVarP(&filter, "filter", "", "", "Filter torrents by name")
 	command.Flags().StringVarP(&category, "category", "", "", "Filter torrents by category")
 	command.Flags().StringVarP(&tag, "tag", "", "",
@@ -110,7 +110,7 @@ func export(cmd *cobra.Command, args []string) error {
 			errorCnt++
 			continue
 		}
-		if useComment {
+		if useCommentMeta {
 			var useCommentErr error
 			if tinfo, err := torrentutil.ParseTorrent(content, 99); err != nil {
 				useCommentErr = fmt.Errorf("failed to parse: %v", err)

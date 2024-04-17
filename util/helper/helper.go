@@ -2,14 +2,15 @@
 package helper
 
 import (
-	"bytes"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -54,9 +55,8 @@ func GetTorrentContent(torrent string, defaultSite string,
 	beforeDownload func(sitename string, id string) error) (
 	content []byte, tinfo *torrentutil.TorrentMeta, siteInstance site.Site, sitename string,
 	filename string, id string, isLocal bool, err error) {
-	isLocal = !forceRemote && (forceLocal || torrent == "-" ||
-		!util.IsUrl(torrent) && (strings.HasSuffix(torrent, ".torrent") ||
-			util.HasAnySuffix(torrent, constants.ProcessedFilenameSuffixes...)))
+	isLocal = !forceRemote && (forceLocal || torrent == "-" || !util.IsUrl(torrent) && (strings.HasSuffix(
+		util.TrimAnySuffix(torrent, constants.ProcessedFilenameSuffixes...), ".torrent")))
 	// site torrent id or url
 	if !isLocal {
 		if util.IsPureTorrentUrl(torrent) {
@@ -163,16 +163,31 @@ func GetTorrentContent(torrent string, defaultSite string,
 			}
 		} else {
 			filename = path.Base(torrent)
-			content, err = os.ReadFile(torrent)
+			var file *os.File
+			if file, err = os.Open(torrent); err == nil {
+				defer file.Close()
+				var info fs.FileInfo
+				if info, err = file.Stat(); err == nil && info.Size() >= constants.BIG_FILE_SIZE {
+					fileHeader := make([]byte, 0, constants.FILE_HEADER_CHUNK_SIZE)
+					if _, err = io.ReadAtLeast(file, fileHeader, len(fileHeader)); err == nil {
+						if util.BytesHasAnyStringPrefix(fileHeader, constants.TorrentFileMagicNumbers...) {
+							_, err = file.Seek(0, 0)
+						} else {
+							err = fmt.Errorf("%s: header is NOT a valid .torrent contents", torrent)
+						}
+					}
+				}
+				if err == nil {
+					content, err = io.ReadAll(file)
+				}
+			}
 		}
 	}
 	if err != nil {
 		return
 	}
-	if !bytes.HasPrefix(content, []byte(constants.TORRENT_FILE_MAGIC_NUMBER)) &&
-		!bytes.HasPrefix(content, []byte(constants.TORRENT_FILE_MAGIC_NUMBER2)) &&
-		!bytes.HasPrefix(content, []byte(constants.TORRENT_FILE_MAGIC_NUMBER3)) {
-		err = fmt.Errorf("%s: content is NOT a valid .torrent file", torrent)
+	if !util.BytesHasAnyStringPrefix(content, constants.TorrentFileMagicNumbers...) {
+		err = fmt.Errorf("%s: is NOT a valid .torrent contents", torrent)
 		return
 	}
 	if tinfo, err = torrentutil.ParseTorrent(content, 99); err != nil {
@@ -314,15 +329,15 @@ func ParseTorrentsFromArgs(args []string) (torrents []string, stdinTorrentConten
 			err = fmt.Errorf(`"-" arg can not be used in shell`)
 		} else if stdin, _err := io.ReadAll(os.Stdin); _err != nil {
 			err = fmt.Errorf("failed to read stdin: %v", _err)
-		} else if bytes.HasPrefix(stdin, []byte(constants.TORRENT_FILE_MAGIC_NUMBER)) ||
-			bytes.HasPrefix(stdin, []byte(constants.TORRENT_FILE_MAGIC_NUMBER2)) ||
-			bytes.HasPrefix(stdin, []byte(constants.TORRENT_FILE_MAGIC_NUMBER3)) {
+		} else if util.BytesHasAnyStringPrefix(stdin, constants.TorrentFileMagicNumbers...) {
 			stdinTorrentContents = stdin
 		} else if data, _err := shlex.Split(string(stdin)); _err != nil {
 			err = fmt.Errorf("failed to parse stdin to tokens: %v", _err)
 		} else {
 			torrents = data
 		}
+	} else if slices.Contains(torrents, "-") {
+		err = fmt.Errorf(`"-" arg can NOT be mixed up with others`)
 	}
 	return
 }
@@ -335,7 +350,7 @@ func ParseInfoHashesFromArgs(args []string) (infoHashes []string, err error) {
 		return
 	}
 	infoHashes = args
-	if len(args) == 1 && args[0] == "-" {
+	if len(infoHashes) == 1 && infoHashes[0] == "-" {
 		if data, _err := ReadArgsFromStdin(); _err != nil {
 			err = fmt.Errorf("failed to parse stdin to info hashes: %v", _err)
 		} else if len(data) == 0 {
@@ -343,6 +358,8 @@ func ParseInfoHashesFromArgs(args []string) (infoHashes []string, err error) {
 		} else {
 			infoHashes = data
 		}
+	} else if slices.Contains(infoHashes, "-") {
+		err = fmt.Errorf(`"-" arg can NOT be mixed up with others`)
 	}
 	return
 }

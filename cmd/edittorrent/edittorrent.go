@@ -20,20 +20,30 @@ var command = &cobra.Command{
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "edittorrent"},
 	Aliases:     []string{"edit"},
 	Short:       "Edit local .torrent (metainfo) files.",
-	Long: `Edit .torrent (metainfo) files.
+	Long: `Edit local .torrent (metainfo) files.
 It will update local disk .torrent files in place.
 It only supports editing / updating of fields that does NOT affect the info-hash of the torrent.
 Args is the torrent filename list. Use a single "-" as args to read the list from stdin, delimited by blanks.
 
 It will ask for confirm before updateing torrent files, unless --force flag is set.
 
-Required flags (at least one of them must be set):
+Available "editing" flags (at least one of them must be set):
 * --remove-tracker
 * --add-tracker
 * --update-tracker
 * --update-created-by
 * --update-creation-date
 * --update-comment
+* --replace-comment-meta-save-path-prefix (requires "--use-comment-meta")
+
+If --use-comment-meta flag is set, ptool will parse the "comment" field of torrent
+as meta info object in json '{tags, category, save_path, comment}' format,
+and allow updating of the properties of the json object.
+The "ptool export" and some other cmds have the same flag that would generate .torrent files
+with meta info encoded in "comment" field in the above way.
+
+The --use-comment-meta flag relative "editing" flags:
+* --replace-comment-meta-save-path-prefix : Update "save_path", replace one prefix with another one.
 
 If --backup flag is set, it will create a backup of original torrent file before updating it.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
@@ -41,14 +51,16 @@ If --backup flag is set, it will create a backup of original torrent file before
 }
 
 var (
-	force              = false
-	doBackup           = false
-	removeTracker      = ""
-	addTracker         = ""
-	updateTracker      = ""
-	updateCreatedBy    = ""
-	updateCreationDate = ""
-	updateComment      = ""
+	force                            = false
+	doBackup                         = false
+	useCommentMeta                   = false
+	removeTracker                    = ""
+	addTracker                       = ""
+	updateTracker                    = ""
+	updateCreatedBy                  = ""
+	updateCreationDate               = ""
+	updateComment                    = ""
+	replaceCommentMetaSavePathPrefix = ""
 )
 
 func init() {
@@ -56,6 +68,8 @@ func init() {
 	command.Flags().BoolVarP(&doBackup, "backup", "", false,
 		"Backup original .torrent file to *"+constants.FILENAME_SUFFIX_BACKUP+
 			" unless it's name already has that suffix. If the same name backup file already exists, it will be overwrited")
+	command.Flags().BoolVarP(&useCommentMeta, "use-comment-meta", "", false,
+		`Allow editing torrent save path and other infos that is encoded (as json) in "comment" field of torrents`)
 	command.Flags().StringVarP(&removeTracker, "remove-tracker", "", "",
 		"Remove tracker from torrents. If the tracker does NOT exists in the torrent, do nothing")
 	command.Flags().StringVarP(&addTracker, "add-tracker", "", "",
@@ -67,11 +81,16 @@ func init() {
 		`Update "creation date" field of torrents. E.g.: "2024-01-20 15:00:00" (local timezone), `+
 			"or a unix timestamp integer (seconds)")
 	command.Flags().StringVarP(&updateComment, "update-comment", "", "", `Update "comment" field of torrents`)
+	command.Flags().StringVarP(&replaceCommentMetaSavePathPrefix, "replace-comment-meta-save-path-prefix", "", "",
+		`Used with "--use-comment-meta". Update the prefix of 'save_path' property encoded in "comment" field `+
+			`of torrents, replace old prefix with new one. Format: "old_path|new_path". E.g.: `+
+			`"/root/Downloads|/var/Downloads" will change ""/root/Downloads" or "/root/Downloads/..." save path to `+
+			`"/var/Downloads" or "/var/Downloads/..."`)
 	cmd.RootCmd.AddCommand(command)
 }
 
 func edittorrent(cmd *cobra.Command, args []string) error {
-	torrents, stdinTorrentContents, err := helper.ParseTorrentsFromArgs(args)
+	torrents, _, err := helper.ParseTorrentsFromArgs(args)
 	if err != nil {
 		return err
 	}
@@ -83,11 +102,21 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf(`"-" as reading .torrent content from stdin is NOT supported here`)
 	}
 	if util.CountNonZeroVariables(removeTracker, addTracker, updateTracker,
-		updateCreatedBy, updateCreationDate, updateComment) == 0 {
-		return fmt.Errorf(`at least one "--add-*", "--remove-*" or "--update-*" flag must be set`)
+		updateCreatedBy, updateCreationDate, updateComment, replaceCommentMetaSavePathPrefix) == 0 {
+		return fmt.Errorf(`at least one of "--add-*", "--remove-*", "--update-*", or "--replace-*" flags must be set`)
 	}
-	if updateTracker != "" && (addTracker != "" || removeTracker != "") {
+	if updateTracker != "" && (util.CountNonZeroVariables(addTracker, removeTracker) > 0) {
 		return fmt.Errorf(`"--update-tracker" flag is NOT compatible with "--remove-tracker" or "--add-tracker" flags`)
+	}
+	if !useCommentMeta && (util.CountNonZeroVariables(replaceCommentMetaSavePathPrefix) > 0) {
+		return fmt.Errorf(`editing of comment meta fields must be used with "--use-comment-meta" flag`)
+	}
+	var savePathReplaces []string
+	if replaceCommentMetaSavePathPrefix != "" {
+		savePathReplaces = strings.Split(replaceCommentMetaSavePathPrefix, "|")
+		if len(savePathReplaces) != 2 || savePathReplaces[0] == "" {
+			return fmt.Errorf("invalid --replace-comment-meta-save-path-prefix")
+		}
 	}
 	errorCnt := int64(0)
 	cntTorrents := int64(0)
@@ -108,13 +137,17 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 			fmt.Printf("Update tracker: %q\n", updateTracker)
 		}
 		if updateCreatedBy != "" {
-			fmt.Printf("Update 'created_by' field: %q\n", updateCreatedBy)
+			fmt.Printf(`Update "created_by" field: %q`+"\n", updateCreatedBy)
 		}
 		if updateCreationDate != "" {
-			fmt.Printf("Update 'creation_date' field: %q\n", updateCreationDate)
+			fmt.Printf(`Update "creation_date" field: %q`+"\n", updateCreationDate)
 		}
 		if updateComment != "" {
-			fmt.Printf("Update 'comment' field: %q\n", updateComment)
+			fmt.Printf(`Update "comment" field: %q`+"\n", updateComment)
+		}
+		if replaceCommentMetaSavePathPrefix != "" {
+			fmt.Printf(`Replace prefix of 'save_path' meta in "comment" field: %q => %q`+"\n",
+				savePathReplaces[0], savePathReplaces[1])
 		}
 		fmt.Printf("-----\n\n")
 		if !helper.AskYesNoConfirm("Will update torrent files") {
@@ -123,12 +156,15 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 	}
 
 	for _, torrent := range torrents {
-		_, tinfo, _, _, _, _, _, err := helper.GetTorrentContent(torrent, "", true, false,
-			stdinTorrentContents, false, nil)
+		_, tinfo, _, _, _, _, _, err := helper.GetTorrentContent(torrent, "", true, false, nil, false, nil)
 		if err != nil {
 			log.Errorf("Failed to parse %s: %v", torrent, err)
 			errorCnt++
 			continue
+		}
+		var commentMeta *torrentutil.TorrentCommentMeta
+		if useCommentMeta {
+			commentMeta = tinfo.DecodeComment()
 		}
 		changed := false
 		if removeTracker != "" {
@@ -177,11 +213,27 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 			}
 		}
 		if err == nil && updateComment != "" {
-			if _err := tinfo.UpdateComment(updateComment); _err != nil {
+			if useCommentMeta {
+				if commentMeta == nil {
+					commentMeta = &torrentutil.TorrentCommentMeta{}
+				}
+				if commentMeta.Comment != updateComment {
+					commentMeta.Comment = updateComment
+					changed = true
+				}
+			} else if _err := tinfo.UpdateComment(updateComment); _err != nil {
 				if _err != torrentutil.ErrNoChange {
 					err = _err
 				}
 			} else {
+				changed = true
+			}
+		}
+		if err == nil && replaceCommentMetaSavePathPrefix != "" && commentMeta != nil {
+			if commentMeta.SavePath == savePathReplaces[0] ||
+				strings.HasPrefix(commentMeta.SavePath, savePathReplaces[0]+"/") ||
+				strings.HasPrefix(commentMeta.SavePath, savePathReplaces[0]+`\`) {
+				commentMeta.SavePath = savePathReplaces[1] + commentMeta.SavePath[len(savePathReplaces[0]):]
 				changed = true
 			}
 		}
@@ -193,6 +245,13 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 		if !changed {
 			fmt.Printf("- %s : no change\n", torrent)
 			continue
+		}
+		if commentMeta != nil {
+			if err = tinfo.EncodeComment(commentMeta); err != nil {
+				fmt.Printf("✕ %s : failed to encode comment meta: %v\n", torrent, err)
+				errorCnt++
+				continue
+			}
 		}
 		if doBackup && !strings.HasSuffix(torrent, constants.FILENAME_SUFFIX_BACKUP) {
 			if err := util.CopyFile(torrent, util.TrimAnySuffix(torrent,

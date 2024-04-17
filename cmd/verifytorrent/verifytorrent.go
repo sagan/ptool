@@ -56,7 +56,7 @@ If --check flag is set, it will also do the hash checking.`, constants.HELP_TORR
 var (
 	renameOk             = false
 	renameFail           = false
-	useComment           = false
+	useCommentMeta       = false
 	checkHash            = false
 	checkQuick           = false
 	forceLocal           = false
@@ -77,8 +77,8 @@ func init() {
 	command.Flags().BoolVarP(&renameFail, "rename-fail", "", false,
 		"Rename verification failed .torrent file to *"+constants.FILENAME_SUFFIX_FAIL+
 			" unless it's name already has that suffix")
-	command.Flags().BoolVarP(&useComment, "use-comment-meta", "", false,
-		"Extract save path from 'comment' field of .torrent file and verify against it")
+	command.Flags().BoolVarP(&useCommentMeta, "use-comment-meta", "", false,
+		`Extract save path from "comment" field of .torrent file and verify against it`)
 	command.Flags().BoolVarP(&checkHash, "check", "", false, "Do hash checking when verifying torrent files")
 	command.Flags().BoolVarP(&checkQuick, "check-quick", "", false,
 		"Do quick hash checking when verifying torrent files, "+
@@ -102,7 +102,7 @@ func init() {
 }
 
 func verifytorrent(cmd *cobra.Command, args []string) error {
-	if util.CountNonZeroVariables(useComment, savePath, contentPath, rcloneSavePath, rcloneLsjsonFilename) != 1 {
+	if util.CountNonZeroVariables(useCommentMeta, savePath, contentPath, rcloneSavePath, rcloneLsjsonFilename) != 1 {
 		return fmt.Errorf("exact one (not less or more) of the --use-comment-meta, --save-path, --content-path, " +
 			"--rclone-save-path and --rclone-lsjson-file flags must be set")
 	}
@@ -176,7 +176,7 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 		if showAll {
 			tinfo.Print(torrent, true)
 		}
-		if useComment {
+		if useCommentMeta {
 			if commentMeta := tinfo.DecodeComment(); commentMeta == nil {
 				fmt.Printf("✕ %s : failed to parse comment meta\n", torrent)
 				errorCnt++

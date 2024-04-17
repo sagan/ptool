@@ -107,8 +107,9 @@ ptool <command> args... [flags]
 - add : 将种子添加到 BT 客户端。
 - dltorrent : 下载站点的种子(.torrent 文件)。
 - BT 客户端控制命令集: clientctl / show / pause / resume / delete / reannounce / recheck / getcategories / createcategory / deletecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / renametag / edittracker / addtrackers / removetrackers / setsavepath / setsharelimits / checktag / export 。
-- parsetorrent : 显示种子(torrent)文件信息。
-- verifytorrent : 测试种子(torrent)文件与硬盘上的文件内容一致。
+- parsetorrent : 显示种子(.torrent)文件信息。
+- verifytorrent : 测试种子(.torrent)文件与硬盘上的文件内容一致。
+- edittorrent : 编辑（修改）种子(.torrent)文件内容。
 - partialdownload : 拆包下载。
 - xseedadd : 手动添加辅种种子到客户端。
 - cookiecloud : 使用 [CookieCloud][] 同步站点的 Cookies 或导入站点。
@@ -538,7 +539,7 @@ ptool verifytorrent <torrentFileNameOrIdOrUrl>...
 - `--content-path` : 种子内容路径(root folder 或单文件种子的文件路径)。只能用于校验 1 个 torrent 文件。
 - `--use-comment-meta` : 读取并使用种子 .torrent 文件的 comment 字段里存储的 save_path 信息。设计用于配合其它命令(例如 `ptool export`)使用。
 - `--rclone-lsjson-file` : 元信息索引文件名，其内容为 [rclone][] 的 `rclone lsjson --recursive <path>` 命令输出。rclone 的 `<path>` 被认为是种子内容的保存路径。参考 [rclone lsjson][] 命令的文档。
-- `--rclone-save-path` : 类似 `--rclone-lsjson-file`，但直接指定 `<path>` 路径。ptool 将运行 `rclone lsjson` 并读取其输出。E.g.: "remote:Downloads"。
+- `--rclone-save-path` : 类似 `--rclone-lsjson-file`，但直接指定 `<path>` 路径。ptool 将运行 `rclone lsjson --recursive <path>` 并读取其输出。E.g.: "remote:Downloads"。
 
 `--rclone-lsjson-file` 和 `--rclone-save-path` 参数的设计目的是用于检测种子的内容文件在云存储上是否存在。
 
@@ -555,6 +556,20 @@ ptool verifytorrent file.torrent --save-path D:\Downloads --check
 ptool verifytorrent MyTorrent.torrent --content-path D:\Downloads\MyTorrent --check
 
 ptool verifytorrent *.torrent --rclone-save-path remote:Downloads
+```
+
+### 编辑种子文件 (edittorrent)
+
+edittorrent 命令可以编辑（修改）.torrent 文件里的信息。
+
+示例：
+
+```
+# 批量修改 .torrent 文件里的 tracker 地址（Announce 字段）
+ptool edittorrent --update-tracker "https://..." *.torrent
+
+# 查看命令帮助了解其更多用法
+ptool edittorrent -h
 ```
 
 ### 拆包下载 (partialdownload)
