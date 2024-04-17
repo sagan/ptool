@@ -33,8 +33,12 @@ var command = &cobra.Command{
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "cookiecloud.sync"},
 	Short:       "Sync cookies with cookiecloud servers.",
 	Long: `Sync cookies with cookiecloud servers.
-It will get latest cookies from cookiecloud servers. Then use them to update local sites in config file,
-Update site which current cookie is no longer valid with the new one.
+It will get latest cookies from cookiecloud servers, use them to update ptool config file,
+replace the site cookie that is no longer valid with the new valid one.
+
+To be qualified for updating, a site must meet both the following conditions:
+1. It's current cookie in ptool config file is invalid.
+2. It's new cookie fetched from any cookiecloud server is valid.
 
 It will ask for confirm before updating config file, unless --force flag is set.
 Be aware that all existing comments in config file will be LOST when updating config file.`,

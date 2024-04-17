@@ -67,7 +67,7 @@ func sites(cmd *cobra.Command, args []string) error {
 		fmt.Printf("<iyuu supported sites. Applying '%s' filter>\n", filter)
 	}
 	fmt.Printf("%-10s  %-15s  %-6s  %-15s  %-30s  %-25s\n",
-		"IyuuName", "IyuuSite", "IyuuId", "LocalSite", "IyuuSiteUrl", "IyuuDlPage")
+		"IyuuName", "IyuuSite", "IyuuId", "PtoolSite", "IyuuSiteUrl", "IyuuDlPage")
 	for _, iyuuSite := range iyuuSites {
 		if iyuu2LocalSiteMap[iyuuSite.Sid] == "" {
 			continue

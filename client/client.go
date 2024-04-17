@@ -495,6 +495,7 @@ func PrintTorrents(torrents []Torrent, filter string, showSum int64, dense bool)
 		}
 	}
 	if showSum > 0 {
+		fmt.Printf("\n")
 		fmt.Printf("// Summary - Cnt / Size / SizeUnfinished: %d / %s / %s\n",
 			cnt, util.BytesSize(float64(size)), util.BytesSize(float64(sizeUnfinished)))
 		fmt.Printf("// Torrents: ↓%d / -%d / ↑%d / ✓%d / +%d\n",

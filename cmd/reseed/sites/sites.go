@@ -57,7 +57,7 @@ func sites(cmd *cobra.Command, args []string) error {
 	} else {
 		fmt.Printf("<Reseed supported sites. Applying '%s' filter>\n", filter)
 	}
-	fmt.Printf("%-15s  %-15s  %s\n", "ReseedSite", "LocalSite", "SiteUrl")
+	fmt.Printf("%-15s  %-15s  %s\n", "ReseedSite", "PtoolSite", "SiteUrl")
 	for _, site := range sites {
 		localsite := reseed2LocalMap[site.Name]
 		if filter != "" && !site.MatchFilter(filter) && !util.ContainsI(localsite, filter) {

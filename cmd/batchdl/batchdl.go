@@ -180,7 +180,7 @@ func init() {
 		"Filename. Write the id list of failed torrents to it. File will be truncated unless --save-apend flag is set")
 	command.Flags().StringVarP(&saveJsonFilename, "save-json-file", "", "",
 		"Filename. Write the full info of found torrents to it in json format. "+
-			"If --save-append flag is not set, file will be truncated and the whole contents of it will be "+
+			"If --save-append flag is not set, file will be truncated and the whole contents of it will be a "+
 			"valid json of array of torrent objects; If --save-append flag is set, each line of the file will be "+
 			"json of torrent object")
 	cmd.AddEnumFlagP(command, &sortFlag, "sort", "", common.SiteTorrentSortFlag)
@@ -496,7 +496,7 @@ mainloop:
 				fmt.Printf("torrent %s (%s): failed to download: %v\n", torrent.Id, torrent.Name, err)
 				consecutiveFail++
 				if maxConsecutiveFail >= 0 && consecutiveFail > maxConsecutiveFail {
-					log.Errorf("Abort due to too many fails to download torrent from site")
+					log.Errorf("Abort due to too many consecutive fails to download torrent from site")
 					break mainloop
 				}
 			} else {

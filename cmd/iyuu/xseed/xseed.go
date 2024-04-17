@@ -220,7 +220,7 @@ func xseed(cmd *cobra.Command, args []string) error {
 	iyuu.Db().Find(&sites)
 	iyuu.Db().Where("target_info_hash in ?", reqInfoHashes).Find(&clientTorrents)
 	site2LocalMap := iyuu.GenerateIyuu2LocalSiteMap(sites, config.Get().SitesEnabled)
-	log.Tracef("iyuu->local site map: %v; clientTorrents: len=%d", site2LocalMap, len(clientTorrents))
+	log.Tracef("iyuu->ptool site map: %v; clientTorrents: len=%d", site2LocalMap, len(clientTorrents))
 	for _, torrent := range clientTorrents {
 		list := clientTorrentsMap[torrent.TargetInfoHash]
 		list = append(list, torrent)
@@ -331,7 +331,8 @@ mainloop:
 					if !strings.Contains(err.Error(), "status=404") {
 						siteConsecutiveFails[sitename]++
 						if maxConsecutiveFail >= 0 && siteConsecutiveFails[sitename] == maxConsecutiveFail {
-							log.Errorf("Site %s has failed (to download torrent) too many times, skip it from now", sitename)
+							log.Errorf("Site %s has consecutively failed (to download torrent) too many times, skip it from now",
+								sitename)
 						}
 					} else {
 						siteConsecutiveFails[sitename] = 0

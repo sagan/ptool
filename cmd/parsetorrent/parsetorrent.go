@@ -19,8 +19,8 @@ var command = &cobra.Command{
 	Use:         "parsetorrent {torrentFilename | torrentId | torrentUrl}...",
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "parsetorrent"},
 	Aliases:     []string{"parse"},
-	Short:       "Parse torrent files and show their contents.",
-	Long: fmt.Sprintf(`Parse torrent files and show their contents.
+	Short:       "Parse .torrent (metainfo) files and show their contents.",
+	Long: fmt.Sprintf(`Parse .torrent (metainfo) files and show their contents.
 %s.`, constants.HELP_TORRENT_ARGS),
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: parsetorrent,
@@ -38,7 +38,8 @@ var (
 
 func init() {
 	command.Flags().BoolVarP(&renameFail, "rename-fail", "", false,
-		"Rename invalid (failed to parse) torrent file to *"+constants.FILENAME_SUFFIX_FAIL)
+		"Rename invalid (failed to parse) .torrent file to *"+constants.FILENAME_SUFFIX_FAIL+
+			" unless it's name already has that suffix")
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all info")
 	command.Flags().BoolVarP(&showInfoHashOnly, "show-info-hash-only", "", false, "Output torrents info hash only")
 	command.Flags().BoolVarP(&showJson, "json", "", false, "Show output in json format")
@@ -59,6 +60,7 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 	errorCnt := int64(0)
 	allSize := int64(0)
 	cntTorrents := int64(0)
+	cntFiles := int64(0)
 
 	for _, torrent := range torrents {
 		_, tinfo, _, _, _, _, isLocal, err := helper.GetTorrentContent(torrent, defaultSite, forceLocal, false,
@@ -77,6 +79,7 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 		}
 		cntTorrents++
 		allSize += tinfo.Size
+		cntFiles += int64(len(tinfo.Files))
 		if showSum {
 			continue
 		}
@@ -106,6 +109,7 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 	fmt.Fprintf(sumOutputDst, "\n")
 	fmt.Fprintf(sumOutputDst, "// Total torrents: %d\n", cntTorrents)
 	fmt.Fprintf(sumOutputDst, "// Total size: %s (%d Byte)\n", util.BytesSize(float64(allSize)), allSize)
+	fmt.Fprintf(sumOutputDst, "// Total number of content files in torrents: %d\n", cntFiles)
 	if errorCnt > 0 {
 		return fmt.Errorf("%d errors", errorCnt)
 	}

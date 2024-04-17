@@ -24,8 +24,8 @@ var command = &cobra.Command{
 		"--rclone-save-path path} [--check | --check-quick]",
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "verifytorrent"},
 	Aliases:     []string{"verify"},
-	Short:       "Verify torrent file(s) are consistent with local disk contents.",
-	Long: fmt.Sprintf(`Verify torrent file(s) are consistent with local disk contents.
+	Short:       "Verify .torrent (metainfo) files are consistent with local disk contents.",
+	Long: fmt.Sprintf(`Verify .torrent (metainfo) files are consistent with local disk contents.
 %s.
 
 Example:
@@ -72,9 +72,11 @@ var (
 
 func init() {
 	command.Flags().BoolVarP(&renameOk, "rename-ok", "", false,
-		"Rename verification successed torrent file to *"+constants.FILENAME_SUFFIX_OK)
+		"Rename verification successed .torrent file to *"+constants.FILENAME_SUFFIX_OK+
+			" unless it's name already has that suffix")
 	command.Flags().BoolVarP(&renameFail, "rename-fail", "", false,
-		"Rename verification failed torrent file to *"+constants.FILENAME_SUFFIX_FAIL)
+		"Rename verification failed .torrent file to *"+constants.FILENAME_SUFFIX_FAIL+
+			" unless it's name already has that suffix")
 	command.Flags().BoolVarP(&useComment, "use-comment-meta", "", false,
 		"Extract save path from 'comment' field of .torrent file and verify against it")
 	command.Flags().BoolVarP(&checkHash, "check", "", false, "Do hash checking when verifying torrent files")

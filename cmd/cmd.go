@@ -62,7 +62,7 @@ func Execute() {
 			config.ConfigType = configExt[1:]
 		}
 		logLevel := 3 + config.VerboseLevel
-		isTty := term.IsTerminal(int(os.Stdout.Fd()))
+		isTty := term.IsTerminal(int(os.Stdin.Fd()))
 		width, height, _ := term.GetSize(int(os.Stdout.Fd()))
 		log.SetLevel(log.Level(logLevel))
 		log.Debugf("ptool start: %v", os.Args)

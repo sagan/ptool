@@ -53,7 +53,8 @@ var (
 
 func init() {
 	command.Flags().BoolVarP(&renameAdded, "rename-added", "", false,
-		"Rename successfully added torrent file to *"+constants.FILENAME_SUFFIX_ADDED)
+		"Rename successfully added .torrent file to *"+constants.FILENAME_SUFFIX_ADDED+
+			" unless it's name already has that suffix")
 	command.Flags().BoolVarP(&deleteAdded, "delete-added", "", false, "Delete successfully added torrent file")
 	command.Flags().BoolVarP(&addPaused, "add-paused", "", false, "Add xseed torrents to client in paused state")
 	command.Flags().BoolVarP(&check, "check", "", false, "Let client do hash checking when adding xseed torrents")

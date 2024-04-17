@@ -41,8 +41,8 @@ To add downloaded torrents to local client as xseed torrents, use "ptool xseedad
 
 If --use-comment-meta flag is set, it will export <save-path> to downloaded .torrent files,
 use "ptool add" cmd with same flag to directly add these torrents to local client with
-their save-path in comment automatically applied.
-Also, for partial-match results, it's the only way to automatically add them to local client as xseed torrent,
+their save-path in comment automatically applied automatically.
+Also, for partial-match results, it's the prefered way to add them to local client as xseed torrent,
 as "xseedadd" cmd will fail to find matched target for such torrent in client.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: match,
@@ -148,6 +148,7 @@ func match(cmd *cobra.Command, args []string) error {
 		sitename, _, found := strings.Cut(torrent.Id, ".")
 		if found && sitename != "" && maxConsecutiveFail >= 0 && siteConsecutiveFails[sitename] > maxConsecutiveFail {
 			log.Debugf("Skip site %s torrent %s as this site has failed too much times", sitename, torrent.Id)
+			cntSkip++
 			continue
 		}
 		if i > 0 && slowMode {
@@ -161,7 +162,8 @@ func match(cmd *cobra.Command, args []string) error {
 				if !strings.Contains(err.Error(), "status=404") {
 					siteConsecutiveFails[sitename]++
 					if maxConsecutiveFail >= 0 && siteConsecutiveFails[sitename] == maxConsecutiveFail {
-						log.Errorf("Site %s has failed (to download torrent) too many times, skip it from now", sitename)
+						log.Errorf("Site %s has consecutively failed (to download torrent) too many times, skip it from now",
+							sitename)
 					}
 				} else {
 					siteConsecutiveFails[sitename] = 0
@@ -206,12 +208,12 @@ func match(cmd *cobra.Command, args []string) error {
 	}
 	fmt.Printf("\n")
 	if cntSuccess > 0 || cntSkip > 0 {
-		fmt.Printf(`Saved %d torrents to %s
+		fmt.Printf(`Saved %d xseed torrents to %s
 Error torrents (failed to download): %d
-Skipped torrents (local site does NOT exist, or already downloaded before): %d
+Skipped torrents (ptool site does NOT exist, already downloaded before, or site failed too many): %d
 
 To add downloaded torrents to local client as xseed torrents, run following command:
-    ptool xseedadd <client> "%s/*.torrent"
+  ptool xseedadd <local-client> "%s/*.torrent"
 `, cntSuccess, downloadDir, errorCnt, cntSkip, downloadDir)
 	}
 	if errorCnt > 0 {

@@ -11,8 +11,10 @@ import (
 // See: https://en.wikipedia.org/wiki/Torrent_file , https://en.wikipedia.org/wiki/Bencode .
 const TORRENT_FILE_MAGIC_NUMBER = "d8:announce"
 
-// 个别种子没有 announce / announce-list 字段，第一个字段是 creation date。这类种子可以通过 DHT 下载成功。
-const TORRENT_FILE_MAGIC_NUMBER2 = "d13:creation date"
+// 个别种子没有 announce / announce-list 字段，第一个字段是 created by / creation date 等。
+// 这类种子可以通过 DHT 下载成功。
+const TORRENT_FILE_MAGIC_NUMBER2 = "d10:created by"
+const TORRENT_FILE_MAGIC_NUMBER3 = "d13:creation date"
 
 const FILENAME_INVALID_CHARS_REGEX = `[<>:"/\|\?\*]+`
 const PERM = 0600 // 程序创建的所有文件的 PERM
@@ -20,6 +22,7 @@ const PERM = 0600 // 程序创建的所有文件的 PERM
 const FILENAME_SUFFIX_ADDED = ".added"
 const FILENAME_SUFFIX_OK = ".ok"
 const FILENAME_SUFFIX_FAIL = ".fail"
+const FILENAME_SUFFIX_BACKUP = ".bak"
 
 // Some funcs require a (positive) timeout parameter. Use a very long value to emulate infinite. (Seconds)
 const INFINITE_TIMEOUT = 86400 * 365 * 100
@@ -32,6 +35,7 @@ var ProcessedFilenameSuffixes = []string{
 	FILENAME_SUFFIX_ADDED,
 	FILENAME_SUFFIX_OK,
 	FILENAME_SUFFIX_FAIL,
+	FILENAME_SUFFIX_BACKUP,
 }
 
 // Unix zero time (00:00:00 UTC on 1 January 1970)

@@ -77,7 +77,8 @@ func init() {
 	command.Flags().BoolVarP(&sequentialDownload, "sequential-download", "", false,
 		"(qbittorrent only) Enable sequential download")
 	command.Flags().BoolVarP(&renameAdded, "rename-added", "", false,
-		"Rename successfully added torrent file to *"+constants.FILENAME_SUFFIX_ADDED)
+		"Rename successfully added .torrent file to *"+constants.FILENAME_SUFFIX_ADDED+
+			" unless it's name already has that suffix")
 	command.Flags().BoolVarP(&deleteAdded, "delete-added", "", false, "Delete successfully added *.torrent file")
 	command.Flags().BoolVarP(&forceLocal, "force-local", "", false, "Force treat all arg as local torrent filename")
 	command.Flags().Int64VarP(&seedingTimeLimit, "seeding-time-limit", "", 0,
@@ -204,8 +205,8 @@ func add(cmd *cobra.Command, args []string) error {
 		}
 		err = clientInstance.AddTorrent(content, option, nil)
 		if err != nil {
-			fmt.Printf("✕ %s (%d/%d) (site=%s): failed to add torrent to client: %v // %s\n",
-				torrent, i+1, cntAll, sitename, err, contentPath)
+			fmt.Printf("✕ %s (%d/%d) (site=%s): failed to add torrent to client: %v // %s (%s)\n",
+				torrent, i+1, cntAll, sitename, err, contentPath, util.BytesSize(float64(size)))
 			errorCnt++
 			continue
 		}
@@ -223,7 +224,8 @@ func add(cmd *cobra.Command, args []string) error {
 		}
 		cntAdded++
 		sizeAdded += size
-		fmt.Printf("✓ %s (%d/%d) (site=%s). infoHash=%s // %s\n", torrent, i+1, cntAll, sitename, infoHash, contentPath)
+		fmt.Printf("✓ %s (%d/%d) (site=%s). infoHash=%s // %s (%s)\n",
+			torrent, i+1, cntAll, sitename, infoHash, contentPath, util.BytesSize(float64(size)))
 	}
 	fmt.Fprintf(os.Stderr, "\n// Done. Added torrent (Size/Cnt): %s / %d; ErrorCnt: %d\n",
 		util.BytesSize(float64(sizeAdded)), cntAdded, errorCnt)

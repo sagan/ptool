@@ -16,6 +16,7 @@ import (
 	"github.com/Noooste/azuretls-client"
 	"github.com/google/shlex"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/term"
 
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/constants"
@@ -30,7 +31,7 @@ var (
 	domainSiteMap = map[string]string{}
 	// The unix timestamp (miliseconds) last time download torrent from a site
 	siteDownloadTimeMap                        = map[string]int64{}
-	ErrGetTorrentUrlIsMegnet                   = fmt.Errorf("magnet or bt url is NOT supported")
+	ErrGetTorrentUrlIsMagnet                   = fmt.Errorf("magnet or bt url is NOT supported")
 	ErrGetTorrentUrlParseFail                  = fmt.Errorf("failed to parse torrent domain")
 	ErrGetTorrentStdoutOutputNotSupportInShell = fmt.Errorf(`"-" arg can not be used in shell`)
 )
@@ -59,7 +60,7 @@ func GetTorrentContent(torrent string, defaultSite string,
 	// site torrent id or url
 	if !isLocal {
 		if util.IsPureTorrentUrl(torrent) {
-			err = ErrGetTorrentUrlIsMegnet
+			err = ErrGetTorrentUrlIsMagnet
 			return
 		}
 		sitename = defaultSite
@@ -169,7 +170,8 @@ func GetTorrentContent(torrent string, defaultSite string,
 		return
 	}
 	if !bytes.HasPrefix(content, []byte(constants.TORRENT_FILE_MAGIC_NUMBER)) &&
-		!bytes.HasPrefix(content, []byte(constants.TORRENT_FILE_MAGIC_NUMBER2)) {
+		!bytes.HasPrefix(content, []byte(constants.TORRENT_FILE_MAGIC_NUMBER2)) &&
+		!bytes.HasPrefix(content, []byte(constants.TORRENT_FILE_MAGIC_NUMBER3)) {
 		err = fmt.Errorf("%s: content is NOT a valid .torrent file", torrent)
 		return
 	}
@@ -277,7 +279,11 @@ func AskYesNoConfirm(prompt string) bool {
 	if prompt == "" {
 		prompt = "Will do the action"
 	}
-	fmt.Printf("%s, are you sure? (yes/no): ", prompt)
+	fmt.Fprintf(os.Stderr, "%s, are you sure? (yes/no): ", prompt)
+	if !term.IsTerminal(int(os.Stdin.Fd())) {
+		fmt.Fprintf(os.Stderr, `Abort due to stdin is NOT tty. Use a proper flag (like "--force") to skip the prompt`+"\n")
+		return false
+	}
 	for {
 		input := ""
 		fmt.Scanf("%s\n", &input)
@@ -288,7 +294,7 @@ func AskYesNoConfirm(prompt string) bool {
 			return false
 		default:
 			if len(input) > 0 {
-				fmt.Printf("Respond with yes or no (Or use Ctrl+C to abort): ")
+				fmt.Fprintf(os.Stderr, "Respond with yes or no (Or use Ctrl+C to abort): ")
 			} else {
 				return false
 			}
@@ -306,10 +312,11 @@ func ParseTorrentsFromArgs(args []string) (torrents []string, stdinTorrentConten
 	if len(torrents) == 1 && torrents[0] == "-" {
 		if config.InShell {
 			err = fmt.Errorf(`"-" arg can not be used in shell`)
-		} else if stdin, _err := io.ReadAll(os.Stdin); err != nil {
+		} else if stdin, _err := io.ReadAll(os.Stdin); _err != nil {
 			err = fmt.Errorf("failed to read stdin: %v", _err)
 		} else if bytes.HasPrefix(stdin, []byte(constants.TORRENT_FILE_MAGIC_NUMBER)) ||
-			bytes.HasPrefix(stdin, []byte(constants.TORRENT_FILE_MAGIC_NUMBER2)) {
+			bytes.HasPrefix(stdin, []byte(constants.TORRENT_FILE_MAGIC_NUMBER2)) ||
+			bytes.HasPrefix(stdin, []byte(constants.TORRENT_FILE_MAGIC_NUMBER3)) {
 			stdinTorrentContents = stdin
 		} else if data, _err := shlex.Split(string(stdin)); _err != nil {
 			err = fmt.Errorf("failed to parse stdin to tokens: %v", _err)
