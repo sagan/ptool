@@ -236,7 +236,7 @@ func brush(cmd *cobra.Command, args []string) error {
 				log.Printf("Failed to download: %s. Skip \n", err)
 				continue
 			}
-			tinfo, err := torrentutil.ParseTorrent(torrentdata, 99)
+			tinfo, err := torrentutil.ParseTorrent(torrentdata)
 			if err != nil {
 				continue
 			}

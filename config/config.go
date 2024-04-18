@@ -224,6 +224,7 @@ var (
 	GlobalLock            = false
 	LockOrExit            = false
 	Fork                  = false
+	Insecure              = false // Disable all TLS / https cert verifications during this session
 	configData            *ConfigStruct
 	clientsConfigMap      = map[string]*ClientConfigStruct{}
 	sitesConfigMap        = map[string]*SiteConfigStruct{}

@@ -109,6 +109,7 @@ ptool <command> args... [flags]
 - BT 客户端控制命令集: clientctl / show / pause / resume / delete / reannounce / recheck / getcategories / createcategory / deletecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / renametag / edittracker / addtrackers / removetrackers / setsavepath / setsharelimits / checktag / export 。
 - parsetorrent : 显示种子(.torrent)文件信息。
 - verifytorrent : 测试种子(.torrent)文件与硬盘上的文件内容一致。
+- maketorrent : 制作种子(.torrent)文件。
 - edittorrent : 编辑（修改）种子(.torrent)文件内容。
 - partialdownload : 拆包下载。
 - xseedadd : 手动添加辅种种子到客户端。
@@ -557,6 +558,25 @@ ptool verifytorrent MyTorrent.torrent --content-path D:\Downloads\MyTorrent --ch
 
 ptool verifytorrent *.torrent --rclone-save-path remote:Downloads
 ```
+
+### 制作种子 (maketorrent)
+
+maketorrent 命令根据提供的“内容文件(夹)”生成种子(.torrent)文件：
+
+示例：
+
+```
+# 生成 MyVideos.torrent
+ptool maketorrent ./MyVideos
+```
+
+常用参数：
+
+- `--public` : 添加常见的公开 Tracker 服务器地址到生成的种子里。
+- `--private` : 将生成的种子标记为非公开 (Private Tracker 标记）。
+- `--tracker` : 手动添加 tracker 地址到生成的种子里。
+
+“内容文件夹”里的一些临时或隐藏类型文件（例如 `.*`, `*.tmp`, `Thumbs.db` 等）默认会被自动忽略，不会被添加到种子里。
 
 ### 编辑种子文件 (edittorrent)
 

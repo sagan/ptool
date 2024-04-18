@@ -112,7 +112,7 @@ func export(cmd *cobra.Command, args []string) error {
 		}
 		if useCommentMeta {
 			var useCommentErr error
-			if tinfo, err := torrentutil.ParseTorrent(content, 99); err != nil {
+			if tinfo, err := torrentutil.ParseTorrent(content); err != nil {
 				useCommentErr = fmt.Errorf("failed to parse: %v", err)
 			} else if err := tinfo.EncodeComment(&torrentutil.TorrentCommentMeta{
 				Category: torrent.Category,

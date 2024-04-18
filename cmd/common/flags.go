@@ -63,6 +63,7 @@ func YesNoAutoFlag(desc string) *cmd.EnumFlag {
 var pureFlags = []string{
 	"add-category-auto",
 	"add-paused",
+	"add-public-trackers",
 	"add-respect-noadd",
 	"all",
 	"append",
@@ -92,6 +93,8 @@ var pureFlags = []string{
 	"parameters",
 	"partial",
 	"preserve",
+	"private",
+	"public",
 	"raw",
 	"rename-added",
 	"rename-fail",

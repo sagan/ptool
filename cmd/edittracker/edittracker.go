@@ -25,9 +25,9 @@ A torrent will not be updated if old tracker does NOT exist in it's trackers lis
 It may return an error in such case or not, depending on specific client implementation.
 
 Examples:
-ptool edittracker <client> _all --old-tracker "https://..." --new-tracker "https://..."
-ptool edittracker <client> _all --old-tracker old-tracker.com --new-tracker new-tracker.com --replace-host
-ptool edittracker <client> _all --old-tracker old-tracker.com --new-tracker "https://..." --replace-host
+  ptool edittracker <client> _all --old-tracker "https://..." --new-tracker "https://..."
+  ptool edittracker <client> _all --old-tracker old-tracker.com --new-tracker new-tracker.com --replace-host
+  ptool edittracker <client> _all --old-tracker old-tracker.com --new-tracker "https://..." --replace-host
 
 It will ask for confirmation, unless --force flag is set.`, constants.HELP_INFOHASH_ARGS),
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),

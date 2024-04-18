@@ -9,7 +9,6 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/anacrolix/torrent/metainfo"
@@ -42,37 +41,40 @@ type TorrentMeta struct {
 	ContentPath       string // root folder or single file name
 	Files             []TorrentMetaFile
 	MetaInfo          *metainfo.MetaInfo
-	Info              metainfo.Info
+	Info              *metainfo.Info
 }
 
 var (
 	ErrNoChange = errors.New("no change made")
 )
 
-// fields: 0 - only infoHash; 1- infoHash + trackers; 2+ - all
-func ParseTorrent(torrentdata []byte, fields int64) (*TorrentMeta, error) {
+func ParseTorrent(torrentdata []byte) (*TorrentMeta, error) {
 	metaInfo, err := metainfo.Load(bytes.NewReader(torrentdata))
 	if err != nil {
 		return nil, err
 	}
-	torrentMeta := &TorrentMeta{}
-	torrentMeta.InfoHash = metaInfo.HashInfoBytes().String()
-	if fields <= 0 {
-		return torrentMeta, nil
+	return FromMetaInfo(metaInfo, nil)
+}
+
+func FromMetaInfo(metaInfo *metainfo.MetaInfo, info *metainfo.Info) (*TorrentMeta, error) {
+	torrentMeta := &TorrentMeta{
+		MetaInfo: metaInfo,
+		Info:     info,
+		InfoHash: metaInfo.HashInfoBytes().String(),
 	}
 	// [][]string, first index is tier: lower number has higher priority
 	announceList := metaInfo.UpvertedAnnounceList()
 	for _, al := range announceList {
 		torrentMeta.Trackers = append(torrentMeta.Trackers, al...)
 	}
-	if fields <= 1 {
-		return torrentMeta, nil
+	if torrentMeta.Info == nil {
+		_info, err := metaInfo.UnmarshalInfo()
+		if err != nil {
+			return nil, err
+		}
+		torrentMeta.Info = &_info
 	}
-	info, err := metaInfo.UnmarshalInfo()
-	if err != nil {
-		return nil, err
-	}
-	torrentMeta.Info = info
+	info = torrentMeta.Info
 	// single file torrent
 	if len(info.Files) == 0 {
 		torrentMeta.Files = append(torrentMeta.Files, TorrentMetaFile{
@@ -95,7 +97,6 @@ func ParseTorrent(torrentdata []byte, fields int64) (*TorrentMeta, error) {
 			torrentMeta.Size += metafile.Length
 		}
 	}
-	torrentMeta.MetaInfo = metaInfo
 	return torrentMeta, nil
 }
 
@@ -145,18 +146,10 @@ func (meta *TorrentMeta) UpdateComment(comment string) error {
 
 func (meta *TorrentMeta) UpdateCreationDate(creationDateStr string) error {
 	creationDate := int64(0)
-	if util.IsIntString(creationDateStr) {
-		if i, err := strconv.Atoi(creationDateStr); err != nil {
-			return err
-		} else {
-			creationDate = int64(i)
-		}
+	if time, err := util.ParseTime(creationDateStr, nil); err != nil {
+		return err
 	} else {
-		if time, err := util.ParseTime(creationDateStr, nil); err != nil {
-			return err
-		} else {
-			creationDate = time
-		}
+		creationDate = time
 	}
 	if meta.MetaInfo.CreationDate == creationDate {
 		return ErrNoChange
@@ -270,10 +263,10 @@ func (meta *TorrentMeta) ToBytes() ([]byte, error) {
 // Generate magnet: url of this torrent.
 // Must be used on meta parsed from ParseTorrent with fields >= 2
 func (meta *TorrentMeta) MagnetUrl() string {
-	return meta.MetaInfo.Magnet(nil, &meta.Info).String()
+	return meta.MetaInfo.Magnet(nil, meta.Info).String()
 }
 
-func (meta *TorrentMeta) Print(name string, showAll bool) {
+func (meta *TorrentMeta) Fprint(f io.Writer, name string, showAll bool) {
 	trackerUrl := ""
 	if len(meta.Trackers) > 0 {
 		trackerUrl = meta.Trackers[0]
@@ -294,7 +287,7 @@ func (meta *TorrentMeta) Print(name string, showAll bool) {
 	} else if meta.RootDir != "" {
 		rootFile = meta.RootDir + "/"
 	}
-	fmt.Printf("%s : infohash = %s ; size = %s (%d) ; root = %q ; tracker = %s%s\n", name, meta.InfoHash,
+	fmt.Fprintf(f, "%s : infohash = %s ; size = %s (%d) ; root = %q ; tracker = %s%s\n", name, meta.InfoHash,
 		util.BytesSize(float64(meta.Size)), len(meta.Files), rootFile, trackerUrl, sitenameStr)
 	if showAll {
 		comments := []string{}
@@ -319,29 +312,29 @@ func (meta *TorrentMeta) Print(name string, showAll bool) {
 			comment = " // " + strings.Join(comments, ", ")
 		}
 		if meta.SingleFileTorrent {
-			fmt.Printf("! RawSize = %d ; SingleFile = %s ; CreationDate = %s ; AllTrackers: %s ;%s\n",
-				meta.Size, meta.Files[0].Path, creationDate, strings.Join(meta.Trackers, " | "), comment)
+			fmt.Fprintf(f, "! RawSize = %d ; SingleFile = %s ; CreationDate = %s ; AllTrackers (%d): %s ;%s\n",
+				meta.Size, meta.Files[0].Path, creationDate, len(meta.Trackers), strings.Join(meta.Trackers, " | "), comment)
 		} else {
-			fmt.Printf("! RawSize = %d ; RootDir = %s ; CreationDate = %s ; AllTrackers: %s ;%s\n",
-				meta.Size, meta.RootDir, creationDate, strings.Join(meta.Trackers, " | "), comment)
+			fmt.Fprintf(f, "! RawSize = %d ; RootDir = %s ; CreationDate = %s ; AllTrackers (%d): %s ;%s\n",
+				meta.Size, meta.RootDir, creationDate, len(meta.Trackers), strings.Join(meta.Trackers, " | "), comment)
 		}
 		if !meta.IsPrivate() {
-			fmt.Printf("! MagnetURI: %s\n", meta.MagnetUrl())
+			fmt.Fprintf(f, "! MagnetURI: %s\n", meta.MagnetUrl())
 		}
 	}
 }
 
-func (meta *TorrentMeta) PrintFiles(addRootDirPrefix bool, useRawSize bool) {
-	fmt.Printf("Files:\n")
+func (meta *TorrentMeta) FprintFiles(f io.Writer, addRootDirPrefix bool, useRawSize bool) {
+	fmt.Fprintf(f, "Files:\n")
 	for i, file := range meta.Files {
 		path := file.Path
 		if addRootDirPrefix && meta.RootDir != "" {
 			path = meta.RootDir + "/" + path
 		}
 		if useRawSize {
-			fmt.Printf("%-5d  %-15d  %s\n", i+1, file.Size, path)
+			fmt.Fprintf(f, "%-5d  %-15d  %s\n", i+1, file.Size, path)
 		} else {
-			fmt.Printf("%-5d  %-10s  %s\n", i+1, util.BytesSize(float64(file.Size)), path)
+			fmt.Fprintf(f, "%-5d  %-10s  %s\n", i+1, util.BytesSize(float64(file.Size)), path)
 		}
 	}
 }

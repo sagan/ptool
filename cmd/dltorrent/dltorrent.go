@@ -117,7 +117,7 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 				fmt.Fprintf(os.Stderr, "Failed to download torrent: %v\n", err)
 			} else if term.IsTerminal(int(os.Stdout.Fd())) {
 				errorCnt++
-				fmt.Fprintf(os.Stderr, "Torrent binary file will mess up the terminal. Use pipe to redirect stdout\n")
+				fmt.Fprintf(os.Stderr, "%s\n", constants.HELP_TIP_TTY_BINARY_OUTPUT)
 			} else if _, err = os.Stdout.Write(content); err != nil {
 				errorCnt++
 				fmt.Fprintf(os.Stderr, "Failed to output torrent content to stdout: %v\n", err)

@@ -4,7 +4,6 @@ package constants
 
 import (
 	"regexp"
-	"time"
 )
 
 const FILENAME_INVALID_CHARS_REGEX = `[<>:"/\|\?\*]+`
@@ -29,7 +28,7 @@ var FilenameInvalidCharsRegex = regexp.MustCompile(FILENAME_INVALID_CHARS_REGEX)
 // 个别种子没有 announce / announce-list 字段，第一个字段是 created by / creation date 等，
 // 这类种子可以通过 DHT 下载成功。
 // values: ["d8:announce", "d10:created by", "d13:creation date"]
-var TorrentFileMagicNumbers = []string{"d8:announce", "d10:created by", "d13:creation date"}
+var TorrentFileMagicNumbers = []string{"d8:announce", "d13:announce-list", "d10:created by", "d13:creation date"}
 
 // Some ptool cmds could add a suffix to processed (torrent) filenames.
 // Current Values: [".added", ".ok", ".fail", ".bak"].
@@ -40,5 +39,21 @@ var ProcessedFilenameSuffixes = []string{
 	FILENAME_SUFFIX_BACKUP,
 }
 
-// Unix zero time (00:00:00 UTC on 1 January 1970)
-var UnixEpoch, _ = time.Parse("2006-01-02", "1970-01-01")
+// Sources:
+// https://github.com/nyaadevs/nyaa/blob/master/trackers.txt ,
+// https://github.com/ngosang/trackerslist/blob/master/trackers_best.txt .
+// Only include most popular & stable trackers in this list.
+var OpenTrackers = []string{
+	"udp://open.stealth.si:80/announce",
+	"udp://tracker.opentrackr.org:1337/announce",
+	"udp://exodus.desync.com:6969/announce",
+	"udp://open.demonii.com:1337/announce",      // At least since 2014
+	"udp://tracker.torrent.eu.org:451/announce", // Since 2016: https://github.com/ngosang/trackerslist/issues/26
+	// Runned by Internet Archive.
+	// According to https://help.archive.org/help/archive-bittorrents/,
+	//  they are not open ("they track our only own torrents").
+	// "udp://bt1.archive.org:6969/announce",
+	// "udp://bt1.archive.org:6969/announce",
+	"http://sukebei.tracker.wf:8888/announce", // nyaa
+	"http://nyaa.tracker.wf:7777/announce",
+}

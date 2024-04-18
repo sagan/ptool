@@ -134,6 +134,10 @@ func init() {
 	config.DefaultConfigFile = configFile
 
 	// global flags
+	RootCmd.PersistentFlags().BoolVarP(&config.Insecure, "insecure", "", false,
+		`Temporarily disable all TLS / https cert verifications during this session. `+
+			`To permanently disable TLS cert verifications, `+
+			`add "siteInsecure = true" line to the top of ptool.toml config file`)
 	RootCmd.PersistentFlags().BoolVarP(&config.Fork, "fork", "", false,
 		"Enables a daemon mode that runs the ptool process in the background (detached from current terminal). "+
 			"The current stdout / stderr will still be used so you may want to redirect them to files using pipe. "+

@@ -2,6 +2,7 @@ package xseedcheck
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 
@@ -78,7 +79,7 @@ func xseedcheck(cmd *cobra.Command, args []string) error {
 
 		fmt.Printf("\n")
 		fmt.Printf("Torrent file: %s\n", torrent)
-		tinfo.PrintFiles(true, true)
+		tinfo.FprintFiles(os.Stdout, true, true)
 	}
 	if compareResult < 0 {
 		return fmt.Errorf("not match")

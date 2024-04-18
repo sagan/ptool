@@ -190,7 +190,7 @@ func GetTorrentContent(torrent string, defaultSite string,
 		err = fmt.Errorf("%s: is NOT a valid .torrent contents", torrent)
 		return
 	}
-	if tinfo, err = torrentutil.ParseTorrent(content, 99); err != nil {
+	if tinfo, err = torrentutil.ParseTorrent(content); err != nil {
 		msg := fmt.Sprintf("%s: failed to parse torrent: %v", torrent, err)
 		if ignoreParsingError {
 			log.Debugf(msg)

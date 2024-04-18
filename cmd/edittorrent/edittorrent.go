@@ -30,6 +30,7 @@ It will ask for confirm before updateing torrent files, unless --force flag is s
 Available "editing" flags (at least one of them must be set):
 * --remove-tracker
 * --add-tracker
+* --add-public-trackers
 * --update-tracker
 * --update-created-by
 * --update-creation-date
@@ -54,6 +55,7 @@ var (
 	force                            = false
 	doBackup                         = false
 	useCommentMeta                   = false
+	addPublicTrackers                = false
 	removeTracker                    = ""
 	addTracker                       = ""
 	updateTracker                    = ""
@@ -65,6 +67,8 @@ var (
 
 func init() {
 	command.Flags().BoolVarP(&force, "force", "", false, "Do update torrent files without confirm")
+	command.Flags().BoolVarP(&addPublicTrackers, "add-public-trackers", "", false,
+		`Add common pre-defined open trackers to public (non-private) torrents. If a torrent is private, do nothing`)
 	command.Flags().BoolVarP(&doBackup, "backup", "", false,
 		"Backup original .torrent file to *"+constants.FILENAME_SUFFIX_BACKUP+
 			" unless it's name already has that suffix. If the same name backup file already exists, it will be overwrited")
@@ -101,12 +105,12 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 	if len(torrents) == 1 && torrents[0] == "-" {
 		return fmt.Errorf(`"-" as reading .torrent content from stdin is NOT supported here`)
 	}
-	if util.CountNonZeroVariables(removeTracker, addTracker, updateTracker,
+	if util.CountNonZeroVariables(removeTracker, addTracker, addPublicTrackers, updateTracker,
 		updateCreatedBy, updateCreationDate, updateComment, replaceCommentMetaSavePathPrefix) == 0 {
 		return fmt.Errorf(`at least one of "--add-*", "--remove-*", "--update-*", or "--replace-*" flags must be set`)
 	}
-	if updateTracker != "" && (util.CountNonZeroVariables(addTracker, removeTracker) > 0) {
-		return fmt.Errorf(`"--update-tracker" flag is NOT compatible with "--remove-tracker" or "--add-tracker" flags`)
+	if updateTracker != "" && (util.CountNonZeroVariables(removeTracker, addTracker, addPublicTrackers) > 0) {
+		return fmt.Errorf(`"--update-tracker" flag is NOT compatible with other tracker editing flags`)
 	}
 	if !useCommentMeta && (util.CountNonZeroVariables(replaceCommentMetaSavePathPrefix) > 0) {
 		return fmt.Errorf(`editing of comment meta fields must be used with "--use-comment-meta" flag`)
@@ -132,6 +136,9 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 		}
 		if addTracker != "" {
 			fmt.Printf("Add tracker: %q\n", addTracker)
+		}
+		if addPublicTrackers {
+			fmt.Printf("Add public trackers:\n  %s\n", strings.Join(constants.OpenTrackers, "\n  "))
 		}
 		if updateTracker != "" {
 			fmt.Printf("Update tracker: %q\n", updateTracker)
@@ -168,47 +175,54 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 		}
 		changed := false
 		if removeTracker != "" {
-			if _err := tinfo.RemoveTracker(removeTracker); _err != nil {
-				if _err != torrentutil.ErrNoChange {
-					err = _err
-				}
-			} else {
+			err = tinfo.RemoveTracker(removeTracker)
+			switch err {
+			case torrentutil.ErrNoChange:
+				err = nil
+			case nil:
 				changed = true
 			}
 		}
 		if err == nil && addTracker != "" {
-			if _err := tinfo.AddTracker(addTracker, -1); _err != nil {
-				if _err != torrentutil.ErrNoChange {
-					err = _err
-				}
-			} else {
+			err = tinfo.AddTracker(addTracker, -1)
+			switch err {
+			case torrentutil.ErrNoChange:
+				err = nil
+			case nil:
 				changed = true
 			}
 		}
-		if err == nil && updateTracker != "" {
-			if _err := tinfo.UpdateTracker(updateTracker); _err != nil {
-				if _err != torrentutil.ErrNoChange {
-					err = _err
+		if err == nil && addPublicTrackers && !tinfo.IsPrivate() {
+			for _, tracker := range constants.OpenTrackers {
+				if tinfo.AddTracker(tracker, -1) == nil {
+					changed = true
 				}
-			} else {
+			}
+		}
+		if err == nil && updateTracker != "" {
+			err = tinfo.UpdateTracker(updateTracker)
+			switch err {
+			case torrentutil.ErrNoChange:
+				err = nil
+			case nil:
 				changed = true
 			}
 		}
 		if err == nil && updateCreatedBy != "" {
-			if _err := tinfo.UpdateCreatedBy(updateCreatedBy); _err != nil {
-				if _err != torrentutil.ErrNoChange {
-					err = _err
-				}
-			} else {
+			err = tinfo.UpdateCreatedBy(updateCreatedBy)
+			switch err {
+			case torrentutil.ErrNoChange:
+				err = nil
+			case nil:
 				changed = true
 			}
 		}
 		if err == nil && updateCreationDate != "" {
-			if _err := tinfo.UpdateCreationDate(updateCreationDate); _err != nil {
-				if _err != torrentutil.ErrNoChange {
-					err = _err
-				}
-			} else {
+			err = tinfo.UpdateCreationDate(updateCreationDate)
+			switch err {
+			case torrentutil.ErrNoChange:
+				err = nil
+			case nil:
 				changed = true
 			}
 		}
@@ -221,12 +235,14 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 					commentMeta.Comment = updateComment
 					changed = true
 				}
-			} else if _err := tinfo.UpdateComment(updateComment); _err != nil {
-				if _err != torrentutil.ErrNoChange {
-					err = _err
-				}
 			} else {
-				changed = true
+				err = tinfo.UpdateComment(updateComment)
+				switch err {
+				case torrentutil.ErrNoChange:
+					err = nil
+				case nil:
+					changed = true
+				}
 			}
 		}
 		if err == nil && replaceCommentMetaSavePathPrefix != "" && commentMeta != nil {

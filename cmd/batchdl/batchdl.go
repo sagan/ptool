@@ -501,7 +501,7 @@ mainloop:
 				}
 			} else {
 				consecutiveFail = 0
-				if tinfo, err := torrentutil.ParseTorrent(torrentContent, 99); err != nil {
+				if tinfo, err := torrentutil.ParseTorrent(torrentContent); err != nil {
 					fmt.Printf("torrent %s (%s): failed to parse: %v\n", torrent.Id, torrent.Name, err)
 				} else {
 					if doDownload {

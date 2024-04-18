@@ -17,7 +17,7 @@ var command = &cobra.Command{
 	Long: `Bind (authenticate) iyuu service using PT site passkey.
 
 Example:
-ptool iyuu bind --site zhuque --uid 123456 --passkey 0123456789abcdef
+  ptool iyuu bind --site zhuque --uid 123456 --passkey 0123456789abcdef
 
 * --site {iyuu_site_name} : iyuu site name. Use "ptool iyuu sites -b" to list all bindable sites.
 * --uid {site_uid} : the uid (user id) of corresponding site

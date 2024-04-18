@@ -359,7 +359,7 @@ func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, globalConfig *con
 	if proxy == "" || proxy == "env" {
 		proxy = util.ParseProxyFromEnv(siteConfig.Url)
 	}
-	insecure := !siteConfig.Secure && (siteConfig.Insecure || globalConfig.SiteInsecure)
+	insecure := config.Insecure || !siteConfig.Secure && (siteConfig.Insecure || globalConfig.SiteInsecure)
 	timeout := int64(0)
 	if siteConfig.Timeout != 0 {
 		timeout = siteConfig.Timeout

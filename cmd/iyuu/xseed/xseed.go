@@ -340,7 +340,7 @@ mainloop:
 					continue
 				}
 				siteConsecutiveFails[sitename] = 0
-				xseedTorrentInfo, err := torrentutil.ParseTorrent(xseedTorrentContent, 99)
+				xseedTorrentInfo, err := torrentutil.ParseTorrent(xseedTorrentContent)
 				if err != nil {
 					log.Errorf("Failed to parse xseed torrent contents: %v", err)
 					continue

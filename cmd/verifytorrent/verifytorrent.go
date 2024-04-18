@@ -28,10 +28,10 @@ var command = &cobra.Command{
 	Long: fmt.Sprintf(`Verify .torrent (metainfo) files are consistent with local disk contents.
 %s.
 
-Example:
-ptool verifytorrent file1.torrent file2.torrent --save-path /root/Downloads
-ptool verifytorrent file.torrent --content-path /root/Downloads/TorrentContentFolder
-ptool verifytorrent *.torrent --rclone-save-path remote:Downloads
+Examples:
+  ptool verifytorrent file1.torrent file2.torrent --save-path /root/Downloads
+  ptool verifytorrent file.torrent --content-path /root/Downloads/TorrentContentFolder
+  ptool verifytorrent *.torrent --rclone-save-path remote:Downloads
 
 Exact one (not less or more) of the following flags must be set.
 * --save-path dir : the save path ("Downloads" folder) of torrent content(s).
@@ -174,7 +174,7 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 			continue
 		}
 		if showAll {
-			tinfo.Print(torrent, true)
+			tinfo.Fprint(os.Stdout, torrent, true)
 		}
 		if useCommentMeta {
 			if commentMeta := tinfo.DecodeComment(); commentMeta == nil {

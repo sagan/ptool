@@ -59,7 +59,7 @@ var (
 // ModTime implements fs.FileInfo.
 func (l *LsjsonItem) ModTime() time.Time {
 	if t, err := time.Parse("2006-01-02T15:04:05+07:00", l.ItemModTime); err != nil {
-		return constants.UnixEpoch
+		return time.Unix(0, 0)
 	} else {
 		return t
 	}

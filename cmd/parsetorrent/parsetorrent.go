@@ -96,9 +96,9 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 			fmt.Printf("%s\n", tinfo.InfoHash)
 			continue
 		}
-		tinfo.Print(torrent, showAll)
+		tinfo.Fprint(os.Stdout, torrent, showAll)
 		if showAll {
-			tinfo.PrintFiles(true, false)
+			tinfo.FprintFiles(os.Stdout, true, false)
 			fmt.Printf("\n")
 		}
 	}

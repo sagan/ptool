@@ -23,7 +23,7 @@ var command = &cobra.Command{
 %s.
 
 Example:
-ptool addtrackers <client> <infoHashes...> --tracker "https://..."
+  ptool addtrackers <client> <infoHashes...> --tracker "https://..."
 The --tracker flag can be set many times.
 
 It will ask for confirmation, unless --force flag is set.`, constants.HELP_INFOHASH_ARGS),

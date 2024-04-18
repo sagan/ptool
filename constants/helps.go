@@ -11,3 +11,5 @@ const HELP_INFOHASH_ARGS = `Args list is an info-hash list of torrents.
 It's possible to use the following state filters in list to target multiple torrents:
 _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.
 Use a single "-" as args to read the list from stdin, delimited by blanks`
+
+const HELP_TIP_TTY_BINARY_OUTPUT = "binary .torrent file will mess up the terminal. Use pipe to redirect stdout"

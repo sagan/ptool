@@ -31,9 +31,9 @@ If '[={value}]' part is present, set the config, otherwise get current config.
 {value}: the value of config item to set. For config item of boolean type, use literal "false" or "true";
 for config item of size or speed type, use unit chars (B/K/M/G/T/P/E), e.g.: "10M" means 10MiB or 10MiB/s.
 
-Example:
-ptool clientctl local save_path # display current default download dir
-ptool clientctl local global_upload_speed_limit=10M # set global upload speed limit of local to 10MiB/s
+Examples:
+  ptool clientctl local save_path # display current default download dir
+  ptool clientctl local global_upload_speed_limit=10M # set global upload speed limit of local to 10MiB/s
 
 For list of all supported variables, run 'ptool clientctl --parameters'`,
 	RunE: clientctl,

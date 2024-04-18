@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -96,11 +97,17 @@ func ParseLocalDateTime(str string) (int64, error) {
 	return 0, fmt.Errorf("invalid date str")
 }
 
-// Parse time. Treat duration time as pasted.
+// Parse time (with date) string. .
+// It try to parse str in any of the below time format:
+// "yyyy-MM-ddHH:mm:ss", "yyyy-MM-dd HH:mm:ss", <integer> (unix timestamp in seconds),
+// "time duration" (e.g.: "5d", "6hm5s", "4天5时") (treat as pasted time til now)
 func ParseTime(str string, location *time.Location) (int64, error) {
 	str = strings.TrimSpace(str)
 	if str == "" {
 		return 0, fmt.Errorf("empty str")
+	}
+	if i, err := strconv.Atoi(str); err == nil {
+		return int64(i), nil
 	}
 	//  handle YYYY-mm-ddHH:mm:ss
 	if matched, _ := regexp.MatchString("\\d{4}-\\d{2}-\\d{2}\\d{2}:\\d{2}:\\d{2}", str); matched {
