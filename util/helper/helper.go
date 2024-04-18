@@ -225,9 +225,9 @@ func ReadArgsFromStdin() ([]string, error) {
 	}
 }
 
-// "*.torrent" => ["a.torrent", "b.torrent"...].
+// "*.torrent" => ["./a.torrent", "./b.torrent"...].
 // Return filestr untouched if it does not contains wildcard char.
-// Windows cmd / powershell 均不支持命令行 *.torrent 参数扩展。必须应用自己实现。做个简易版的
+// Windows cmd / powershell 均不支持命令行 *.torrent 参数扩展。必须应用自己实现。做个简易版的.
 func GetWildcardFilenames(filestr string) []string {
 	if !strings.ContainsAny(filestr, "*") {
 		return nil

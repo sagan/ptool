@@ -163,7 +163,7 @@ func maketorrent(cmd *cobra.Command, args []string) (err error) {
 		return fmt.Errorf("failed to marshal info: %v", err)
 	}
 	if output == "" {
-		if info.Name != metainfo.NoName {
+		if info.Name != "" && info.Name != metainfo.NoName {
 			output = info.Name + ".torrent"
 		} else {
 			log.Warnf("The created torrent has NO root folder, use it's info-hash as output file name")
@@ -183,18 +183,19 @@ func maketorrent(cmd *cobra.Command, args []string) (err error) {
 			err = mi.Write(os.Stdout)
 		}
 	} else {
-		if util.FileExists(output) && !force {
+		if !force && util.FileExists(output) {
 			err = fmt.Errorf(`output file %q already exists. use "--force" to overwrite`, output)
 		} else {
 			var outputFile *os.File
 			if outputFile, err = os.OpenFile(output, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, constants.PERM); err == nil {
+				defer outputFile.Close()
 				err = mi.Write(outputFile)
 			}
 		}
 	}
 	if err == nil {
 		if tinfo, err := torrentutil.FromMetaInfo(mi, info); err != nil {
-			log.Errorf("Failed to parsed created .torrent contents: %v", err)
+			log.Errorf("Failed to parsed created .torrent file contents: %v", err)
 		} else {
 			fmt.Fprintf(os.Stderr, "\nSuccessfully created torrent file:\n")
 			tinfo.Fprint(os.Stderr, output, true)

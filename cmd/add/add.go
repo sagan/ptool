@@ -98,7 +98,7 @@ func add(cmd *cobra.Command, args []string) error {
 	if renameAdded && deleteAdded {
 		return fmt.Errorf("--rename-added and --delete-added flags are NOT compatible")
 	}
-	torrents, stdinTorrentContents, err := helper.ParseTorrentsFromArgs(args)
+	torrents, stdinTorrentContents, err := helper.ParseTorrentsFromArgs(args[1:])
 	if err != nil {
 		return err
 	}
