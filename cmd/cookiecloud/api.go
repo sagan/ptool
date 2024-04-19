@@ -48,7 +48,7 @@ func GetCookiecloudData(server string, uuid string, password string,
 	if !strings.HasSuffix(server, "/") {
 		server += "/"
 	}
-	if proxy == "" || proxy == "env" {
+	if proxy == "" || proxy == constants.ENV_PROXY {
 		proxy = util.ParseProxyFromEnv(server)
 	}
 	if timeout == 0 {
@@ -59,7 +59,7 @@ func GetCookiecloudData(server string, uuid string, password string,
 	httpClient := &http.Client{
 		Timeout: time.Duration(timeout) * time.Second,
 	}
-	if proxy != "" && proxy != config.NONE {
+	if proxy != "" && proxy != constants.NONE {
 		proxyUrl, err := url.Parse(proxy)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse proxy %s: %v", proxy, err)

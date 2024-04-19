@@ -41,10 +41,9 @@ func init() {
 		"If != 0, the max amount of time (seconds) the torrent should be seeded. Negative value has special meaning")
 	command.Flags().Float64VarP(&ratioLimit, "ratio-limit", "", 0,
 		"If != 0, the max ratio (Up/Dl) the torrent should be seeded until. Negative value has special meaning")
-	command.Flags().StringVarP(&filter, "filter", "", "", "Filter torrents by name")
-	command.Flags().StringVarP(&category, "category", "", "", "Filter torrents by category")
-	command.Flags().StringVarP(&tag, "tag", "", "",
-		"Filter torrents by tag. Comma-separated list. Torrent which tags contain any one in the list matches")
+	command.Flags().StringVarP(&filter, "filter", "", "", constants.HELP_ARG_FILTER_TORRENT)
+	command.Flags().StringVarP(&category, "category", "", "", constants.HELP_ARG_CATEGORY)
+	command.Flags().StringVarP(&tag, "tag", "", "", constants.HELP_ARG_TAG)
 	cmd.RootCmd.AddCommand(command)
 }
 

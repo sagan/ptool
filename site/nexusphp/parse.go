@@ -178,6 +178,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 	)
 
 	fieldColumIndex := map[string]int{
+		"category": -1,
 		"time":     -1,
 		"size":     -1,
 		"seeders":  -1,
@@ -215,7 +216,10 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 	if headerEl != nil {
 		headerEl.Children().Each(func(i int, s *goquery.Selection) {
 			text := util.DomSanitizedText(s)
-			if text == "進度" || text == "进度" {
+			if text == "类型" || text == "類型" {
+				fieldColumIndex["category"] = i
+				return
+			} else if text == "進度" || text == "进度" {
 				fieldColumIndex["process"] = i
 				return
 			} else if text == "標題" || text == "标题" || text == "Name" {
@@ -262,6 +266,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		if s.Find(option.selectorTorrent).Length() == 0 {
 			return
 		}
+		var tags []string
 		name := ""
 		description := ""
 		id := ""
@@ -295,6 +300,16 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 					continue
 				}
 				switch field {
+				case "category":
+					s.Find(`img[alt]`).Each(func(i int, s *goquery.Selection) {
+						tag := s.AttrOr("alt", "")
+						if tag == "" {
+							tag = s.AttrOr("title", "")
+						}
+						if tag != "" {
+							tags = append(tags, tag)
+						}
+					})
 				case "size":
 					size, _ = util.RAMInBytes(text)
 				case "seeders":
@@ -471,6 +486,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 				IsActive:           isActive,
 				Paid:               paid,
 				Neutral:            neutral,
+				Tags:               tags,
 			})
 		}
 	})

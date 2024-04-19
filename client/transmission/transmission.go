@@ -17,6 +17,7 @@ import (
 	transmissionrpc "github.com/hekmon/transmissionrpc/v2"
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/util"
 	log "github.com/sirupsen/logrus"
 )
@@ -178,8 +179,14 @@ func (trclient *Client) GetTorrents(stateFilter string, category string, showAll
 	torrents := []client.Torrent{}
 	for _, trtorrent := range trclient.torrents {
 		torrent := tr2Torrent(trtorrent)
-		if category != "" && category != torrent.Category {
-			continue
+		if category != "" {
+			if category == constants.NONE {
+				if torrent.Category != "" {
+					continue
+				}
+			} else if category != torrent.Category {
+				continue
+			}
 		}
 		if !showAll && torrent.DownloadSpeed < 1024 && torrent.UploadSpeed < 1024 {
 			continue

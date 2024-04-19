@@ -83,6 +83,7 @@ var pureFlags = []string{
 	"free",
 	"help",
 	"include-downloaded",
+	"insecure",
 	"json",
 	"largest",
 	"lock-or-exit",

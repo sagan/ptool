@@ -16,6 +16,7 @@ import (
 	"github.com/sagan/ptool/cmd/common"
 	"github.com/sagan/ptool/cmd/iyuu"
 	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/util"
 	"github.com/sagan/ptool/util/torrentutil"
@@ -67,9 +68,8 @@ func init() {
 		"Only add xseed torrents from these sites or groups (comma-separated)")
 	command.Flags().StringVarP(&excludeSites, "exclude-sites", "", "",
 		"Do NOT add xseed torrents from these sites or groups (comma-separated)")
-	command.Flags().StringVarP(&category, "category", "", "", "Only xseed torrents that belongs to this category")
-	command.Flags().StringVarP(&tag, "tag", "", "",
-		"Comma-separated list. Only xseed torrents which tags contain any one in the list")
+	command.Flags().StringVarP(&category, "category", "", "", constants.HELP_ARG_CATEGORY_XSEED)
+	command.Flags().StringVarP(&tag, "tag", "", "", constants.HELP_ARG_TAG_XSEED)
 	command.Flags().StringVarP(&filter, "filter", "", "", "Only xseed torrents which name contains this")
 	command.Flags().StringVarP(&addCategory, "add-category", "", "",
 		"Manually set category of added xseed torrent. By Default it uses the original torrent's")

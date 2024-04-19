@@ -13,3 +13,17 @@ _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _err
 Use a single "-" as args to read the list from stdin, delimited by blanks`
 
 const HELP_TIP_TTY_BINARY_OUTPUT = "binary .torrent file will mess up the terminal. Use pipe to redirect stdout"
+
+const HELP_ARG_TRACKER = `Filter torrents by tracker url or domain. Use "` +
+	NONE + `" to select torrents without tracker`
+
+const HELP_ARG_FILTER_TORRENT = "Filter torrents by name"
+
+const HELP_ARG_CATEGORY = `Filter torrents by category. Use "` + NONE + `" to select uncategoried torrents`
+const HELP_ARG_CATEGORY_XSEED = `Only xseed torrents that belongs to this category. Use "` +
+	NONE + `" to select uncategoried torrents`
+
+const HELP_ARG_TAG = `Filter torrents by tag. Comma-separated list. ` +
+	`Torrent which tags contain any one in the list matches. Use "` + NONE + `" to select untagged torrents`
+const HELP_ARG_TAG_XSEED = `Comma-separated tag list. Only xseed torrents which tags ` +
+	`contain any one in the list. Use "` + NONE + `" to select untagged torrents`

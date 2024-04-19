@@ -93,6 +93,15 @@ func Execute() {
 				}
 			}
 			log.Infof("Lock acquired")
+			if config.Proxy != "" {
+				if config.Proxy == constants.NONE {
+					os.Setenv("HTTP_PROXY", "")
+					os.Setenv("HTTPS_PROXY", "")
+				} else if config.Proxy != constants.ENV_PROXY {
+					os.Setenv("HTTP_PROXY", config.Proxy)
+					os.Setenv("HTTPS_PROXY", config.Proxy)
+				}
+			}
 		}
 		ShellHistory = &ShellHistoryStruct{filename: filepath.Join(config.ConfigDir, config.HISTORY_FILENAME)}
 	}))
@@ -154,6 +163,10 @@ func init() {
 			"It is intended to be used to prevent multiple invocations of ptool process at the same time. "+
 			"If the lock file does not exist, it will be created automatically. "+
 			"However, it will NOT be deleted after ptool process exits")
+	RootCmd.PersistentFlags().StringVarP(&config.Proxy, "proxy", "", "",
+		`Temporarily set the network proxy used during this session. `+
+			`It has the highest priority and will override all other proxy settings in config file or env. `+
+			`E.g.: "http://127.0.0.1:1080", "socks5://127.0.0.1:7890". To disable proxy, set it to "`+constants.NONE+`"`)
 	RootCmd.PersistentFlags().CountVarP(&config.VerboseLevel, "verbose", "v", "verbose (-v, -vv, -vvv)")
 }
 

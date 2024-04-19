@@ -93,7 +93,7 @@ func prepareFs(dir string, fs map[string]any) {
 				f.Close()
 			}
 		} else {
-			if err := os.Mkdir(entryPath, 0600); err != nil {
+			if err := os.Mkdir(entryPath, 0666); err != nil {
 				panic(err)
 			}
 			prepareFs(entryPath, entry.(map[string]any))

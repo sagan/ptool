@@ -12,6 +12,7 @@ import (
 	"golang.org/x/term"
 
 	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/util"
 )
 
@@ -97,6 +98,7 @@ type Client interface {
 	// download / export .torrent file for a torrent in client
 	ExportTorrentFile(infoHash string) ([]byte, error)
 	GetTorrent(infoHash string) (*Torrent, error)
+	// category: "none" is a special value to select uncategoried torrents.
 	// stateFilter: _all|_active|_done|_undone, or any state value (possibly with a _ prefix)
 	GetTorrents(stateFilter string, category string, showAll bool) ([]Torrent, error)
 	AddTorrent(torrentContent []byte, option *TorrentOption, meta map[string]int64) error
@@ -237,6 +239,25 @@ func ParseMetaFromName(fullname string) (name string, meta map[string]int64) {
 		name = fullname
 	}
 	return
+}
+
+func (torrent *Torrent) MatchFilter(filter string) bool {
+	if filter == "" || util.ContainsI(torrent.Name, filter) {
+		return true
+	}
+	return false
+}
+
+// Matches if torrent tracker's url or domain == tracker.
+// Specially, if tracker is "none", matches if torrent does NOT have a tracker.
+func (torrent *Torrent) MatchTracker(tracker string) bool {
+	if tracker == constants.NONE {
+		return torrent.Tracker == ""
+	}
+	if util.IsUrl(tracker) {
+		return torrent.Tracker == tracker
+	}
+	return torrent.TrackerDomain == tracker
 }
 
 func (torrent *Torrent) StateIconText() string {
@@ -451,7 +472,7 @@ func PrintTorrents(torrents []Torrent, filter string, showSum int64, dense bool)
 			widthName, "Name", "InfoHash", "Size", "State", "↓S(/s)", "↑S(/s)", "Seeds", "Peers", "Tracker")
 	}
 	for _, torrent := range torrents {
-		if filter != "" && !util.ContainsI(torrent.Name, filter) && !util.ContainsI(torrent.InfoHash, filter) {
+		if filter != "" && !torrent.MatchFilter(filter) {
 			continue
 		}
 		cnt++
@@ -503,8 +524,9 @@ func PrintTorrents(torrents []Torrent, filter string, showSum int64, dense bool)
 	}
 }
 
-// parse and return torrents that meet criterion.
-// tag: comma-separated list, a torrent matches if it has any tag that in the list
+// Parse and return torrents that meet criterion.
+// tag: comma-separated list, a torrent matches if it has any tag that in the list;
+// specially, "none" means untagged torrents.
 func QueryTorrents(clientInstance Client, category string, tag string, filter string,
 	hashOrStateFilters ...string) ([]Torrent, error) {
 	isAll := len(hashOrStateFilters) == 0
@@ -525,10 +547,16 @@ func QueryTorrents(clientInstance Client, category string, tag string, filter st
 	}
 	torrents2 := []Torrent{}
 	for _, torrent := range torrents {
-		if tag != "" && !torrent.HasAnyTag(tag) {
-			continue
+		if tag != "" {
+			if tag == constants.NONE {
+				if len(torrent.Tags) > 0 {
+					continue
+				}
+			} else if !torrent.HasAnyTag(tag) {
+				continue
+			}
 		}
-		if filter != "" && !util.ContainsI(torrent.Name, filter) {
+		if filter != "" && !torrent.MatchFilter(filter) {
 			continue
 		}
 		if isAll {
@@ -550,7 +578,8 @@ func QueryTorrents(clientInstance Client, category string, tag string, filter st
 
 // Query torrents that meet criterion and return infoHashes. Specially, return nil slice if all torrents selected.
 // If all hashOrStateFilters is plain info-hash and all other conditions empty, just return hashOrStateFilters,nil.
-// tag: comma-separated list, a torrent matches if it has any tag that in the list.
+// tag: comma-separated list, a torrent matches if it has any tag that in the list;
+// specially, "none" means untagged torrents.
 func SelectTorrents(clientInstance Client, category string, tag string, filter string,
 	hashOrStateFilters ...string) ([]string, error) {
 	noCondition := category == "" && tag == "" && filter == ""
@@ -582,10 +611,16 @@ func SelectTorrents(clientInstance Client, category string, tag string, filter s
 	}
 	infoHashes := []string{}
 	for _, torrent := range torrents {
-		if tag != "" && !torrent.HasAnyTag(tag) {
-			continue
+		if tag != "" {
+			if tag == constants.NONE {
+				if len(torrent.Tags) > 0 {
+					continue
+				}
+			} else if !torrent.HasAnyTag(tag) {
+				continue
+			}
 		}
-		if filter != "" && !util.ContainsI(torrent.Name, filter) {
+		if filter != "" && !torrent.MatchFilter(filter) {
 			continue
 		}
 		if isAll {

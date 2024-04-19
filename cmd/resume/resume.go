@@ -29,10 +29,9 @@ var (
 )
 
 func init() {
-	command.Flags().StringVarP(&filter, "filter", "", "", "Filter torrents by name")
-	command.Flags().StringVarP(&category, "category", "", "", "Filter torrents by category")
-	command.Flags().StringVarP(&tag, "tag", "", "",
-		"Filter torrents by tag. Comma-separated list. Torrent which tags contain any one in the list matches")
+	command.Flags().StringVarP(&filter, "filter", "", "", constants.HELP_ARG_FILTER_TORRENT)
+	command.Flags().StringVarP(&category, "category", "", "", constants.HELP_ARG_CATEGORY)
+	command.Flags().StringVarP(&tag, "tag", "", "", constants.HELP_ARG_TAG)
 	cmd.RootCmd.AddCommand(command)
 }
 

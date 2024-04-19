@@ -60,10 +60,9 @@ func init() {
 			`"[client].[infohash].torrent" (e.g.: "local.293235f712652df08a8665ec2ca118d7e0615c3f.torrent") format`)
 	command.Flags().BoolVarP(&useCommentMeta, "use-comment-meta", "", false,
 		`Export torrent category, tags, save path and other infos to "comment" field of .torrent file`)
-	command.Flags().StringVarP(&filter, "filter", "", "", "Filter torrents by name")
-	command.Flags().StringVarP(&category, "category", "", "", "Filter torrents by category")
-	command.Flags().StringVarP(&tag, "tag", "", "",
-		"Filter torrents by tag. Comma-separated list. Torrent which tags contain any one in the list matches")
+	command.Flags().StringVarP(&filter, "filter", "", "", constants.HELP_ARG_FILTER_TORRENT)
+	command.Flags().StringVarP(&category, "category", "", "", constants.HELP_ARG_CATEGORY)
+	command.Flags().StringVarP(&tag, "tag", "", "", constants.HELP_ARG_TAG)
 	command.Flags().StringVarP(&downloadDir, "download-dir", "", ".", `Set the download dir of exported torrents`)
 	command.Flags().StringVarP(&rename, "rename", "", config.DEFAULT_EXPORT_TORRENT_RENAME,
 		"Set the name of downloaded torrents (supports variables)")

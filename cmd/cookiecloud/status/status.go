@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/cmd/cookiecloud"
+	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/util"
 )
 
@@ -36,7 +37,7 @@ func status(cmd *cobra.Command, args []string) error {
 	}
 	for _, profile := range cookiecloudProfiles {
 		data, err := cookiecloud.GetCookiecloudData(profile.Server, profile.Uuid, profile.Password,
-			profile.Proxy, profile.Timeout)
+			config.GetProxy(profile.Proxy), profile.Timeout)
 		if err != nil {
 			fmt.Printf("✕cookiecloud server %s (uuid %s) test failed: %v\n",
 				util.ParseUrlHostname(profile.Server), profile.Uuid, err)

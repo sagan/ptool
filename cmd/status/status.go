@@ -11,6 +11,7 @@ import (
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/util"
 )
@@ -44,7 +45,7 @@ var command = &cobra.Command{
 }
 
 func init() {
-	command.Flags().StringVarP(&filter, "filter", "", "", "Filter torrents by name")
+	command.Flags().StringVarP(&filter, "filter", "", "", constants.HELP_ARG_FILTER_TORRENT)
 	command.Flags().StringVarP(&category, "category", "", "", "Filter client torrents by category")
 	command.Flags().BoolVarP(&dense, "dense", "d", false, "Dense mode: show full torrent title & subtitle")
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all clients and sites")

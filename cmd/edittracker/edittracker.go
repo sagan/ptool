@@ -49,10 +49,9 @@ func init() {
 	command.Flags().BoolVarP(&replaceHost, "replace-host", "", false,
 		"Replace host mode. If set, --old-tracker should be the old host (hostname[:port]) instead of url, "+
 			"the --new-tracker can either be a host or url")
-	command.Flags().StringVarP(&filter, "filter", "", "", "Filter torrents by name")
-	command.Flags().StringVarP(&category, "category", "", "", "Filter torrents by category")
-	command.Flags().StringVarP(&tag, "tag", "", "",
-		"Filter torrents by tag. Comma-separated list. Torrent which tags contain any one in the list matches")
+	command.Flags().StringVarP(&filter, "filter", "", "", constants.HELP_ARG_FILTER_TORRENT)
+	command.Flags().StringVarP(&category, "category", "", "", constants.HELP_ARG_CATEGORY)
+	command.Flags().StringVarP(&tag, "tag", "", "", constants.HELP_ARG_TAG)
 	command.Flags().StringVarP(&oldTracker, "old-tracker", "", "", "Set the old tracker")
 	command.Flags().StringVarP(&newTracker, "new-tracker", "", "", "Set the new tracker")
 	command.MarkFlagRequired("old-tracker")

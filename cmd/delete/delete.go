@@ -41,11 +41,10 @@ func init() {
 	command.Flags().BoolVarP(&preserve, "preserve", "p", false,
 		"Preserve (don't delete) torrent content files on the disk")
 	command.Flags().BoolVarP(&force, "force", "", false, "Force deletion. Do NOT prompt for confirm")
-	command.Flags().StringVarP(&filter, "filter", "", "", "Filter torrents by name")
-	command.Flags().StringVarP(&category, "category", "", "", "Filter torrents by category")
-	command.Flags().StringVarP(&tag, "tag", "", "",
-		"Filter torrents by tag. Comma-separated list. Torrent which tags contain any one in the list matches")
-	command.Flags().StringVarP(&tracker, "tracker", "", "", "Filter torrents by tracker domain")
+	command.Flags().StringVarP(&filter, "filter", "", "", constants.HELP_ARG_FILTER_TORRENT)
+	command.Flags().StringVarP(&category, "category", "", "", constants.HELP_ARG_CATEGORY)
+	command.Flags().StringVarP(&tag, "tag", "", "", constants.HELP_ARG_TAG)
+	command.Flags().StringVarP(&tracker, "tracker", "", "", constants.HELP_ARG_TRACKER)
 	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1",
 		"Skip torrent with size smaller than (<) this value. -1 == no limit")
 	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1",
@@ -96,7 +95,7 @@ func delete(cmd *cobra.Command, args []string) error {
 	}
 	if tracker != "" || minTorrentSize >= 0 || maxTorrentSize >= 0 {
 		torrents = util.Filter(torrents, func(t client.Torrent) bool {
-			if tracker != "" && t.TrackerDomain != tracker ||
+			if tracker != "" && !t.MatchTracker(tracker) ||
 				minTorrentSize >= 0 && t.Size < minTorrentSize ||
 				maxTorrentSize >= 0 && t.Size > maxTorrentSize {
 				return false

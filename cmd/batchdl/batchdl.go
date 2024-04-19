@@ -252,7 +252,7 @@ func batchdl(command *cobra.Command, args []string) error {
 		freeTimeAtLeast = t
 	}
 	if nohr && siteInstance.GetSiteConfig().GlobalHnR {
-		log.Errorf("No torrents will be downloaded: site %s enforces global HnR restrictions",
+		log.Errorf("No torrents will be downloaded: site %s enforces global HnR policy",
 			siteInstance.GetName(),
 		)
 		return nil

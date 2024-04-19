@@ -6,6 +6,13 @@ import (
 	"regexp"
 )
 
+// 如果 ptool.toml 配置文件里字符串类型配置项值为空，使用系统默认值；使用 NONE 值显式设置该配置项为空值。
+// 部分 flag 参数使用 NONE 值显式指定为空值。
+const NONE = "none"
+
+// a special proxy value to indicate force use proxy from HTTP(S)_PROXY env.
+const ENV_PROXY = "env"
+
 const FILENAME_INVALID_CHARS_REGEX = `[<>:"/\|\?\*]+`
 const PERM = 0600 // 程序创建的所有文件的 PERM
 

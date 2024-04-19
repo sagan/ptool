@@ -12,6 +12,7 @@ import (
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/cmd/common"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/util"
 )
 
@@ -83,11 +84,10 @@ func init() {
 		`Time duration. Only showing torrent that has activity in the past time of this value. E.g.: "5d"`)
 	command.Flags().StringVarP(&noActiveInStr, "not-active-in", "", "",
 		`Time duration. Only showing torrent that does NOT has activity in the past time of this value. E.g.: "3d"`)
-	command.Flags().StringVarP(&filter, "filter", "", "", "Filter torrents by name")
-	command.Flags().StringVarP(&category, "category", "", "", "Filter torrents by category")
-	command.Flags().StringVarP(&tag, "tag", "", "",
-		"Filter torrents by tag. Comma-separated list. Torrent which tags contain any one in the list matches")
-	command.Flags().StringVarP(&tracker, "tracker", "", "", "Filter torrents by tracker domain")
+	command.Flags().StringVarP(&filter, "filter", "", "", constants.HELP_ARG_FILTER_TORRENT)
+	command.Flags().StringVarP(&category, "category", "", "", constants.HELP_ARG_CATEGORY)
+	command.Flags().StringVarP(&tag, "tag", "", "", constants.HELP_ARG_TAG)
+	command.Flags().StringVarP(&tracker, "tracker", "", "", constants.HELP_ARG_TRACKER)
 	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1",
 		"Skip torrent with size smaller than (<) this value. -1 == no limit")
 	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1",
@@ -192,7 +192,7 @@ func show(cmd *cobra.Command, args []string) error {
 	}
 	if hasFilterCondition {
 		torrents = util.Filter(torrents, func(t client.Torrent) bool {
-			if tracker != "" && t.TrackerDomain != tracker ||
+			if tracker != "" && !t.MatchTracker(tracker) ||
 				minTorrentSize >= 0 && t.Size < minTorrentSize ||
 				maxTorrentSize >= 0 && t.Size > maxTorrentSize ||
 				addedIn > 0 && now-t.Atime > addedIn ||

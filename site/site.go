@@ -35,11 +35,12 @@ type Torrent struct {
 	Seeders            int64
 	Leechers           int64
 	Snatched           int64
-	HasHnR             bool // true if has any type of HR
-	IsActive           bool // true if torrent is as already downloading / seeding
-	Paid               bool // "付费"种子: (第一次)下载或汇报种子时扣除魔力/积分
-	Bought             bool // 适用于付费种子：已购买
-	Neutral            bool // 中性种子：不计算上传、下载、做种魔力
+	HasHnR             bool     // true if has any type of HR
+	IsActive           bool     // true if torrent is as already downloading / seeding
+	Paid               bool     // "付费"种子: (第一次)下载或汇报种子时扣除魔力/积分
+	Bought             bool     // 适用于付费种子：已购买
+	Neutral            bool     // 中性种子：不计算上传、下载、做种魔力
+	Tags               []string // labels, e.g. category and other meta infos.
 }
 
 type Status struct {
@@ -320,7 +321,7 @@ func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, globalConfig *con
 	} else if globalConfig.SiteImpersonate != "" {
 		impersonate = globalConfig.SiteImpersonate
 	}
-	if impersonate != config.NONE {
+	if impersonate != constants.NONE {
 		if ip := impersonateutil.GetProfile(impersonate); ip == nil {
 			return nil, nil, fmt.Errorf("impersonate '%s' not supported", impersonate)
 		} else {
@@ -352,11 +353,8 @@ func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, globalConfig *con
 	if siteConfig.HttpHeaders != nil {
 		httpHeaders = append(httpHeaders, siteConfig.HttpHeaders...)
 	}
-	proxy := globalConfig.SiteProxy
-	if siteConfig.Proxy != "" {
-		proxy = siteConfig.Proxy
-	}
-	if proxy == "" || proxy == "env" {
+	proxy := config.GetProxy(siteConfig.Proxy, globalConfig.SiteProxy)
+	if proxy == "" || proxy == constants.ENV_PROXY {
 		proxy = util.ParseProxyFromEnv(siteConfig.Url)
 	}
 	insecure := config.Insecure || !siteConfig.Secure && (siteConfig.Insecure || globalConfig.SiteInsecure)
@@ -371,13 +369,13 @@ func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, globalConfig *con
 	} else if timeout < 0 {
 		timeout = constants.INFINITE_TIMEOUT
 	}
-	if ja3 == config.NONE {
+	if ja3 == constants.NONE {
 		ja3 = ""
 	}
-	if h2fingerprint == config.NONE {
+	if h2fingerprint == constants.NONE {
 		h2fingerprint = ""
 	}
-	if proxy == config.NONE {
+	if proxy == constants.NONE {
 		proxy = ""
 	}
 	sep := "\n"

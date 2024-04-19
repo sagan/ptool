@@ -22,7 +22,6 @@ import (
 )
 
 const (
-	NONE                      = "none" // 如果字符串类型配置项值为空，使用系统默认值。使用 NONE 值显式设置该配置项为空值
 	BRUSH_CAT                 = "_brush"
 	FALLBACK_CAT              = "Others" // --add-category-auto fallback category if does NOT match with any site
 	XSEED_TAG                 = "_xseed"
@@ -221,6 +220,7 @@ var (
 	ConfigName            = "" // "ptool"
 	ConfigType            = "" // "toml"
 	LockFile              = ""
+	Proxy                 = "" // proxy set by cmdline global flag. It has the highest priority.
 	GlobalLock            = false
 	LockOrExit            = false
 	Fork                  = false
@@ -683,4 +683,18 @@ func assertConfigItemNameIsValid(itemType string, name string, item any) {
 	if strings.ContainsAny(name, `,.:;'"/\<>[]{}|`) {
 		log.Fatalf("Invalid config: %s name %s contains invalid characters (item=%v)", itemType, name, item)
 	}
+}
+
+// Get effective proxy, following the orders:
+// Proxy (set by cmdline --proxy flag), proxies...
+func GetProxy(proxies ...string) string {
+	if Proxy != "" {
+		return Proxy
+	}
+	for _, proxy := range proxies {
+		if proxy != "" {
+			return proxy
+		}
+	}
+	return ""
 }

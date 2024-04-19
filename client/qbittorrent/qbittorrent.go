@@ -21,6 +21,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/util"
 )
 
@@ -822,8 +823,14 @@ func (qbclient *Client) GetTorrents(stateFilter string, category string, showAll
 	torrents := []client.Torrent{}
 
 	for _, qbtorrent := range qbclient.data.Torrents {
-		if category != "" && category != qbtorrent.Category {
-			continue
+		if category != "" {
+			if category == constants.NONE {
+				if qbtorrent.Category != "" {
+					continue
+				}
+			} else if category != qbtorrent.Category {
+				continue
+			}
 		}
 		if !showAll && qbtorrent.Dlspeed < 1024 && qbtorrent.Upspeed < 1024 {
 			continue
