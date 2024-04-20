@@ -27,6 +27,9 @@ const INFINITE_TIMEOUT = 86400 * 365 * 100
 const BIG_FILE_SIZE = 10 * 1024 * 1024 // 10MiB
 const FILE_HEADER_CHUNK_SIZE = 512
 
+// type, name, ↑info, ↓info, others
+const STATUS_FMT = "%-6s  %-15s  %-30s  %-30s  %-s\n"
+
 var FilenameInvalidCharsRegex = regexp.MustCompile(FILENAME_INVALID_CHARS_REGEX)
 
 // .torrent file magic number.

@@ -35,7 +35,7 @@ var defaultIgnorePatterns = []string{
 
 var command = &cobra.Command{
 	Use:         "maketorrent {content-path}",
-	Aliases:     []string{"createtorrent"},
+	Aliases:     []string{"createtorrent", "mktorrent"},
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "maketorrent"},
 	Short:       "Make (create) a .torrent (metainfo) file from content folder or file in file system.",
 	Long: fmt.Sprintf(`Make (create) a .torrent (metainfo) file from content folder or file in file system.
@@ -47,8 +47,8 @@ It creates BitTorrent v1 format torrent. V2 or hybrid format is NOT supported at
 Examples:
   ptool maketorrent ./MyVideos # output: ./MyVideos.torrent
 
-	# --public : add common open trackers to created torrent
-	# --excludes : Prevent *.txt files from being indexed in created torrent
+  # --public : add common open trackers to created torrent
+  # --excludes : Prevent *.txt files from being indexed in created torrent
   ptool maketorrent ./MyVideos --public --excludes "*.txt"
 
 By default, certain patterns files inside content-path will be ignored and NOT indexed in created .torrent file:

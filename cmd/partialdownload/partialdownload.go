@@ -27,13 +27,15 @@ var command = &cobra.Command{
 Before running this command, you should add the target torrent to client in paused
 state. You need to manually start the torrent task after running this command.
 
-Example usage:
+Examples:
+  # View chunks info of the torrent
+  ptool partialdownload local e447d424dd0e6fba7bf9494008111f3bbb1f56a9 --chunk-size 500GiB -a
 
-# View chunks info of the torrent
-ptool partialdownload local e447d424dd0e6fba7bf9494008111f3bbb1f56a9 --chunk-size 500GiB -a
+  # Download the first (0-indexed) chunk of the torrent in client (Mark files of other chunks as no-download)
+  ptool partialdownload local e447d424dd0e6fba7bf9494008111f3bbb1f56a9 --chunk-size 500GiB --chunk-index 0
 
-# Download the first (0-indexed) chunk of the torrent in client (Mark files of other chunks as no-download)
-ptool partialdownload local e447d424dd0e6fba7bf9494008111f3bbb1f56a9 --chunk-size 500GiB --chunk-index 0
+  # Download the last (-1 index) chunk of the torrent
+  ptool partialdownload local e447d424dd0e6fba7bf9494008111f3bbb1f56a9 --chunk-size 500GiB --chunk-index -1
 
 Without --strict flag, ptool will always split torrent contents to chunks.
 The size of each chunk may be larger then chunk size. And there may be less
@@ -48,12 +50,9 @@ With --append flag, ptool will only mark files of current (index) chunk as downl
 but will NOT mark files of other chunks as no-download (Leave their download / no-download
 marks unchanged).
 
-Use case of this command:
-You have a cloud VPS / Server with limited disk space, and you want to use this
+Use case of this command: You have a cloud VPS / Server with limited disk space, and you want to use this
 machine to download a large torrent. And then upload the downloaded torrent contents
-to cloud drive using rclone, for example.
-
-The above task is trivial using this command.`,
+to cloud drive using rclone, for example. The above task is trivial using this command.`,
 	Args: cobra.MatchAll(cobra.ExactArgs(2), cobra.OnlyValidArgs),
 	RunE: partialdownload,
 }
@@ -76,9 +75,13 @@ func init() {
 		"Set strict mode that the size of every chunk MUST be strictly <= chunk-size")
 	command.Flags().BoolVarP(&originalOrder, "original-order", "", false,
 		"Split torrent files to chunks by their original order instead of path order")
-	command.Flags().Int64VarP(&chunkIndex, "chunk-index", "", 0, "Set the split chunk index (0-based) to download")
+	command.Flags().Int64VarP(&chunkIndex, "chunk-index", "", 0, "Set the split chunk index (0-based) to download. "+
+		"Negative value is related to the total chunks number, e.g.: -1 means the last chunk. "+
+		"Default value is 0 (the first chunk)")
 	command.Flags().Int64VarP(&startIndex, "start-index", "", 0,
-		"Set the index (0-based) of the first file in torrent to download. The prior files of torrent will be skipped")
+		"Set the index (0-based) of the first file in torrent to download. The prior files of torrent will be skipped. "+
+			"Negative value is related to the total files number, e.g.: -100 means skip all but the last 100 files. "+
+			"Skipped files will be be excluded from being splitting into chunks")
 	command.Flags().StringVarP(&chunkSizeStr, "chunk-size", "", "", "Set the split chunk size string. e.g.: 500GiB")
 	command.MarkFlagRequired("chunk-size")
 	cmd.RootCmd.AddCommand(command)
@@ -91,9 +94,6 @@ func partialdownload(cmd *cobra.Command, args []string) error {
 	if chunkSize <= 0 {
 		return fmt.Errorf("invalid chunk size %d", chunkSize)
 	}
-	if chunkIndex < 0 {
-		return fmt.Errorf("invalid chunk index %d", chunkIndex)
-	}
 
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
@@ -103,9 +103,14 @@ func partialdownload(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get client files: %v", err)
 	}
-	if startIndex < 0 || startIndex >= int64(len(torrentFiles))-1 {
-		return fmt.Errorf("invalid start-index %d, valid range: [0, %d] (torrent has %d files)",
-			startIndex, len(torrentFiles)-2, len(torrentFiles))
+	if len(torrentFiles) == 0 {
+		return fmt.Errorf("target torrent has no files")
+	}
+	if startIndex < 0 && int64(len(torrentFiles))+startIndex < 0 || startIndex >= int64(len(torrentFiles)) {
+		return fmt.Errorf("invalid start-index %d, torrent has %d files", startIndex, len(torrentFiles))
+	}
+	if startIndex < 0 {
+		startIndex = int64(len(torrentFiles)) + startIndex
 	}
 	if !originalOrder {
 		// while not necessory to use stable sort, we want absolutely consistent results
@@ -123,6 +128,30 @@ func partialdownload(cmd *cobra.Command, args []string) error {
 	noDownloadFileIndexes := []int64{}
 	allSize := int64(0)
 	skippedSize := int64(0)
+	// For negative chunk-index, scan once to get total chunks count
+	if chunkIndex < 0 {
+		for i, file := range torrentFiles {
+			if int64(i) < startIndex {
+				continue
+			}
+			if strict && file.Size > chunkSize {
+				return fmt.Errorf("torrent can NOT be strictly splitted to %s chunks: file %s is too large (%s)",
+					util.BytesSize(float64(chunkSize)), file.Path, util.BytesSize(float64(file.Size)))
+			}
+			if currentChunkSize >= chunkSize || (strict && (currentChunkSize+file.Size) > chunkSize) {
+				currentChunkIndex++
+				currentChunkSize = 0
+			}
+			currentChunkSize += file.Size
+		}
+		actualChunkIndex := currentChunkIndex + 1 + chunkIndex
+		if actualChunkIndex < 0 {
+			return fmt.Errorf("invalid chunkIndex %d. Torrent has %d chunks", chunkIndex, currentChunkIndex+1)
+		}
+		chunkIndex = actualChunkIndex
+		currentChunkIndex = 0
+		currentChunkSize = 0
+	}
 	for i, file := range torrentFiles {
 		if int64(i) < startIndex {
 			skippedSize += file.Size
@@ -168,7 +197,7 @@ func partialdownload(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	if chunkIndex >= int64(len(chunks)) {
-		return fmt.Errorf("invalid chunkIndex %d. Torrent has %d chunks", chunkIndex, currentChunkIndex+1)
+		return fmt.Errorf("invalid chunkIndex %d. Torrent has %d chunks", chunkIndex, len(chunks))
 	}
 	chunk := chunks[chunkIndex]
 	err = clientInstance.SetFilePriority(infoHash, downloadFileIndexes, 1)

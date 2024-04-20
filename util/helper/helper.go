@@ -168,7 +168,7 @@ func GetTorrentContent(torrent string, defaultSite string,
 				defer file.Close()
 				var info fs.FileInfo
 				if info, err = file.Stat(); err == nil && info.Size() >= constants.BIG_FILE_SIZE {
-					fileHeader := make([]byte, 0, constants.FILE_HEADER_CHUNK_SIZE)
+					fileHeader := make([]byte, constants.FILE_HEADER_CHUNK_SIZE)
 					if _, err = io.ReadAtLeast(file, fileHeader, len(fileHeader)); err == nil {
 						if util.BytesHasAnyStringPrefix(fileHeader, constants.TorrentFileMagicNumbers...) {
 							_, err = file.Seek(0, 0)

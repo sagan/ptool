@@ -16,7 +16,9 @@ var command = &cobra.Command{
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "setcategory"},
 	Short:       "Set category of torrents in client.",
 	Long: fmt.Sprintf(`Set category of torrents in client.
-%s.`, constants.HELP_INFOHASH_ARGS),
+%s.
+
+To make torrents "uncategoried", set {category} to %q.`, constants.HELP_INFOHASH_ARGS, constants.NONE),
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	RunE: setcategory,
 }

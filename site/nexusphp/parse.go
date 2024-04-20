@@ -216,7 +216,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 	if headerEl != nil {
 		headerEl.Children().Each(func(i int, s *goquery.Selection) {
 			text := util.DomSanitizedText(s)
-			if text == "类型" || text == "類型" {
+			if text == "类型" || text == "類型" || text == "分類" || text == "分类" {
 				fieldColumIndex["category"] = i
 				return
 			} else if text == "進度" || text == "进度" {

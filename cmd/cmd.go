@@ -156,6 +156,10 @@ func init() {
 	RootCmd.PersistentFlags().BoolVarP(&config.GlobalLock, "global-lock", "", false,
 		"Similar to --lock but does NOT require a filename. "+
 			"All ptool instances which use the same config dir share the lock")
+	RootCmd.PersistentFlags().Int64VarP(&config.Timeout, "timeout", "", 0,
+		`Temporarily set the http / network request timeout during this session (seconds). `+
+			`To set timeout permanently, add "siteTimeout = true" line to the top of ptool.toml config file. `+
+			`-1 = infinite`)
 	RootCmd.PersistentFlags().StringVarP(&config.ConfigFile, "config", "", config.DefaultConfigFile,
 		"Config file ([ptool.toml])")
 	RootCmd.PersistentFlags().StringVarP(&config.LockFile, "lock", "", "",

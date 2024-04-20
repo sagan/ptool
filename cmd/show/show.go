@@ -24,7 +24,24 @@ var command = &cobra.Command{
 [infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
 _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.
 If no condition flags or args are set, it will display current active torrents.
-If at least one condition flag is set but no arg is provided, the args is assumed to be "_all"`,
+If at least one condition flag is set but no arg is provided, the args is assumed to be "_all"
+
+It displays found torrents of client in the list, which has several fields like "Name" and "State".
+
+The "Name" field by default displays the truncated prefix of the torrent name in client.
+If "--dense" flag is set, it will instead display the full name of the torrent as well as it's category and tags.
+
+The "State" field displays some icon texts:
+* ✓ : Torrent is downloaded completely (finished).
+* - : Torrent is paused and incomplete (unfinished).
+* ↓ : Torrent is in downloading state.
+* ↑ : Torrent is in seeding (uploading) state.
+* 80% (e.g.) : The current download progress of the torrent.
+* ! : Torrent is in error state.
+* ? : Torrent state is unknown.
+* _ : Torrent contents files are partially selected for downloading.
+
+Specially, if all args is an (1) single info-hash, it displays the details of that torrent instead of the list.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: show,
 }
@@ -274,7 +291,8 @@ func show(cmd *cobra.Command, args []string) error {
 					util.BytesSize(float64(clientStatus.UploadSpeedLimit))),
 				fmt.Sprintf("↓Spd/Lmt: %s / %s/s", util.BytesSize(float64(clientStatus.DownloadSpeed)),
 					util.BytesSize(float64(clientStatus.DownloadSpeedLimit))),
-				fmt.Sprintf("FreeSpace: %s", util.BytesSize(float64(clientStatus.FreeSpaceOnDisk))),
+				fmt.Sprintf("FreeSpace/UnfinishedDL: %s / %s", util.BytesSize(float64(clientStatus.FreeSpaceOnDisk)),
+					util.BytesSize(float64(clientStatus.UnfinishedDownloadingSize))),
 				len(torrents),
 			)
 		}

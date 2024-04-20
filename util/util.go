@@ -19,6 +19,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/exp/constraints"
 )
 
 var commaSeperatorRegexp = regexp.MustCompile(`,\s*`)
@@ -307,6 +308,15 @@ func CountNonZeroVariables(vars ...any) (cnt int) {
 		}
 	}
 	return
+}
+
+func FirstNonZeroIntegerArg[T constraints.Integer](args ...T) T {
+	for _, t := range args {
+		if t != 0 {
+			return t
+		}
+	}
+	return 0
 }
 
 func BytesHasAnyStringPrefix(data []byte, prefixes ...string) bool {

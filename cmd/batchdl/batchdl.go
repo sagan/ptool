@@ -28,11 +28,22 @@ var command = &cobra.Command{
 	Use:         "batchdl {site} [--download | --add-client client] [--base-url torrents_page_url]",
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "batchdl"},
 	Aliases:     []string{"ebookgod"},
-	Short:       "Batch download the smallest (or by any other order) torrents from a site.",
-	Long: `Batch download the smallest (or by any other order) torrents from a site.
-By default it will display the list of found torrents.
-If --download flag is set, it will download found torrents to dir specified by --download dir (default ".").
+	Short:       "Batch display or download torrents from a site.",
+	Long: `Batch display or download torrents from a site.
+By default it displays all non-dead torrents of site that have not been download before, in size asc order,
+one page by page infinitely, until reachs the end of all site torrents. Press Ctrl+C to stop in the middle.
+If --download flag is set, it will download found torrents to dir specified by "--download dir" flag (default ".").
 If --add-client flag is set, it will directly add found torrents to the specified client.
+
+For the format of displayed torrents list, see help of "ptool search" command.
+
+To query site torrents by any other order than size asc, use "--sort" and "--order" flags.
+
+It supports resuming from the page that last time this command is interrupted,
+using "--start-page" flag, set it to the "LastPage" value last time this command outputed in the end.
+
+It supports saving info of found torrents to disk file in json format,
+or exporting the id list of found torrents, using "--save-*" flags.
 
 To set the name of added torrent in client or filename of downloaded torrent, use --rename <name> flag,
 which supports the following variable placeholders:
@@ -81,6 +92,7 @@ var (
 	addCategory          = ""
 	addClient            = ""
 	addTags              = ""
+	tag                  = ""
 	filter               = ""
 	excludes             = ""
 	addSavePath          = ""
@@ -102,14 +114,14 @@ var (
 )
 
 func init() {
-	command.Flags().BoolVarP(&doDownload, "download", "", false, "Download found torrents to local")
+	command.Flags().BoolVarP(&doDownload, "download", "", false, "Do download found torrents to local")
 	command.Flags().BoolVarP(&slowMode, "slow", "", false, "Slow mode. wait after downloading each torrent")
 	command.Flags().BoolVarP(&downloadSkipExisting, "download-skip-existing", "", false,
 		`Used with "--download". Do NOT re-download torrent that same name file already exists in local dir. `+
 			`If this flag is set, the download torrent filename ("--rename" flag) will be fixed to `+
 			`"[site].[id].torrent" (e.g.: "mteam.12345.torrent") format`)
 	command.Flags().BoolVarP(&downloadAll, "all", "a", false,
-		`Download all torrents. Equivalent to "--include-downloaded --min-seeders -1"`)
+		`Display or download all torrents of site. Equivalent to "--include-downloaded --min-seeders -1"`)
 	command.Flags().BoolVarP(&onePage, "one-page", "", false, "Only fetch one page torrents")
 	command.Flags().BoolVarP(&addPaused, "add-paused", "", false, "Add torrents to client in paused state")
 	command.Flags().BoolVarP(&dense, "dense", "d", false, "Dense mode: show full torrent title & subtitle")
@@ -120,7 +132,7 @@ func init() {
 	command.Flags().BoolVarP(&largestFlag, "largest", "l", false,
 		`Sort site torrents by size in desc order. Equivalent to "--sort size --order desc"`)
 	command.Flags().BoolVarP(&newestFlag, "newest", "n", false,
-		`Download newest torrents of site. Equivalent to "--sort time --order desc --one-page"`)
+		`Only display or download newest torrents of site. Equivalent to "--sort time --order desc --one-page"`)
 	command.Flags().BoolVarP(&addRespectNoadd, "add-respect-noadd", "", false,
 		`Used with "--add-client". Check and respect _noadd flag in client`)
 	command.Flags().BoolVarP(&nohr, "no-hr", "", false,
@@ -128,9 +140,9 @@ func init() {
 	command.Flags().BoolVarP(&allowBreak, "break", "", false,
 		"Break (stop finding more torrents) if all torrents of current page do not meet criterion")
 	command.Flags().BoolVarP(&includeDownloaded, "include-downloaded", "", false,
-		"Do NOT skip torrent that had been downloaded before")
+		"If set, it will also display or download torrents that had been downloaded before")
 	command.Flags().BoolVarP(&onlyDownloaded, "only-downloaded", "", false,
-		"Only include torrent that had been downloaded before")
+		"Only display or download torrent that had been downloaded before")
 	command.Flags().BoolVarP(&addCategoryAuto, "add-category-auto", "", false,
 		"Automatically set category of added torrent to corresponding sitename")
 	command.Flags().BoolVarP(&saveAppend, "save-append", "", false,
@@ -152,10 +164,12 @@ func init() {
 	command.Flags().StringVarP(&freeTimeAtLeastStr, "free-time", "", "",
 		"Used with --free. Set the allowed minimal remaining torrent free time. e.g.: 12h, 1d")
 	command.Flags().StringVarP(&filter, "filter", "", "",
-		"If set, skip torrent which title or subtitle does NOT contains this string")
+		"If set, only display or download torrent which title or subtitle contains this string")
+	command.Flags().StringVarP(&tag, "tag", "", "",
+		"Comma-separated list. If set, only display or download torrent which tags contain any one in the list")
 	command.Flags().StringArrayVarP(&includes, "includes", "", nil,
-		"Comma-separated list that ONLY torrent which title or subtitle contains any one in the list will be downloaded. "+
-			"Can be provided multiple times, in which case every list MUST be matched")
+		"Comma-separated list(s). If set, only torrents which title or subtitle contains any one in the list will be "+
+			"displayed or downloaded. Can be set multiple times, in which case every list MUST be matched")
 	command.Flags().StringVarP(&excludes, "excludes", "", "",
 		"Comma-separated list that torrent which title of subtitle contains any one in the list will be skipped")
 	command.Flags().StringVarP(&startPage, "start-page", "", "",
@@ -407,6 +421,10 @@ mainloop:
 				log.Debugf("Skip torrent %s due to filter %s does NOT match", torrent.Name, filter)
 				continue
 			}
+			if tag != "" && !torrent.HasAnyTag(tag) {
+				log.Debugf("Skip torrent %s due to it does not contain any tag of %v", torrent.Name, tag)
+				continue
+			}
 			if torrent.MatchFiltersOr(excludesList) {
 				log.Debugf("Skip torrent %s due to excludes matches", torrent.Name)
 				continue
@@ -565,7 +583,7 @@ mainloop:
 			if allowBreak {
 				break
 			} else {
-				log.Warnf("Warning, current page %s has no required torrents.", lastMarker)
+				log.Warnf("Warning, current page %s has no torrents that fulfil all conditions.", lastMarker)
 			}
 		}
 		log.Warnf("Finish handling page %s. Torrents(Size/Cnt) | AllTorrents(Size/Cnt) till now: %s/%d | %s/%d. "+

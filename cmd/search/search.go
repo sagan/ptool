@@ -26,7 +26,22 @@ var command = &cobra.Command{
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "search"},
 	Short:       "Search torrents by keyword in sites.",
 	Long: `Search torrents by keyword in sites.
-{siteOrGroups}: Comma-separated list of sites or groups. Use "_all" to search all sites.`,
+{siteOrGroups}: Comma-separated list of sites or groups. Use "_all" to search all sites.
+
+It displays found torrents of site in the list, which has several fields like "Name" and "Free".
+
+The "Name" field by default displays the truncated prefix of the torrent name in site.
+If "--dense" flag is set, it will instead display the full name of the torrent as well as it's description and tags.
+
+The "Free" field displays some icon texts:
+* ✓ : Torrent is free leech.
+* $ : Torrent is paid. It will cost you bonus points when first time downloading it or announcing it in client.
+* 2.0 : Torrent counts uploading as double.
+* (1d12h) (e.g.) : The remaining time of torrent discount (free or 2.0 uploading).
+* N : Neutral torrent, does not count uploading / downloading / bonus points.
+* Z : Zero-traffic torrent, does not count uploading / downloading.
+
+The "P" (progress) field: if you have never downloaded this torrent before, displays a "-".`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	RunE: search,
 }

@@ -2,9 +2,11 @@ package site
 
 import (
 	"fmt"
+	"io"
 	"mime"
 	"os"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -85,6 +87,41 @@ var (
 	siteSessions = map[string]*azuretls.Session{}
 	mu           sync.Mutex
 )
+
+func (ss *Status) Print(f io.Writer, name string, additionalInfo string) {
+	info := fmt.Sprintf("UserName: %s", name)
+	if additionalInfo != "" {
+		info += "; " + additionalInfo
+	}
+	fmt.Printf(constants.STATUS_FMT, "Site", name, fmt.Sprintf("↑: %s", util.BytesSize(float64(ss.UserUploaded))),
+		fmt.Sprintf("↓: %s", util.BytesSize(float64(ss.UserDownloaded))), info)
+}
+
+func PrintDummyStatus(f io.Writer, name string, info string) {
+	if info != "" {
+		info = "// " + info
+	} else {
+		info = "-"
+	}
+	fmt.Printf(constants.STATUS_FMT, "Site", name, "-", "-", info)
+}
+
+func (torrent *Torrent) HasTag(tag string) bool {
+	return slices.ContainsFunc(torrent.Tags, func(t string) bool {
+		return strings.EqualFold(tag, t)
+	})
+}
+
+// Return true if torrent has any tag in the tags.
+// tags: comma-separated tag list.
+func (torrent *Torrent) HasAnyTag(tags string) bool {
+	if tags == "" {
+		return false
+	}
+	return slices.ContainsFunc(util.SplitCsv(tags), func(tag string) bool {
+		return torrent.HasTag(tag)
+	})
+}
 
 func (torrent *Torrent) MatchFilter(filter string) bool {
 	if filter == "" || util.ContainsI(torrent.Name, filter) || util.ContainsI(torrent.Description, filter) {
@@ -218,8 +255,14 @@ func PrintTorrents(torrents []Torrent, filter string, now int64,
 		if torrent.IsActive {
 			process = "0%"
 		}
-		if dense && torrent.Description != "" {
-			name += " // " + torrent.Description
+		if dense && (torrent.Description != "" || len(torrent.Tags) > 0) {
+			name += " //"
+			if torrent.Description != "" {
+				name += " " + torrent.Description
+			}
+			if len(torrent.Tags) > 0 {
+				name += fmt.Sprintf(" [%s]", strings.Join(util.Map(torrent.Tags, strconv.Quote), ", "))
+			}
 		}
 		remain := util.PrintStringInWidth(name, int64(widthName), true)
 		if scores == nil {
@@ -358,12 +401,7 @@ func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, globalConfig *con
 		proxy = util.ParseProxyFromEnv(siteConfig.Url)
 	}
 	insecure := config.Insecure || !siteConfig.Secure && (siteConfig.Insecure || globalConfig.SiteInsecure)
-	timeout := int64(0)
-	if siteConfig.Timeout != 0 {
-		timeout = siteConfig.Timeout
-	} else if globalConfig.SiteTimeout != 0 {
-		timeout = globalConfig.SiteTimeout
-	}
+	timeout := util.FirstNonZeroIntegerArg(config.Timeout, siteConfig.Timeout, globalConfig.SiteTimeout)
 	if timeout == 0 {
 		timeout = config.DEFAULT_SITE_TIMEOUT
 	} else if timeout < 0 {

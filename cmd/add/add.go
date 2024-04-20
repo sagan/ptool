@@ -176,7 +176,9 @@ func add(cmd *cobra.Command, args []string) error {
 					content = data
 				}
 			}
-		} else {
+		}
+		// it category & tags & savePath options are not set by comment-meta, set them with flag values
+		if option.Category == "" {
 			if addCategoryAuto {
 				if sitename != "" {
 					option.Category = sitename
@@ -188,6 +190,8 @@ func add(cmd *cobra.Command, args []string) error {
 			} else {
 				option.Category = addCategory
 			}
+		}
+		if option.Tags == nil {
 			if tinfo.IsPrivate() {
 				option.Tags = append(option.Tags, config.PRIVATE_TAG)
 			}
@@ -201,6 +205,8 @@ func add(cmd *cobra.Command, args []string) error {
 			if rename != "" {
 				option.Name = torrentutil.RenameTorrent(rename, sitename, id, filename, tinfo)
 			}
+		}
+		if option.SavePath == "" {
 			option.SavePath = savePath
 		}
 		err = clientInstance.AddTorrent(content, option, nil)

@@ -212,6 +212,7 @@ type ConfigStruct struct {
 var defaultConfigFs embed.FS
 
 var (
+	Timeout               = int64(0) // set by cmdline global flag. It has the highest priority.
 	VerboseLevel          = 0
 	InShell               = false
 	ConfigDir             = "" // "/root/.config/ptool"

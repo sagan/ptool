@@ -2,9 +2,11 @@ package client
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -163,6 +165,31 @@ var (
 	clients = map[string]Client{}
 )
 
+func (cs *Status) Print(f io.Writer, name string, additionalInfo string) {
+	info := fmt.Sprintf("FreeSpace: %s; Unfinished(All/DL): %s/%s",
+		util.BytesSizeAround(float64(cs.FreeSpaceOnDisk)),
+		util.BytesSizeAround(float64(cs.UnfinishedSize)),
+		util.BytesSizeAround(float64(cs.UnfinishedDownloadingSize)),
+	)
+	if additionalInfo != "" {
+		info += "; " + additionalInfo
+	}
+	fmt.Fprintf(f, constants.STATUS_FMT, "Client", name,
+		fmt.Sprintf("↑Spd/Lmt: %s / %s/s", util.BytesSize(float64(cs.UploadSpeed)),
+			util.BytesSizeAround(float64(cs.UploadSpeedLimit))),
+		fmt.Sprintf("↓Spd/Lmt: %s / %s/s", util.BytesSize(float64(cs.DownloadSpeed)),
+			util.BytesSizeAround(float64(cs.DownloadSpeedLimit))), info)
+}
+
+func PrintDummyStatus(f io.Writer, name string, info string) {
+	if info != "" {
+		info = "// " + info
+	} else {
+		info = "-"
+	}
+	fmt.Fprintf(f, constants.STATUS_FMT, "Client", name, "-", "-", info)
+}
+
 func Register(regInfo *RegInfo) {
 	Registry = append(Registry, regInfo)
 }
@@ -289,7 +316,13 @@ func (torrent *Torrent) StateIconText() string {
 	}
 	if showProcess {
 		process := int64(float64(torrent.SizeCompleted) * 100 / float64(torrent.Size))
-		s += fmt.Sprint(process, "%")
+		if torrent.Size == torrent.SizeTotal {
+			s += fmt.Sprint(process, "%")
+		} else {
+			s += fmt.Sprint(process, "_")
+		}
+	} else if torrent.Size != torrent.SizeTotal {
+		s += "_"
 	}
 	return s
 }
@@ -493,7 +526,19 @@ func PrintTorrents(torrents []Torrent, filter string, showSum int64, dense bool)
 		if showSum >= 2 {
 			continue
 		}
-		remain := util.PrintStringInWidth(torrent.Name, int64(widthName), true)
+		name := torrent.Name
+		if dense && (torrent.Category != "" || len(torrent.Tags) > 0) {
+			name += " //"
+			if torrent.Category != "" {
+				name += " " + strconv.Quote(torrent.Category)
+			}
+			if len(torrent.Tags) > 0 {
+				name += fmt.Sprintf(" [%s]", strings.Join(util.Map(torrent.Tags, func(t string) string {
+					return fmt.Sprintf("%q", t)
+				}), ", "))
+			}
+		}
+		remain := util.PrintStringInWidth(name, int64(widthName), true)
 		fmt.Printf("  %-40s  %-6s  %-5s  %-6s  %-6s  %-5d  %-5d  %-16s\n",
 			torrent.InfoHash,
 			util.BytesSizeAround(float64(torrent.Size)),

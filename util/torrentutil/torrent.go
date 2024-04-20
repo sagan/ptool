@@ -312,12 +312,13 @@ func (meta *TorrentMeta) Fprint(f io.Writer, name string, showAll bool) {
 			comment = " // " + strings.Join(comments, ", ")
 		}
 		if meta.SingleFileTorrent {
-			fmt.Fprintf(f, "! RawSize = %d ; SingleFile = %s ; CreationDate = %s ; AllTrackers (%d): %s ;%s\n",
-				meta.Size, meta.Files[0].Path, creationDate, len(meta.Trackers), strings.Join(meta.Trackers, " | "), comment)
+			fmt.Fprintf(f, "! SingleFile = %q ; ", meta.Files[0].Path)
 		} else {
-			fmt.Fprintf(f, "! RawSize = %d ; RootDir = %s ; CreationDate = %s ; AllTrackers (%d): %s ;%s\n",
-				meta.Size, meta.RootDir, creationDate, len(meta.Trackers), strings.Join(meta.Trackers, " | "), comment)
+			fmt.Fprintf(f, "! RootDir = %q ; ", meta.RootDir)
 		}
+		fmt.Fprintf(f, "RawSize = %d ; PieceLength = %s ; CreationDate = %s ; AllTrackers (%d): %s ;%s\n",
+			meta.Size, util.BytesSizeAround(float64(meta.Info.PieceLength)), creationDate, len(meta.Trackers),
+			strings.Join(meta.Trackers, " | "), comment)
 		if !meta.IsPrivate() {
 			fmt.Fprintf(f, "! MagnetURI: %s\n", meta.MagnetUrl())
 		}

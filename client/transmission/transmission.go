@@ -230,7 +230,7 @@ func (trclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 	}
 
 	labels := util.CopySlice(option.Tags)
-	if option.Category != "" {
+	if option.Category != "" && option.Category != constants.NONE {
 		// use label to simulate category
 		labels = append(labels, client.GenerateTorrentTagFromCategory(option.Category))
 	}
@@ -289,7 +289,8 @@ func (trclient *Client) ModifyTorrent(infoHash string, option *client.TorrentOpt
 		IDs: []int64{*trtorrent.ID},
 	}
 
-	if option.Category != "" || len(option.Tags) > 0 || len(option.RemoveTags) > 0 ||
+	if (option.Category != "" && option.Category != constants.NONE) ||
+		len(option.Tags) > 0 || len(option.RemoveTags) > 0 ||
 		len(meta) > 0 || len(torrent.Meta) > 0 {
 		labels := []string{}
 		if option.Category != "" && torrent.Category != option.Category {

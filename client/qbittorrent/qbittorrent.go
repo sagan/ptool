@@ -160,7 +160,9 @@ func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 	mp.WriteField("rename", name)
 	mp.WriteField("root_folder", "true")
 	if option != nil {
-		mp.WriteField("category", option.Category)
+		if option.Category != constants.NONE {
+			mp.WriteField("category", option.Category)
+		}
 		mp.WriteField("tags", strings.Join(option.Tags, ",")) // qb 4.3.2+ new
 		mp.WriteField("paused", fmt.Sprint(option.Pause))
 		mp.WriteField("upLimit", fmt.Sprint(option.UploadSpeedLimit))
@@ -421,6 +423,9 @@ func (qbclient *Client) SetTorrentsCatetory(infoHashes []string, category string
 	if err != nil {
 		return fmt.Errorf("login error: %v", err)
 	}
+	if category == constants.NONE {
+		category = ""
+	}
 	data := url.Values{
 		"hashes":   {strings.Join(infoHashes, "|")},
 		"category": {category},
@@ -489,14 +494,20 @@ func (qbclient *Client) ModifyTorrent(infoHash string,
 	// @todo: apply option.SequentialDownload using qb toggleSequentialDownload.
 	// However, we must know current sequentialDownload status in ahead.
 
-	if option.Category != "" && option.Category != qbtorrent.Category {
-		data := url.Values{
-			"hashes":   {infoHash},
-			"category": {option.Category},
+	if option.Category != "" {
+		category := option.Category
+		if category == constants.NONE {
+			category = ""
 		}
-		err := qbclient.apiPost("api/v2/torrents/setCategory", data)
-		if err != nil {
-			return err
+		if category != qbtorrent.Category {
+			data := url.Values{
+				"hashes":   {infoHash},
+				"category": {category},
+			}
+			err := qbclient.apiPost("api/v2/torrents/setCategory", data)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

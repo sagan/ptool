@@ -155,13 +155,14 @@ badSuffix:
 	return -1, fmt.Errorf("invalid suffix: '%s'", sfx)
 }
 
-// Return at most 6 chars, e.g.: "123.1G"
+// Return at most 6 chars, e.g.: "123.1G".
+// It removes trailing zero(s) and dot, e.g.: "123.0GiB" => "123G".
 func BytesSizeAround(size float64) string {
 	s := BytesSize(size)
 	s = strings.TrimSuffix(s, "iB")
 	if i := strings.IndexAny(s, "KMGTPE"); i != -1 {
 		num, _ := strconv.ParseFloat(s[:i], 64)
-		s = fmt.Sprintf("%.1f%s", num, s[i:])
+		s = strings.TrimRight(strings.TrimRight(fmt.Sprintf("%.1f", num), "0"), ".") + s[i:]
 	}
 	return s
 }
