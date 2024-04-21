@@ -306,8 +306,8 @@ ptool <command> <client> [flags] [<infoHash>...]
 `<infoHash>` 参数为指定的 BT 客户端里需要操作的种子的 infoHash 列表。也可以使用以下特殊值参数操作多个种子：
 
 - `_all` : 所有种子
-- `_done` : 所有已下载完成的种子（无论是否正在做种）(`_seeding` | `_completed`)
-- `_undone` : 所有未下载完成的种子(`_downloading` | `_paused`)
+- `_done` : 所有已下载完成的种子（无论是否正在做种）
+- `_undone` : 所有未下载完成的种子
 - `_active` : 当前正在活动（上传或下载）的种子
 - `_error` : 状态为“出错”的种子
 - `_downloading` / `_seeding` / `_paused` / `_completed` : 状态为正在下载 / 做种 / 暂停下载 / 下载完成(但未做种)的种子

@@ -69,7 +69,7 @@ func init() {
 	command.Flags().BoolVarP(&doDownload, "download", "", false, "Download found xseed torrents to local")
 	command.Flags().BoolVarP(&all, "all", "", false,
 		"Display or download all found xseed torrents (include partial-match results)")
-	command.Flags().Int64VarP(&timeout, "timeout", "", 15, "Timeout (seconds) for requesting Reseed API")
+	command.Flags().Int64VarP(&timeout, "reseed-timeout", "", 15, "Timeout (seconds) for requesting Reseed API")
 	command.Flags().Int64VarP(&maxConsecutiveFail, "max-consecutive-fail", "", 3,
 		"After consecutive fails to download torrent from a site of this times, will skip that site afterwards. "+
 			"Note a 404 error does NOT count as a fail. -1 = no limit (never skip)")

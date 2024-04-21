@@ -363,6 +363,8 @@ mainloop:
 				tags = append(tags, fixedTags...)
 				if xseedTorrentInfo.IsPrivate() {
 					tags = append(tags, config.PRIVATE_TAG)
+				} else {
+					tags = append(tags, config.PUBLIC_TAG)
 				}
 				err = clientInstance.AddTorrent(xseedTorrentContent, &client.TorrentOption{
 					SavePath:     targetTorrent.SavePath,

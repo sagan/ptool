@@ -29,6 +29,7 @@ const (
 	NOXSEED_TAG               = "noxseed" // BT 客户端里含有此 tag 的种子不会被辅种
 	HR_TAG                    = "_hr"
 	PRIVATE_TAG               = "_private"
+	PUBLIC_TAG                = "_public"
 	STATS_FILENAME            = "ptool_stats.txt"
 	HISTORY_FILENAME          = "ptool_history"
 	SITE_TORRENTS_WIDTH       = 120 // min width for printing site torrents

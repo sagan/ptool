@@ -542,6 +542,8 @@ mainloop:
 						tags = append(tags, clientAddFixedTags...)
 						if tinfo.IsPrivate() {
 							tags = append(tags, config.PRIVATE_TAG)
+						} else {
+							tags = append(tags, config.PUBLIC_TAG)
 						}
 						if torrent.HasHnR || siteInstance.GetSiteConfig().GlobalHnR {
 							tags = append(tags, config.HR_TAG)

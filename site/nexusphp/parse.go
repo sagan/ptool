@@ -310,6 +310,12 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 							tags = append(tags, tag)
 						}
 					})
+					s.Find(`a[href^="?cat="]`).Each(func(i int, s *goquery.Selection) {
+						if tag := util.DomSanitizedText(s); tag != "" {
+							tags = append(tags, tag)
+						}
+					})
+					tags = util.UniqueSlice(tags)
 				case "size":
 					size, _ = util.RAMInBytes(text)
 				case "seeders":

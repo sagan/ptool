@@ -94,10 +94,11 @@ func init() {
 		`Use "-" to output to stdout`)
 	command.Flags().StringVarP(&infoName, "info-name", "", "", `Manually set the "info.name" field of created torrent`)
 	command.Flags().StringVarP(&comment, "comment", "", "", `Set the "comment" field of created torrent`)
-	command.Flags().StringVarP(&createdBy, "created-by", "", "", `Set the "created by" field of created torrent`)
+	command.Flags().StringVarP(&createdBy, "created-by", "", "",
+		`Manually set the "created by" field of created torrent. To unset this field, set it to "`+constants.NONE+`"`)
 	command.Flags().StringVarP(&creationDate, "creation-date", "", "",
 		`Set the "creation date" field of torrent. E.g.: "2024-01-20 15:00:00" (local timezone), `+
-			"or a unix timestamp integer (seconds)")
+			`or a unix timestamp integer (seconds). Default to now; To unset this field, set it to "`+constants.NONE+`"`)
 	command.Flags().StringArrayVarP(&trackers, "tracker", "", nil,
 		`Set the trackers ("Announce" & "AnnounceList" field) of created torrent`)
 	command.Flags().StringArrayVarP(&excludes, "excludes", "", nil,
@@ -130,12 +131,23 @@ func maketorrent(cmd *cobra.Command, args []string) (err error) {
 		mi.Announce = trackers[0]
 	}
 	mi.SetDefaults()
-	if creationDate != "" {
-		ts, err := util.ParseTime(creationDate, nil)
-		if err != nil {
-			return fmt.Errorf("invalid creation-date: %v", err)
+	if createdBy != "" {
+		if createdBy == constants.NONE {
+			mi.CreatedBy = ""
+		} else {
+			mi.CreatedBy = createdBy
 		}
-		mi.CreationDate = ts
+	}
+	if creationDate != "" {
+		if creationDate == constants.NONE {
+			mi.CreationDate = 0
+		} else {
+			ts, err := util.ParseTime(creationDate, nil)
+			if err != nil {
+				return fmt.Errorf("invalid creation-date: %v", err)
+			}
+			mi.CreationDate = ts
+		}
 	}
 	info := &metainfo.Info{}
 	if pieceLength, err := util.RAMInBytes(pieceLengthStr); err != nil {

@@ -257,8 +257,8 @@ func EnumFlagArg(prefix string, enumFlag *cmd.EnumFlag) []prompt.Suggest {
 var infoHashFilters = [][2]string{
 	{"_all", ":: all torrents"},
 	{"_active", ":: current active torrents"},
-	{"_done", ":: completed downloaded torrents (_completed | _seeding)"},
-	{"_undone", ":: incomplete downloaded torrents (_downloading | _paused)"},
+	{"_done", ":: completed downloaded torrents"},
+	{"_undone", ":: incomplete downloaded torrents"},
 	{"_seeding", "state: seeding"},
 	{"_downloading", "state: downloading"},
 	{"_completed", "state: completed"},

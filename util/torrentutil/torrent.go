@@ -144,13 +144,7 @@ func (meta *TorrentMeta) UpdateComment(comment string) error {
 	return nil
 }
 
-func (meta *TorrentMeta) UpdateCreationDate(creationDateStr string) error {
-	creationDate := int64(0)
-	if time, err := util.ParseTime(creationDateStr, nil); err != nil {
-		return err
-	} else {
-		creationDate = time
-	}
+func (meta *TorrentMeta) UpdateCreationDate(creationDate int64) error {
 	if meta.MetaInfo.CreationDate == creationDate {
 		return ErrNoChange
 	}

@@ -194,6 +194,8 @@ func add(cmd *cobra.Command, args []string) error {
 		if option.Tags == nil {
 			if tinfo.IsPrivate() {
 				option.Tags = append(option.Tags, config.PRIVATE_TAG)
+			} else {
+				option.Tags = append(option.Tags, config.PUBLIC_TAG)
 			}
 			if sitename != "" {
 				option.Tags = append(option.Tags, client.GenerateTorrentTagFromSite(sitename))

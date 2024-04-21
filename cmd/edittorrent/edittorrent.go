@@ -80,10 +80,11 @@ func init() {
 		"Add new tracker to torrents. If the tracker already exists in the torrent, do nothing")
 	command.Flags().StringVarP(&updateTracker, "update-tracker", "", "",
 		"Set the tracker of torrents. It will become the sole tracker of torrents, all existing ones will be removed")
-	command.Flags().StringVarP(&updateCreatedBy, "update-created-by", "", "", `Update "created by" field of torrents`)
+	command.Flags().StringVarP(&updateCreatedBy, "update-created-by", "", "",
+		`Update "created by" field of torrents. To unset this field, set it to "`+constants.NONE+`"`)
 	command.Flags().StringVarP(&updateCreationDate, "update-creation-date", "", "",
 		`Update "creation date" field of torrents. E.g.: "2024-01-20 15:00:00" (local timezone), `+
-			"or a unix timestamp integer (seconds)")
+			`or a unix timestamp integer (seconds). To unset this field, set it to "`+constants.NONE+`"`)
 	command.Flags().StringVarP(&updateComment, "update-comment", "", "", `Update "comment" field of torrents`)
 	command.Flags().StringVarP(&replaceCommentMetaSavePathPrefix, "replace-comment-meta-save-path-prefix", "", "",
 		`Used with "--use-comment-meta". Update the prefix of 'save_path' property encoded in "comment" field `+
@@ -120,6 +121,22 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 		savePathReplaces = strings.Split(replaceCommentMetaSavePathPrefix, "|")
 		if len(savePathReplaces) != 2 || savePathReplaces[0] == "" {
 			return fmt.Errorf("invalid --replace-comment-meta-save-path-prefix")
+		}
+	}
+	createdBy := updateCreatedBy
+	if createdBy == constants.NONE {
+		createdBy = ""
+	}
+	creationDate := int64(0)
+	if updateCreationDate != "" {
+		if updateCreationDate == constants.NONE {
+			creationDate = 0
+		} else {
+			ts, err := util.ParseTime(updateCreationDate, nil)
+			if err != nil {
+				return fmt.Errorf("invalid update-creation-date: %v", err)
+			}
+			creationDate = ts
 		}
 	}
 	errorCnt := int64(0)
@@ -209,7 +226,7 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 			}
 		}
 		if err == nil && updateCreatedBy != "" {
-			err = tinfo.UpdateCreatedBy(updateCreatedBy)
+			err = tinfo.UpdateCreatedBy(createdBy)
 			switch err {
 			case torrentutil.ErrNoChange:
 				err = nil
@@ -218,7 +235,7 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 			}
 		}
 		if err == nil && updateCreationDate != "" {
-			err = tinfo.UpdateCreationDate(updateCreationDate)
+			err = tinfo.UpdateCreationDate(creationDate)
 			switch err {
 			case torrentutil.ErrNoChange:
 				err = nil

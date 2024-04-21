@@ -12,6 +12,7 @@ import (
 
 var command = &cobra.Command{
 	Use:         "renametag {client} {old-tag(s)} {new-tag}",
+	Aliases:     []string{"renametags"},
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "renametag"},
 	Short:       "Rename tag in client.",
 	Long: `Rename tag in client.
