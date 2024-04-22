@@ -227,10 +227,10 @@ Reseed 的辅种原理是扫描本地硬盘的“下载文件夹” (QB 的 save
 
 reseed 命令设计有两种使用方式：
 
-方式 1：
+#### 方式 1
 
 ```
-ptool reseed match --download D:\Downloads
+ptool reseed match --download "D:\Downloads"
 ptool xseedadd local "C:\Users\<username>\.config\ptool\reseed\*.torrent"
 ```
 
@@ -238,10 +238,12 @@ ptool xseedadd local "C:\Users\<username>\.config\ptool\reseed\*.torrent"
 
 然后使用 ptool xseedadd 命令将所有下载的 Reseed 辅种种子添加到本地 BT 客户端。
 
-方式 2：
+这种方式下，BitTorrent 客户端与运行 ptool 程序环境的文件系统可以不一致（e.g.: BitTorrent 客户端运行在 Docker 里，而 ptool 运行在宿主机里）。
+
+#### 方式 2
 
 ```
-ptool reseed match --download --use-comment-meta D:\Downloads
+ptool reseed match --download --use-comment-meta "D:\Downloads"
 ptool verifytorrent --check --rename-fail --use-comment-meta "C:\Users\root\.config\ptool\reseed\*.torrent"
 ptool add local --use-comment-meta --skip-check "C:\Users\<username>\.config\ptool\reseed\*.torrent"
 ```

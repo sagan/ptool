@@ -29,13 +29,13 @@ state. You need to manually start the torrent task after running this command.
 
 Examples:
   # View chunks info of the torrent
-  ptool partialdownload local e447d424dd0e6fba7bf9494008111f3bbb1f56a9 --chunk-size 500GiB -a
+  ptool partialdownload local <info-hash> --chunk-size 500GiB -a
 
   # Download the first (0-indexed) chunk of the torrent in client (Mark files of other chunks as no-download)
-  ptool partialdownload local e447d424dd0e6fba7bf9494008111f3bbb1f56a9 --chunk-size 500GiB --chunk-index 0
+  ptool partialdownload local <info-hash> --chunk-size 500GiB --chunk-index 0
 
   # Download the last (-1 index) chunk of the torrent
-  ptool partialdownload local e447d424dd0e6fba7bf9494008111f3bbb1f56a9 --chunk-size 500GiB --chunk-index -1
+  ptool partialdownload local <info-hash> --chunk-size 500GiB --chunk-index -1
 
 Without --strict flag, ptool will always split torrent contents to chunks.
 The size of each chunk may be larger then chunk size. And there may be less

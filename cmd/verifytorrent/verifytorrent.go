@@ -23,7 +23,7 @@ var command = &cobra.Command{
 		"{--save-path dir | --content-path path | --use-comment-meta | --rclone-lsjson-file file | " +
 		"--rclone-save-path path} [--check | --check-quick]",
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "verifytorrent"},
-	Aliases:     []string{"verify"},
+	Aliases:     []string{"verify", "verifytorrents"},
 	Short:       "Verify .torrent (metainfo) files are consistent with local disk contents.",
 	Long: fmt.Sprintf(`Verify .torrent (metainfo) files are consistent with local disk contents.
 %s.

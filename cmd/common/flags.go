@@ -68,6 +68,7 @@ var pureFlags = []string{
 	"all",
 	"append",
 	"backup",
+	"bindable",
 	"break",
 	"check",
 	"check-quick",

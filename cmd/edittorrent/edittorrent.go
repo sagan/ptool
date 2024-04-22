@@ -18,7 +18,7 @@ import (
 var command = &cobra.Command{
 	Use:         "edittorrent {torrentFilename}...",
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "edittorrent"},
-	Aliases:     []string{"edit"},
+	Aliases:     []string{"edit", "edittorrents"},
 	Short:       "Edit local .torrent (metainfo) files.",
 	Long: `Edit local .torrent (metainfo) files.
 It will update local disk .torrent files in place.

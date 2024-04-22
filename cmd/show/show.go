@@ -3,6 +3,7 @@ package show
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -29,7 +30,8 @@ If at least one condition flag is set but no arg is provided, the args is assume
 It displays found torrents of client in the list, which has several fields like "Name" and "State".
 
 The "Name" field by default displays the truncated prefix of the torrent name in client.
-If "--dense" flag is set, it will instead display the full name of the torrent as well as it's category and tags.
+If "--dense" flag is set, it will instead display the full name of the torrent,
+as well as it's category & tags & content path infos.
 
 The "State" field displays some icon texts:
 * ✓ : Torrent is downloaded completely (finished).
@@ -62,6 +64,7 @@ var (
 	category           = ""
 	tag                = ""
 	tracker            = ""
+	savePath           = ""
 	minTorrentSizeStr  = ""
 	maxTorrentSizeStr  = ""
 	maxTotalSizeStr    = ""
@@ -105,6 +108,8 @@ func init() {
 	command.Flags().StringVarP(&category, "category", "", "", constants.HELP_ARG_CATEGORY)
 	command.Flags().StringVarP(&tag, "tag", "", "", constants.HELP_ARG_TAG)
 	command.Flags().StringVarP(&tracker, "tracker", "", "", constants.HELP_ARG_TRACKER)
+	command.Flags().StringVarP(&savePath, "save-path", "", "",
+		`Filter torrent by it's save path. E.g.: "/root/Downloads"`)
 	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1",
 		"Skip torrent with size smaller than (<) this value. -1 == no limit")
 	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1",
@@ -141,6 +146,9 @@ func show(cmd *cobra.Command, args []string) error {
 	if orderFlag == "desc" {
 		desc = true
 	}
+	if savePath != "" {
+		savePath = filepath.Clean(savePath)
+	}
 	minTorrentSize, _ := util.RAMInBytes(minTorrentSizeStr)
 	maxTorrentSize, _ := util.RAMInBytes(maxTorrentSizeStr)
 	maxTotalSize, _ := util.RAMInBytes(maxTotalSizeStr)
@@ -153,7 +161,7 @@ func show(cmd *cobra.Command, args []string) error {
 	}
 	now := util.Now()
 
-	hasFilterCondition := tracker != "" || minTorrentSize >= 0 || maxTorrentSize >= 0 ||
+	hasFilterCondition := savePath != "" || tracker != "" || minTorrentSize >= 0 || maxTorrentSize >= 0 ||
 		addedIn > 0 || completedBefore > 0 || activeIn > 0 || noActiveIn > 0 || partial
 	noConditionFlags := category == "" && tag == "" && filter == "" && !hasFilterCondition
 	var torrents []client.Torrent
@@ -209,7 +217,8 @@ func show(cmd *cobra.Command, args []string) error {
 	}
 	if hasFilterCondition {
 		torrents = util.Filter(torrents, func(t client.Torrent) bool {
-			if tracker != "" && !t.MatchTracker(tracker) ||
+			if savePath != "" && t.SavePath != savePath ||
+				tracker != "" && !t.MatchTracker(tracker) ||
 				minTorrentSize >= 0 && t.Size < minTorrentSize ||
 				maxTorrentSize >= 0 && t.Size > maxTorrentSize ||
 				addedIn > 0 && now-t.Atime > addedIn ||

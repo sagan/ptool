@@ -67,7 +67,7 @@ func init() {
 	command.Flags().BoolVarP(&useCommentMeta, "use-comment-meta", "", false,
 		`Use with --download. Use "comment" field to export save path location to downloaded .torrent files`)
 	command.Flags().BoolVarP(&doDownload, "download", "", false, "Download found xseed torrents to local")
-	command.Flags().BoolVarP(&all, "all", "", false,
+	command.Flags().BoolVarP(&all, "all", "a", false,
 		"Display or download all found xseed torrents (include partial-match results)")
 	command.Flags().Int64VarP(&timeout, "reseed-timeout", "", 15, "Timeout (seconds) for requesting Reseed API")
 	command.Flags().Int64VarP(&maxConsecutiveFail, "max-consecutive-fail", "", 3,

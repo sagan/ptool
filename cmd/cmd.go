@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/gofrs/flock"
@@ -52,6 +53,14 @@ func Execute() {
 	cobra.OnInitialize(sync.OnceFunc(func() {
 		if config.Fork {
 			osutil.Fork("--fork")
+		}
+		if config.Tz != "" {
+			loc, err := time.LoadLocation(config.Tz)
+			if err != nil {
+				log.Fatalf("Invalid --timezone flag: %v", err)
+			}
+			time.Local = loc
+			os.Setenv("TZ", config.Tz)
 		}
 		// level: panic(0), fatal(1), error(2), warn(3), info(4), debug(5), trace(6). Default level = warning(3)
 		config.ConfigDir = filepath.Dir(config.ConfigFile)
@@ -159,7 +168,7 @@ func init() {
 	RootCmd.PersistentFlags().Int64VarP(&config.Timeout, "timeout", "", 0,
 		`Temporarily set the http / network request timeout during this session (seconds). `+
 			`To set timeout permanently, add "siteTimeout = true" line to the top of ptool.toml config file. `+
-			`-1 = infinite`)
+			`-1 == infinite`)
 	RootCmd.PersistentFlags().StringVarP(&config.ConfigFile, "config", "", config.DefaultConfigFile,
 		"Config file ([ptool.toml])")
 	RootCmd.PersistentFlags().StringVarP(&config.LockFile, "lock", "", "",
@@ -171,6 +180,9 @@ func init() {
 		`Temporarily set the network proxy used during this session. `+
 			`It has the highest priority and will override all other proxy settings in config file or env. `+
 			`E.g.: "http://127.0.0.1:1080", "socks5://127.0.0.1:7890". To disable proxy, set it to "`+constants.NONE+`"`)
+	RootCmd.PersistentFlags().StringVarP(&config.Tz, "timezone", "", "",
+		`Force set the timezone used by the program during this session. It will overwrite the system timezone. `+
+			`E.g.: "UTC", "Asia/Shanghai"`)
 	RootCmd.PersistentFlags().CountVarP(&config.VerboseLevel, "verbose", "v", "verbose (-v, -vv, -vvv)")
 }
 

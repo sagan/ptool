@@ -213,7 +213,7 @@ type ConfigStruct struct {
 var defaultConfigFs embed.FS
 
 var (
-	Timeout               = int64(0) // set by cmdline global flag. It has the highest priority.
+	Timeout               = int64(0) // network(http) timeout. It has the highest priority. Set by --timeout global flag
 	VerboseLevel          = 0
 	InShell               = false
 	ConfigDir             = "" // "/root/.config/ptool"
@@ -222,11 +222,12 @@ var (
 	ConfigName            = "" // "ptool"
 	ConfigType            = "" // "toml"
 	LockFile              = ""
-	Proxy                 = "" // proxy set by cmdline global flag. It has the highest priority.
+	Proxy                 = "" // proxy. It has the highest priority. Set by --proxy global flag
+	Tz                    = "" // override system timezone (TZ) used by the program. Set by --timezone global flag
 	GlobalLock            = false
 	LockOrExit            = false
 	Fork                  = false
-	Insecure              = false // Disable all TLS / https cert verifications during this session
+	Insecure              = false // Force disable all TLS / https cert verifications. Set by --insecure global flag
 	configData            *ConfigStruct
 	clientsConfigMap      = map[string]*ClientConfigStruct{}
 	sitesConfigMap        = map[string]*SiteConfigStruct{}

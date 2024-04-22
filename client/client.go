@@ -531,7 +531,7 @@ func PrintTorrents(torrents []Torrent, filter string, showSum int64, dense bool)
 			continue
 		}
 		name := torrent.Name
-		if dense && (torrent.Category != "" || len(torrent.Tags) > 0) {
+		if dense && (torrent.Category != "" || len(torrent.Tags) > 0 || torrent.ContentPath != "") {
 			name += " //"
 			if torrent.Category != "" {
 				name += " " + strconv.Quote(torrent.Category)
@@ -541,8 +541,13 @@ func PrintTorrents(torrents []Torrent, filter string, showSum int64, dense bool)
 					return fmt.Sprintf("%q", t)
 				}), ", "))
 			}
+			if torrent.ContentPath != "" {
+				name += ` >` + torrent.ContentPath
+			}
 		}
 		remain := util.PrintStringInWidth(name, int64(widthName), true)
+		// 目前遇到的tracker域名最长的: "wintersakura.net"
+		trackerBaseDomain, _ := util.StringPrefixInWidth(torrent.TrackerBaseDomain, 16)
 		fmt.Printf("  %-40s  %-6s  %-5s  %-6s  %-6s  %-5d  %-5d  %-16s\n",
 			torrent.InfoHash,
 			util.BytesSizeAround(float64(torrent.Size)),
@@ -551,7 +556,7 @@ func PrintTorrents(torrents []Torrent, filter string, showSum int64, dense bool)
 			util.BytesSizeAround(float64(torrent.UploadSpeed)),
 			torrent.Seeders,
 			torrent.Leechers,
-			torrent.TrackerBaseDomain, // 目前遇到的tracker域名最长的: "wintersakura.net"
+			trackerBaseDomain,
 		)
 		if dense {
 			for {

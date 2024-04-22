@@ -18,7 +18,7 @@ import (
 var command = &cobra.Command{
 	Use:         "parsetorrent {torrentFilename | torrentId | torrentUrl}...",
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "parsetorrent"},
-	Aliases:     []string{"parse"},
+	Aliases:     []string{"parse", "parsetorrents"},
 	Short:       "Parse .torrent (metainfo) files and show their contents.",
 	Long: fmt.Sprintf(`Parse .torrent (metainfo) files and show their contents.
 %s.`, constants.HELP_TORRENT_ARGS),
