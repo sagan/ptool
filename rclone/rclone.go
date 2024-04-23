@@ -113,7 +113,7 @@ func (l *LsjsonItem) Open(name string) (fs.File, error) {
 	}
 }
 
-// Get item by relative path. name is the full relative path (e.g.: "foo/bar.txt").
+// Get item by relative path. name is the full relative path (e.g. "foo/bar.txt").
 // If relativePath is empty, return self item.
 func (l *LsjsonItem) getItemByPath(relativePath string) (*LsjsonItem, error) {
 	item := l

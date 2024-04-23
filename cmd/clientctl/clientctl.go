@@ -27,9 +27,9 @@ var command = &cobra.Command{
 	Short:       "Get or set client config.",
 	Long: `Get or set client config.
 If '[={value}]' part is present, set the config, otherwise get current config.
-{variable}: snake_case style config key. e.g.: global_download_speed_limit
+{variable}: snake_case style config key. e.g. global_download_speed_limit
 {value}: the value of config item to set. For config item of boolean type, use literal "false" or "true";
-for config item of size or speed type, use unit chars (B/K/M/G/T/P/E), e.g.: "10M" means 10MiB or 10MiB/s.
+for config item of size or speed type, use unit chars (B/K/M/G/T/P/E), e.g. "10M" means 10MiB or 10MiB/s.
 
 Examples:
   ptool clientctl local save_path # display current default download dir
@@ -49,10 +49,10 @@ var (
 		{"save_path", 0, false, false, "Default save path"},
 		{"qb_*", 0, false, false, "The qBittorrent specific preferences. " +
 			"For full list see https://github.com/qbittorrent/qBittorrent/wiki/" +
-			"WebUI-API-(qBittorrent-4.1)#get-application-preferences . E.g.: qb_start_paused_enabled"},
+			"WebUI-API-(qBittorrent-4.1)#get-application-preferences . E.g. qb_start_paused_enabled"},
 		{"tr_*", 0, false, false, "The transmission specific preferences. " +
 			"For full list see https://github.com/transmission/transmission/blob/3.00/extras/rpc-spec.txt#L482 . " +
-			"Convert argument name to snake_case. E.g.: tr_config_dir"},
+			"Convert argument name to snake_case. E.g. tr_config_dir"},
 	}
 	showRaw        = false
 	showValuesOnly = false

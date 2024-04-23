@@ -2,8 +2,8 @@ package constants
 
 const HELP_TORRENT_ARGS = `Args list is a torrent list that each one could be
 a local filename (e.g. "*.torrent" or "[M-TEAM]CLANNAD.torrent"),
-site torrent id (e.g.: "mteam.488424") or url (e.g.: "https://kp.m-team.cc/details.php?id=488424").
-Torrent url that does NOT belong to any site (e.g.: a public site url), as well as "magnet:" link, is also supported.
+site torrent id (e.g. "mteam.488424") or url (e.g. "https://kp.m-team.cc/details.php?id=488424").
+Torrent url that does NOT belong to any site (e.g. a public site url), as well as "magnet:" link, is also supported.
 Use a single "-" as args to read the list from stdin, delimited by blanks,
 as a special case, it also supports directly reading .torrent file contents from stdin`
 
@@ -27,3 +27,6 @@ const HELP_ARG_TAG = `Filter torrents by tag. Comma-separated list. ` +
 	`Torrent which tags contain any one in the list matches. Use "` + NONE + `" to select untagged torrents`
 const HELP_ARG_TAG_XSEED = `Comma-separated tag list. Only xseed torrents which tags ` +
 	`contain any one in the list. Use "` + NONE + `" to select untagged torrents`
+const HELP_ARG_TIMES = `Time string (local timezone). ` +
+	`Supported formats: "yyyy-MM-dd HH:mm:ss", a unix timestamp integer (seconds), ` +
+	`or a time duration (e.g. "5d") which references to a past time point from now`

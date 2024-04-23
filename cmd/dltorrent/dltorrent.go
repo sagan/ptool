@@ -23,9 +23,9 @@ var command = &cobra.Command{
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "dltorrent"},
 	Short:       "Download site torrents to local.",
 	Long: `Download site torrents to local.
-Args is torrent list that each one could be a site torrent id (e.g.: "mteam.488424")
-or url (e.g.: "https://kp.m-team.cc/details.php?id=488424").
-Torrent url that does NOT belong to any site (e.g.: a public site url) is also supported.
+Args is torrent list that each one could be a site torrent id (e.g. "mteam.488424")
+or url (e.g. "https://kp.m-team.cc/details.php?id=488424").
+Torrent url that does NOT belong to any site (e.g. a public site url) is also supported.
 Use a single "-" as args to read torrent (id or url) list from stdin, delimited by blanks.
 
 To set the filename of downloaded torrent, use --rename <name> flag,
@@ -54,7 +54,7 @@ func init() {
 	command.Flags().BoolVarP(&downloadSkipExisting, "download-skip-existing", "", false,
 		`Do NOT re-download torrent that same name file already exists in local dir. `+
 			`If this flag is set, the download torrent filename ("--rename" flag) will be fixed to `+
-			`"[site].[id].torrent" (e.g.: "mteam.12345.torrent") format`)
+			`"[site].[id].torrent" (e.g. "mteam.12345.torrent") format`)
 	command.Flags().BoolVarP(&slowMode, "slow", "", false, "Slow mode. wait after downloading each torrent")
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of torrents")
 	command.Flags().StringVarP(&downloadDir, "download-dir", "", ".", `Set the dir of downloaded torrents. `+

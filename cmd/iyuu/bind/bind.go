@@ -32,7 +32,7 @@ var (
 )
 
 func init() {
-	command.Flags().StringVarP(&site, "site", "", "", "(Required) Iyuu sitename used for binding. e.g.: zhuque")
+	command.Flags().StringVarP(&site, "site", "", "", "(Required) Iyuu sitename used for binding. e.g. zhuque")
 	command.Flags().Int64VarP(&uid, "uid", "", 0, "(Required) Site uid")
 	command.Flags().StringVarP(&passkey, "passkey", "", "", "(Required) Site passkey (or equivalent key)")
 	command.MarkFlagRequired("site")

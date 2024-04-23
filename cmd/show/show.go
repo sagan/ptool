@@ -58,8 +58,8 @@ var (
 	maxTorrents        = int64(0)
 	addedInStr         = ""
 	completedBeforeStr = ""
-	activeInStr        = ""
-	noActiveInStr      = ""
+	activeSinceStr     = ""
+	notActiveSinceStr  = ""
 	filter             = ""
 	category           = ""
 	tag                = ""
@@ -97,19 +97,19 @@ func init() {
 	command.Flags().StringVarP(&maxTotalSizeStr, "max-total-size", "", "-1",
 		"Show at most torrents with total contents size of this value. -1 == no limit")
 	command.Flags().StringVarP(&addedInStr, "added-in", "", "",
-		`Time duration. Only showing torrent that was added to client in the past time of this value. E.g.: "5d"`)
+		`Time duration. Only showing torrent that was added to client in the past time of this value. E.g. "5d"`)
 	command.Flags().StringVarP(&completedBeforeStr, "completed-before", "", "",
-		`Time duration. Only showing torrent that was downloaded completed before past time of this value. E.g.: "5d"`)
-	command.Flags().StringVarP(&activeInStr, "active-in", "", "",
-		`Time duration. Only showing torrent that has activity in the past time of this value. E.g.: "5d"`)
-	command.Flags().StringVarP(&noActiveInStr, "not-active-in", "", "",
-		`Time duration. Only showing torrent that does NOT has activity in the past time of this value. E.g.: "3d"`)
+		`Only showing torrent that was downloaded completed before this. `+constants.HELP_ARG_TIMES)
+	command.Flags().StringVarP(&activeSinceStr, "active-since", "", "",
+		`Only showing torrent that has activity since this. `+constants.HELP_ARG_TIMES)
+	command.Flags().StringVarP(&notActiveSinceStr, "not-active-since", "", "",
+		`Only showing torrent that does NOT has activity since this. `+constants.HELP_ARG_TIMES)
 	command.Flags().StringVarP(&filter, "filter", "", "", constants.HELP_ARG_FILTER_TORRENT)
 	command.Flags().StringVarP(&category, "category", "", "", constants.HELP_ARG_CATEGORY)
 	command.Flags().StringVarP(&tag, "tag", "", "", constants.HELP_ARG_TAG)
 	command.Flags().StringVarP(&tracker, "tracker", "", "", constants.HELP_ARG_TRACKER)
 	command.Flags().StringVarP(&savePath, "save-path", "", "",
-		`Filter torrent by it's save path. E.g.: "/root/Downloads"`)
+		`Filter torrent by it's save path. E.g. "/root/Downloads"`)
 	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1",
 		"Skip torrent with size smaller than (<) this value. -1 == no limit")
 	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1",
@@ -153,16 +153,32 @@ func show(cmd *cobra.Command, args []string) error {
 	maxTorrentSize, _ := util.RAMInBytes(maxTorrentSizeStr)
 	maxTotalSize, _ := util.RAMInBytes(maxTotalSizeStr)
 	addedIn, _ := util.ParseTimeDuration(addedInStr)
-	completedBefore, _ := util.ParseTimeDuration(completedBeforeStr)
-	activeIn, _ := util.ParseTimeDuration(activeInStr)
-	noActiveIn, _ := util.ParseTimeDuration(noActiveInStr)
-	if activeIn > 0 && noActiveIn > 0 && activeIn <= noActiveIn {
-		return fmt.Errorf("--active-in must be larger then --no-active-in flag")
+	var completedBefore, activeSince, notActiveSince int64
+	if completedBeforeStr != "" {
+		completedBefore, err = util.ParseTime(completedBeforeStr, nil)
+		if err != nil {
+			return fmt.Errorf("invalid completed-before: %v", err)
+		}
+	}
+	if activeSinceStr != "" {
+		activeSince, err = util.ParseTime(activeSinceStr, nil)
+		if err != nil {
+			return fmt.Errorf("invalid active-since: %v", err)
+		}
+	}
+	if notActiveSinceStr != "" {
+		notActiveSince, err = util.ParseTime(notActiveSinceStr, nil)
+		if err != nil {
+			return fmt.Errorf("invalid not-active-since: %v", err)
+		}
+	}
+	if activeSince > 0 && notActiveSince > 0 && activeSince >= notActiveSince {
+		return fmt.Errorf("--active-since must be before --not-active-since flag")
 	}
 	now := util.Now()
 
 	hasFilterCondition := savePath != "" || tracker != "" || minTorrentSize >= 0 || maxTorrentSize >= 0 ||
-		addedIn > 0 || completedBefore > 0 || activeIn > 0 || noActiveIn > 0 || partial
+		addedIn > 0 || completedBefore > 0 || activeSince > 0 || notActiveSince > 0 || partial
 	noConditionFlags := category == "" && tag == "" && filter == "" && !hasFilterCondition
 	var torrents []client.Torrent
 	if showAll {
@@ -222,9 +238,9 @@ func show(cmd *cobra.Command, args []string) error {
 				minTorrentSize >= 0 && t.Size < minTorrentSize ||
 				maxTorrentSize >= 0 && t.Size > maxTorrentSize ||
 				addedIn > 0 && now-t.Atime > addedIn ||
-				completedBefore > 0 && (t.Ctime <= 0 || now-t.Ctime <= completedBefore) ||
-				activeIn > 0 && now-t.ActivityTime > activeIn ||
-				noActiveIn > 0 && now-t.ActivityTime < noActiveIn ||
+				completedBefore > 0 && (t.Ctime <= 0 || t.Ctime >= completedBefore) ||
+				activeSince > 0 && t.ActivityTime < activeSince ||
+				notActiveSince > 0 && t.ActivityTime > notActiveSince ||
 				partial && t.Size == t.SizeTotal {
 				return false
 			}

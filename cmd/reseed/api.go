@@ -35,8 +35,8 @@ import (
 const RESEED_API = "https://reseed-api.tongyifan.me/"
 
 type Site struct {
-	BaseUrl string `json:"base_url,omitempty"` // e.g.: "https://hdtime.org/"
-	Name    string `json:"name,omitempty"`     // e.g.: "HDTIME"
+	BaseUrl string `json:"base_url,omitempty"` // e.g. "https://hdtime.org/"
+	Name    string `json:"name,omitempty"`     // e.g. "HDTIME"
 	// we do not need below fields:
 	// _enable
 	// _passkey
@@ -48,14 +48,14 @@ type File map[string]any
 type ReseedResultSite struct {
 	// reseed torrent id
 	Id int64 `json:"id,omitempty"`
-	// comma-separated site torrent ids, e.g.: NexusHD-123456,HDU-23456,TJUPT-34567
+	// comma-separated site torrent ids, e.g. NexusHD-123456,HDU-23456,TJUPT-34567
 	Sites string `json:"sites,omitempty"`
 }
 
 type Torrent struct {
-	Id       string // local site torrent id, e.g.: hdupt.23456
-	ReseedId string // Reseed torrent id, e.g.: HDU-23456
-	SavePath string // Local path of torrent contents, e.g.: D:\Downloads
+	Id       string // local site torrent id, e.g. hdupt.23456
+	ReseedId string // Reseed torrent id, e.g. HDU-23456
+	SavePath string // Local path of torrent contents, e.g. D:\Downloads
 	Filename string // Filename of torrent content file or root folder
 	Success  bool   // true: a full match (success). false: partial-match (warning)
 }

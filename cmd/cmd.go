@@ -179,10 +179,10 @@ func init() {
 	RootCmd.PersistentFlags().StringVarP(&config.Proxy, "proxy", "", "",
 		`Temporarily set the network proxy used during this session. `+
 			`It has the highest priority and will override all other proxy settings in config file or env. `+
-			`E.g.: "http://127.0.0.1:1080", "socks5://127.0.0.1:7890". To disable proxy, set it to "`+constants.NONE+`"`)
+			`E.g. "http://127.0.0.1:1080", "socks5://127.0.0.1:7890". To disable proxy, set it to "`+constants.NONE+`"`)
 	RootCmd.PersistentFlags().StringVarP(&config.Tz, "timezone", "", "",
 		`Force set the timezone used by the program during this session. It will overwrite the system timezone. `+
-			`E.g.: "UTC", "Asia/Shanghai"`)
+			`E.g. "UTC", "Asia/Shanghai"`)
 	RootCmd.PersistentFlags().CountVarP(&config.VerboseLevel, "verbose", "v", "verbose (-v, -vv, -vvv)")
 }
 

@@ -25,7 +25,7 @@ var Command = &cobra.Command{
 	Short: "Display or manage config file contents.",
 	Long: `Display or manage config file contents.
 
-ptool use a single .toml or .yaml format config file to store user data (e.g.: clients & sites info).
+ptool use a single .toml or .yaml format config file to store user data (e.g. clients & sites info).
 By default it tries to locate the config file in pre-defined pathes by order,
 use the first found one as the config file. The dir of the config file is used as config dir.
 Some ptool cmds may create & use additional files or folders inside the config dir.

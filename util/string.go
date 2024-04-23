@@ -31,6 +31,7 @@ func ContainsI(str string, substr string) bool {
 	)
 }
 
+// Check whether str is a "http://" or "https://"" url
 func IsUrl(str string) bool {
 	return strings.HasPrefix(str, "http://") || strings.HasPrefix(str, "https://")
 }
@@ -151,7 +152,7 @@ var nonTldSiteDomains = map[string][]string{
 	"pp.ua":  {"ecust.pp.ua"},
 }
 
-// Return (top-level) domain of a url. e.g.: https://www.google.com/ => google.com.
+// Return (top-level) domain of a url. e.g. https://www.google.com/ => google.com.
 // Very few PT sites do NOT use top-level domain, url of those sites are handled specially,
 // with their (second level) site domain returned.
 func GetUrlDomain(urlStr string) string {

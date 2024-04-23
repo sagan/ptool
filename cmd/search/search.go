@@ -76,7 +76,7 @@ func init() {
 		"Number limit of search result of any single site. -1 == no limit")
 	command.Flags().StringVarP(&baseUrl, "base-url", "", "",
 		`Manually set the base url of search page. "%s" can be used as search keyboard placeholder. `+
-			`E.g.: "special.php", "adult.php?incldead=1&search=%s"`)
+			`E.g. "special.php", "adult.php?incldead=1&search=%s"`)
 	command.Flags().Int64VarP(&minSeeders, "min-seeders", "", 1,
 		"Skip torrent with seeders less than (<) this value. -1 == no limit")
 	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1",
@@ -84,7 +84,7 @@ func init() {
 	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1",
 		"Skip torrent with size larger than (>) this value. -1 == no limit")
 	command.Flags().StringVarP(&publishedInStr, "published-in", "", "",
-		`Time duration. Only showing torrent that was published in the past time of this value. E.g.: "30d"`)
+		`Time duration. Only showing torrent that was published in the past time of this value. E.g. "30d"`)
 	command.Flags().StringVarP(&filter, "filter", "", "", "Filter search result additionally by title or subtitle")
 	command.Flags().StringArrayVarP(&includes, "includes", "", nil,
 		"Comma-separated list that ONLY torrent which title or subtitle contains any one in the list will be included. "+

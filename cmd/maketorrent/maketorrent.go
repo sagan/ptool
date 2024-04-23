@@ -97,14 +97,14 @@ func init() {
 	command.Flags().StringVarP(&createdBy, "created-by", "", "",
 		`Manually set the "created by" field of created torrent. To unset this field, set it to "`+constants.NONE+`"`)
 	command.Flags().StringVarP(&creationDate, "creation-date", "", "",
-		`Set the "creation date" field of torrent. E.g.: "2024-01-20 15:00:00" (local timezone), `+
+		`Set the "creation date" field of torrent. E.g. "2024-01-20 15:00:00" (local timezone), `+
 			`or a unix timestamp integer (seconds). Default to now; To unset this field, set it to "`+constants.NONE+`"`)
 	command.Flags().StringArrayVarP(&trackers, "tracker", "", nil,
 		`Set the trackers ("Announce" & "AnnounceList" field) of created torrent`)
 	command.Flags().StringArrayVarP(&excludes, "excludes", "", nil,
 		`Specifiy patterns of files that will NOT be included (indexed) to created torrent. `+
 			`Use gitignore-style, checked against relative path of the file to the root folder. `+
-			`E.g.: "*.txt"`)
+			`E.g. "*.txt"`)
 	command.Flags().StringArrayVarP(&urlList, "url-list", "", nil,
 		`Set the "url list" field (BEP 19 WebSeeds) of created torrent`)
 	cmd.RootCmd.AddCommand(command)

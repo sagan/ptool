@@ -87,11 +87,11 @@ func MapMaxElementKey[TK comparable, TV constraints.Ordered](m map[TK](TV)) TK {
 }
 
 func UniqueSlice[T comparable](slice []T) []T {
-	keys := map[T]bool{}
+	keys := map[T]struct{}{}
 	var list []T
 	for _, entry := range slice {
-		if !keys[entry] {
-			keys[entry] = true
+		if _, ok := keys[entry]; !ok {
+			keys[entry] = struct{}{}
 			list = append(list, entry)
 		}
 	}

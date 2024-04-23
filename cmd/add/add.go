@@ -26,6 +26,11 @@ var command = &cobra.Command{
 First arg is client. The following args is the args list.
 %s.
 
+By default, if the arg is a http(s) url, it will try to parse it as a site torrent url,
+download the .torrent file to local and verify it's a valid metainfo file,
+then adding the downloaded .torrent file contents to the BitTorrent client.
+If "--raw" flag is set, it skips above procedures and directly submits the url to the BitTorrent client.
+
 To set the name of added torrent in client, use --rename <name> flag,
 which supports the following variable placeholders:
 * [size] : Torrent size
@@ -48,6 +53,7 @@ The "ptool export" command has the same flag that saves meta info to 'comment' f
 }
 
 var (
+	addRawUrl          = false
 	slowMode           = false
 	useComment         = false
 	addCategoryAuto    = false
@@ -67,6 +73,8 @@ var (
 )
 
 func init() {
+	command.Flags().BoolVarP(&addRawUrl, "raw", "", false,
+		`Directly submit http(s) url arg to BitTorrent client (do not try to parse url and download .torrent file)`)
 	command.Flags().BoolVarP(&slowMode, "slow", "", false, "Slow mode. wait after adding each torrent")
 	command.Flags().BoolVarP(&useComment, "use-comment-meta", "", false,
 		`Use "comment" field of .torrent file to extract category, tags, savePath and other meta info and apply them`)
@@ -127,7 +135,7 @@ func add(cmd *cobra.Command, args []string) error {
 		option.Tags = nil
 		option.SavePath = ""
 		// handle as a special case
-		if util.IsPureTorrentUrl(torrent) {
+		if util.IsPureTorrentUrl(torrent) || (addRawUrl && util.IsUrl(torrent)) {
 			option.Category = addCategory
 			option.Tags = fixedTags
 			option.SavePath = savePath

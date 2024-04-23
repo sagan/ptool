@@ -21,8 +21,8 @@ import (
 type Torrent struct {
 	InfoHash           string
 	Name               string
-	TrackerDomain      string // e.g.: tracker.m-team.cc
-	TrackerBaseDomain  string // e.g.: m-team.cc
+	TrackerDomain      string // e.g. tracker.m-team.cc
+	TrackerBaseDomain  string // e.g. m-team.cc
 	Tracker            string
 	State              string // simplified state: seeding|downloading|completed|paused|checking|error|unknown
 	LowLevelState      string // original state value returned by bt client

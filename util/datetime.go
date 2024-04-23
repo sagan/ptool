@@ -100,7 +100,7 @@ func ParseLocalDateTime(str string) (int64, error) {
 // Parse time (with date) string. .
 // It try to parse str in any of the below time format:
 // "yyyy-MM-ddHH:mm:ss", "yyyy-MM-dd HH:mm:ss", <integer> (unix timestamp in seconds),
-// "time duration" (e.g.: "5d", "6hm5s", "4天5时") (treat as pasted time til now)
+// "time duration" (e.g. "5d", "6hm5s", "4天5时") (treat as pasted time til now)
 func ParseTime(str string, location *time.Location) (int64, error) {
 	str = strings.TrimSpace(str)
 	if str == "" {

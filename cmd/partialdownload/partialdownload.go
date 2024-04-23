@@ -76,13 +76,13 @@ func init() {
 	command.Flags().BoolVarP(&originalOrder, "original-order", "", false,
 		"Split torrent files to chunks by their original order instead of path order")
 	command.Flags().Int64VarP(&chunkIndex, "chunk-index", "", 0, "Set the split chunk index (0-based) to download. "+
-		"Negative value is related to the total chunks number, e.g.: -1 means the last chunk. "+
+		"Negative value is related to the total chunks number, e.g. -1 means the last chunk. "+
 		"Default value is 0 (the first chunk)")
 	command.Flags().Int64VarP(&startIndex, "start-index", "", 0,
 		"Set the index (0-based) of the first file in torrent to download. The prior files of torrent will be skipped. "+
-			"Negative value is related to the total files number, e.g.: -100 means skip all but the last 100 files. "+
+			"Negative value is related to the total files number, e.g. -100 means skip all but the last 100 files. "+
 			"Skipped files will be be excluded from being splitting into chunks")
-	command.Flags().StringVarP(&chunkSizeStr, "chunk-size", "", "", "Set the split chunk size string. e.g.: 500GiB")
+	command.Flags().StringVarP(&chunkSizeStr, "chunk-size", "", "", "Set the split chunk size string. e.g. 500GiB")
 	command.MarkFlagRequired("chunk-size")
 	cmd.RootCmd.AddCommand(command)
 }

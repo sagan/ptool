@@ -238,7 +238,7 @@ ptool xseedadd local "C:\Users\<username>\.config\ptool\reseed\*.torrent"
 
 然后使用 ptool xseedadd 命令将所有下载的 Reseed 辅种种子添加到本地 BT 客户端。
 
-这种方式下，BitTorrent 客户端与运行 ptool 程序环境的文件系统可以不一致（e.g.: BitTorrent 客户端运行在 Docker 里，而 ptool 运行在宿主机里）。
+这种方式下，BitTorrent 客户端与运行 ptool 程序环境的文件系统可以不一致（e.g. BitTorrent 客户端运行在 Docker 里，而 ptool 运行在宿主机里）。
 
 #### 方式 2
 
@@ -512,9 +512,9 @@ ptool batchdl <site> --add-client local
 - --max-torrents int : 最多下载多少个种子。默认 -1 (无限制，一直运行除非手动 Ctrl + C 停止)。
 - --sort string : 站点种子排序方式：size|time|name|seeders|leechers|snatched|none (default size)
 - --order string : 排序顺序：asc|desc。默认 asc。
-- --min-torrent-size string : 种子大小的最小值限制 (e.g.: "100MiB", "1GiB")。默认为 "-1"（无限制）。
+- --min-torrent-size string : 种子大小的最小值限制 (e.g. "100MiB", "1GiB")。默认为 "-1"（无限制）。
 - --max-torrent-size string : 种子大小的最大值限制。默认为 "-1"（无限制）。
-- --max-total-size string : 下载种子内容总体积最大值限制 (e.g.: "512GiB", "1TiB")。默认为 "-1"（无限制）。
+- --max-total-size string : 下载种子内容总体积最大值限制 (e.g. "512GiB", "1TiB")。默认为 "-1"（无限制）。
 - --free : 只下载免费种子。
 - --no-hr : 跳过存在 HR 的种子。
 - --no-paid : 跳过"付费"的种子。(部分站点存在"付费"种子，第一次下载或汇报时扣除积分)
@@ -542,7 +542,7 @@ ptool verifytorrent <torrentFileNameOrIdOrUrl>...
 - `--content-path` : 种子内容路径(root folder 或单文件种子的文件路径)。只能用于校验 1 个 torrent 文件。
 - `--use-comment-meta` : 读取并使用种子 .torrent 文件的 comment 字段里存储的 save_path 信息。设计用于配合其它命令(例如 `ptool export`)使用。
 - `--rclone-lsjson-file` : 元信息索引文件名，其内容为 [rclone][] 的 `rclone lsjson --recursive <path>` 命令输出。rclone 的 `<path>` 被认为是种子内容的保存路径。参考 [rclone lsjson][] 命令的文档。
-- `--rclone-save-path` : 类似 `--rclone-lsjson-file`，但直接指定 `<path>` 路径。ptool 将运行 `rclone lsjson --recursive <path>` 并读取其输出。E.g.: "remote:Downloads"。
+- `--rclone-save-path` : 类似 `--rclone-lsjson-file`，但直接指定 `<path>` 路径。ptool 将运行 `rclone lsjson --recursive <path>` 并读取其输出。E.g. "remote:Downloads"。
 
 `--rclone-lsjson-file` 和 `--rclone-save-path` 参数的设计目的是用于检测种子的内容文件在云存储上是否存在。
 

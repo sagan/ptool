@@ -253,9 +253,10 @@ var InternalAliases = []*AliasConfigStruct{
 		Internal: true,
 	},
 	{
-		Name:     "parsetorrent2",
-		Cmd:      "parsetorrent *.torrent",
-		Internal: true,
+		Name:        "sum",
+		Cmd:         "parsetorrent --sum",
+		DefaultArgs: "*.torrent",
+		Internal:    true,
 	},
 	{
 		Name:        "verifytorrent2",
@@ -594,7 +595,7 @@ func (siteConfig *SiteConfigStruct) MatchFilter(filter string) bool {
 		util.ContainsI(siteConfig.Url, filter)
 }
 
-// Parse a site internal url (e.g.: special.php), return absolute url
+// Parse a site internal url (e.g. special.php), return absolute url
 func (siteConfig *SiteConfigStruct) ParseSiteUrl(siteUrl string, appendQueryStringDelimiter bool) string {
 	pageUrl := ""
 	if siteUrl != "" {

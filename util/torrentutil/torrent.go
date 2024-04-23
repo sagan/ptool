@@ -392,7 +392,7 @@ func (meta *TorrentMeta) XseedCheckWithClientTorrent(clientTorrentContents []cli
 	return 0
 }
 
-// Verify against a fs.FS of save path (e.g.: os.DirFS("D:\Downloads")). It does no hash checking for now.
+// Verify against a fs.FS of save path (e.g. os.DirFS("D:\Downloads")). It does no hash checking for now.
 func (meta *TorrentMeta) VerifyAgaintSavePathFs(savePathFs fs.FS) error {
 	relativePath := ""
 	if meta.RootDir != "" {

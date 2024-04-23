@@ -83,12 +83,12 @@ func init() {
 	command.Flags().StringVarP(&updateCreatedBy, "update-created-by", "", "",
 		`Update "created by" field of torrents. To unset this field, set it to "`+constants.NONE+`"`)
 	command.Flags().StringVarP(&updateCreationDate, "update-creation-date", "", "",
-		`Update "creation date" field of torrents. E.g.: "2024-01-20 15:00:00" (local timezone), `+
+		`Update "creation date" field of torrents. E.g. "2024-01-20 15:00:00" (local timezone), `+
 			`or a unix timestamp integer (seconds). To unset this field, set it to "`+constants.NONE+`"`)
 	command.Flags().StringVarP(&updateComment, "update-comment", "", "", `Update "comment" field of torrents`)
 	command.Flags().StringVarP(&replaceCommentMetaSavePathPrefix, "replace-comment-meta-save-path-prefix", "", "",
 		`Used with "--use-comment-meta". Update the prefix of 'save_path' property encoded in "comment" field `+
-			`of torrents, replace old prefix with new one. Format: "old_path|new_path". E.g.: `+
+			`of torrents, replace old prefix with new one. Format: "old_path|new_path". E.g. `+
 			`"/root/Downloads|/var/Downloads" will change ""/root/Downloads" or "/root/Downloads/..." save path to `+
 			`"/var/Downloads" or "/var/Downloads/..."`)
 	cmd.RootCmd.AddCommand(command)

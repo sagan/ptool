@@ -64,19 +64,19 @@ func HumanSizeWithPrecision(size float64, precision int) string {
 }
 
 // HumanSize returns a human-readable approximation of a size
-// capped at 4 valid numbers (e.g.: "2.746 MB", "796 KB").
+// capped at 4 valid numbers (e.g. "2.746 MB", "796 KB").
 func HumanSize(size float64) string {
 	return HumanSizeWithPrecision(size, 2)
 }
 
 // BytesSize returns a human-readable size in bytes, kibibytes,
-// mebibytes, gibibytes, or tebibytes (e.g.: "44kiB", "17MiB").
+// mebibytes, gibibytes, or tebibytes (e.g. "44kiB", "17MiB").
 func BytesSize(size float64) string {
 	return CustomSize("%.4g%s", size, 1024.0, binaryAbbrs)
 }
 
 // FromHumanSize returns an integer from a human-readable specification of a
-// size using SI standard (e.g.: "44kB", "17MB").
+// size using SI standard (e.g. "44kB", "17MB").
 func FromHumanSize(size string) (int64, error) {
 	return parseSize(size, decimalMap)
 }
@@ -85,7 +85,11 @@ func FromHumanSize(size string) (int64, error) {
 // in bytes, kibibytes, mebibytes, gibibytes, or tebibytes and
 // returns the number of bytes, or -1 if the string is unparseable.
 // Units are case-insensitive, and the 'b' suffix is optional.
+// Specially, if size is "-1", return -1,nil
 func RAMInBytes(size string) (int64, error) {
+	if size == "-1" {
+		return -1, nil
+	}
 	return parseSize(size, binaryMap)
 }
 
@@ -155,8 +159,8 @@ badSuffix:
 	return -1, fmt.Errorf("invalid suffix: '%s'", sfx)
 }
 
-// Return at most 6 chars, e.g.: "123.1G".
-// It removes trailing zero(s) and dot, e.g.: "123.0GiB" => "123G".
+// Return at most 6 chars, e.g. "123.1G".
+// It removes trailing zero(s) and dot, e.g. "123.0GiB" => "123G".
 func BytesSizeAround(size float64) string {
 	s := BytesSize(size)
 	s = strings.TrimSuffix(s, "iB")

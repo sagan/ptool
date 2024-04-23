@@ -57,7 +57,7 @@ func init() {
 	command.Flags().BoolVarP(&exportSkipExisting, "export-skip-existing", "", false,
 		`Do NOT re-export torrent that same name file already exists in local dir. `+
 			`If this flag is set, the exported torrent filename ("--rename" flag) will be fixed to `+
-			`"[client].[infohash].torrent" (e.g.: "local.293235f712652df08a8665ec2ca118d7e0615c3f.torrent") format`)
+			`"[client].[infohash].torrent" (e.g. "local.293235f712652df08a8665ec2ca118d7e0615c3f.torrent") format`)
 	command.Flags().BoolVarP(&useCommentMeta, "use-comment-meta", "", false,
 		`Export torrent category, tags, save path and other infos to "comment" field of .torrent file`)
 	command.Flags().StringVarP(&filter, "filter", "", "", constants.HELP_ARG_FILTER_TORRENT)

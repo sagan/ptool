@@ -23,7 +23,7 @@ Set appropriate tags to all torrents of a client.
 For example, it will set the "site:m-team" tag for torrents downloaded from M-Team.
 
 Note it will NOT change the category of torrents in client.
-To set category of torrents to it's site, run "setcategory" cmd after running this cmd. E.g.:
+To set category of torrents to it's site, run "setcategory" cmd after running this cmd. E.g.
   ptool setcategory local mteam --tag site:mteam -vvv
 The above cmd changes the category of all torrents in "local" client that has tag "site:mteam" to "mteam".`,
 	Args: cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),

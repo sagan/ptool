@@ -119,7 +119,7 @@ func init() {
 	command.Flags().BoolVarP(&downloadSkipExisting, "download-skip-existing", "", false,
 		`Used with "--download". Do NOT re-download torrent that same name file already exists in local dir. `+
 			`If this flag is set, the download torrent filename ("--rename" flag) will be fixed to `+
-			`"[site].[id].torrent" (e.g.: "mteam.12345.torrent") format`)
+			`"[site].[id].torrent" (e.g. "mteam.12345.torrent") format`)
 	command.Flags().BoolVarP(&downloadAll, "all", "a", false,
 		`Display or download all torrents of site. Equivalent to "--include-downloaded --min-seeders -1"`)
 	command.Flags().BoolVarP(&onePage, "one-page", "", false, "Only fetch one page torrents")
@@ -162,7 +162,7 @@ func init() {
 	command.Flags().Int64VarP(&maxConsecutiveFail, "max-consecutive-fail", "", 3,
 		"Stop after consecutive fails to download torrent from site of this times. -1 == no limit (never stop)")
 	command.Flags().StringVarP(&freeTimeAtLeastStr, "free-time", "", "",
-		"Used with --free. Set the allowed minimal remaining torrent free time. e.g.: 12h, 1d")
+		"Used with --free. Set the allowed minimal remaining torrent free time. e.g. 12h, 1d")
 	command.Flags().StringVarP(&filter, "filter", "", "",
 		"If set, only display or download torrent which title or subtitle contains this string")
 	command.Flags().StringVarP(&tag, "tag", "", "",
@@ -184,7 +184,7 @@ func init() {
 	command.Flags().StringVarP(&addSavePath, "add-save-path", "", "",
 		`Used with "--add-client". Set contents save path of added torrents`)
 	command.Flags().StringVarP(&baseUrl, "base-url", "", "",
-		`Manually set the base url of torrents list page. e.g.: "special.php", "torrents.php?cat=100"`)
+		`Manually set the base url of torrents list page. e.g. "special.php", "torrents.php?cat=100"`)
 	command.Flags().StringVarP(&rename, "rename", "", "", "Rename downloaded or added torrents (supports variables)")
 	command.Flags().StringVarP(&saveFilename, "save-list-file", "", "",
 		"Filename. Write the id list of found torrents to it. File will be truncated unless --save-apend flag is set")

@@ -17,8 +17,8 @@ var command = &cobra.Command{
 	Short:       "Check whether a torrent in client is identical with a torrent file.",
 	Long: `Check whether a torrent in client is identical with a torrent file.
 {torrentFilename | torrentId | torrentUrl}: could be a local filename (e.g. "*.torrent" or "[M-TEAM]CLANNAD.torrent"),
-site torrent id (e.g.: "mteam.488424") or url (e.g.: "https://kp.m-team.cc/details.php?id=488424").
-Torrent url that does NOT belong to any site (e.g.: a public site url) is also supported.
+site torrent id (e.g. "mteam.488424") or url (e.g. "https://kp.m-team.cc/details.php?id=488424").
+Torrent url that does NOT belong to any site (e.g. a public site url) is also supported.
 Use a single "-" to read .torrent file contents from stdin.
 
 Only filename and size will be compared. Not the disk file contents themselves.`,

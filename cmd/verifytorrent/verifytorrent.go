@@ -95,7 +95,7 @@ func init() {
 		`The rclone save path of "Downloads" folder, ptool will execute "rclone lsjson --recursive <rclone-save-path>" `+
 			`and read it's output. E.g. "remote:Downloads"`)
 	command.Flags().StringVarP(&rcloneFlags, "rclone-flags", "", "",
-		`Used with "--rclone-save-path", the additional rclone flags. E.g.: "--config rclone.conf"`)
+		`Used with "--rclone-save-path", the additional rclone flags. E.g. "--config rclone.conf"`)
 	command.Flags().StringVarP(&rcloneBinary, "rclone-binary", "", "rclone",
 		`Used with "--rclone-save-path", the path of rclone binary`)
 	cmd.RootCmd.AddCommand(command)

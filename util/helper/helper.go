@@ -37,8 +37,8 @@ var (
 	ErrGetTorrentStdoutOutputNotSupportInShell = fmt.Errorf(`"-" arg can not be used in shell`)
 )
 
-// Read a torrent and return it's contents. torrent could be: local filename (e.g.: abc.torrent),
-// site torrent id (e.g.: mteam.1234) or url (e.g. https://kp.m-team.cc/details.php?id=488424),
+// Read a torrent and return it's contents. torrent could be: local filename (e.g. abc.torrent),
+// site torrent id (e.g. mteam.1234) or url (e.g. https://kp.m-team.cc/details.php?id=488424),
 // or "-" to read torrent contents from os.Stdin.
 // Params:
 // forceLocal: force treat torrent as local filename. forceRemote: force treat torrent as site torrent id or url.
@@ -339,6 +339,7 @@ func ParseTorrentsFromArgs(args []string) (torrents []string, stdinTorrentConten
 	} else if slices.Contains(torrents, "-") {
 		err = fmt.Errorf(`"-" arg can NOT be mixed up with others`)
 	}
+	torrents = util.UniqueSlice(torrents)
 	return
 }
 
@@ -361,5 +362,6 @@ func ParseInfoHashesFromArgs(args []string) (infoHashes []string, err error) {
 	} else if slices.Contains(infoHashes, "-") {
 		err = fmt.Errorf(`"-" arg can NOT be mixed up with others`)
 	}
+	infoHashes = util.UniqueSlice(infoHashes)
 	return
 }
