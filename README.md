@@ -1,6 +1,6 @@
 # ptool
 
-自用的 PT ([Private trackers][]) 网站和 [BitTorrent][] 客户端辅助工具([Github](https://github.com/sagan/ptool))。提供全自动刷流(brush)、自动辅种(使用 iyuu 或 Reseed 等接口)、BT 客户端控制等功能。
+自用的 PT ([Private trackers][]) 网站和 [BitTorrent][] 客户端辅助工具([Github](https://github.com/sagan/ptool))。提供全自动刷流(brush)、自动辅种(使用 IYUU 或 Reseed 等接口)、BT 客户端控制等功能。
 
 主要特性：
 
@@ -98,7 +98,7 @@ ptool <command> args... [flags]
 所有可用的 `<command>` 包括:
 
 - brush : 自动刷流。
-- iyuu : 使用 [iyuu][] 接口自动辅种。
+- iyuu : 使用 [IYUU][] 接口自动辅种。
 - reseed : 使用 [Reseed][] 接口自动辅种。
 - batchdl : 批量下载站点的种子。
 - status : 显示 BT 客户端或 PT 站点当前状态信息。
@@ -169,17 +169,17 @@ ptool brush local mteam
 
 ### 自动辅种 (iyuu)
 
-iyuu 命令通过 [iyuu 接口][] 提供自动辅种(cross seed)功能。本功能直接访问 iyuu 的服务器，本机上不需要安装 / 运行 iyuu 客户端。
+iyuu 命令通过 [IYUU 接口][] 提供自动辅种(cross seed)功能。本功能直接访问 IYUU 的服务器，本机上不需要安装 / 运行 IYUU 客户端。
 
-#### iyuu 配置
+#### IYUU 配置
 
-如果是第一次使用 iyuu，首先需要在 [iyuu 网站][] 上微信扫码申请 IYUU 令牌（token）。在 ptool.toml 配置文件里配置 iyuu token：
+如果是第一次使用 "IYUU"，首先需要在 [IYUU 网站][] 上微信扫码申请 IYUU 令牌（token）。在 ptool.toml 配置文件里配置 IYUU token：
 
 ```
 iyuuToken = "IYUU0011223344..."
 ```
 
-然后使用 iyuu 支持的任意合作站点的 uid 和 passkey 激活和绑定(bind) iyuu token，命令格式如下：
+然后使用 IYUU 支持的任意合作站点的 uid 和 passkey 激活和绑定(bind) IYUU token，命令格式如下：
 
 ```
 ptool iyuu bind --site zhuque --uid 123456 --passkey 0123456789abcdef
@@ -187,26 +187,26 @@ ptool iyuu bind --site zhuque --uid 123456 --passkey 0123456789abcdef
 
 所有参数均必须提供
 
-- --site : 用于验证的 PT 站点名。可以使用 `ptool iyuu sites -b` 命令查询 iyuu 支持的合作站点列表。
+- --site : 用于验证的 PT 站点名。可以使用 `ptool iyuu sites -b` 命令查询 IYUU 支持的合作站点列表。
 - --uid : 对应 PT 站点的用户 uid（数字）。在 PT 网站的个人页面获取。
 - --passkey : 对应 PT 站点的用户 passkey。在 PT 网站的个人页面获取。
 
 其他说明：
 
-- 使用 `ptool iyuu sites` 查看 iyuu 支持的所有可辅种站点列表。
-- 使用 `ptool iyuu status` 查询当前 iyuu token 的激活和绑定状态。
+- 使用 `ptool iyuu sites` 查看 IYUU 支持的所有可辅种站点列表。
+- 使用 `ptool iyuu status` 查询当前 IYUU token 的激活和绑定状态。
 
-#### 使用 iyuu 自动辅种
+#### 使用 IYUU 自动辅种
 
 ```
 ptool iyuu xseed <client>...
 ```
 
-可以提供多个 client。程序会获取这些 client 里正在做种的种子信息，通过 iyuu 接口查询可以辅种的种子并将其自动添加到对应客户端里。注意只有在本程序的 ptool.toml 配置文件里添加的站点的种子才会被辅种。
+可以提供多个 client。程序会获取这些 client 里正在做种的种子信息，通过 IYUU 接口查询可以辅种的种子并将其自动添加到对应客户端里。注意只有在本程序的 ptool.toml 配置文件里添加的站点的种子才会被辅种。
 
 iyuu xseed 子命令支持很多可选参数。运行 `ptool iyuu xseed -h` 查看所有可选参数使用说明。
 
-添加的辅种种子默认跳过客户端 hash 校验并立即开始做种。本程序会对客户端里目标种子和 iyuu 接口返回的候选辅种种子的文件列表进行比较（文件路径、大小），只有完全一致才会添加辅种种子。添加的辅种种子会打上 `_xseed` 标签。
+添加的辅种种子默认跳过客户端 hash 校验并立即开始做种。本程序会对客户端里目标种子和 IYUU 接口返回的候选辅种种子的文件列表进行比较（文件路径、大小），只有完全一致才会添加辅种种子。添加的辅种种子会打上 `_xseed` 标签。
 
 ## 自动辅种 (reseed)
 
@@ -615,7 +615,7 @@ ptool partialdownload <client> <infoHash> --chunk-size 1TiB --chunk-index 0
 ptool xseedadd <client> <torrentFileNameOrIdOrUrl>...
 ```
 
-xseedadd 命令将提供的种子作为辅种种子添加到客户端。程序将在客户端里寻找与提供的种子元信息（文件名、文件大小）完全一致的目标种子，然后将提供的种子作为目标种子的辅种添加到客户端。如果客户端里没有找到匹配的目标种子，程序不会添加提供的种子到客户端。
+xseedadd 命令将提供的种子作为辅种种子添加到客户端。程序将在客户端里寻找与提供的种子元信息（文件名、文件大小）完全一致的目标种子，然后将提供的种子作为目标种子的辅种添加到客户端。如果客户端里没有找到匹配的目标种子，程序不会添加提供的种子到客户端。"xseedadd" 命令添加的辅种种子会打上 `_xseed` 标签。
 
 ### 同步 Cookies & 导入站点 (cookiecloud)
 
@@ -780,9 +780,9 @@ ptool 会在访问站点时自动模拟浏览器环境（类似 [curl-impersonat
 [Private trackers]: https://wiki.installgentoo.com/wiki/Private_trackers
 [BitTorrent]: https://en.wikipedia.org/wiki/BitTorrent
 [CookieCloud]: https://github.com/easychen/CookieCloud
-[iyuu]: https://github.com/ledccn/IYUUAutoReseed
-[iyuu 接口]: https://api.iyuu.cn/docs.php
-[iyuu 网站]: https://iyuu.cn/
+[IYUU]: https://github.com/ledccn/IYUUAutoReseed
+[IYUU 接口]: https://api.iyuu.cn/docs.php
+[IYUU 网站]: https://iyuu.cn/
 [Reseed]: https://github.com/tongyifan/Reseed-backend
 [Reseed 官网]: https://reseed.tongyifan.me/
 [rclone]: https://github.com/rclone/rclone

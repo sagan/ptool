@@ -173,6 +173,11 @@ func xseedadd(cmd *cobra.Command, args []string) error {
 			tags = append(tags, client.GenerateTorrentTagFromSite(sitename))
 		}
 		tags = append(tags, fixedTags...)
+		if tinfo.IsPrivate() {
+			tags = append(tags, config.PRIVATE_TAG)
+		} else {
+			tags = append(tags, config.PUBLIC_TAG)
+		}
 		err = clientInstance.AddTorrent(content, &client.TorrentOption{
 			SavePath:     matchClientTorrent.SavePath,
 			Category:     category,

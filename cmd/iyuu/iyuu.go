@@ -45,8 +45,8 @@ var (
 )
 var Command = &cobra.Command{
 	Use:   "iyuu",
-	Short: "Cross seed automation tool using iyuu API.",
-	Long:  `Cross seed automation tool using iyuu API.`,
+	Short: "Cross seed automation tool using IYUU (https://github.com/ledccn/IYUUAutoReseed) API.",
+	Long:  `Cross seed automation tool using IYUU (https://github.com/ledccn/IYUUAutoReseed) API.`,
 }
 
 func init() {

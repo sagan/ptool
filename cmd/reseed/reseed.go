@@ -12,8 +12,8 @@ import (
 
 var Command = &cobra.Command{
 	Use:   "reseed",
-	Short: "Reseed client of https://github.com/tongyifan/Reseed-backend",
-	Long:  `Reseed client of https://github.com/tongyifan/Reseed-backend .`,
+	Short: "Cross seed automation tool using Reseed (https://github.com/tongyifan/Reseed-backend) API.",
+	Long:  `Cross seed automation tool using Reseed (https://github.com/tongyifan/Reseed-backend) API.`,
 }
 
 func init() {

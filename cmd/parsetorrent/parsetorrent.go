@@ -165,13 +165,16 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 	if showSum {
 		sumOutputDst = os.Stdout
 	}
+	averageSize := int64(0)
+	if cntTorrents > 0 {
+		averageSize = allSize / cntTorrents
+	}
 	fmt.Fprintf(sumOutputDst, "\n")
 	fmt.Fprintf(sumOutputDst, "// Total torrents: %d\n", cntTorrents)
 	fmt.Fprintf(sumOutputDst, "// Total contents size: %s (%d Byte)\n", util.BytesSize(float64(allSize)), allSize)
 	fmt.Fprintf(sumOutputDst, "// Total number of content files in torrents: %d\n", cntFiles)
 	fmt.Fprintf(sumOutputDst, "// Smallest / Average / Largest torrent contents size: %s / %s / %s\n",
-		util.BytesSize(float64(smallestSize)), util.BytesSize(float64(allSize/cntTorrents)),
-		util.BytesSize(float64(largestSize)))
+		util.BytesSize(float64(smallestSize)), util.BytesSize(float64(averageSize)), util.BytesSize(float64(largestSize)))
 	if errorCnt > 0 {
 		return fmt.Errorf("%d errors", errorCnt)
 	}

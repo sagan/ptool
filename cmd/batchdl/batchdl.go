@@ -100,6 +100,7 @@ var (
 	maxTorrentSizeStr    = ""
 	maxTotalSizeStr      = ""
 	freeTimeAtLeastStr   = ""
+	publishedAfterStr    = ""
 	startPage            = ""
 	downloadDir          = ""
 	baseUrl              = ""
@@ -163,6 +164,8 @@ func init() {
 		"Stop after consecutive fails to download torrent from site of this times. -1 == no limit (never stop)")
 	command.Flags().StringVarP(&freeTimeAtLeastStr, "free-time", "", "",
 		"Used with --free. Set the allowed minimal remaining torrent free time. e.g. 12h, 1d")
+	command.Flags().StringVarP(&publishedAfterStr, "published-after", "", "",
+		`If set, only display or download torrent that was published after (>=) this. `+constants.HELP_ARG_TIMES)
 	command.Flags().StringVarP(&filter, "filter", "", "",
 		"If set, only display or download torrent which title or subtitle contains this string")
 	command.Flags().StringVarP(&tag, "tag", "", "",
@@ -264,6 +267,13 @@ func batchdl(command *cobra.Command, args []string) error {
 			return fmt.Errorf("invalid --free-time value %s: %v", freeTimeAtLeastStr, err)
 		}
 		freeTimeAtLeast = t
+	}
+	var publishedAfter int64
+	if publishedAfterStr != "" {
+		publishedAfter, err = util.ParseTime(publishedAfterStr, nil)
+		if err != nil {
+			return fmt.Errorf("invalid published-after: %v", err)
+		}
 	}
 	if nohr && siteInstance.GetSiteConfig().GlobalHnR {
 		log.Errorf("No torrents will be downloaded: site %s enforces global HnR policy",
@@ -388,6 +398,14 @@ mainloop:
 			if maxTorrentSize >= 0 && torrent.Size > maxTorrentSize {
 				log.Debugf("Skip torrent %s due to size %d > maxTorrentSize", torrent.Name, torrent.Size)
 				if sortFlag == "size" && !desc {
+					break mainloop
+				} else {
+					continue
+				}
+			}
+			if publishedAfter > 0 && torrent.Time < publishedAfter {
+				log.Debugf("Skip torrent %s due to too old", torrent.Name)
+				if sortFlag == "time" && desc {
 					break mainloop
 				} else {
 					continue

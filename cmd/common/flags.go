@@ -73,6 +73,7 @@ var pureFlags = []string{
 	"check",
 	"check-quick",
 	"clients",
+	"data-order",
 	"dedupe",
 	"delete-added",
 	"delete-fail",

@@ -251,11 +251,17 @@ func brush(cmd *cobra.Command, args []string) error {
 			}
 			log.Printf("torrent info: %s\n", tinfo.InfoHash)
 			cndAddTorrents++
+			tags := []string{client.GenerateTorrentTagFromSite(siteInstance.GetName())}
+			if tinfo.IsPrivate() {
+				tags = append(tags, config.PRIVATE_TAG)
+			} else {
+				tags = append(tags, config.PUBLIC_TAG)
+			}
 			torrentOption := &client.TorrentOption{
 				Name:             torrent.Name,
 				Pause:            addPaused,
 				Category:         config.BRUSH_CAT,
-				Tags:             []string{client.GenerateTorrentTagFromSite(siteInstance.GetName())},
+				Tags:             tags,
 				UploadSpeedLimit: siteInstance.GetSiteConfig().TorrentUploadSpeedLimitValue,
 			}
 			// torrentname := fmt.Sprint(torrent.Name, "_", i, ".torrent")

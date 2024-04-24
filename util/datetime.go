@@ -97,11 +97,17 @@ func ParseLocalDateTime(str string) (int64, error) {
 	return 0, fmt.Errorf("invalid date str")
 }
 
+// Similar with ParseTimeWithNow but use time.Now() as now time
+func ParseTime(str string, location *time.Location) (int64, error) {
+	return ParseTimeWithNow(str, location, time.Now())
+}
+
 // Parse time (with date) string. .
 // It try to parse str in any of the below time format:
 // "yyyy-MM-ddHH:mm:ss", "yyyy-MM-dd HH:mm:ss", <integer> (unix timestamp in seconds),
 // "time duration" (e.g. "5d", "6hm5s", "4天5时") (treat as pasted time til now)
-func ParseTime(str string, location *time.Location) (int64, error) {
+// If location is nil, current local timezone is used.
+func ParseTimeWithNow(str string, location *time.Location, now time.Time) (int64, error) {
 	str = strings.TrimSpace(str)
 	if str == "" {
 		return 0, fmt.Errorf("empty str")
@@ -109,9 +115,13 @@ func ParseTime(str string, location *time.Location) (int64, error) {
 	if i, err := strconv.Atoi(str); err == nil {
 		return int64(i), nil
 	}
-	//  handle YYYY-mm-ddHH:mm:ss
-	if matched, _ := regexp.MatchString("\\d{4}-\\d{2}-\\d{2}\\d{2}:\\d{2}:\\d{2}", str); matched {
+	//  handle yyyy-MM-ddHH:mm:ss
+	if matched, _ := regexp.MatchString("^\\d{4}-\\d{2}-\\d{2}\\d{2}:\\d{2}:\\d{2}$", str); matched {
 		str = str[:10] + " " + str[10:]
+	}
+	//  handle yyyy-MM-dd
+	if matched, _ := regexp.MatchString("^\\d{4}-\\d{2}-\\d{2}$", str); matched {
+		str += " 00:00:00"
 	}
 
 	if location == nil {
@@ -124,16 +134,17 @@ func ParseTime(str string, location *time.Location) (int64, error) {
 
 	td, error := ParseTimeDuration(str)
 	if error == nil {
-		now := time.Now()
+		t := time.Unix(now.Unix()-td, 0)
 		// 以距今的相对时间标识，精度有限
-		if td%86400 == 0 {
-			if td > 86400*30 {
-				now = now.Truncate(time.Hour * 24)
-			} else if td > 86400 {
-				now = now.Truncate(time.Hour)
-			}
+		if td%86400 == 0 && td >= 86400*30 { // e.g. "1月0天", "1年10月"
+			t = t.Truncate(time.Hour * 24) // Go standard library truncates time against UTC
+			t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, location)
+		} else if td%3600 == 0 && td >= 86400 { // e.g. "1天0时", "29天10时"
+			t = t.Truncate(time.Hour)
+		} else if td%60 == 0 && td >= 3600 { // e.g. "1时25分钟"
+			t = t.Truncate(time.Minute)
 		}
-		return now.Unix() - td, nil
+		return t.Unix(), nil
 	}
 	return 0, fmt.Errorf("invalid time str")
 }

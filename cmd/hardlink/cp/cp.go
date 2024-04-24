@@ -3,7 +3,7 @@ package hardlinkcp
 import (
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -47,8 +47,8 @@ func hardlinkcp(cmd *cobra.Command, args []string) error {
 	if dest == "." || dest == ".." || strings.HasSuffix(dest, "/") || strings.HasSuffix(dest, `\`) {
 		destIsDir = true
 	}
-	source = path.Clean(source)
-	dest = path.Clean(dest)
+	source = filepath.Clean(source)
+	dest = filepath.Clean(dest)
 	sourceStat, err := os.Stat(source)
 	if err != nil {
 		return fmt.Errorf("failed to access source %s: %v", source, err)

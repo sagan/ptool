@@ -175,9 +175,9 @@ func (cs *Status) Print(f io.Writer, name string, additionalInfo string) {
 		info += "; " + additionalInfo
 	}
 	fmt.Fprintf(f, constants.STATUS_FMT, "Client", name,
-		fmt.Sprintf("↑Spd/Lmt: %s / %s/s", util.BytesSize(float64(cs.UploadSpeed)),
+		fmt.Sprintf("↑Spd/Lmt: %s / %s/s", util.BytesSizeAround(float64(cs.UploadSpeed)),
 			util.BytesSizeAround(float64(cs.UploadSpeedLimit))),
-		fmt.Sprintf("↓Spd/Lmt: %s / %s/s", util.BytesSize(float64(cs.DownloadSpeed)),
+		fmt.Sprintf("↓Spd/Lmt: %s / %s/s", util.BytesSizeAround(float64(cs.DownloadSpeed)),
 			util.BytesSizeAround(float64(cs.DownloadSpeedLimit))), info)
 }
 
@@ -503,6 +503,8 @@ func PrintTorrents(torrents []Torrent, filter string, showSum int64, dense bool)
 	cnt := int64(0)
 	var cntPaused, cntDownloading, cntSeeding, cntCompleted, cntOthers int64
 	size := int64(0)
+	smallestSize := int64(-1)
+	largestSize := int64(-1)
 	sizeUnfinished := int64(0)
 	if showSum < 2 {
 		fmt.Printf("%-*s  %-40s  %-6s  %-5s  %-6s  %-6s  %-5s  %-5s  %-16s\n",
@@ -526,6 +528,12 @@ func PrintTorrents(torrents []Torrent, filter string, showSum int64, dense bool)
 			cntOthers++
 		}
 		size += torrent.Size
+		if largestSize == -1 || torrent.Size > largestSize {
+			largestSize = torrent.Size
+		}
+		if smallestSize == -1 || torrent.Size < smallestSize {
+			smallestSize = torrent.Size
+		}
 		sizeUnfinished += torrent.Size - torrent.SizeCompleted
 		if showSum >= 2 {
 			continue
@@ -570,11 +578,17 @@ func PrintTorrents(torrents []Torrent, filter string, showSum int64, dense bool)
 		}
 	}
 	if showSum > 0 {
+		averageSize := int64(0)
+		if cnt > 0 {
+			averageSize = size / cnt
+		}
 		fmt.Printf("\n")
 		fmt.Printf("// Summary - Cnt / Size / SizeUnfinished: %d / %s / %s\n",
 			cnt, util.BytesSize(float64(size)), util.BytesSize(float64(sizeUnfinished)))
 		fmt.Printf("// Torrents: ↓%d / -%d / ↑%d / ✓%d / +%d\n",
 			cntDownloading, cntPaused, cntSeeding, cntCompleted, cntOthers)
+		fmt.Printf("// Smallest / Average / Largest torrent size: %s / %s / %s\n",
+			util.BytesSize(float64(smallestSize)), util.BytesSize(float64(averageSize)), util.BytesSize(float64(largestSize)))
 	}
 }
 

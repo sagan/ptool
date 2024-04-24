@@ -317,10 +317,10 @@ func AskYesNoConfirm(prompt string) bool {
 	}
 }
 
-// Parse torrents list from args.
-// A single "-" args will make it read torrents list from stdin instead,
+// Parse torrent list from args. If args is a single "-", read the list from stdin instead,
 // unless stdin contents is a valid .torrent file, in which case returned torrents is ["-"]
 // and stdin contents returned as stdinTorrentContents.
+// It returns an error if parsed torrents list is empty.
 func ParseTorrentsFromArgs(args []string) (torrents []string, stdinTorrentContents []byte, err error) {
 	stdinTorrentContents = []byte{}
 	torrents = ParseFilenameArgs(args...)
@@ -339,29 +339,33 @@ func ParseTorrentsFromArgs(args []string) (torrents []string, stdinTorrentConten
 	} else if slices.Contains(torrents, "-") {
 		err = fmt.Errorf(`"-" arg can NOT be mixed up with others`)
 	}
-	torrents = util.UniqueSlice(torrents)
+	if err == nil {
+		torrents = util.UniqueSlice(torrents)
+		if len(torrents) == 0 {
+			err = fmt.Errorf("no torrent is provided")
+		}
+	}
 	return
 }
 
-// Parse info-hash list from args. If args is a single "-", read list from stdin instead.
-// Specially, it returns an error is args is empty.
+// Parse info-hash list from args. If args is a single "-", read the list from stdin instead.
+// It returns an error if parsed info-hash list is empty.
 func ParseInfoHashesFromArgs(args []string) (infoHashes []string, err error) {
-	if len(args) == 0 {
-		err = fmt.Errorf("you must provide at least a arg or filter flag")
-		return
-	}
 	infoHashes = args
 	if len(infoHashes) == 1 && infoHashes[0] == "-" {
 		if data, _err := ReadArgsFromStdin(); _err != nil {
 			err = fmt.Errorf("failed to parse stdin to info hashes: %v", _err)
-		} else if len(data) == 0 {
-			infoHashes = nil
 		} else {
 			infoHashes = data
 		}
 	} else if slices.Contains(infoHashes, "-") {
 		err = fmt.Errorf(`"-" arg can NOT be mixed up with others`)
 	}
-	infoHashes = util.UniqueSlice(infoHashes)
+	if err == nil {
+		infoHashes = util.UniqueSlice(infoHashes)
+		if len(infoHashes) == 0 {
+			err = fmt.Errorf("no info-hash is provided")
+		}
+	}
 	return
 }
