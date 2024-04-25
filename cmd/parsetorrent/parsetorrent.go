@@ -94,6 +94,8 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 	errorCnt := int64(0)
 	allSize := int64(0)
 	cntTorrents := int64(0)
+	cntInvalidTorrents := int64(0)
+	cntTreatedFailTorrents := int64(0)
 	cntFiles := int64(0)
 	parsedTorrents := map[string]struct{}{}
 	smallestSize := int64(-1)
@@ -102,7 +104,9 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 	for _, torrent := range torrents {
 		_, tinfo, _, _, _, _, isLocal, err := helper.GetTorrentContent(torrent, defaultSite, forceLocal, false,
 			stdinTorrentContents, false, nil)
-		if err == nil {
+		if err != nil {
+			cntInvalidTorrents++
+		} else {
 			_, exists := parsedTorrents[tinfo.InfoHash]
 			if minTorrentSize >= 0 && tinfo.Size < minTorrentSize {
 				err = fmt.Errorf("torrent is too small: %s (%d)", util.BytesSize(float64(tinfo.Size)), tinfo.Size)
@@ -111,9 +115,14 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 			} else if dedupe && exists {
 				err = fmt.Errorf("torrent is duplicate: info-hash = %s", tinfo.InfoHash)
 			}
+			if err != nil {
+				cntTreatedFailTorrents++
+			}
 		}
 		if err != nil {
-			log.Errorf("Failed to parse %s: %v", torrent, err)
+			if !showSum {
+				fmt.Printf("✕ %s : failed to parse: %v\n", torrent, err)
+			}
 			errorCnt++
 			if isLocal && torrent != "-" {
 				if renameFail && !strings.HasSuffix(torrent, constants.FILENAME_SUFFIX_FAIL) && util.FileExists(torrent) {
@@ -170,11 +179,13 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 		averageSize = allSize / cntTorrents
 	}
 	fmt.Fprintf(sumOutputDst, "\n")
-	fmt.Fprintf(sumOutputDst, "// Total torrents: %d\n", cntTorrents)
+	fmt.Fprintf(sumOutputDst, "// Total parsed torrents: %d\n", cntTorrents)
 	fmt.Fprintf(sumOutputDst, "// Total contents size: %s (%d Byte)\n", util.BytesSize(float64(allSize)), allSize)
 	fmt.Fprintf(sumOutputDst, "// Total number of content files in torrents: %d\n", cntFiles)
 	fmt.Fprintf(sumOutputDst, "// Smallest / Average / Largest torrent contents size: %s / %s / %s\n",
 		util.BytesSize(float64(smallestSize)), util.BytesSize(float64(averageSize)), util.BytesSize(float64(largestSize)))
+	fmt.Fprintf(sumOutputDst, "// Count of torrents that are treated as fail: %d\n", cntTreatedFailTorrents)
+	fmt.Fprintf(sumOutputDst, "// Invalids torrents: %d\n", cntInvalidTorrents)
 	if errorCnt > 0 {
 		return fmt.Errorf("%d errors", errorCnt)
 	}

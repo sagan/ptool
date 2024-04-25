@@ -54,6 +54,7 @@ If --check flag is set, it will also do the hash checking.`, constants.HELP_TORR
 }
 
 var (
+	showSum              = false
 	renameOk             = false
 	renameFail           = false
 	useCommentMeta       = false
@@ -71,6 +72,7 @@ var (
 )
 
 func init() {
+	command.Flags().BoolVarP(&showSum, "sum", "", false, "Show torrents summary only")
 	command.Flags().BoolVarP(&renameOk, "rename-ok", "", false,
 		"Rename verification successed .torrent file to *"+constants.FILENAME_SUFFIX_OK+
 			" unless it's name already has that suffix")
@@ -106,6 +108,9 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("exact one (not less or more) of the --use-comment-meta, --save-path, --content-path, " +
 			"--rclone-save-path and --rclone-lsjson-file flags must be set")
 	}
+	if showSum && showAll {
+		return fmt.Errorf("--sum and --all flags are NOT compatible")
+	}
 	if rcloneSavePath != "" || rcloneLsjsonFilename != "" {
 		if checkHash || checkQuick {
 			return fmt.Errorf("--rclone-* can NOT be used with --check or --check-quick flags")
@@ -132,7 +137,6 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 		checkMode = 99
 		checkModeStr = "full"
 	}
-
 	var rcloneSavePathFs fs.ReadDirFS
 	if len(torrents) > 0 && (rcloneSavePath != "" || rcloneLsjsonFilename != "") {
 		var rcloneLsjsonContents []byte
@@ -162,14 +166,15 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	for i, torrent := range torrents {
-		if showAll && i > 0 {
-			fmt.Printf("\n")
-		}
+	var cntOk, cntFail, cntInvalid, sizeOk, sizeFail int64
+	for _, torrent := range torrents {
 		_, tinfo, _, _, _, _, isLocal, err :=
 			helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, stdinTorrentContents, false, nil)
 		if err != nil {
-			fmt.Printf("X torrent %s: failed to get: %v\n", torrent, err)
+			if !showSum {
+				fmt.Printf("X torrent %s: failed to get: %v\n", torrent, err)
+			}
+			cntInvalid++
 			errorCnt++
 			continue
 		}
@@ -178,16 +183,21 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 		}
 		if useCommentMeta {
 			if commentMeta := tinfo.DecodeComment(); commentMeta == nil {
-				fmt.Printf("✕ %s : failed to parse comment meta\n", torrent)
-				errorCnt++
-				continue
+				err = fmt.Errorf("failed to parse comment meta")
 			} else if commentMeta.SavePath == "" {
-				fmt.Printf("✕ %s : comment meta has empty save_path\n", torrent)
-				errorCnt++
-				continue
+				err = fmt.Errorf("comment meta has empty save_path")
 			} else {
 				log.Debugf("Found torrent %s comment meta %v", torrent, commentMeta)
 				savePath = commentMeta.SavePath
+			}
+			if err != nil {
+				if !showSum {
+					fmt.Printf("✕ %s : %v\n", torrent, err)
+				}
+				cntFail++
+				sizeFail += tinfo.Size
+				errorCnt++
+				continue
 			}
 		}
 		if rcloneSavePathFs != nil {
@@ -198,8 +208,12 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 			err = tinfo.Verify(savePath, contentPath, checkMode)
 		}
 		if err != nil {
-			fmt.Printf("X torrent %s: contents do NOT match with disk content(s) (hash check = %s): %v\n",
-				torrent, checkModeStr, err)
+			if !showSum {
+				fmt.Printf("X torrent %s: contents do NOT match with disk content(s) (hash check = %s): %v\n",
+					torrent, checkModeStr, err)
+			}
+			cntFail++
+			sizeFail += tinfo.Size
 			errorCnt++
 			if isLocal && torrent != "-" && renameFail && !strings.HasSuffix(torrent, constants.FILENAME_SUFFIX_FAIL) {
 				if err := os.Rename(torrent, util.TrimAnySuffix(torrent,
@@ -208,15 +222,27 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 				}
 			}
 		} else {
+			cntOk++
+			sizeOk += tinfo.Size
 			if isLocal && torrent != "-" && renameOk && !strings.HasSuffix(torrent, constants.FILENAME_SUFFIX_OK) {
 				if err := os.Rename(torrent, util.TrimAnySuffix(torrent,
 					constants.ProcessedFilenameSuffixes...)+constants.FILENAME_SUFFIX_OK); err != nil {
 					log.Debugf("Failed to rename %s to *%s: %v", torrent, constants.FILENAME_SUFFIX_OK, err)
 				}
 			}
-			fmt.Printf("✓ torrent %s: contents match with disk content(s) (hash check = %s)\n", torrent, checkModeStr)
+			if !showSum {
+				fmt.Printf("✓ torrent %s: contents match with disk content(s) (hash check = %s)\n", torrent, checkModeStr)
+			}
 		}
 	}
+	sumOutputDst := os.Stderr
+	if showSum {
+		sumOutputDst = os.Stdout
+	}
+	fmt.Fprintf(sumOutputDst, "\n")
+	fmt.Fprintf(sumOutputDst, "// Success torrents: %d / %s\n", cntOk, util.BytesSize(float64(sizeOk)))
+	fmt.Fprintf(sumOutputDst, "// Failed torrents: %d / %s\n", cntFail, util.BytesSize(float64(sizeFail)))
+	fmt.Fprintf(sumOutputDst, "// Invalids torrents: %d\n", cntInvalid)
 	if errorCnt > 0 {
 		return fmt.Errorf("%d errors", errorCnt)
 	}

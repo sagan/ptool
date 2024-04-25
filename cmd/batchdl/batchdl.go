@@ -212,6 +212,9 @@ func batchdl(command *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	if util.CountNonZeroVariables(downloadAll, onlyDownloaded, includeDownloaded) > 1 {
+		return fmt.Errorf("--all, --only-downloaded and --include-downloaded flags are NOT compatible")
+	}
 	if downloadAll {
 		includeDownloaded = true
 		onlyDownloaded = false
@@ -219,9 +222,6 @@ func batchdl(command *cobra.Command, args []string) error {
 	}
 	if largestFlag && newestFlag {
 		return fmt.Errorf("--largest and --newest flags are NOT compatible")
-	}
-	if onlyDownloaded && includeDownloaded {
-		return fmt.Errorf("--only-downloaded and --include-downloaded flags are NOT compatible")
 	}
 	if util.CountNonZeroVariables(doDownload, addClient) > 1 {
 		return fmt.Errorf("--download and --add-client flags are NOT compatible")
