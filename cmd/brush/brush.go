@@ -39,7 +39,7 @@ func init() {
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do not actually controlling client")
 	command.Flags().BoolVarP(&addPaused, "add-paused", "", false, "Add torrents to client in paused state")
 	command.Flags().BoolVarP(&ordered, "ordered", "", false, "Brush sites provided in order")
-	command.Flags().BoolVarP(&force, "force", "", false, "Force mode. Ignore _noadd flag in client")
+	command.Flags().BoolVarP(&force, "force", "", false, `Force mode. Ignore "`+config.NOADD_TAG+`" flag tag in client`)
 	command.Flags().Int64VarP(&maxSites, "max-sites", "", -1, "Allowed max succcess sites number, -1 == no limit")
 	cmd.RootCmd.AddCommand(command)
 }

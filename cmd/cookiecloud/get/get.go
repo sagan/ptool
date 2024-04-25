@@ -3,6 +3,7 @@ package get
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -15,9 +16,10 @@ import (
 )
 
 var (
-	showAll = false
-	format  = ""
-	profile = ""
+	checkSite = false
+	showAll   = false
+	format    = ""
+	profile   = ""
 )
 
 var command = &cobra.Command{
@@ -50,6 +52,11 @@ func init() {
 	})
 	command.Flags().BoolVarP(&showAll, "all", "a", false,
 		"Show all cookies associated with the domain (no path checking)")
+	command.Flags().BoolVarP(&checkSite, "check", "", false,
+		`If arg is a sitename, check the validity of it's cookie. `+
+			`Valid and invalid cookie will display a "✓" or "✕" flag respectively. `+
+			`Note it will stop when the cookie of a site from any CookieCloud profile successed, `+
+			`skip checking remaining cookies of that site that are fetched from other CookieCloud profiles`)
 	command.Flags().StringVarP(&profile, "profile", "", "",
 		"Comma-separated list. Set the used cookiecloud profile name(s). "+
 			"If not set, All cookiecloud profiles in config will be used")
@@ -84,10 +91,12 @@ func get(cmd *cobra.Command, args []string) error {
 	}
 	siteOrDomainOrUrls := config.ParseGroupAndOtherNames(args...)
 
-	fmt.Printf("%-20s  %-20s  %s\n", "Site/Url/Hostname", "CookieCloud", "Cookie")
+	successSites := map[string]bool{}
+	fmt.Printf("%-20s  %-20s  %-5s  %s\n", "Site/Url/Hostname", "CookieCloud", "Flags", "Cookie")
 	for _, siteOrDomainOrUrl := range siteOrDomainOrUrls {
 		domainOrUrl := ""
-		if siteConfig := config.GetSiteConfig(siteOrDomainOrUrl); siteConfig != nil {
+		var siteConfig *config.SiteConfigStruct
+		if siteConfig = config.GetSiteConfig(siteOrDomainOrUrl); siteConfig != nil {
 			siteInstance, err := site.CreateSiteInternal(siteOrDomainOrUrl, siteConfig, config.Get())
 			if err != nil {
 				log.Debugf("Failed to create site %s", siteOrDomainOrUrl)
@@ -99,14 +108,13 @@ func get(cmd *cobra.Command, args []string) error {
 		}
 		var cookieScope = domainOrUrl // the valid scope of cookies
 		if domainOrUrl == "" {
-			fmt.Printf("%-20s  %-20s  %s\n",
-				util.First(util.StringPrefixInWidth(siteOrDomainOrUrl, 20)), "", "// Error: empty hostname")
+			fmt.Printf("%-20s  %-20s  %-5s  %s\n",
+				util.First(util.StringPrefixInWidth(siteOrDomainOrUrl, 20)), "", "", "// Error: empty hostname")
 			errorCnt++
 			continue
 		} else if !util.IsUrl(domainOrUrl) && !util.IsHostname(domainOrUrl) {
-			fmt.Printf("%-20s  %-20s  %s\n",
-				util.First(util.StringPrefixInWidth(siteOrDomainOrUrl, 20)),
-				"", "// Error: invalid site, url or hostname")
+			fmt.Printf("%-20s  %-20s  %-5s  %s\n",
+				util.First(util.StringPrefixInWidth(siteOrDomainOrUrl, 20)), "", "", "// Error: invalid site, url or hostname")
 			errorCnt++
 			continue
 		} else if util.IsUrl(domainOrUrl) {
@@ -127,9 +135,34 @@ func get(cmd *cobra.Command, args []string) error {
 				log.Debugf("No cookie found for %s in cookiecloud %s", siteOrDomainOrUrl, cookiecloudData.Label)
 				continue
 			}
+			checkFlag := 0
+			if checkSite && siteConfig != nil && !successSites[siteOrDomainOrUrl] && !siteConfig.NoCookie {
+				siteConfig.Cookie = cookie
+				checkFlag = 1
+				if siteInstance, err := site.CreateSiteInternal(siteOrDomainOrUrl, siteConfig, config.Get()); err != nil {
+					log.Debugf("Failed to create site %s with cookie from %s", siteOrDomainOrUrl, cookiecloudData.Label)
+				} else if sitestatus, err := siteInstance.GetStatus(); err != nil {
+					log.Debugf("Failed to get site %s status with cookie from %s", siteOrDomainOrUrl, cookiecloudData.Label)
+				} else if !sitestatus.IsOk() {
+					log.Debugf("Cookie of site %s from cookiecloud %s is invalid", siteOrDomainOrUrl, cookiecloudData.Label)
+				} else {
+					successSites[siteOrDomainOrUrl] = true
+					checkFlag = 2
+				}
+			}
 			cookieStr := cookie + " // " + cookieScope
-			fmt.Printf("%-20s  %-20s  %s\n", util.First(util.StringPrefixInWidth(siteOrDomainOrUrl, 20)),
-				util.First(util.StringPrefixInWidth(cookiecloudData.Label, 20)), cookieStr)
+			var flags []string
+			if checkSite && siteConfig != nil {
+				if checkFlag == 0 {
+					flags = append(flags, "-")
+				} else if checkFlag == 1 {
+					flags = append(flags, "✕")
+				} else if checkFlag == 2 {
+					flags = append(flags, "✓")
+				}
+			}
+			fmt.Printf("%-20s  %-20s  %-5s  %s\n", util.First(util.StringPrefixInWidth(siteOrDomainOrUrl, 20)),
+				util.First(util.StringPrefixInWidth(cookiecloudData.Label, 20)), strings.Join(flags, ""), cookieStr)
 		}
 	}
 

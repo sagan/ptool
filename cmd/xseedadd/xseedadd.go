@@ -173,10 +173,12 @@ func xseedadd(cmd *cobra.Command, args []string) error {
 			tags = append(tags, client.GenerateTorrentTagFromSite(sitename))
 		}
 		tags = append(tags, fixedTags...)
+		ratioLmit := float64(0)
 		if tinfo.IsPrivate() {
 			tags = append(tags, config.PRIVATE_TAG)
 		} else {
 			tags = append(tags, config.PUBLIC_TAG)
+			ratioLmit = config.Get().PublicTorrentRatioLimit
 		}
 		err = clientInstance.AddTorrent(content, &client.TorrentOption{
 			SavePath:     matchClientTorrent.SavePath,
@@ -184,6 +186,7 @@ func xseedadd(cmd *cobra.Command, args []string) error {
 			Tags:         tags,
 			Pause:        addPaused,
 			SkipChecking: !check,
+			RatioLimit:   ratioLmit,
 		}, nil)
 		if err != nil {
 			fmt.Printf("X%s: matched with client torrent %s (%s), but failed to add to client: %v\n",

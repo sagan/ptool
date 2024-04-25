@@ -496,6 +496,8 @@ ptool search <sites> <keyword>
 
 提供一个 batchdl 命令用于批量下载 PT 网站的种子（别名：ebookgod）。默认按种子体积大小升序排序、跳过死种和已经下载过的种子。
 
+基本用法：
+
 ```
 # 默认显示找到的种子列表
 ptool batchdl <site>
@@ -507,7 +509,7 @@ ptool batchdl <site> --download
 ptool batchdl <site> --add-client local
 ```
 
-此命令提供非常多的配置参数。部分常用参数：
+此命令提供非常多的配置参数。部分参数：
 
 - --max-torrents int : 最多下载多少个种子。默认 -1 (无限制，一直运行除非手动 Ctrl + C 停止)。
 - --sort string : 站点种子排序方式：size|time|name|seeders|leechers|snatched|none (default size)
@@ -519,6 +521,17 @@ ptool batchdl <site> --add-client local
 - --no-hr : 跳过存在 HR 的种子。
 - --no-paid : 跳过"付费"的种子。(部分站点存在"付费"种子，第一次下载或汇报时扣除积分)
 - --base-url : 手动指定种子列表页 URL，例如："special.php"、"torrents.php?cat=100"。
+- --start-page string : 指定起始页面序号。
+- --one-page : 只抓取 1 页种子。
+- --add-category-auto : 添加种子到 BT 客户端时，将其分类(Category)设为站点名。
+
+实际使用场景示例：
+
+```
+ptool batchdl kamept --tag "外语音声,同人志" --sort none --start-page 0 --free --one-page --add-client local --add-category-auto
+```
+
+获取 kamept 首页最新的 "外语音声"或"同人志"分类里的免费种子并添加到 local 客户端。使用 crontab 定时运行即可，可以实现比 RSS 更细致的筛选，并且不依赖站点。
 
 ### 显示种子文件信息 (parsetorrent)
 
@@ -687,7 +700,7 @@ ptool 也支持 bash、powershell 等操作系统 shell 环境下的命令自动
 
 ### 站点种子信息显示
 
-status -t, batchdl, search 等命令会将找到的站点种子以列表形式显示，示例：
+`status -t`, `batchdl`, `search` 等命令会将找到的站点种子以列表形式显示，示例：
 
 ```
 Name Size Free Time ↑S ↓L ✓C ID P
@@ -719,6 +732,8 @@ You Sheng Xiao Shuo He Ji Mp3 M4a 265.3GiB ✓ 2022-10-31 06:08:14 14 1 61 redle
 - P : 种子的下载进度或历史下载状态。此信息由站点提供。目前显示的值为：
   - `-` : 未曾下载过此种子。
   - `0%` : 正在下载或下载过此种子。
+
+如果指定 `--dense` (`-d`) 参数，列表的 Name 列会输出完整名称，以及种子在站点里的“类别”和其它标签。
 
 ### 站点分组 (group) 功能
 

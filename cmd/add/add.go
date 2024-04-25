@@ -216,6 +216,13 @@ func add(cmd *cobra.Command, args []string) error {
 				option.Name = torrentutil.RenameTorrent(rename, sitename, id, filename, tinfo)
 			}
 		}
+		if ratioLimit == 0 {
+			if tinfo.IsPrivate() {
+				option.RatioLimit = 0
+			} else {
+				option.RatioLimit = config.Get().PublicTorrentRatioLimit
+			}
+		}
 		if option.SavePath == "" {
 			option.SavePath = savePath
 		}

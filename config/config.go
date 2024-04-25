@@ -204,8 +204,12 @@ type ConfigStruct struct {
 	Aliases             []*AliasConfigStruct       `yaml:"aliases"`
 	Cookieclouds        []*CookiecloudConfigStruct `yaml:"cookieclouds"`
 	Comment             string                     `yaml:"comment"`
-	ClientsEnabled      []*ClientConfigStruct
-	SitesEnabled        []*SiteConfigStruct
+	// 公网 BT 种子的分享率(Up/Dl)限制(到达后停止做种)。"add" 等命令添加公网种子到BT客户端时会自动应用此限制。
+	// 0 : unlimited。仅 qBittorrent 支持此选项。
+	PublicTorrentRatioLimit float64 `yaml:"publicTorrentRatioLimit"`
+
+	ClientsEnabled []*ClientConfigStruct
+	SitesEnabled   []*SiteConfigStruct
 }
 
 //go:embed ptool.example.toml

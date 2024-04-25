@@ -23,10 +23,10 @@ var command = &cobra.Command{
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "show"},
 	Short:       "Show torrents of client.",
 	Long: `Show torrents of client.
-[infoHash]...: infoHash list of torrents. It's possible to use state filter to target multiple torrents:
-_all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.
-If no condition flags or args are set, it will display current active torrents.
-If at least one condition flag is set but no arg is provided, the args is assumed to be "_all"
+[infoHash]...: Args list, info-hash list of torrents. It's possible to use state filter to select multiple torrents:
+  _all, _active, _done, _undone, _downloading, _seeding, _paused, _completed, _error.
+If both filter flags (--category & --tag & --filter) and args are not set, it will display current active torrents.
+If at least one filter flag is set but no arg is provided, the args is assumed to be "_all"
 
 It displays found torrents of client in the list, which has several fields like "Name" and "State".
 
@@ -99,13 +99,13 @@ func init() {
 	command.Flags().StringVarP(&maxTotalSizeStr, "max-total-size", "", "-1",
 		"Show at most torrents with total contents size of this value. -1 == no limit")
 	command.Flags().StringVarP(&addedAfterStr, "added-after", "", "",
-		`Only showing torrent that was added to client after this. `+constants.HELP_ARG_TIMES)
+		`Only showing torrent that was added to client after (>=) this. `+constants.HELP_ARG_TIMES)
 	command.Flags().StringVarP(&completedBeforeStr, "completed-before", "", "",
-		`Only showing torrent that was downloaded completed before this. `+constants.HELP_ARG_TIMES)
+		`Only showing torrent that was downloaded completed before (<) this. `+constants.HELP_ARG_TIMES)
 	command.Flags().StringVarP(&activeSinceStr, "active-since", "", "",
-		`Only showing torrent that has activity since this. `+constants.HELP_ARG_TIMES)
+		`Only showing torrent that has activity since (>=) this. `+constants.HELP_ARG_TIMES)
 	command.Flags().StringVarP(&notActiveSinceStr, "not-active-since", "", "",
-		`Only showing torrent that does NOT has activity since this. `+constants.HELP_ARG_TIMES)
+		`Only showing torrent that does NOT has activity since (>=) this. `+constants.HELP_ARG_TIMES)
 	command.Flags().StringVarP(&filter, "filter", "", "", constants.HELP_ARG_FILTER_TORRENT)
 	command.Flags().StringVarP(&category, "category", "", "", constants.HELP_ARG_CATEGORY)
 	command.Flags().StringVarP(&tag, "tag", "", "", constants.HELP_ARG_TAG)
@@ -258,10 +258,10 @@ func show(cmd *cobra.Command, args []string) error {
 				tracker != "" && !t.MatchTracker(tracker) ||
 				minTorrentSize >= 0 && t.Size < minTorrentSize ||
 				maxTorrentSize >= 0 && t.Size > maxTorrentSize ||
-				addedAfter > 0 && t.Atime <= addedAfter ||
+				addedAfter > 0 && t.Atime < addedAfter ||
 				completedBefore > 0 && (t.Ctime <= 0 || t.Ctime >= completedBefore) ||
 				activeSince > 0 && t.ActivityTime < activeSince ||
-				notActiveSince > 0 && t.ActivityTime > notActiveSince ||
+				notActiveSince > 0 && t.ActivityTime >= notActiveSince ||
 				partial && t.Size == t.SizeTotal {
 				return false
 			}

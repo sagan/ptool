@@ -361,10 +361,12 @@ mainloop:
 				}
 				tags := []string{config.XSEED_TAG, client.GenerateTorrentTagFromSite(sitename)}
 				tags = append(tags, fixedTags...)
+				ratioLimit := float64(0)
 				if xseedTorrentInfo.IsPrivate() {
 					tags = append(tags, config.PRIVATE_TAG)
 				} else {
 					tags = append(tags, config.PUBLIC_TAG)
+					ratioLimit = config.Get().PublicTorrentRatioLimit
 				}
 				err = clientInstance.AddTorrent(xseedTorrentContent, &client.TorrentOption{
 					SavePath:     targetTorrent.SavePath,
@@ -372,6 +374,7 @@ mainloop:
 					Tags:         tags,
 					Pause:        addPaused,
 					SkipChecking: !check,
+					RatioLimit:   ratioLimit,
 				}, nil)
 				log.Infof("Add xseed torrent %s result: error=%v", xseedTorrent.InfoHash, err)
 				if err == nil {

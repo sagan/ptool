@@ -127,7 +127,7 @@ func init() {
 	command.Flags().BoolVarP(&addPaused, "add-paused", "", false, "Add torrents to client in paused state")
 	command.Flags().BoolVarP(&dense, "dense", "d", false, "Dense mode: show full torrent title & subtitle")
 	command.Flags().BoolVarP(&freeOnly, "free", "", false, "Skip none-free torrent")
-	command.Flags().BoolVarP(&noPaid, "no-paid", "", false, "Skip paid (use bonus points) torrent")
+	command.Flags().BoolVarP(&noPaid, "no-paid", "", false, "Skip paid (cost bonus points) torrent")
 	command.Flags().BoolVarP(&noNeutral, "no-neutral", "", false,
 		"Skip neutral (do not count uploading & downloading & seeding bonus) torrent")
 	command.Flags().BoolVarP(&largestFlag, "largest", "l", false,
@@ -135,7 +135,8 @@ func init() {
 	command.Flags().BoolVarP(&newestFlag, "newest", "n", false,
 		`Only display or download newest torrents of site. Equivalent to "--sort time --order desc --one-page"`)
 	command.Flags().BoolVarP(&addRespectNoadd, "add-respect-noadd", "", false,
-		`Used with "--add-client". Check and respect _noadd flag in client`)
+		`Used with "--add-client". Check and respect "`+config.NOADD_TAG+
+			`" flag tag in client. If the tag exists in client, skip the execution (do not add any torrent to client)`)
 	command.Flags().BoolVarP(&nohr, "no-hr", "", false,
 		"Skip torrent that has any type of HnR (Hit and Run) restriction")
 	command.Flags().BoolVarP(&allowBreak, "break", "", false,
@@ -558,15 +559,18 @@ mainloop:
 					} else if addClient != "" {
 						tags := []string{}
 						tags = append(tags, clientAddFixedTags...)
+						ratioLimit := float64(0)
 						if tinfo.IsPrivate() {
 							tags = append(tags, config.PRIVATE_TAG)
 						} else {
 							tags = append(tags, config.PUBLIC_TAG)
+							ratioLimit = config.Get().PublicTorrentRatioLimit
 						}
 						if torrent.HasHnR || siteInstance.GetSiteConfig().GlobalHnR {
 							tags = append(tags, config.HR_TAG)
 						}
 						clientAddTorrentOption.Tags = tags
+						clientAddTorrentOption.RatioLimit = ratioLimit
 						if addCategoryAuto {
 							clientAddTorrentOption.Category = sitename
 						} else {
