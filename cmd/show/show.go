@@ -1,8 +1,8 @@
 package show
 
 import (
-	"encoding/json"
 	"fmt"
+	"os"
 	"path"
 	"sort"
 	"strings"
@@ -217,12 +217,7 @@ func show(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("torrent %s not found", infoHashes[0])
 		}
 		if showJson {
-			bytes, err := json.Marshal(torrent)
-			if err != nil {
-				return fmt.Errorf("failed to marshal json: %v", err)
-			}
-			fmt.Println(string(bytes))
-			return nil
+			return util.PrintJson(os.Stdout, torrent)
 		}
 		torrent.Print()
 		if showTrackers {
@@ -317,15 +312,15 @@ func show(cmd *cobra.Command, args []string) error {
 		torrents = torrents[:i]
 	}
 
-	if !showInfoHashOnly {
-		if showJson {
-			bytes, err := json.Marshal(torrents)
-			if err != nil {
-				return fmt.Errorf("failed to marshal json: %v", err)
-			}
-			fmt.Println(string(bytes))
-			return nil
+	if showJson {
+		return util.PrintJson(os.Stdout, torrents)
+	} else if showInfoHashOnly {
+		sep := ""
+		for _, torrent := range torrents {
+			fmt.Printf("%s%s", sep, torrent.InfoHash)
+			sep = " "
 		}
+	} else {
 		clientStatus, err := clientInstance.GetStatus()
 		if err != nil {
 			log.Errorf("Failed to get client status: %v", err)
@@ -347,12 +342,6 @@ func show(cmd *cobra.Command, args []string) error {
 			showSummary = 2
 		}
 		client.PrintTorrents(torrents, "", showSummary, dense)
-	} else {
-		sep := ""
-		for _, torrent := range torrents {
-			fmt.Printf("%s%s", sep, torrent.InfoHash)
-			sep = " "
-		}
 	}
 	return nil
 }

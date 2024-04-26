@@ -89,12 +89,8 @@ var (
 )
 
 func (ss *Status) Print(f io.Writer, name string, additionalInfo string) {
-	info := fmt.Sprintf("UserName: %s", name)
-	if additionalInfo != "" {
-		info += "; " + additionalInfo
-	}
 	fmt.Printf(constants.STATUS_FMT, "Site", name, fmt.Sprintf("↑: %s", util.BytesSizeAround(float64(ss.UserUploaded))),
-		fmt.Sprintf("↓: %s", util.BytesSizeAround(float64(ss.UserDownloaded))), info)
+		fmt.Sprintf("↓: %s", util.BytesSizeAround(float64(ss.UserDownloaded))), additionalInfo)
 }
 
 func PrintDummyStatus(f io.Writer, name string, info string) {

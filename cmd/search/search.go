@@ -1,8 +1,8 @@
 package search
 
 import (
-	"encoding/json"
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 
@@ -194,12 +194,7 @@ func search(cmd *cobra.Command, args []string) error {
 			"errors":        errorStr,
 			"torrents":      torrents,
 		}
-		bytes, err := json.Marshal(data)
-		if err != nil {
-			return fmt.Errorf("failed to marshal json: %v", err)
-		}
-		fmt.Println(string(bytes))
-		return nil
+		return util.PrintJson(os.Stdout, data)
 	} else if showIdOnly {
 		for _, torrent := range torrents {
 			fmt.Printf("%s\n", torrent.Id)

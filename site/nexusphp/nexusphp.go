@@ -89,7 +89,7 @@ func (npclient *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Tor
 
 	doc, res, err := util.GetUrlDocWithAzuretls(searchUrl, npclient.HttpClient,
 		npclient.SiteConfig.Cookie, site.GetUa(npclient), npclient.GetDefaultHttpHeaders())
-	if err != nil {
+	if !npclient.SiteConfig.AcceptAnyHttpStatus && err != nil || doc == nil {
 		return nil, fmt.Errorf("failed to parse site page dom: %v", err)
 	}
 	if strings.Contains(res.Request.Url, "/login.php") {
@@ -247,10 +247,10 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 	}
 	pageStr := "page=" + fmt.Sprint(page)
 	now := util.Now()
-	doc, res, error := util.GetUrlDocWithAzuretls(pageUrl+queryString+pageStr, npclient.HttpClient,
+	doc, res, _err := util.GetUrlDocWithAzuretls(pageUrl+queryString+pageStr, npclient.HttpClient,
 		npclient.SiteConfig.Cookie, site.GetUa(npclient), npclient.GetDefaultHttpHeaders())
-	if error != nil {
-		err = fmt.Errorf("failed to fetch torrents page dom: %v", error)
+	if !npclient.SiteConfig.AcceptAnyHttpStatus && _err != nil || doc == nil {
+		err = fmt.Errorf("failed to fetch torrents page dom: %v", _err)
 		return
 	}
 	if strings.Contains(res.Request.Url, "/login.php") {
@@ -276,10 +276,10 @@ labelLastPage:
 		page = lastPage
 		pageStr = "page=" + fmt.Sprint(page)
 		now = util.Now()
-		doc, res, error = util.GetUrlDocWithAzuretls(pageUrl+queryString+pageStr, npclient.HttpClient,
+		doc, res, _err = util.GetUrlDocWithAzuretls(pageUrl+queryString+pageStr, npclient.HttpClient,
 			npclient.SiteConfig.Cookie, site.GetUa(npclient), npclient.GetDefaultHttpHeaders())
-		if error != nil {
-			err = fmt.Errorf("failed to fetch torrents page dom: %v", error)
+		if !npclient.SiteConfig.AcceptAnyHttpStatus && _err != nil || doc == nil {
+			err = fmt.Errorf("failed to fetch torrents page dom: %v", _err)
 			return
 		}
 		if strings.Contains(res.Request.Url, "/login.php") {
@@ -334,7 +334,7 @@ func (npclient *Site) sync() error {
 	url = npclient.SiteConfig.ParseSiteUrl(url, false)
 	doc, res, err := util.GetUrlDocWithAzuretls(url, npclient.HttpClient,
 		npclient.SiteConfig.Cookie, site.GetUa(npclient), npclient.GetDefaultHttpHeaders())
-	if err != nil {
+	if !npclient.SiteConfig.AcceptAnyHttpStatus && err != nil || doc == nil {
 		return fmt.Errorf("failed to get site page dom: %v", err)
 	}
 	if strings.Contains(res.Request.Url, "/login.php") {

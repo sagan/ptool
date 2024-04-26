@@ -174,7 +174,8 @@ type SiteConfigStruct struct {
 	FlowControlInterval           int64  `yaml:"flowControlInterval"` // 暂定名。两次请求种子列表页间隔时间(秒)
 	NexusphpNoLetDown             bool   `yaml:"nexusphpNoLetDown"`
 	MaxRedirects                  int64  `yaml:"maxRedirects"`
-	NoCookie                      bool   `yaml:"noCookie"` // true: 该站点不使用 cookie 鉴权方式
+	NoCookie                      bool   `yaml:"noCookie"`            // true: 该站点不使用 cookie 鉴权方式
+	AcceptAnyHttpStatus           bool   `yaml:"acceptAnyHttpStatus"` // true: 非200的http状态不认为是错误
 	TorrentUploadSpeedLimitValue  int64
 	BrushTorrentMinSizeLimitValue int64
 	BrushTorrentMaxSizeLimitValue int64
@@ -251,8 +252,14 @@ var InternalAliases = []*AliasConfigStruct{
 		Internal:    true,
 	},
 	{
-		Name:     "batchdl2",
-		Cmd:      "batchdl --action=add --add-category-auto --add-client",
+		Name:     "batchadd",
+		Cmd:      "batchdl --add-category-auto --add-respect-noadd --add-client",
+		MinArgs:  1,
+		Internal: true,
+	},
+	{
+		Name:     "dlsite",
+		Cmd:      "batchdl --download --download-skip-existing",
 		MinArgs:  1,
 		Internal: true,
 	},

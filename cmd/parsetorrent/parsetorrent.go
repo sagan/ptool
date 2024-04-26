@@ -1,7 +1,6 @@
 package parsetorrent
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -10,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/cmd/common"
 	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/util"
 	"github.com/sagan/ptool/util/helper"
@@ -53,10 +53,11 @@ var (
 func init() {
 	command.Flags().BoolVarP(&renameFail, "rename-fail", "", false,
 		"Rename fail (failed to parse, or treated as error) .torrent file to *"+constants.FILENAME_SUFFIX_FAIL+
-			" unless it's name already has that suffix")
+			` unless it's name already has that suffix. It will only rename file which has `+
+			`".torrent" or ".torrent.*" extension`)
 	command.Flags().BoolVarP(&deleteFail, "delete-fail", "", false,
 		`Delete fail (failed to parse, or treated as error) .torrent file. `+
-			`It will only delete file which has ".torrent" extension`)
+			`It will only delete file which has ".torrent" or ".torrent.*" extension`)
 	command.Flags().BoolVarP(&dedupe, "dedupe", "", false,
 		"Treat duplicate torrent (has the same info-hash as previous parsed torrent) as fail (error)")
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show all info")
@@ -73,8 +74,11 @@ func init() {
 }
 
 func parsetorrent(cmd *cobra.Command, args []string) error {
-	if util.CountNonZeroVariables(showInfoHashOnly, showAll, showSum, showJson) > 1 {
-		return fmt.Errorf("--all, --show-info-hash-only, --sum and --json flags are NOT compatible")
+	if util.CountNonZeroVariables(showInfoHashOnly, showAll, showSum) > 1 {
+		return fmt.Errorf("--all, --show-info-hash-only and --sum flags are NOT compatible")
+	}
+	if util.CountNonZeroVariables(showInfoHashOnly, showAll, showJson) > 1 {
+		return fmt.Errorf("--all, --show-info-hash-only and --json flags are NOT compatible")
 	}
 	if renameFail && deleteFail {
 		return fmt.Errorf("--rename-fail and --delete-fail flags are NOT compatible")
@@ -92,20 +96,14 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid max-torrent-size: %v", err)
 	}
 	errorCnt := int64(0)
-	allSize := int64(0)
-	cntTorrents := int64(0)
-	cntInvalidTorrents := int64(0)
-	cntTreatedFailTorrents := int64(0)
-	cntFiles := int64(0)
 	parsedTorrents := map[string]struct{}{}
-	smallestSize := int64(-1)
-	largestSize := int64(-1)
+	statistics := common.NewTorrentsStatistics()
 
 	for _, torrent := range torrents {
 		_, tinfo, _, _, _, _, isLocal, err := helper.GetTorrentContent(torrent, defaultSite, forceLocal, false,
 			stdinTorrentContents, false, nil)
 		if err != nil {
-			cntInvalidTorrents++
+			statistics.Update(common.TORRENT_INVALID, nil)
 		} else {
 			_, exists := parsedTorrents[tinfo.InfoHash]
 			if minTorrentSize >= 0 && tinfo.Size < minTorrentSize {
@@ -116,21 +114,22 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 				err = fmt.Errorf("torrent is duplicate: info-hash = %s", tinfo.InfoHash)
 			}
 			if err != nil {
-				cntTreatedFailTorrents++
+				statistics.Update(common.TORRENT_FAILURE, tinfo)
 			}
 		}
 		if err != nil {
 			if !showSum {
-				fmt.Printf("✕ %s : failed to parse: %v\n", torrent, err)
+				fmt.Fprintf(os.Stderr, "✕ %s : failed to parse: %v\n", torrent, err)
 			}
 			errorCnt++
 			if isLocal && torrent != "-" {
-				if renameFail && !strings.HasSuffix(torrent, constants.FILENAME_SUFFIX_FAIL) && util.FileExists(torrent) {
-					if err := os.Rename(torrent, util.TrimAnySuffix(torrent,
-						constants.ProcessedFilenameSuffixes...)+constants.FILENAME_SUFFIX_FAIL); err != nil {
+				torrentTrim := util.TrimAnySuffix(torrent, constants.ProcessedFilenameSuffixes...)
+				isValidTarget := strings.HasSuffix(torrentTrim, ".torrent") && util.FileExists(torrent)
+				if renameFail && !strings.HasSuffix(torrent, constants.FILENAME_SUFFIX_FAIL) && isValidTarget {
+					if err := os.Rename(torrent, torrentTrim+constants.FILENAME_SUFFIX_FAIL); err != nil {
 						log.Debugf("Failed to rename %s to *%s: %v", torrent, constants.FILENAME_SUFFIX_FAIL, err)
 					}
-				} else if deleteFail && strings.HasSuffix(torrent, ".torrent") && util.FileExists(torrent) {
+				} else if deleteFail && isValidTarget {
 					if err := os.Remove(torrent); err != nil {
 						log.Debugf("Failed to delete %s: %v", torrent, err)
 					}
@@ -139,26 +138,15 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 			continue
 		}
 		parsedTorrents[tinfo.InfoHash] = struct{}{}
-		cntTorrents++
-		allSize += tinfo.Size
-		cntFiles += int64(len(tinfo.Files))
-		if largestSize == -1 || tinfo.Size > largestSize {
-			largestSize = tinfo.Size
-		}
-		if smallestSize == -1 || tinfo.Size < smallestSize {
-			smallestSize = tinfo.Size
-		}
+		statistics.Update(common.TORRENT_SUCCESS, tinfo)
 		if showSum {
 			continue
 		}
 		if showJson {
-			bytes, err := json.Marshal(tinfo)
-			if err != nil {
-				log.Errorf("Failed to marshal info json of %s: %v", torrent, err)
+			if err := util.PrintJson(os.Stdout, tinfo); err != nil {
+				log.Errorf("%s: %v", torrent, err)
 				errorCnt++
-				continue
 			}
-			fmt.Println(string(bytes))
 			continue
 		} else if showInfoHashOnly {
 			fmt.Printf("%s\n", tinfo.InfoHash)
@@ -170,22 +158,14 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 			fmt.Printf("\n")
 		}
 	}
-	sumOutputDst := os.Stderr
-	if showSum {
-		sumOutputDst = os.Stdout
+	if !showInfoHashOnly {
+		if !showJson {
+			fmt.Printf("\n")
+			statistics.Print(os.Stdout)
+		} else if err := util.PrintJson(os.Stdout, statistics); err != nil {
+			return err
+		}
 	}
-	averageSize := int64(0)
-	if cntTorrents > 0 {
-		averageSize = allSize / cntTorrents
-	}
-	fmt.Fprintf(sumOutputDst, "\n")
-	fmt.Fprintf(sumOutputDst, "// Total parsed torrents: %d\n", cntTorrents)
-	fmt.Fprintf(sumOutputDst, "// Total contents size: %s (%d Byte)\n", util.BytesSize(float64(allSize)), allSize)
-	fmt.Fprintf(sumOutputDst, "// Total number of content files in torrents: %d\n", cntFiles)
-	fmt.Fprintf(sumOutputDst, "// Smallest / Average / Largest torrent contents size: %s / %s / %s\n",
-		util.BytesSize(float64(smallestSize)), util.BytesSize(float64(averageSize)), util.BytesSize(float64(largestSize)))
-	fmt.Fprintf(sumOutputDst, "// Count of torrents that are treated as fail: %d\n", cntTreatedFailTorrents)
-	fmt.Fprintf(sumOutputDst, "// Invalids torrents: %d\n", cntInvalidTorrents)
 	if errorCnt > 0 {
 		return fmt.Errorf("%d errors", errorCnt)
 	}

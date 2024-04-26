@@ -90,14 +90,14 @@ func DomTime(s *goquery.Selection, location *time.Location) int64 {
 }
 
 func GetUrlDocWithAzuretls(url string, client *azuretls.Session,
-	cookie string, ua string, headers [][]string) (*goquery.Document, *azuretls.Response, error) {
-	res, _, err := FetchUrlWithAzuretls(url, client, cookie, ua, headers)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to fetch page: %v", err)
+	cookie string, ua string, headers [][]string) (doc *goquery.Document, res *azuretls.Response, err error) {
+	res, _, err = FetchUrlWithAzuretls(url, client, cookie, ua, headers)
+	if res != nil {
+		var _err error
+		doc, _err = goquery.NewDocumentFromReader(bytes.NewReader(res.Body))
+		if err == nil && _err != nil {
+			err = fmt.Errorf("failed to parse site page DOM, error: %v", _err)
+		}
 	}
-	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(res.Body))
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to parse site page DOM, error: %v", err)
-	}
-	return doc, res, nil
+	return
 }

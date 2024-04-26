@@ -81,6 +81,7 @@ func FetchJsonWithAzuretls(url string, v any, client *azuretls.Session,
 	return err
 }
 
+// If http response status is not 200, it return the response, header and an error
 func FetchUrlWithAzuretls(url string, client *azuretls.Session,
 	cookie string, ua string, headers [][]string) (*azuretls.Response, http.Header, error) {
 	log.Tracef("FetchUrlWithAzuretls url=%s hasCookie=%t", url, cookie != "")
@@ -98,7 +99,7 @@ func FetchUrlWithAzuretls(url string, client *azuretls.Session,
 	}
 	log.Tracef("FetchUrlWithAzuretls response status=%d", res.StatusCode)
 	if res.StatusCode != 200 {
-		return nil, http.Header(res.Header), fmt.Errorf("failed to fetch url: status=%d", res.StatusCode)
+		return res, http.Header(res.Header), fmt.Errorf("failed to fetch url: status=%d", res.StatusCode)
 	}
 	return res, http.Header(res.Header), nil
 }

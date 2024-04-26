@@ -1,7 +1,6 @@
 package match
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -108,12 +107,7 @@ func match(cmd *cobra.Command, args []string) error {
 		torrents = append(torrents, results2...)
 	}
 	if showJson {
-		if bytes, err := json.Marshal(torrents); err != nil {
-			return fmt.Errorf("failed to marshal json: %v", err)
-		} else {
-			fmt.Println(string(bytes))
-			return nil
-		}
+		return util.PrintJson(os.Stdout, torrents)
 	} else if showRaw {
 		fmt.Println(strings.Join(util.Map(torrents, func(t *reseed.Torrent) string { return t.ReseedId }), "  "))
 		return nil

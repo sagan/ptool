@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -326,4 +327,13 @@ func BytesHasAnyStringPrefix(data []byte, prefixes ...string) bool {
 		}
 	}
 	return false
+}
+
+func PrintJson(output io.Writer, value any) error {
+	bytes, err := json.MarshalIndent(value, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal json: %v", err)
+	}
+	fmt.Fprintln(output, string(bytes))
+	return nil
 }

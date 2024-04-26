@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/cmd/common"
 	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/rclone"
 	"github.com/sagan/ptool/util"
@@ -166,7 +167,7 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	var cntOk, cntFail, cntInvalid, sizeOk, sizeFail int64
+	statistics := common.NewTorrentsStatistics()
 	for _, torrent := range torrents {
 		_, tinfo, _, _, _, _, isLocal, err :=
 			helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, stdinTorrentContents, false, nil)
@@ -174,7 +175,7 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 			if !showSum {
 				fmt.Printf("X torrent %s: failed to get: %v\n", torrent, err)
 			}
-			cntInvalid++
+			statistics.Update(common.TORRENT_INVALID, nil)
 			errorCnt++
 			continue
 		}
@@ -194,8 +195,7 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 				if !showSum {
 					fmt.Printf("✕ %s : %v\n", torrent, err)
 				}
-				cntFail++
-				sizeFail += tinfo.Size
+				statistics.Update(common.TORRENT_FAILURE, tinfo)
 				errorCnt++
 				continue
 			}
@@ -212,8 +212,7 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 				fmt.Printf("X torrent %s: contents do NOT match with disk content(s) (hash check = %s): %v\n",
 					torrent, checkModeStr, err)
 			}
-			cntFail++
-			sizeFail += tinfo.Size
+			statistics.Update(common.TORRENT_FAILURE, tinfo)
 			errorCnt++
 			if isLocal && torrent != "-" && renameFail && !strings.HasSuffix(torrent, constants.FILENAME_SUFFIX_FAIL) {
 				if err := os.Rename(torrent, util.TrimAnySuffix(torrent,
@@ -222,8 +221,7 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 				}
 			}
 		} else {
-			cntOk++
-			sizeOk += tinfo.Size
+			statistics.Update(common.TORRENT_SUCCESS, tinfo)
 			if isLocal && torrent != "-" && renameOk && !strings.HasSuffix(torrent, constants.FILENAME_SUFFIX_OK) {
 				if err := os.Rename(torrent, util.TrimAnySuffix(torrent,
 					constants.ProcessedFilenameSuffixes...)+constants.FILENAME_SUFFIX_OK); err != nil {
@@ -234,15 +232,12 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 				fmt.Printf("✓ torrent %s: contents match with disk content(s) (hash check = %s)\n", torrent, checkModeStr)
 			}
 		}
+		if showAll {
+			fmt.Printf("\n")
+		}
 	}
-	sumOutputDst := os.Stderr
-	if showSum {
-		sumOutputDst = os.Stdout
-	}
-	fmt.Fprintf(sumOutputDst, "\n")
-	fmt.Fprintf(sumOutputDst, "// Success torrents: %d / %s\n", cntOk, util.BytesSize(float64(sizeOk)))
-	fmt.Fprintf(sumOutputDst, "// Failed torrents: %d / %s\n", cntFail, util.BytesSize(float64(sizeFail)))
-	fmt.Fprintf(sumOutputDst, "// Invalids torrents: %d\n", cntInvalid)
+	fmt.Printf("\n")
+	statistics.Print(os.Stdout)
 	if errorCnt > 0 {
 		return fmt.Errorf("%d errors", errorCnt)
 	}

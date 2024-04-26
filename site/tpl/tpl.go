@@ -175,7 +175,7 @@ var (
 		},
 		"gtk": {
 			Type:    "nexusphp",
-			Aliases: []string{"ptgtk"},
+			Aliases: []string{"ptgtk", "gtkpw"},
 			Url:     "https://pt.gtk.pw/",
 			Comment: "PT GTK",
 		},
@@ -216,7 +216,6 @@ var (
 			Type:    "nexusphp",
 			Url:     "https://www.hddolby.com/",
 			Comment: "杜比",
-			Dead:    true,
 		},
 		"hdfans": {
 			Type:    "nexusphp",
@@ -495,6 +494,18 @@ var (
 			TorrentsExtraUrls:        []string{"special.php"},
 			SelectorUserInfoUserName: `.User_Name`,
 			Comment:                  "象站",
+		},
+		"pwtorrents": {
+			Type:                       "nexusphp",
+			Url:                        "https://pwtorrents.net/",
+			TorrentsUrl:                "browse.php",
+			SelectorUserInfoUploaded:   `img[alt="Uploaded amount"]+font`,
+			SelectorUserInfoDownloaded: `img[alt="Downloaded amount"]+font`,
+			SelectorTorrentFree:        `img[src="pic/freeleech.png"]`,
+			AcceptAnyHttpStatus:        true, // 该站点种子页面 http status == 500
+			GlobalHnR:                  true,
+			Timezone:                   "UTC",
+			Comment:                    "Pro Wrestling Torrents",
 		},
 		"rousi": {
 			Type:              "nexusphp",

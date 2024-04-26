@@ -230,9 +230,9 @@ func status(cmd *cobra.Command, args []string) error {
 				cntSuccessSites++
 				successSitesUploaded += response.SiteStatus.UserUploaded
 				successSitesDownloaded += response.SiteStatus.UserDownloaded
-				additionalInfo := ""
+				additionalInfo := fmt.Sprintf("UserName: %s", response.SiteStatus.UserName)
 				if len(response.SiteTorrents) > 0 {
-					additionalInfo = fmt.Sprintf("Torrents: %d", len(response.SiteTorrents))
+					additionalInfo += fmt.Sprintf("; Torrents: %d", len(response.SiteTorrents))
 				}
 				response.SiteStatus.Print(os.Stdout, response.Name, additionalInfo)
 			} else {
