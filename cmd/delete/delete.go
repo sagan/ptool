@@ -16,7 +16,7 @@ import (
 var command = &cobra.Command{
 	Use:         "delete {client} [--category category] [--tag tag] [--filter filter] [infoHash]...",
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "delete"},
-	Aliases:     []string{"rm"},
+	Aliases:     []string{"del", "rm"},
 	Short:       "Delete torrents from client.",
 	Long: fmt.Sprintf(`Delete torrents from client.
 %s.

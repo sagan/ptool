@@ -70,6 +70,7 @@ var (
 	minTorrentSizeStr  = ""
 	maxTorrentSizeStr  = ""
 	maxTotalSizeStr    = ""
+	excludes           = ""
 	dense              = false
 	showAll            = false
 	showRaw            = false
@@ -119,6 +120,8 @@ func init() {
 		"Skip torrent with size smaller than (<) this value. -1 == no limit")
 	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1",
 		"Skip torrent with size larger than (>) this value. -1 == no limit")
+	command.Flags().StringVarP(&excludes, "excludes", "", "",
+		"Comma-separated list that torrent which name contains any one in the list will be skipped")
 	cmd.AddEnumFlagP(command, &sortFlag, "sort", "", common.ClientTorrentSortFlag)
 	cmd.AddEnumFlagP(command, &orderFlag, "order", "", common.OrderFlag)
 	cmd.RootCmd.AddCommand(command)
@@ -195,9 +198,14 @@ func show(cmd *cobra.Command, args []string) error {
 	if activeSince > 0 && notActiveSince > 0 && activeSince >= notActiveSince {
 		return fmt.Errorf("--active-since must be before --not-active-since flag")
 	}
+	var excludesList []string
+	if excludes != "" {
+		excludesList = util.SplitCsv(excludes)
+	}
 
 	hasFilterCondition := savePath != "" || savePathPrefix != "" || tracker != "" || minTorrentSize >= 0 ||
-		maxTorrentSize >= 0 || addedAfter > 0 || completedBefore > 0 || activeSince > 0 || notActiveSince > 0 || partial
+		maxTorrentSize >= 0 || addedAfter > 0 || completedBefore > 0 || activeSince > 0 || notActiveSince > 0 || partial ||
+		excludes != ""
 	noConditionFlags := category == "" && tag == "" && filter == "" && !hasFilterCondition
 	var torrents []client.Torrent
 	if showAll {
@@ -248,6 +256,7 @@ func show(cmd *cobra.Command, args []string) error {
 	if hasFilterCondition {
 		torrents = util.Filter(torrents, func(t client.Torrent) bool {
 			if savePath != "" && t.SavePath != savePath ||
+				excludes != "" && t.MatchFiltersOr(excludesList) ||
 				savePathPrefix != "" && t.SavePath != savePathPrefix && !strings.HasPrefix(t.SavePath, savePathPrefix+`/`) &&
 					!strings.HasPrefix(t.SavePath, savePathPrefix+`\`) ||
 				tracker != "" && !t.MatchTracker(tracker) ||

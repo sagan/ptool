@@ -109,10 +109,18 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		if offset > 0 {
 			time2, _ = util.ExtractTime(txt[offset:], option.location)
 		}
-		if time1 > 0 && time2 > 0 && doctime >= time1 && doctime < time2 {
-			log.Tracef("Found global discount timespan: %s ~ %s", util.FormatTime(time1), util.FormatTime(time2))
-			globalDiscountEndTime = time2
-			globalFree = maybeGlobalFree
+		if time1 > 0 {
+			if time2 <= 0 { // only 1 time, treat it as discount end time
+				if time1 > doctime {
+					log.Tracef("Found global discount timespan: ~ %s", util.FormatTime(time1))
+					globalDiscountEndTime = time1
+					globalFree = maybeGlobalFree
+				}
+			} else if doctime >= time1 && doctime < time2 {
+				log.Tracef("Found global discount timespan: %s ~ %s", util.FormatTime(time1), util.FormatTime(time2))
+				globalDiscountEndTime = time2
+				globalFree = maybeGlobalFree
+			}
 		}
 	}
 

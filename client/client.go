@@ -275,6 +275,12 @@ func (torrent *Torrent) MatchFilter(filter string) bool {
 	return false
 }
 
+func (torrent *Torrent) MatchFiltersOr(filters []string) bool {
+	return slices.ContainsFunc(filters, func(filter string) bool {
+		return torrent.MatchFilter(filter)
+	})
+}
+
 // Matches if torrent tracker's url or domain == tracker.
 // Specially, if tracker is "none", matches if torrent does NOT have a tracker.
 func (torrent *Torrent) MatchTracker(tracker string) bool {
