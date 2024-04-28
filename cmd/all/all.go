@@ -18,6 +18,7 @@ import (
 	_ "github.com/sagan/ptool/cmd/deletecategories"
 	_ "github.com/sagan/ptool/cmd/deletetags"
 	_ "github.com/sagan/ptool/cmd/dltorrent"
+	_ "github.com/sagan/ptool/cmd/dynamicseeding"
 	_ "github.com/sagan/ptool/cmd/edittorrent"
 	_ "github.com/sagan/ptool/cmd/edittracker"
 	_ "github.com/sagan/ptool/cmd/export"

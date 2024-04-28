@@ -103,7 +103,7 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 		_, tinfo, _, _, _, _, isLocal, err := helper.GetTorrentContent(torrent, defaultSite, forceLocal, false,
 			stdinTorrentContents, false, nil)
 		if err != nil {
-			statistics.Update(common.TORRENT_INVALID, nil)
+			statistics.UpdateTinfo(common.TORRENT_INVALID, nil)
 		} else {
 			_, exists := parsedTorrents[tinfo.InfoHash]
 			if minTorrentSize >= 0 && tinfo.Size < minTorrentSize {
@@ -114,7 +114,7 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 				err = fmt.Errorf("torrent is duplicate: info-hash = %s", tinfo.InfoHash)
 			}
 			if err != nil {
-				statistics.Update(common.TORRENT_FAILURE, tinfo)
+				statistics.UpdateTinfo(common.TORRENT_FAILURE, tinfo)
 			}
 		}
 		if err != nil {
@@ -138,7 +138,7 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 			continue
 		}
 		parsedTorrents[tinfo.InfoHash] = struct{}{}
-		statistics.Update(common.TORRENT_SUCCESS, tinfo)
+		statistics.UpdateTinfo(common.TORRENT_SUCCESS, tinfo)
 		if showSum {
 			continue
 		}

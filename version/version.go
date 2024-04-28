@@ -1,12 +1,16 @@
 package version
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/sagan/ptool/constants"
+)
 
 var (
 	VersionSuffix = "DEV" // e.g. DEV
 	VersionTag    = "v0.1.10"
 	Version       = ""
-	Commit        = "none"
+	Commit        = constants.NONE
 	Date          = "unknown"
 )
 

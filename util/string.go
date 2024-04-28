@@ -139,6 +139,8 @@ func AppendUrlQueryStringDelimiter(url string) string {
 	return url
 }
 
+// Append the qs to the url and return the new url.
+// qs is query string, e.g. "foo=1&bar=2", possibly with a "?" or "&" prefix.
 func AppendUrlQueryString(url string, qs string) string {
 	url = AppendUrlQueryStringDelimiter(url)
 	if strings.HasPrefix(qs, "?") || strings.HasPrefix(qs, "&") {

@@ -7,6 +7,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/constants"
 )
 
 var command = &cobra.Command{
@@ -25,7 +26,7 @@ var (
 
 func init() {
 	command.Flags().StringVarP(&savePath, "save-path", "", "",
-		`Set the save path of the category. Can use "none" to set it back to default empty value`)
+		`Set the save path of the category. Can use "`+constants.NONE+`" to set it back to default empty value`)
 	cmd.RootCmd.AddCommand(command)
 }
 

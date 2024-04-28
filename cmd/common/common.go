@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/util"
 	"github.com/sagan/ptool/util/torrentutil"
 )
@@ -35,25 +36,37 @@ func NewTorrentsStatistics() *TorrentsStatistics {
 	}
 }
 
-func (ts *TorrentsStatistics) Update(torrentType TorrentType, tinfo *torrentutil.TorrentMeta) {
+func (ts *TorrentsStatistics) Update(torrentType TorrentType, size int64, files int64) {
 	switch torrentType {
 	case TORRENT_SUCCESS:
 		ts.TorrentsCnt++
 		ts.SuccessCnt++
-		ts.SuccessContentFiles += int64(len(tinfo.Files))
-		ts.SuccessSize += tinfo.Size
-		if ts.LargestSize == -1 || tinfo.Size > ts.LargestSize {
-			ts.LargestSize = tinfo.Size
+		ts.SuccessContentFiles += files
+		ts.SuccessSize += size
+		if ts.LargestSize == -1 || size > ts.LargestSize {
+			ts.LargestSize = size
 		}
-		if ts.SmallestSize == -1 || tinfo.Size < ts.SmallestSize {
-			ts.SmallestSize = tinfo.Size
+		if ts.SmallestSize == -1 || size < ts.SmallestSize {
+			ts.SmallestSize = size
 		}
 	case TORRENT_FAILURE:
 		ts.TorrentsCnt++
 		ts.FailureCnt++
-		ts.FailureSize += tinfo.Size
+		ts.FailureSize += size
 	case TORRENT_INVALID:
 		ts.InvalidCnt++
+	}
+}
+
+func (ts *TorrentsStatistics) UpdateClientTorrent(torrentType TorrentType, torrent *client.Torrent) {
+	ts.Update(torrentType, torrent.Size, 0)
+}
+
+func (ts *TorrentsStatistics) UpdateTinfo(torrentType TorrentType, tinfo *torrentutil.TorrentMeta) {
+	if tinfo != nil {
+		ts.Update(torrentType, tinfo.Size, int64(len(tinfo.Files)))
+	} else {
+		ts.Update(torrentType, 0, 0)
 	}
 }
 

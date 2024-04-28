@@ -4,6 +4,7 @@ import (
 	"slices"
 
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/constants"
 )
 
 // "name", "size", "speed", "state", "time", "tracker", "none"
@@ -17,7 +18,7 @@ var ClientTorrentSortFlag = &cmd.EnumFlag{
 		{"time", ""},
 		{"activity-time", ""},
 		{"tracker", ""},
-		{"none", ""},
+		{constants.NONE, ""},
 	},
 }
 
@@ -31,7 +32,7 @@ var SiteTorrentSortFlag = &cmd.EnumFlag{
 		{"seeders", ""},
 		{"leechers", ""},
 		{"snatched", ""},
-		{"none", ""},
+		{constants.NONE, ""},
 	},
 }
 

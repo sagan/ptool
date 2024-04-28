@@ -38,7 +38,8 @@ type Torrent struct {
 	Leechers           int64
 	Snatched           int64
 	HasHnR             bool     // true if has any type of HR
-	IsActive           bool     // true if torrent is as already downloading / seeding
+	IsActive           bool     // true if torrent is or had ever been downloaded / seeding
+	IsCurrentActive    bool     // true if torrent is currently downloading / seeding. If true, so will be IsActive
 	Paid               bool     // "付费"种子: (第一次)下载或汇报种子时扣除魔力/积分
 	Bought             bool     // 适用于付费种子：已购买
 	Neutral            bool     // 中性种子：不计算上传、下载、做种魔力
@@ -249,7 +250,11 @@ func PrintTorrents(torrents []Torrent, filter string, now int64,
 		name := torrent.Name
 		process := "-"
 		if torrent.IsActive {
-			process = "0%"
+			if torrent.IsCurrentActive {
+				process = "*%"
+			} else {
+				process = "✓"
+			}
 		}
 		if dense && (torrent.Description != "" || len(torrent.Tags) > 0) {
 			name += " //"

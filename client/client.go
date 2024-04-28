@@ -42,7 +42,7 @@ type Torrent struct {
 	Size               int64 // size of torrent files that selected for downloading
 	SizeTotal          int64 // Total size of all file in the torrent (including unselected ones)
 	SizeCompleted      int64
-	Seeders            int64
+	Seeders            int64 // Cnt of seeders (including self client, if it's seeding), returned by tracker
 	Leechers           int64
 	Meta               map[string]int64
 }
@@ -64,7 +64,8 @@ type Status struct {
 	UploadSpeed               int64
 	DownloadSpeedLimit        int64 // <= 0 means no limit
 	UploadSpeedLimit          int64 // <= 0 means no limit
-	NoAdd                     bool  // if true, brush and other tasks will NOT add any torrents to client
+	NoAdd                     bool  // if true, brush and other tasks will NOT add any torrent to client
+	NoDel                     bool  // if true, brush and other tasks will NOT delete any torrent from client
 }
 
 type TorrentTracker struct {
@@ -164,6 +165,40 @@ var (
 	// all clientInstances created during this ptool program session
 	clients = map[string]Client{}
 )
+
+var tracker_invalid_torrent_msgs = []string{
+	"not registered",
+	"unauthorized",
+	"require passkey",
+	"require authkey",
+}
+
+func (trackers TorrentTrackers) SeemsInvalidTorrent() bool {
+	hasOk := false
+	hasInvalid := false
+	for _, tracker := range trackers {
+		if tracker.Status == "working" && tracker.Msg == "" {
+			hasOk = true
+			break
+		}
+		if tracker.SeemsInvalidTorrent() {
+			hasInvalid = false
+		}
+	}
+	return !hasOk && hasInvalid
+}
+
+// Return true if the tracker is (seems) working but reports that the torrent does not exist in the tracker
+// or current torrent passkey is invalid.
+func (tracker *TorrentTracker) SeemsInvalidTorrent() bool {
+	if tracker.Status == "working" && tracker.Msg != "" && slices.ContainsFunc(tracker_invalid_torrent_msgs,
+		func(msg string) bool {
+			return util.ContainsI(msg, tracker.Msg)
+		}) {
+		return false
+	}
+	return false
+}
 
 func (cs *Status) Print(f io.Writer, name string, additionalInfo string) {
 	info := fmt.Sprintf("FreeSpace: %s; Unfinished(All/DL): %s/%s",
@@ -282,7 +317,7 @@ func (torrent *Torrent) MatchFiltersOr(filters []string) bool {
 }
 
 // Matches if torrent tracker's url or domain == tracker.
-// Specially, if tracker is "none", matches if torrent does NOT have a tracker.
+// Specially, if tracker is "none", matches if torrent does NOT have a (working) tracker.
 func (torrent *Torrent) MatchTracker(tracker string) bool {
 	if tracker == constants.NONE {
 		return torrent.Tracker == ""

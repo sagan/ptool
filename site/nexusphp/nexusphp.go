@@ -12,6 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/util"
 )
@@ -220,34 +221,56 @@ func (npclient *Site) GetLatestTorrents(full bool) ([]site.Torrent, error) {
 
 func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (
 	torrents []site.Torrent, nextPageMarker string, err error) {
-	if sort != "" && sort != "none" && sortFields[sort] == "" {
+	if sort != "" && sort != constants.NONE && sortFields[sort] == "" {
 		err = fmt.Errorf("unsupported sort field: %s", sort)
 		return
 	}
-	// 颠倒排序。从np最后一页开始获取。目的是跳过站点的置顶种子
-	sortOrder := "desc"
-	if desc {
-		sortOrder = "asc"
+	// baseUrl is empty; or is query string, e.g. "?seeders_begin=1"
+	if baseUrl == "" || baseUrl == constants.NONE || strings.HasPrefix(baseUrl, "?") {
+		torrentsUrl := ""
+		if npclient.SiteConfig.TorrentsUrl != "" {
+			torrentsUrl = npclient.SiteConfig.TorrentsUrl
+		} else {
+			torrentsUrl = DEFAULT_TORRENTS_URL
+		}
+		if strings.HasPrefix(baseUrl, "?") {
+			baseUrl = util.AppendUrlQueryString(torrentsUrl, baseUrl)
+		} else {
+			baseUrl = torrentsUrl
+		}
+	}
+	torrentsPageUrl := npclient.SiteConfig.ParseSiteUrl(baseUrl, false)
+	torrentsPageUrlObj, err := url.Parse(torrentsPageUrl)
+	if err != nil {
+		err = fmt.Errorf("invalid base-url: %v", err)
+		return
+	}
+	torrentsPageUrlQuery := torrentsPageUrlObj.Query()
+	sorting := sort != "" && sort != constants.NONE
+	if sorting {
+		sortOrder := ""
+		// 颠倒排序。从np最后一页开始获取。目的是跳过站点的置顶种子
+		if desc {
+			sortOrder = "asc"
+		} else {
+			sortOrder = "desc"
+		}
+		torrentsPageUrlQuery.Set("sort", sortFields[sort])
+		torrentsPageUrlQuery.Set("type", sortOrder)
+	}
+	if pageMarker == "" && torrentsPageUrlQuery.Get("page") != "" {
+		pageMarker = torrentsPageUrlQuery.Get("page")
 	}
 	page := int64(0)
 	if pageMarker != "" {
 		page = util.ParseInt(pageMarker)
 	}
-	if baseUrl == "" {
-		if npclient.SiteConfig.TorrentsUrl != "" {
-			baseUrl = npclient.SiteConfig.TorrentsUrl
-		} else {
-			baseUrl = DEFAULT_TORRENTS_URL
-		}
-	}
-	pageUrl := npclient.SiteConfig.ParseSiteUrl(baseUrl, true)
-	queryString := ""
-	if sort != "" && sort != "none" {
-		queryString += "sort=" + sortFields[sort] + "&type=" + sortOrder + "&"
-	}
+	torrentsPageUrlQuery.Del("page")
+	torrentsPageUrlObj.RawQuery = torrentsPageUrlQuery.Encode()
+	torrentsPageUrl = util.AppendUrlQueryStringDelimiter(torrentsPageUrlObj.String())
 	pageStr := "page=" + fmt.Sprint(page)
 	now := util.Now()
-	doc, res, _err := util.GetUrlDocWithAzuretls(pageUrl+queryString+pageStr, npclient.HttpClient,
+	doc, res, _err := util.GetUrlDocWithAzuretls(torrentsPageUrl+pageStr, npclient.HttpClient,
 		npclient.SiteConfig.Cookie, site.GetUa(npclient), npclient.GetDefaultHttpHeaders())
 	if !npclient.SiteConfig.AcceptAnyHttpStatus && _err != nil || doc == nil {
 		err = fmt.Errorf("failed to fetch torrents page dom: %v", _err)
@@ -276,7 +299,7 @@ labelLastPage:
 		page = lastPage
 		pageStr = "page=" + fmt.Sprint(page)
 		now = util.Now()
-		doc, res, _err = util.GetUrlDocWithAzuretls(pageUrl+queryString+pageStr, npclient.HttpClient,
+		doc, res, _err = util.GetUrlDocWithAzuretls(torrentsPageUrl+pageStr, npclient.HttpClient,
 			npclient.SiteConfig.Cookie, site.GetUa(npclient), npclient.GetDefaultHttpHeaders())
 		if !npclient.SiteConfig.AcceptAnyHttpStatus && _err != nil || doc == nil {
 			err = fmt.Errorf("failed to fetch torrents page dom: %v", _err)
@@ -302,10 +325,11 @@ labelLastPage:
 	if page > 0 {
 		nextPageMarker = fmt.Sprint(page - 1)
 	}
-	for i, j := 0, len(torrents)-1; i < j; i, j = i+1, j-1 {
-		torrents[i], torrents[j] = torrents[j], torrents[i]
+	if sorting {
+		for i, j := 0, len(torrents)-1; i < j; i, j = i+1, j-1 {
+			torrents[i], torrents[j] = torrents[j], torrents[i]
+		}
 	}
-
 	return
 }
 
@@ -475,7 +499,8 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 			selectorTorrentLeechers:        siteConfig.SelectorTorrentLeechers,
 			selectorTorrentSnatched:        siteConfig.SelectorTorrentSnatched,
 			selectorTorrentSize:            siteConfig.SelectorTorrentSize,
-			selectorTorrentProcessBar:      siteConfig.SelectorTorrentProcessBar,
+			selectorTorrentActive:          siteConfig.SelectorTorrentActive,
+			selectorTorrentCurrentActive:   siteConfig.SelectorTorrentCurrentActive,
 			selectorTorrentFree:            siteConfig.SelectorTorrentFree,
 			selectorTorrentHnR:             siteConfig.SelectorTorrentHnR,
 			selectorTorrentNeutral:         siteConfig.SelectorTorrentNeutral,

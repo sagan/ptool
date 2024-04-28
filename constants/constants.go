@@ -27,6 +27,8 @@ const INFINITE_TIMEOUT = 86400 * 365 * 100
 const BIG_FILE_SIZE = 10 * 1024 * 1024 // 10MiB
 const FILE_HEADER_CHUNK_SIZE = 512
 
+const CLIENT_DEFAULT_DOWNLOADING_SPEED_LIMIT = 300 * 1024 * 1024 / 8 // BT客户端默认下载速度上限：300Mbps
+
 // type, name, ↑info, ↓info, others
 const STATUS_FMT = "%-6s  %-15s  %-27s  %-27s  %-s\n"
 

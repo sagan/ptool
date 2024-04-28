@@ -10,6 +10,7 @@ import (
 
 	"github.com/Noooste/azuretls-client"
 	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/util"
 	log "github.com/sirupsen/logrus"
@@ -117,7 +118,7 @@ func (m *Site) GetLatestTorrents(full bool) ([]site.Torrent, error) {
 }
 
 func (m *Site) GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (torrents []site.Torrent, nextPageMarker string, err error) {
-	if sort != "" && sort != "none" && sortFields[sort] == "" {
+	if sort != "" && sort != constants.NONE && sortFields[sort] == "" {
 		err = fmt.Errorf("unsupported sort field: %s", sort)
 		return
 	}

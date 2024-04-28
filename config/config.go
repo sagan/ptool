@@ -22,20 +22,22 @@ import (
 )
 
 const (
-	BRUSH_CAT                 = "_brush"
-	FALLBACK_CAT              = "Others" // --add-category-auto fallback category if does NOT match with any site
-	XSEED_TAG                 = "_xseed"
-	NOADD_TAG                 = "_noadd"
-	NOXSEED_TAG               = "noxseed" // BT 客户端里含有此 tag 的种子不会被辅种
-	HR_TAG                    = "_hr"
-	PRIVATE_TAG               = "_private"
-	PUBLIC_TAG                = "_public"
-	STATS_FILENAME            = "ptool_stats.txt"
-	HISTORY_FILENAME          = "ptool_history"
-	SITE_TORRENTS_WIDTH       = 120 // min width for printing site torrents
-	CLIENT_TORRENTS_WIDTH     = 120 // min width for printing client torrents
-	GLOBAL_INTERNAL_LOCK_FILE = "ptool.lock"
-	GLOBAL_LOCK_FILE          = "ptool-global.lock"
+	BRUSH_CAT                  = "_brush"
+	FALLBACK_CAT               = "Others" // --add-category-auto fallback category if does NOT match with any site
+	DYNAMIC_SEEDING_CAT_PREFIX = "dynamic-seeding-"
+	XSEED_TAG                  = "_xseed"
+	NOADD_TAG                  = "_noadd"
+	NODEL_TAG                  = "_nodel"
+	NOXSEED_TAG                = "noxseed" // BT 客户端里含有此 tag 的种子不会被辅种
+	HR_TAG                     = "_hr"
+	PRIVATE_TAG                = "_private"
+	PUBLIC_TAG                 = "_public"
+	STATS_FILENAME             = "ptool_stats.txt"
+	HISTORY_FILENAME           = "ptool_history"
+	SITE_TORRENTS_WIDTH        = 120 // min width for printing site torrents
+	CLIENT_TORRENTS_WIDTH      = 120 // min width for printing client torrents
+	GLOBAL_INTERNAL_LOCK_FILE  = "ptool.lock"
+	GLOBAL_LOCK_FILE           = "ptool-global.lock"
 
 	DEFAULT_EXPORT_TORRENT_RENAME = "[name128].[infohash16].torrent"
 	// Changed in Feb, 2024.
@@ -120,6 +122,10 @@ type SiteConfigStruct struct {
 	Domains                        []string   `yaml:"domains"` // other site domains (do not include subdomain part)
 	TorrentsUrl                    string     `yaml:"torrentsUrl"`
 	SearchUrl                      string     `yaml:"searchUrl"`
+	DynamicSeedingTorrentsUrl      string     `yaml:"dynamicSeedingTorrentsUrl"`
+	DynamicSeedingExcludes         []string   `yaml:"dynamicSeedingExcludes"`
+	DynamicSeedingSize             string     `yaml:"dynamicSeedingSize"`
+	DynamicSeedingTorrentMaxSize   string     `yaml:"dynamicSeedingTorrentMaxSize"`
 	SearchQueryVariable            string     `yaml:"searchQueryVariable"`
 	TorrentsExtraUrls              []string   `yaml:"torrentsExtraUrls"`
 	Cookie                         string     `yaml:"cookie"`
@@ -153,7 +159,8 @@ type SiteConfigStruct struct {
 	SelectorTorrentLeechers        string     `yaml:"selectorTorrentLeechers"`
 	SelectorTorrentSnatched        string     `yaml:"selectorTorrentSnatched"`
 	SelectorTorrentSize            string     `yaml:"selectorTorrentSize"`
-	SelectorTorrentProcessBar      string     `yaml:"selectorTorrentProcessBar"`
+	SelectorTorrentActive          string     `yaml:"selectorTorrentActive"`        // Is or was active
+	SelectorTorrentCurrentActive   string     `yaml:"selectorTorrentCurrentActive"` // Is currently active
 	SelectorTorrentFree            string     `yaml:"SelectorTorrentFree"`
 	SelectorTorrentNoTraffic       string     `yaml:"selectorTorrentNoTraffic"`
 	SelectorTorrentNeutral         string     `yaml:"selectorTorrentNeutral"`
@@ -169,17 +176,19 @@ type SiteConfigStruct struct {
 	Passkey                        string     `yaml:"passkey"`
 	UseCuhash                      bool       `yaml:"useCuhash"` // hdcity 使用机制。种子下载地址里必须有cuhash参数
 	// ttg 使用机制。种子下载地址末段必须有4位数字校验码或Passkey参数(即使有 Cookie)
-	UseDigitHash                  bool   `yaml:"useDigitHash"`
-	TorrentUrlIdRegexp            string `yaml:"torrentUrlIdRegexp"`
-	FlowControlInterval           int64  `yaml:"flowControlInterval"` // 暂定名。两次请求种子列表页间隔时间(秒)
-	NexusphpNoLetDown             bool   `yaml:"nexusphpNoLetDown"`
-	MaxRedirects                  int64  `yaml:"maxRedirects"`
-	NoCookie                      bool   `yaml:"noCookie"`            // true: 该站点不使用 cookie 鉴权方式
-	AcceptAnyHttpStatus           bool   `yaml:"acceptAnyHttpStatus"` // true: 非200的http状态不认为是错误
-	TorrentUploadSpeedLimitValue  int64
-	BrushTorrentMinSizeLimitValue int64
-	BrushTorrentMaxSizeLimitValue int64
-	AutoComment                   string // 自动更新 ptool.toml 时系统生成的 comment。会被写入 Comment 字段
+	UseDigitHash                      bool   `yaml:"useDigitHash"`
+	TorrentUrlIdRegexp                string `yaml:"torrentUrlIdRegexp"`
+	FlowControlInterval               int64  `yaml:"flowControlInterval"` // 暂定名。两次请求种子列表页间隔时间(秒)
+	NexusphpNoLetDown                 bool   `yaml:"nexusphpNoLetDown"`
+	MaxRedirects                      int64  `yaml:"maxRedirects"`
+	NoCookie                          bool   `yaml:"noCookie"`            // true: 该站点不使用 cookie 鉴权方式
+	AcceptAnyHttpStatus               bool   `yaml:"acceptAnyHttpStatus"` // true: 非200的http状态不认为是错误
+	TorrentUploadSpeedLimitValue      int64
+	BrushTorrentMinSizeLimitValue     int64
+	BrushTorrentMaxSizeLimitValue     int64
+	DynamicSeedingSizeValue           int64
+	DynamicSeedingTorrentMaxSizeValue int64
+	AutoComment                       string // 自动更新 ptool.toml 时系统生成的 comment。会被写入 Comment 字段
 }
 
 type ConfigStruct struct {
@@ -270,8 +279,8 @@ var InternalAliases = []*AliasConfigStruct{
 		Internal:    true,
 	},
 	{
-		Name:        "verifytorrent2",
-		Cmd:         "verifytorrent2 --rename-fail",
+		Name:        "verify2",
+		Cmd:         "verifytorrent --rename-fail",
 		DefaultArgs: "*.torrent",
 		MinArgs:     1,
 		Internal:    true,
@@ -581,6 +590,21 @@ func (siteConfig *SiteConfigStruct) Register() {
 		v = DEFAULT_SITE_BRUSH_TORRENT_MAX_SIZE_LIMIT
 	}
 	siteConfig.BrushTorrentMaxSizeLimitValue = v
+
+	if siteConfig.DynamicSeedingSize != "" {
+		if v, err = util.RAMInBytes(siteConfig.DynamicSeedingSize); err != nil || v < 0 {
+			log.Fatalf("Invalid dynamicSeedingSize value %q in site config: %v", siteConfig.DynamicSeedingSize, err)
+		}
+		siteConfig.DynamicSeedingSizeValue = v
+	}
+
+	if siteConfig.DynamicSeedingTorrentMaxSize != "" {
+		if v, err = util.RAMInBytes(siteConfig.DynamicSeedingTorrentMaxSize); err != nil {
+			log.Fatalf("Invalid dynamicSeedingTorrentMaxSize value %q in site config: %v",
+				siteConfig.DynamicSeedingTorrentMaxSize, err)
+		}
+		siteConfig.DynamicSeedingTorrentMaxSizeValue = v
+	}
 
 	sitesConfigMap[siteConfig.GetName()] = siteConfig
 }

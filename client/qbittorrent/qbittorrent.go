@@ -373,7 +373,7 @@ func (qbclient *Client) MakeCategory(category string, savePath string) error {
 	data := url.Values{
 		"category": {category},
 	}
-	if savePath != "none" {
+	if savePath != constants.NONE {
 		data.Add("savePath", savePath)
 	}
 	err = qbclient.apiPost("api/v2/torrents/createCategory", data)
@@ -681,6 +681,9 @@ func (qbclient *Client) GetStatus() (*client.Status, error) {
 	}
 	if slices.Index(qbclient.data.Tags, config.NOADD_TAG) != -1 {
 		status.NoAdd = true
+	}
+	if slices.Index(qbclient.data.Tags, config.NODEL_TAG) != -1 {
+		status.NoDel = true
 	}
 	return &status, nil
 }

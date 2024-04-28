@@ -150,6 +150,7 @@ func add(cmd *cobra.Command, args []string) error {
 		if i > 0 && slowMode {
 			util.Sleep(3)
 		}
+		// Note: tinfo coule be nil here. It's a workaround as anacrolix/torrent failed to parse some torrents.
 		content, tinfo, siteInstance, sitename, filename, id, isLocal, err :=
 			helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, stdinTorrentContents, true, nil)
 		if err != nil {
@@ -170,7 +171,11 @@ func add(cmd *cobra.Command, args []string) error {
 			hr = siteInstance.GetSiteConfig().GlobalHnR
 		}
 		if useComment {
-			if commentMeta := tinfo.DecodeComment(); commentMeta == nil {
+			if tinfo == nil {
+				fmt.Printf("✕ %s (%d/%d): can NOT parse comment meta (invalid torrent)\n", torrent, i+1, cntAll)
+				errorCnt++
+				continue
+			} else if commentMeta := tinfo.DecodeComment(); commentMeta == nil {
 				fmt.Printf("✕ %s (%d/%d): failed to parse comment meta\n", torrent, i+1, cntAll)
 				errorCnt++
 				continue
@@ -200,10 +205,12 @@ func add(cmd *cobra.Command, args []string) error {
 			}
 		}
 		if option.Tags == nil {
-			if tinfo.IsPrivate() {
-				option.Tags = append(option.Tags, config.PRIVATE_TAG)
-			} else {
-				option.Tags = append(option.Tags, config.PUBLIC_TAG)
+			if tinfo != nil {
+				if tinfo.IsPrivate() {
+					option.Tags = append(option.Tags, config.PRIVATE_TAG)
+				} else {
+					option.Tags = append(option.Tags, config.PUBLIC_TAG)
+				}
 			}
 			if sitename != "" {
 				option.Tags = append(option.Tags, client.GenerateTorrentTagFromSite(sitename))
@@ -217,7 +224,7 @@ func add(cmd *cobra.Command, args []string) error {
 			}
 		}
 		if ratioLimit == 0 {
-			if tinfo.IsPrivate() {
+			if tinfo == nil || tinfo.IsPrivate() {
 				option.RatioLimit = 0
 			} else {
 				option.RatioLimit = config.Get().PublicTorrentRatioLimit

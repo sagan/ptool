@@ -47,7 +47,8 @@ type TorrentsParserOption struct {
 	selectorTorrentLeechers        string
 	selectorTorrentSnatched        string
 	selectorTorrentSize            string
-	selectorTorrentProcessBar      string
+	selectorTorrentActive          string
+	selectorTorrentCurrentActive   string
 	selectorTorrentFree            string
 	selectorTorrentHnR             string
 	selectorTorrentNoTraffic       string
@@ -289,6 +290,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 		uploadMultiplier := 1.0
 		discountEndTime := int64(-1)
 		isActive := false
+		isCurrentActive := false
 		paid := false
 		neutral := false
 		processValueRegexp := regexp.MustCompile(`\d+(\.\d+)?%`)
@@ -456,9 +458,15 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 			downloadMultiplier = 0
 			uploadMultiplier = 0
 		}
-		if s.Find(`*[title^="seeding"],*[title^="leeching"],*[title^="downloading"],*[title^="uploading"],*[title^="inactivity"]`).Length() > 0 {
+		if s.Find(`*[title^="seeding"],*[title^="leeching"],*[title^="downloading"],*[title^="uploading"]`).Length() > 0 {
 			isActive = true
-		} else if option.selectorTorrentProcessBar != "" && s.Find(option.selectorTorrentProcessBar).Length() > 0 {
+			isCurrentActive = true
+		} else if s.Find(`*[title^="inactivity"]`).Length() > 0 {
+			isActive = true
+		} else if option.selectorTorrentCurrentActive != "" && s.Find(option.selectorTorrentCurrentActive).Length() > 0 {
+			isActive = true
+			isCurrentActive = true
+		} else if option.selectorTorrentActive != "" && s.Find(option.selectorTorrentActive).Length() > 0 {
 			isActive = true
 		}
 		if option.selectorTorrentDiscountEndTime != "" {
@@ -498,6 +506,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 				UploadMultiplier:   uploadMultiplier,
 				DiscountEndTime:    discountEndTime,
 				IsActive:           isActive,
+				IsCurrentActive:    isCurrentActive,
 				Paid:               paid,
 				Neutral:            neutral,
 				Tags:               tags,

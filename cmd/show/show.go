@@ -272,7 +272,7 @@ func show(cmd *cobra.Command, args []string) error {
 			return true
 		})
 	}
-	if sortFlag != "" && sortFlag != "none" {
+	if sortFlag != "" && sortFlag != constants.NONE {
 		sort.Slice(torrents, func(i, j int) bool {
 			switch sortFlag {
 			case "name":

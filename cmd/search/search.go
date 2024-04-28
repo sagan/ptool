@@ -41,7 +41,10 @@ The "Free" field displays some icon texts:
 * N : Neutral torrent, does not count uploading / downloading / bonus points.
 * Z : Zero-traffic torrent, does not count uploading / downloading.
 
-The "P" (progress) field: if you have never downloaded this torrent before, displays a "-".`,
+The "P" (progress) field also displays some icon texts:
+- If you have never downloaded this torrent before, displays a "-".
+- If you had ever downloaded or seeded this torrent before, display a "✓".
+- If you are currently downloading or seeding this torrent, display a "*%".`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	RunE: search,
 }
