@@ -506,7 +506,7 @@ mainloop:
 			cntTorrentsThisPage++
 			totalSize += torrent.Size
 			if !doDownload && addClient == "" {
-				site.PrintTorrents([]site.Torrent{torrent}, "", now, cntTorrents != 1, dense, nil)
+				site.PrintTorrents(os.Stdout, []site.Torrent{torrent}, "", now, cntTorrents != 1, dense, nil)
 				continue
 			}
 			var err error

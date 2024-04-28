@@ -2,6 +2,7 @@ package edittracker
 
 import (
 	"fmt"
+	"os"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -86,7 +87,7 @@ func edittracker(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	if !force {
-		client.PrintTorrents(torrents, "", 1, false)
+		client.PrintTorrents(os.Stdout, torrents, "", 1, false)
 		fmt.Printf("\n")
 		if !helper.AskYesNoConfirm(fmt.Sprintf(
 			`Will update above %d torrents, replace old tracker with new tracker:

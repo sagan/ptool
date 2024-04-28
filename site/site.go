@@ -197,7 +197,7 @@ func CreateSite(name string) (Site, error) {
 	return siteInstance, err
 }
 
-func PrintTorrents(torrents []Torrent, filter string, now int64,
+func PrintTorrents(output io.Writer, torrents []Torrent, filter string, now int64,
 	noHeader bool, dense bool, scores map[string]float64) {
 	width, _, _ := term.GetSize(int(os.Stdout.Fd()))
 	if width < config.SITE_TORRENTS_WIDTH {
@@ -209,14 +209,14 @@ func PrintTorrents(torrents []Torrent, filter string, now int64,
 		widthExcludingName = 81 // 6+11+19+4+4+4+15+2+8*2
 		widthName = width - widthExcludingName
 		if !noHeader {
-			fmt.Printf("%-*s  %6s  %-11s  %-19s  %4s  %4s  %4s  %-15s  %2s\n",
+			fmt.Fprintf(output, "%-*s  %6s  %-11s  %-19s  %4s  %4s  %4s  %-15s  %2s\n",
 				widthName, "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "P")
 		}
 	} else {
 		widthExcludingName = 88 // 6+11+19+4+4+4+15+5+2+9*2
 		widthName = width - widthExcludingName
 		if !noHeader {
-			fmt.Printf("%-*s  %6s  %-11s  %-19s  %4s  %4s  %4s  %-15s  %5s  %2s\n",
+			fmt.Fprintf(output, "%-*s  %6s  %-11s  %-19s  %4s  %4s  %4s  %-15s  %5s  %2s\n",
 				widthName, "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "Score", "P")
 		}
 	}
@@ -265,9 +265,9 @@ func PrintTorrents(torrents []Torrent, filter string, now int64,
 				name += fmt.Sprintf(" [%s]", strings.Join(util.Map(torrent.Tags, strconv.Quote), ", "))
 			}
 		}
-		remain := util.PrintStringInWidth(name, int64(widthName), true)
+		remain := util.PrintStringInWidth(output, name, int64(widthName), true)
 		if scores == nil {
-			fmt.Printf("  %6s  %-11s  %-19s  %4d  %4d  %4d  %-15s  %2s\n",
+			fmt.Fprintf(output, "  %6s  %-11s  %-19s  %4d  %4d  %4d  %-15s  %2s\n",
 				util.BytesSizeAround(float64(torrent.Size)),
 				freeStr,
 				util.FormatTime(torrent.Time),
@@ -278,7 +278,7 @@ func PrintTorrents(torrents []Torrent, filter string, now int64,
 				process,
 			)
 		} else {
-			fmt.Printf("  %6s  %-11s  %-19s  %4s  %4s  %4s  %-15s  %5.0f  %2s\n",
+			fmt.Fprintf(output, "  %6s  %-11s  %-19s  %4s  %4s  %4s  %-15s  %5.0f  %2s\n",
 				util.BytesSizeAround(float64(torrent.Size)),
 				freeStr,
 				util.FormatTime(torrent.Time),
@@ -296,8 +296,8 @@ func PrintTorrents(torrents []Torrent, filter string, now int64,
 				if remain == "" {
 					break
 				}
-				remain = util.PrintStringInWidth(remain, int64(widthName), true)
-				fmt.Printf("\n")
+				remain = util.PrintStringInWidth(output, remain, int64(widthName), true)
+				fmt.Fprintf(output, "\n")
 			}
 		}
 	}

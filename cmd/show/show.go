@@ -350,7 +350,7 @@ func show(cmd *cobra.Command, args []string) error {
 		if showSum {
 			showSummary = 2
 		}
-		client.PrintTorrents(torrents, "", showSummary, dense)
+		client.PrintTorrents(os.Stdout, torrents, "", showSummary, dense)
 	}
 	return nil
 }

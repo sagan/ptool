@@ -210,6 +210,6 @@ func search(cmd *cobra.Command, args []string) error {
 		log.Warnf("Errors encountered: %s", errorStr)
 	}
 	fmt.Printf("\n")
-	site.PrintTorrents(torrents, "", now, false, dense, nil)
+	site.PrintTorrents(os.Stdout, torrents, "", now, false, dense, nil)
 	return nil
 }

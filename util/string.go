@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"io"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -108,7 +109,7 @@ func StringPrefixInWidth(str string, width int64) (string, int64) {
 	return sb.String(), strWidth
 }
 
-func PrintStringInWidth(str string, width int64, padRight bool) (remain string) {
+func PrintStringInWidth(output io.Writer, str string, width int64, padRight bool) (remain string) {
 	pstr, strWidth := StringPrefixInWidth(str, width)
 	remain = str[len(pstr):]
 	if padRight {
@@ -116,7 +117,7 @@ func PrintStringInWidth(str string, width int64, padRight bool) (remain string) 
 	} else {
 		pstr = strings.Repeat(" ", int(width-strWidth)) + pstr
 	}
-	fmt.Print(pstr)
+	fmt.Fprint(output, pstr)
 	return
 }
 

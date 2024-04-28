@@ -2,6 +2,7 @@ package sites
 
 import (
 	"fmt"
+	"os"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -75,7 +76,7 @@ func sites(cmd *cobra.Command, args []string) error {
 		if filter != "" && !iyuuSite.MatchFilter(filter) {
 			continue
 		}
-		util.PrintStringInWidth(iyuuSite.Nickname, 10, true)
+		util.PrintStringInWidth(os.Stdout, iyuuSite.Nickname, 10, true)
 		fmt.Printf("  %-15s  %-6d  %-15s  %-30s  %-25s\n", iyuuSite.Name, iyuuSite.Sid,
 			iyuu2LocalSiteMap[iyuuSite.Sid], iyuuSite.Url, iyuuSite.DownloadPage)
 	}
@@ -86,7 +87,7 @@ func sites(cmd *cobra.Command, args []string) error {
 		if filter != "" && !iyuuSite.MatchFilter(filter) {
 			continue
 		}
-		util.PrintStringInWidth(iyuuSite.Nickname, 10, true)
+		util.PrintStringInWidth(os.Stdout, iyuuSite.Nickname, 10, true)
 		fmt.Printf("  %-15s  %-6d  %-15s  %-30s  %-25s\n", iyuuSite.Name, iyuuSite.Sid,
 			"X (None)", iyuuSite.Url, iyuuSite.DownloadPage)
 	}

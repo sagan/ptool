@@ -2,6 +2,7 @@ package addtrackers
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -84,7 +85,7 @@ func addtrackers(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	if !force {
-		client.PrintTorrents(torrents, "", 1, false)
+		client.PrintTorrents(os.Stdout, torrents, "", 1, false)
 		fmt.Printf("\n")
 		if !helper.AskYesNoConfirm(fmt.Sprintf(
 			`Will update above %d torrents, add the following trackers to them:

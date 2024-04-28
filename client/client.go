@@ -465,10 +465,11 @@ func PrintTorrentTrackers(trackers TorrentTrackers) {
 	fmt.Printf("%-8s  %-40s  %s\n", "Status", "Msg", "Url")
 	for _, tracker := range trackers {
 		fmt.Printf("%-8s  ", tracker.Status)
-		util.PrintStringInWidth(tracker.Msg, 40, true)
+		util.PrintStringInWidth(os.Stdout, tracker.Msg, 40, true)
 		fmt.Printf("  %s\n", tracker.Url)
 	}
 }
+
 func PrintTorrentFiles(files []TorrentContentFile, showRaw bool) {
 	fmt.Printf("Files (%d):\n", len(files))
 	fmt.Printf("%-5s  %-5s  %-10s  %-5s  %s\n", "No.", "Index", "Size", "Done?", "Path")
@@ -534,7 +535,7 @@ func (torrent *Torrent) Print() {
 }
 
 // showSum: 0 - no; 1 - yes; 2 - sum only
-func PrintTorrents(torrents []Torrent, filter string, showSum int64, dense bool) {
+func PrintTorrents(output io.Writer, torrents []Torrent, filter string, showSum int64, dense bool) {
 	width, _, _ := term.GetSize(int(os.Stdout.Fd()))
 	if width < config.CLIENT_TORRENTS_WIDTH {
 		width = config.CLIENT_TORRENTS_WIDTH
@@ -548,7 +549,7 @@ func PrintTorrents(torrents []Torrent, filter string, showSum int64, dense bool)
 	largestSize := int64(-1)
 	sizeUnfinished := int64(0)
 	if showSum < 2 {
-		fmt.Printf("%-*s  %-40s  %-6s  %-5s  %-6s  %-6s  %-5s  %-5s  %-16s\n",
+		fmt.Fprintf(output, "%-*s  %-40s  %-6s  %-5s  %-6s  %-6s  %-5s  %-5s  %-16s\n",
 			widthName, "Name", "InfoHash", "Size", "State", "↓S(/s)", "↑S(/s)", "Seeds", "Peers", "Tracker")
 	}
 	for _, torrent := range torrents {
@@ -594,10 +595,10 @@ func PrintTorrents(torrents []Torrent, filter string, showSum int64, dense bool)
 				name += ` >` + torrent.ContentPath
 			}
 		}
-		remain := util.PrintStringInWidth(name, int64(widthName), true)
+		remain := util.PrintStringInWidth(output, name, int64(widthName), true)
 		// 目前遇到的tracker域名最长的: "wintersakura.net"
 		trackerBaseDomain, _ := util.StringPrefixInWidth(torrent.TrackerBaseDomain, 16)
-		fmt.Printf("  %-40s  %-6s  %-5s  %-6s  %-6s  %-5d  %-5d  %-16s\n",
+		fmt.Fprintf(output, "  %-40s  %-6s  %-5s  %-6s  %-6s  %-5d  %-5d  %-16s\n",
 			torrent.InfoHash,
 			util.BytesSizeAround(float64(torrent.Size)),
 			torrent.StateIconText(),
@@ -613,8 +614,8 @@ func PrintTorrents(torrents []Torrent, filter string, showSum int64, dense bool)
 				if remain == "" {
 					break
 				}
-				remain = util.PrintStringInWidth(remain, int64(widthName), true)
-				fmt.Printf("\n")
+				remain = util.PrintStringInWidth(output, remain, int64(widthName), true)
+				fmt.Fprintf(output, "\n")
 			}
 		}
 	}
@@ -623,12 +624,12 @@ func PrintTorrents(torrents []Torrent, filter string, showSum int64, dense bool)
 		if cnt > 0 {
 			averageSize = size / cnt
 		}
-		fmt.Printf("\n")
-		fmt.Printf("// Summary - Cnt / Size / SizeUnfinished: %d / %s / %s\n",
+		fmt.Fprintf(output, "\n")
+		fmt.Fprintf(output, "// Summary - Cnt / Size / SizeUnfinished: %d / %s / %s\n",
 			cnt, util.BytesSize(float64(size)), util.BytesSize(float64(sizeUnfinished)))
-		fmt.Printf("// Torrents: ↓%d / -%d / ↑%d / ✓%d / +%d\n",
+		fmt.Fprintf(output, "// Torrents: ↓%d / -%d / ↑%d / ✓%d / +%d\n",
 			cntDownloading, cntPaused, cntSeeding, cntCompleted, cntOthers)
-		fmt.Printf("// Smallest / Average / Largest torrent size: %s / %s / %s\n",
+		fmt.Fprintf(output, "// Smallest / Average / Largest torrent size: %s / %s / %s\n",
 			util.BytesSize(float64(smallestSize)), util.BytesSize(float64(averageSize)), util.BytesSize(float64(largestSize)))
 	}
 }

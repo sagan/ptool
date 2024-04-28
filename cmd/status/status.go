@@ -217,7 +217,7 @@ func status(cmd *cobra.Command, args []string) error {
 						return response.ClientTorrents[i].Atime > response.ClientTorrents[j].Atime
 					})
 				}
-				client.PrintTorrents(response.ClientTorrents, filter, 0, dense)
+				client.PrintTorrents(os.Stdout, response.ClientTorrents, filter, 0, dense)
 				fmt.Printf("\n")
 			}
 		} else if response.Kind == 2 {
@@ -249,7 +249,7 @@ func status(cmd *cobra.Command, args []string) error {
 						return response.SiteTorrents[i].Time > response.SiteTorrents[j].Time
 					})
 				}
-				site.PrintTorrents(response.SiteTorrents, filter, now, false, dense, response.SiteTorrentScores)
+				site.PrintTorrents(os.Stdout, response.SiteTorrents, filter, now, false, dense, response.SiteTorrentScores)
 				fmt.Printf("\n")
 			}
 		}
