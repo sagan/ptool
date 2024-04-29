@@ -312,7 +312,7 @@ func (trclient *Client) ModifyTorrent(infoHash string, option *client.TorrentOpt
 		}
 		if len(labels) > 0 || len(option.RemoveTags) > 0 {
 			for _, tag := range torrent.Tags {
-				if slices.Index(option.RemoveTags, tag) == -1 {
+				if !slices.Contains(option.RemoveTags, tag) {
 					labels = append(labels, tag)
 				}
 			}
@@ -828,7 +828,7 @@ func (trclient *Client) RemoveTorrentTrackers(infoHash string, trackers []string
 	}
 	trackerIds := []int64{}
 	for _, tracker := range trtorrent.Trackers {
-		if slices.Index(trackers, tracker.Announce) != -1 {
+		if slices.Contains(trackers, tracker.Announce) {
 			trackerIds = append(trackerIds, tracker.ID)
 		}
 	}

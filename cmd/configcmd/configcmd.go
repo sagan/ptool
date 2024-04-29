@@ -5,7 +5,6 @@ package configcmd
 import (
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -59,7 +58,7 @@ func init() {
 func configcmd(cmd *cobra.Command, args []string) error {
 	fmt.Printf("Config file: %s%c%s\n", config.ConfigDir, filepath.Separator, config.ConfigFile)
 	fmt.Printf("Config dir: %s\n", config.ConfigDir)
-	if _, err := os.Stat(path.Join(config.ConfigDir, config.ConfigFile)); err != nil {
+	if _, err := os.Stat(filepath.Join(config.ConfigDir, config.ConfigFile)); err != nil {
 		if os.IsNotExist(err) {
 			fmt.Printf(`<config file does NOT exist, run "ptool config create" to create it>` + "\n")
 		} else {

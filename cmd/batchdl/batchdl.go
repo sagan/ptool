@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"strings"
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
@@ -512,7 +511,7 @@ mainloop:
 			var err error
 			filename := ""
 			if doDownload && downloadSkipExisting && torrent.Id != "" {
-				filename = fmt.Sprintf("%s.%s.torrent", sitename, strings.TrimPrefix(torrent.Id, sitename+"."))
+				filename = fmt.Sprintf("%s.%s.torrent", sitename, torrent.ID())
 				if util.FileExistsWithOptionalSuffix(filepath.Join(downloadDir, filename),
 					constants.ProcessedFilenameSuffixes...) {
 					log.Debugf("Skip downloading local-existing torrent %s (%s)", torrent.Name, torrent.Id)

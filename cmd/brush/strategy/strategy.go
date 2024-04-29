@@ -202,7 +202,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 		// mark torrents that discount time ends as stall
 		if torrent.Meta["dcet"] > 0 && torrent.Meta["dcet"]-siteOption.Now <= 3600 && torrent.Ctime <= 0 {
 			if canStallTorrent(&torrent) {
-				meta := util.CopyMap(torrent.Meta)
+				meta := util.CopyMap(torrent.Meta, true)
 				meta["stt"] = siteOption.Now
 				stallTorrents = append(stallTorrents, AlgorithmModifyTorrent{
 					InfoHash: torrent.InfoHash,
@@ -250,7 +250,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 							torrent.DownloadSpeed >= RATIO_CHECK_MIN_DOWNLOAD_SPEED &&
 							float64(torrent.UploadSpeed)/float64(torrent.DownloadSpeed) < clientOption.MinRatio &&
 							siteOption.Now-torrent.Atime >= NEW_TORRENTS_STALL_EXEMPTION_TIMESPAN {
-							meta := util.CopyMap(torrent.Meta)
+							meta := util.CopyMap(torrent.Meta, true)
 							meta["stt"] = siteOption.Now
 							stallTorrents = append(stallTorrents, AlgorithmModifyTorrent{
 								InfoHash: torrent.InfoHash,
@@ -276,7 +276,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 						})
 						clientTorrentsMap[torrent.InfoHash].DeleteCandidateFlag = true
 					} else {
-						meta := util.CopyMap(torrent.Meta)
+						meta := util.CopyMap(torrent.Meta, true)
 						meta["sct"] = siteOption.Now
 						meta["sctu"] = torrent.Uploaded
 						modifyTorrents = append(modifyTorrents, AlgorithmModifyTorrent{
@@ -289,7 +289,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 					}
 				}
 			} else { // first encounter on slow torrent
-				meta := util.CopyMap(torrent.Meta)
+				meta := util.CopyMap(torrent.Meta, true)
 				meta["sct"] = siteOption.Now
 				meta["sctu"] = torrent.Uploaded
 				modifyTorrents = append(modifyTorrents, AlgorithmModifyTorrent{
@@ -301,7 +301,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 				clientTorrentsMap[torrent.InfoHash].ModifyFlag = true
 			}
 		} else if torrent.Meta["sct"] > 0 { // remove mark on no-longer slow torrents
-			meta := util.CopyMap(torrent.Meta)
+			meta := util.CopyMap(torrent.Meta, true)
 			delete(meta, "sct")
 			delete(meta, "sctu")
 			modifyTorrents = append(modifyTorrents, AlgorithmModifyTorrent{
@@ -405,7 +405,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 				continue
 			}
 			if canStallTorrent(&torrent) {
-				meta := util.CopyMap(torrent.Meta)
+				meta := util.CopyMap(torrent.Meta, true)
 				meta["stt"] = siteOption.Now
 				stallTorrents = append(stallTorrents, AlgorithmModifyTorrent{
 					InfoHash: torrent.InfoHash,

@@ -99,10 +99,10 @@ func xseedadd(cmd *cobra.Command, args []string) error {
 			return clientTorrents[i].Size > clientTorrents[j].Size
 		}
 		a, b := 0, 0
-		if clientTorrents[i].Category == config.XSEED_TAG || clientTorrents[i].HasTag(config.XSEED_TAG) {
+		if clientTorrents[i].HasTag(config.XSEED_TAG) {
 			a = 1
 		}
-		if clientTorrents[j].Category == config.XSEED_TAG || clientTorrents[j].HasTag(config.XSEED_TAG) {
+		if clientTorrents[j].HasTag(config.XSEED_TAG) {
 			b = 1
 		}
 		if a != b {

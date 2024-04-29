@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -82,7 +81,7 @@ func Execute() {
 				log.Fatalf("--lock and --global-lock flags are NOT compatible")
 			}
 			os.MkdirAll(config.ConfigDir, constants.PERM)
-			config.LockFile = path.Join(config.ConfigDir, config.GLOBAL_LOCK_FILE)
+			config.LockFile = filepath.Join(config.ConfigDir, config.GLOBAL_LOCK_FILE)
 		}
 		if config.LockFile != "" {
 			log.Debugf("Locking file: %s", config.LockFile)

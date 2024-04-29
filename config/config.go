@@ -7,7 +7,7 @@ import (
 	"io/fs"
 	"net/url"
 	"os"
-	"path"
+	"path/filepath"
 	"regexp"
 	"slices"
 	"strings"
@@ -24,7 +24,7 @@ import (
 const (
 	BRUSH_CAT                  = "_brush"
 	FALLBACK_CAT               = "Others" // --add-category-auto fallback category if does NOT match with any site
-	DYNAMIC_SEEDING_CAT_PREFIX = "dynamic-seeding-"
+	DYNAMIC_SEEDING_CAT_PREFIX = "_dynamic-seeding-"
 	XSEED_TAG                  = "_xseed"
 	NOADD_TAG                  = "_noadd"
 	NODEL_TAG                  = "_nodel"
@@ -125,6 +125,7 @@ type SiteConfigStruct struct {
 	DynamicSeedingTorrentsUrl      string     `yaml:"dynamicSeedingTorrentsUrl"`
 	DynamicSeedingExcludes         []string   `yaml:"dynamicSeedingExcludes"`
 	DynamicSeedingSize             string     `yaml:"dynamicSeedingSize"`
+	DynamicSeedingTorrentMinSize   string     `yaml:"dynamicSeedingTorrentMinSize"`
 	DynamicSeedingTorrentMaxSize   string     `yaml:"dynamicSeedingTorrentMaxSize"`
 	SearchQueryVariable            string     `yaml:"searchQueryVariable"`
 	TorrentsExtraUrls              []string   `yaml:"torrentsExtraUrls"`
@@ -187,6 +188,7 @@ type SiteConfigStruct struct {
 	BrushTorrentMinSizeLimitValue     int64
 	BrushTorrentMaxSizeLimitValue     int64
 	DynamicSeedingSizeValue           int64
+	DynamicSeedingTorrentMinSizeValue int64
 	DynamicSeedingTorrentMaxSizeValue int64
 	AutoComment                       string // 自动更新 ptool.toml 时系统生成的 comment。会被写入 Comment 字段
 }
@@ -333,7 +335,7 @@ func Set() error {
 	if err := os.MkdirAll(ConfigDir, constants.PERM); err != nil {
 		return fmt.Errorf("config dir does NOT exists and can not be created: %v", err)
 	}
-	lock := flock.New(path.Join(ConfigDir, GLOBAL_INTERNAL_LOCK_FILE))
+	lock := flock.New(filepath.Join(ConfigDir, GLOBAL_INTERNAL_LOCK_FILE))
 	if ok, err := lock.TryLock(); err != nil || !ok {
 		return fmt.Errorf("unable to acquire global lock: %v", err)
 	}
@@ -606,6 +608,14 @@ func (siteConfig *SiteConfigStruct) Register() {
 		siteConfig.DynamicSeedingTorrentMaxSizeValue = v
 	}
 
+	if siteConfig.DynamicSeedingTorrentMinSize != "" {
+		if v, err = util.RAMInBytes(siteConfig.DynamicSeedingTorrentMinSize); err != nil {
+			log.Fatalf("Invalid dynamicSeedingTorrentMinSize value %q in site config: %v",
+				siteConfig.DynamicSeedingTorrentMinSize, err)
+		}
+		siteConfig.DynamicSeedingTorrentMinSizeValue = v
+	}
+
 	sitesConfigMap[siteConfig.GetName()] = siteConfig
 }
 
@@ -683,12 +693,12 @@ func CreateDefaultConfig() (err error) {
 	if err := os.MkdirAll(ConfigDir, constants.PERM); err != nil {
 		return fmt.Errorf("failed to create config dir: %v", err)
 	}
-	lock := flock.New(path.Join(ConfigDir, GLOBAL_INTERNAL_LOCK_FILE))
+	lock := flock.New(filepath.Join(ConfigDir, GLOBAL_INTERNAL_LOCK_FILE))
 	if ok, err := lock.TryLock(); err != nil || !ok {
 		return fmt.Errorf("unable to acquire global lock: %v", err)
 	}
 	defer lock.Unlock()
-	configFile := path.Join(ConfigDir, ConfigFile)
+	configFile := filepath.Join(ConfigDir, ConfigFile)
 	if _, err := os.Stat(configFile); !os.IsNotExist(err) {
 		if err == nil {
 			return fmt.Errorf("config file already exists")

@@ -401,6 +401,7 @@ var (
 			Aliases:             []string{"m-team", "mt"},
 			Url:                 "https://kp.m-team.cc/",
 			Domains:             []string{"m-team.io"},
+			NoCookie:            true,
 			TorrentsExtraUrls:   []string{"adult.php", "music.php"},
 			BrushExcludes:       []string{"[原盤首發]"}, // 馒头原盘首发限速，刷流效果极差
 			FlowControlInterval: 30,                 // 馒头流控极为严格。很容易出“休息120秒”页面
@@ -694,7 +695,7 @@ func GuessSiteByDomain(domain string, defaultSite string) (string, error) {
 	}
 
 	siteTypes := FindSiteTypesByDomain(domain)
-	if defaultSiteConfig != nil && slices.Index(siteTypes, defaultSiteConfig.Type) != -1 {
+	if defaultSiteConfig != nil && slices.Contains(siteTypes, defaultSiteConfig.Type) {
 		return defaultSite, nil
 	}
 	return site.GetConfigSiteNameByTypes(siteTypes...)

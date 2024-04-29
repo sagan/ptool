@@ -516,12 +516,12 @@ func (qbclient *Client) ModifyTorrent(infoHash string,
 		addTags := []string{}
 		removeTags := []string{}
 		for _, addTag := range option.Tags {
-			if slices.Index(qbTags, addTag) == -1 {
+			if !slices.Contains(qbTags, addTag) {
 				addTags = append(addTags, addTag)
 			}
 		}
 		for _, removeTag := range option.RemoveTags {
-			if slices.Index(qbTags, removeTag) != -1 {
+			if slices.Contains(qbTags, removeTag) {
 				removeTags = append(removeTags, removeTag)
 			}
 		}
@@ -679,10 +679,10 @@ func (qbclient *Client) GetStatus() (*client.Status, error) {
 			status.FreeSpaceOnDisk = -1
 		}
 	}
-	if slices.Index(qbclient.data.Tags, config.NOADD_TAG) != -1 {
+	if slices.Contains(qbclient.data.Tags, config.NOADD_TAG) {
 		status.NoAdd = true
 	}
-	if slices.Index(qbclient.data.Tags, config.NODEL_TAG) != -1 {
+	if slices.Contains(qbclient.data.Tags, config.NODEL_TAG) {
 		status.NoDel = true
 	}
 	return &status, nil

@@ -9,8 +9,8 @@
 - 使用简单。只需 5 分钟时间，配置 BitTorrent 客户端地址、PT 网站地址和 cookie 即可开始全自动刷流。
 - 目前支持的 BitTorrent 客户端： qBittorrent v4.1+ / Transmission (<= v3.0)。
   - 推荐使用 qBittorrent。Transmission 客户端未充分测试。
-- 目前支持的 PT 站点：绝大部分使用 nexusphp 的网站。
-  - 测试过支持的站点：M-Team(馒头)、U2、冬樱、红叶、聆音、铂金家、若干不可说的站点等。
+- 目前支持的 PT 站点：绝大部分使用 nexusphp 的网站；M-Team(馒头)。
+  - 测试过支持的站点：U2、冬樱、红叶、聆音、铂金家、若干不可说的站点等。
   - 未列出的大部分 np 站点应该也支持。除了个别魔改 np 很厉害的站点可能有问题。
   - 支持通过 [CookieCloud][] 自动同步站点 cookie 或导入站点。
 - 刷流功能(brush)：
@@ -39,11 +39,11 @@ username = "admin" # QB Web UI 用户名
 password = "adminadmin" # QB Web UI 密码
 
 [[sites]]
-type = "mteam"
+type = "keepfrds"
 cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 ```
 
-然后运行 `ptool brush local mteam` 即可执行刷流任务。程序会从 M-Team 获取最新的种子、根据一定规则筛选出适合的种子添加到本地的 qBittorrent 客户端里，同时自动从 BT 客户端里删除（已经没有上传的）旧的刷流种子。刷流任务添加到客户端里的种子会放到 `_brush` 分类(Category)里。程序只会对这个分类里的种子进行管理或删除等操作。
+然后运行 `ptool brush local keepfrds` 即可执行刷流任务。程序会从 keepfrds 站点获取最新的种子、根据一定规则筛选出适合的种子添加到 local 这个 BT 客户端里，同时自动从 BT 客户端里删除（已经没有上传的）旧的刷流种子。刷流任务添加到客户端里的种子会放到 `_brush` 分类(Category)里。程序只会对这个分类里的种子进行管理或删除等操作。
 
 使用 Linux cron job / Windows 计划任务 (taskschd.msc) 等方式定时执行上面的刷流任务命令（例如每隔 10 分钟执行一次）即可。
 
@@ -65,25 +65,27 @@ cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 ```toml
 # 方式 1（推荐）：直接使用站点 ID 或 alias 作为类型(type)。无需手动输入站点 url。
 [[sites]]
-#name = "mteam" # (可选)手动指定站点名称。如果不指定，默认使用其 type 作为 name
-type = "mteam"
+#name = "keepfrds" # (可选)手动指定站点名称。如果不指定，默认使用其 type 作为 name
+type = "keepfrds"
 cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 
 # 方式 2：使用通用的 nexusphp 等站点架构类型，需要手动指定站点名称(name)、站点 url 和其他参数。
 [[sites]]
-name = "mteam"
-type = "nexusphp" # 通用站点架构类型。可选值: nexusphp|gazellepw|unit3d|tnode|discuz
-url = "https://kp.m-team.cc/" # 站点首页 URL
+name = "keepfrds"
+type = "nexusphp" # 通用站点架构类型。可选值: nexusphp|gazellepw|unit3d|tnode|discuz|mtorrent
+url = "https://pt.keepfrds.com/" # 站点首页 URL
 cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 ```
 
 推荐使用“方式 1”。程序内置了对大部分国内 NexusPHP PT 站点的支持。站点 type 通常为 PT 网站域名的主体部分（不含次级域名和 TLD 部分），例如 BTSCHOOL ( https://pt.btschool.club/ )的站点 type 是 btschool。部分 PT 网站也可以使用别名(alias)配置，例如 M-TEAM ( https://kp.m-team.cc/ )在本程序配置文件里的 type 设为 "m-team" 或 "mteam" 均可。运行 `ptool sites` 查看所有本程序内置支持的 PT 站点列表。本程序没有内置支持的 PT 站点必须通过“方式 2”配置。 （注：部分非 NP 架构站点本程序目前只支持自动辅种、查看站点状态，暂不支持刷流、搜索站点种子等功能）
 
+注：新版 M-Team（馒头）不使用 Cookie 鉴权；其配置方式参考`ptool.example.toml` 示例配置文件里说明。
+
 配置好站点后，使用 `ptool status <site> -t` 测试（`<site>`参数为站点的 name）。如果配置正确且 Cookie 有效，会显示站点当前登录用户的状态信息和网站最新种子列表。
 
 程序支持自动与浏览器同步站点 Cookies 或导入站点信息。详细信息请参考本文档 "cookiecloud" 命令说明部分。
 
-参考程序代码 config/ 目录下的 `ptool.example.toml` 或 `ptool.example.yaml` 示例配置文件了解常用配置项信息。
+参考程序代码 config/ 目录下的 `ptool.example.toml` 示例配置文件了解常用配置项信息。
 
 查看程序代码 [config/config.go](https://github.com/sagan/ptool/blob/master/config/config.go) 文件里的 type ConfigStruct struct 获取全部可配置项信息。
 
@@ -113,6 +115,7 @@ ptool <command> args... [flags]
 - edittorrent : 编辑（修改）种子(.torrent)文件内容。
 - partialdownload : 拆包下载。
 - xseedadd : 手动添加辅种种子到客户端。
+- findalone : 查找下载目录里的未做种文件。
 - cookiecloud : 使用 [CookieCloud][] 同步站点的 Cookies 或导入站点。
 - sites : 显示本程序内置支持的所有 PT 站点列表。
 - config : 显示当前 ptool.toml 配置文件信息。
@@ -629,6 +632,24 @@ ptool xseedadd <client> <torrentFileNameOrIdOrUrl>...
 ```
 
 xseedadd 命令将提供的种子作为辅种种子添加到客户端。程序将在客户端里寻找与提供的种子元信息（文件名、文件大小）完全一致的目标种子，然后将提供的种子作为目标种子的辅种添加到客户端。如果客户端里没有找到匹配的目标种子，程序不会添加提供的种子到客户端。"xseedadd" 命令添加的辅种种子会打上 `_xseed` 标签。
+
+### 查找下载目录里的未做种文件 (findalone)
+
+```
+ptool findalone <client> <save-path>...
+```
+
+findalone 命令可以扫描并列出下载目录(save path)里所有当前未在 BitTorrent 客户端里做种的文件。可以提供多个 save-path。只有 save path 文件夹自身里的文件会被检查（不会递归读取子级目录）。会将找到的"孤立"文件(或文件夹)的完整路径输出到 stdout。
+
+如果 ptool 运行在宿主机而 BitTorrent 客户端运行在 Docker 里，使用 `--map-save-path-prefix` 参数指定两者路径的映射关系。
+
+示例：
+
+```
+ptool findalone local D:\Downloads E:\Downloads F:\Downloads
+
+ptool findalone local --map-save-path-prefix "/root/Downloads|/Downloads" /root/Downloads
+```
 
 ### 同步 Cookies & 导入站点 (cookiecloud)
 

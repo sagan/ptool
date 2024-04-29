@@ -8,8 +8,8 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
-func CopyMap[T1 comparable, T2 any](m map[T1](T2)) map[T1](T2) {
-	if m == nil {
+func CopyMap[T1 comparable, T2 any](m map[T1](T2), nonil bool) map[T1](T2) {
+	if m == nil && !nonil {
 		return nil
 	}
 	cp := map[T1](T2){}

@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"sort"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd/common"
@@ -34,7 +37,7 @@ const MIN_SEEDERS = 3
 const MIN_SIZE = 10 * 1024 * 1024 * 1024 // minimal dynamicSeedingSize required. 10GiB
 const NEW_TORRENT_TIMESPAN = 3600
 const MAX_PARALLEL_DOWNLOAD = 3
-const INACTIVITY_TIMESPAN = 86400 * 1 // If incomplete torrent has no activity for enough time, abort.
+const INACTIVITY_TIMESPAN = 3600 * 3 // If incomplete torrent has no activity for enough time, abort.
 // Could replace a client seeding torrent with a new site torrent if their seeders diff >= this
 const MIN_REPLACE_SEEDERS_DIFF = 3
 
@@ -69,7 +72,8 @@ func (result *Result) Print(output io.Writer) {
 	fmt.Fprintf(output, "\nLog:\n%s\n", result.Log)
 }
 
-func doDynamicSeeding(clientInstance client.Client, siteInstance site.Site) (result *Result, err error) {
+func doDynamicSeeding(clientInstance client.Client, siteInstance site.Site, ignores []string) (
+	result *Result, err error) {
 	timestamp := util.Now()
 	if siteInstance.GetSiteConfig().DynamicSeedingSizeValue <= MIN_SIZE {
 		return nil, fmt.Errorf("dynamicSeedingSize insufficient. Current value: %s. At least %s is required",
@@ -211,6 +215,10 @@ site_outer:
 			break
 		}
 		for _, torrent := range torrents {
+			if torrent.Id != "" && slices.Contains(ignores, torrent.ID()) {
+				log.Debugf("Ignore site torrent %s (%s) which is recently deleted from client", torrent.Name, torrent.Id)
+				continue
+			}
 			if torrent.Seeders < 1 || torrent.IsCurrentActive {
 				continue
 			}
@@ -234,6 +242,8 @@ site_outer:
 			if torrent.Size > availableSpace-siteTorrentsSize || (timestamp-torrent.Time < MIN_TORRENT_AGE) ||
 				siteInstance.GetSiteConfig().DynamicSeedingTorrentMaxSizeValue > 0 &&
 					torrent.Size > siteInstance.GetSiteConfig().DynamicSeedingTorrentMaxSizeValue ||
+				siteInstance.GetSiteConfig().DynamicSeedingTorrentMinSizeValue > 0 &&
+					torrent.Size < siteInstance.GetSiteConfig().DynamicSeedingTorrentMinSizeValue ||
 				torrent.MatchFiltersOr(siteInstance.GetSiteConfig().DynamicSeedingExcludes) ||
 				torrent.Seeders+torrent.Leechers >= MAX_SEEDERS {
 				continue

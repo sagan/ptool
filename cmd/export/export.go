@@ -3,7 +3,6 @@ package export
 import (
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -133,7 +132,7 @@ func export(cmd *cobra.Command, args []string) error {
 		if filename == "" {
 			filename = torrentutil.RenameExportedTorrent(clientName, torrent, rename)
 		}
-		filepath := path.Join(downloadDir, filename)
+		filepath := filepath.Join(downloadDir, filename)
 		if err := os.WriteFile(filepath, content, constants.PERM); err != nil {
 			fmt.Printf("✕ %s : failed to save to %s: %v (%d/%d)\n", torrent.InfoHash, filepath, err, i+1, cntAll)
 			errorCnt++

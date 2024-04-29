@@ -42,7 +42,7 @@ func checktag(cmd *cobra.Command, args []string) error {
 	}
 	ok := false
 	for _, tag := range tags {
-		if slices.Index(clientTags, tag) != -1 {
+		if slices.Contains(clientTags, tag) {
 			fmt.Printf("✓ tag %s exists in client %s\n", tag, clientName)
 			ok = true
 		} else {

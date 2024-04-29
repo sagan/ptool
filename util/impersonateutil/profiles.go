@@ -8,7 +8,7 @@ import (
 
 const (
 	// 默认对站点的 http 请求模仿最新版 Chrome on Windows 11 x64 en-US 环境
-	DEFAULT_IMPERSONATE = "chrome122"
+	DEFAULT_IMPERSONATE = "chrome124"
 )
 
 // 对站点的 http 请求模仿真实浏览器环境。包括：
@@ -70,6 +70,30 @@ var profiles = []*Profile{
 			{"Sec-Fetch-Dest", `document`},
 			{"Accept-Encoding", "gzip, deflate, br, zstd"},
 			{"Accept-Language", "en-US,en;q=0.9"},
+			{"Cookie", util.HTTP_HEADER_PLACEHOLDER},
+		},
+	},
+	{
+		Name:          "chrome124",
+		Navigator:     "chrome",
+		Comment:       "Chrome 124 on Windows 11 x64 en-US",
+		Ja3:           "771,4865-4866-4867-49195-49199-49196-49200-52393-52392-49171-49172-156-157-47-53,17513-18-16-0-43-23-65037-27-13-45-65281-35-10-51-5-11,25497-29-23-24,0",
+		H2fingerprint: "1:65536,2:0,4:6291456,6:262144|15663105|0|m,a,s,p",
+		Headers: [][]string{
+			{"Cache-Control", "max-age=0"},
+			{"Sec-Ch-Ua", `"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"`},
+			{"Sec-Ch-Ua-Mobile", `?0`},
+			{"Sec-Ch-Ua-Platform", `"Windows"`},
+			{"Upgrade-Insecure-Requests", "1"},
+			{"User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"},
+			{"Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"},
+			{"Sec-Fetch-Site", `none`},
+			{"Sec-Fetch-Mode", `navigate`},
+			{"Sec-Fetch-User", `?1`},
+			{"Sec-Fetch-Dest", `document`},
+			{"Accept-Encoding", "gzip, deflate, br, zstd"},
+			{"Accept-Language", "en-US,en;q=0.9"},
+			{"priority", "u=0, i"}, // all_lowercase
 			{"Cookie", util.HTTP_HEADER_PLACEHOLDER},
 		},
 	},

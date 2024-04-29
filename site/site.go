@@ -103,6 +103,16 @@ func PrintDummyStatus(f io.Writer, name string, info string) {
 	fmt.Printf(constants.STATUS_FMT, "Site", name, "-", "-", info)
 }
 
+// Get real (number) id, removing sitename prefix
+func (torrent *Torrent) ID() string {
+	sitename, id, found := strings.Cut(torrent.Id, ".")
+	if found {
+		return id
+	} else {
+		return sitename
+	}
+}
+
 func (torrent *Torrent) HasTag(tag string) bool {
 	return slices.ContainsFunc(torrent.Tags, func(t string) bool {
 		return strings.EqualFold(tag, t)

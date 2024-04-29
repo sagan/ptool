@@ -193,7 +193,7 @@ func GenerateIyuu2LocalSiteMap(iyuuSites []Site,
 				return true
 			}
 			regInfo := site.GetConfigSiteReginfo(siteConfig.GetName())
-			return regInfo != nil && (regInfo.Name == iyuuSite.Name || slices.Index(regInfo.Aliases, iyuuSite.Name) != -1)
+			return regInfo != nil && (regInfo.Name == iyuuSite.Name || slices.Contains(regInfo.Aliases, iyuuSite.Name))
 		})
 		if localSite != nil {
 			iyuu2LocalSiteMap[iyuuSite.Sid] = (*localSite).GetName()

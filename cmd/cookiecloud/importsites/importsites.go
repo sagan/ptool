@@ -84,7 +84,7 @@ func importsites(cmd *cobra.Command, args []string) error {
 	for _, tplname := range tpl.SITENAMES {
 		tplInfo := tpl.SITES[tplname]
 		for _, site := range config.Get().Sites {
-			if site.Type == tplname || slices.Index(tplInfo.Aliases, site.Type) != -1 {
+			if site.Type == tplname || slices.Contains(tplInfo.Aliases, site.Type) {
 				tplExistingFlags[tplname] = true
 				break
 			}

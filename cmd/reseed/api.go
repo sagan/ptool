@@ -261,7 +261,7 @@ func GenerateReseed2LocalSiteMap(reseedSites []Site,
 				return true
 			}
 			regInfo := site.GetConfigSiteReginfo(siteConfig.GetName())
-			return regInfo != nil && (regInfo.Name == reseedSiteName || slices.Index(regInfo.Aliases, reseedSiteName) != -1)
+			return regInfo != nil && (regInfo.Name == reseedSiteName || slices.Contains(regInfo.Aliases, reseedSiteName))
 		})
 		if localSite != nil {
 			iyuu2LocalSiteMap[reseedSite.Name] = (*localSite).GetName()

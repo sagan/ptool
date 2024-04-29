@@ -186,7 +186,7 @@ func sync(cmd *cobra.Command, args []string) error {
 		siteconfig := config.GetSiteConfig(sitename)
 		for _, cookiecloudData := range cookiecloudDatas {
 			if cookiecloudData.Sites != nil &&
-				slices.Index(config.ParseGroupAndOtherNames(cookiecloudData.Sites...), sitename) == -1 {
+				!slices.Contains(config.ParseGroupAndOtherNames(cookiecloudData.Sites...), sitename) {
 				continue
 			}
 			newcookie, rawCookies, err := cookiecloudData.Data.GetEffectiveCookie(siteUrls[sitename], false, "http")

@@ -778,11 +778,11 @@ func IsValidInfoHash(infoHash string) bool {
 
 func IsValidStateFilter(stateFilter string) bool {
 	if strings.HasPrefix(stateFilter, "_") {
-		if slices.Index(STATE_FILTERS, stateFilter) != -1 {
+		if slices.Contains(STATE_FILTERS, stateFilter) {
 			return true
 		}
 		stateFilter = stateFilter[1:]
-		return slices.Index(STATES, stateFilter) != -1
+		return slices.Contains(STATES, stateFilter)
 	}
 	return false
 }

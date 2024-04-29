@@ -15,7 +15,7 @@ replace github.com/c-bata/go-prompt => ./go-prompt
 replace github.com/stromland/cobra-prompt => ./cobra-prompt
 
 require (
-	github.com/Noooste/azuretls-client v1.4.9
+	github.com/Noooste/azuretls-client v1.4.12
 	github.com/PuerkitoBio/goquery v1.9.1
 	github.com/anacrolix/torrent v1.55.0
 	github.com/c-bata/go-prompt v0.2.6
@@ -28,13 +28,14 @@ require (
 	github.com/jpillora/go-tld v1.2.1
 	github.com/mattn/go-runewidth v0.0.15
 	github.com/pelletier/go-toml/v2 v2.2.1
+	github.com/shibumi/go-pathspec v1.3.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.2
 	github.com/stromland/cobra-prompt v0.5.0
 	golang.org/x/exp v0.0.0-20240416160154-fe59bbe5cc7f
 	golang.org/x/net v0.24.0
-	gorm.io/gorm v1.25.9
+	gorm.io/gorm v1.25.10
 )
 
 require (
@@ -47,24 +48,22 @@ require (
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
-	github.com/refraction-networking/utls v1.6.4 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
-	github.com/shibumi/go-pathspec v1.3.0 // indirect
-	modernc.org/libc v1.49.3 // indirect
+	modernc.org/libc v1.50.4 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.8.0 // indirect
-	modernc.org/sqlite v1.29.7 // indirect
+	modernc.org/sqlite v1.29.8 // indirect
 )
 
 require (
-	github.com/Noooste/fhttp v1.0.11 // indirect
-	github.com/Noooste/utls v1.2.7 // indirect
+	github.com/Noooste/fhttp v1.0.12 // indirect
+	github.com/Noooste/utls v1.2.9 // indirect
 	github.com/Noooste/websocket v1.0.3 // indirect
 	github.com/anacrolix/missinggo v1.3.0 // indirect
 	github.com/anacrolix/missinggo/v2 v2.7.3 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
-	github.com/cloudflare/circl v1.3.7 // indirect
+	github.com/cloudflare/circl v1.3.8 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/glebarez/go-sqlite v1.22.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
@@ -80,7 +79,6 @@ require (
 	github.com/mattn/go-tty v0.0.5 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pkg/term v1.2.0-beta.2 // indirect
-	github.com/quic-go/quic-go v0.42.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect

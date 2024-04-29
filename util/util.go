@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -99,7 +98,7 @@ func Assign(dst any, src any, excludeFieldIndexes []int) {
 		srcField := srcValue.Field(i)
 		fieldType := dstField.Type()
 		srcValue := reflect.Value(srcField)
-		if slices.Index(excludeFieldIndexes, i) != -1 {
+		if slices.Contains(excludeFieldIndexes, i) {
 			continue
 		}
 		if fieldType.Kind() == reflect.String && srcValue.String() == "" {
@@ -232,7 +231,7 @@ func LinkDir(source string, dest string, limit int64) error {
 		if err != nil {
 			return err
 		}
-		destPath := path.Join(dest, relativePath)
+		destPath := filepath.Join(dest, relativePath)
 		if d.IsDir() {
 			log.Tracef("Create dir %s", destPath)
 			err := os.Mkdir(destPath, d.Type())

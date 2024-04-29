@@ -125,5 +125,5 @@ var pureFlags = []string{
 }
 
 func IsPureFlag(name string) bool {
-	return slices.Index(pureFlags, name) != -1
+	return slices.Contains(pureFlags, name)
 }

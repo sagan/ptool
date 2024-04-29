@@ -59,7 +59,7 @@ func init() {
 	command.Flags().BoolVarP(&check, "check", "", false, "Let client do hash checking when adding xseed torrents")
 	command.Flags().Int64VarP(&maxXseedTorrents, "max-torrents", "", -1,
 		"Number limit of xseed torrents added. -1 == no limit")
-	command.Flags().Int64VarP(&iyuuRequestMaxTorrents, "max-request-torrents", "", 2000,
+	command.Flags().Int64VarP(&iyuuRequestMaxTorrents, "max-request-torrents", "", 5000,
 		"Number limit of target torrents sent to iyuu server at once")
 	command.Flags().Int64VarP(&maxConsecutiveFail, "max-consecutive-fail", "", 3,
 		"After consecutive fails to download torrent from a site of this times, will skip that site afterwards. "+
@@ -139,13 +139,19 @@ func xseed(cmd *cobra.Command, args []string) error {
 		} else {
 			log.Tracef("client %s has %d torrents", clientName, len(torrents))
 		}
-		torrents = util.Filter(torrents, func(torrent client.Torrent) bool {
-			return torrent.IsFull() && torrent.Category != config.XSEED_TAG &&
-				!torrent.HasTag(config.XSEED_TAG) && !torrent.HasTag(config.NOXSEED_TAG)
-		})
 		sort.Slice(torrents, func(i, j int) bool {
 			if torrents[i].Size != torrents[j].Size {
 				return torrents[i].Size > torrents[j].Size
+			}
+			a, b := 0, 0
+			if torrents[i].HasTag(config.XSEED_TAG) {
+				a = 1
+			}
+			if torrents[j].HasTag(config.XSEED_TAG) {
+				b = 1
+			}
+			if a != b {
+				return a < b
 			}
 			if torrents[i].Atime != torrents[j].Atime {
 				return torrents[i].Atime < torrents[j].Atime
@@ -156,24 +162,37 @@ func xseed(cmd *cobra.Command, args []string) error {
 		tsize := int64(0)
 		var sameSizeTorrentContentPathes []string
 		for _, torrent := range torrents {
-			// same size torrents may be identical (manually xseeded before)
+			// same size torrents may be identical
 			if torrent.Size != tsize {
 				sameSizeTorrentContentPathes = []string{torrent.ContentPath}
 				reqInfoHashes = append(reqInfoHashes, torrent.InfoHash)
 				tsize = torrent.Size
-			} else if slices.Index(sameSizeTorrentContentPathes, torrent.ContentPath) == -1 {
+			} else if !slices.Contains(sameSizeTorrentContentPathes, torrent.ContentPath) {
 				sameSizeTorrentContentPathes = append(sameSizeTorrentContentPathes, torrent.ContentPath)
 				reqInfoHashes = append(reqInfoHashes, torrent.InfoHash)
 			}
 			if category != "" {
-				if torrent.Category != category {
+				if category == constants.NONE {
+					if torrent.Category != "" {
+						continue
+					}
+				} else if torrent.Category != category {
 					continue
 				}
 			} else if strings.HasPrefix(torrent.Category, "_") {
 				continue
 			}
-			if tag != "" && !torrent.HasAnyTag(tag) {
+			if torrent.HasTag(config.NOXSEED_TAG) {
 				continue
+			}
+			if tag != "" {
+				if tag == constants.NONE {
+					if len(torrent.Tags) > 0 {
+						continue
+					}
+				} else if !torrent.HasAnyTag(tag) {
+					continue
+				}
 			}
 			if torrent.State != "seeding" || !torrent.IsFullComplete() ||
 				(minTorrentSize >= 0 && torrent.Size < minTorrentSize) ||

@@ -22,6 +22,7 @@ import (
 	_ "github.com/sagan/ptool/cmd/edittorrent"
 	_ "github.com/sagan/ptool/cmd/edittracker"
 	_ "github.com/sagan/ptool/cmd/export"
+	_ "github.com/sagan/ptool/cmd/findalone"
 	_ "github.com/sagan/ptool/cmd/getcategories"
 	_ "github.com/sagan/ptool/cmd/gettags"
 	_ "github.com/sagan/ptool/cmd/hardlink/all"

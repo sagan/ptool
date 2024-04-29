@@ -78,20 +78,22 @@ func FromMetaInfo(metaInfo *metainfo.MetaInfo, info *metainfo.Info) (*TorrentMet
 	// single file torrent
 	if len(info.Files) == 0 {
 		torrentMeta.Files = append(torrentMeta.Files, TorrentMetaFile{
-			Path: info.Name,
+			// 个别站点的.torrent文件里的 files.path 字段包含不可见字符。保持与 qb 行为一致：直接忽略这些字符。
+			// 例如： keepfrds.1684287 种子里有 \u200e (U+200E, LEFT-TO-RIGHT MARK)
+			Path: util.Clean(info.Name),
 			Size: info.Length,
 		})
 		torrentMeta.SingleFileTorrent = true
 		torrentMeta.Size = info.Length
-		torrentMeta.ContentPath = info.Name
+		torrentMeta.ContentPath = util.Clean(info.Name)
 	} else {
 		if info.Name != "" && info.Name != metainfo.NoName {
-			torrentMeta.RootDir = info.Name
-			torrentMeta.ContentPath = info.Name
+			torrentMeta.RootDir = util.Clean(info.Name)
+			torrentMeta.ContentPath = util.Clean(info.Name)
 		}
 		for _, metafile := range info.Files {
 			torrentMeta.Files = append(torrentMeta.Files, TorrentMetaFile{
-				Path: strings.Join(metafile.Path, "/"),
+				Path: util.Clean(strings.Join(metafile.Path, "/")),
 				Size: metafile.Length,
 			})
 			torrentMeta.Size += metafile.Length

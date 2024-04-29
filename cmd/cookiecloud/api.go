@@ -186,5 +186,5 @@ var cdnCookies = []string{"cf_clearance"}
 // Check whether this cookie is set by the CDN or similar reverse-proxy services,
 // which is not associated with authentication & authorization.
 func (cookie *Cookie) IsCDN() bool {
-	return slices.Index(cdnCookies, cookie.Name) != -1
+	return slices.Contains(cdnCookies, cookie.Name)
 }
