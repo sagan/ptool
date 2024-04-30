@@ -612,6 +612,8 @@ ptool edittorrent -h
 
 ### 拆包下载 (partialdownload)
 
+该命令的设计目的不是用于刷流。而是用于使用 VPS 等硬盘空间有限的云服务器(分多次)下载体积非常大的单个种子，然后配合 [rclone][] 将下载的文件直接上传到云存储。
+
 使用方法：
 
 ```
@@ -621,9 +623,10 @@ ptool partialdownload <client> <infoHash> --chunk-size 1TiB -a
 
 # 设置客户端只下载该种子第 0 块切片(0-indexed)的内容。
 ptool partialdownload <client> <infoHash> --chunk-size 1TiB --chunk-index 0
-```
 
-该命令的设计目的不是用于刷流。而是用于使用 VPS 等硬盘空间有限的云服务器(分多次)下载体积非常大的单个种子，然后配合 [rclone][] 将下载的文件直接上传到云存储。
+# 也可以用于跳过种子里特定文件。查看命令帮助了解更多用法。
+ptool partialdownload <client> <infohash> --excludes "*.txt"
+```
 
 ### 手动添加辅种种子到客户端 (xseedadd)
 
@@ -643,12 +646,14 @@ findalone 命令可以扫描并列出下载目录(save path)里所有当前未�
 
 如果 ptool 运行在宿主机而 BitTorrent 客户端运行在 Docker 里，使用 `--map-save-path-prefix` 参数指定两者路径的映射关系。
 
+如果指定 `--all` 参数，会显示下载目录里所有文件以及每个文件对应的客户端里的种子个数。
+
 示例：
 
 ```
 ptool findalone local D:\Downloads E:\Downloads F:\Downloads
 
-ptool findalone local --map-save-path-prefix "/root/Downloads|/Downloads" /root/Downloads
+ptool findalone local --map-save-path-prefix "/root/Downloads:/Downloads" /root/Downloads
 ```
 
 ### 同步 Cookies & 导入站点 (cookiecloud)

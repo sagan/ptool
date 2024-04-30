@@ -16,6 +16,11 @@ import (
 	"github.com/sagan/ptool/util"
 )
 
+type File struct {
+	Path  string
+	Count int64
+}
+
 var command = &cobra.Command{
 	Use:         "findalone {client} {save-path}...",
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "findalone"},
@@ -29,25 +34,37 @@ If ptool and the BitTorrent client use different file system (e.g. the client ru
 then you may want to set the mapper rule of "ptool save path" to "client save path",
 which can be done using "--map-save-path-prefix" flag. The flag can be set multiple times.
 
+If --all flag is set, it will list all files in save pathes instead of only "alone" files,
+and display each file's count of belonged torrents in client.
+
 It prints found "alone" files or dirs to stdout.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	RunE: findalone,
 }
 
 var (
+	showAll            = false
+	originalOrder      = false
 	mapSavePathPrefixs []string
 )
 
 func init() {
+	command.Flags().BoolVarP(&showAll, "all", "a", false,
+		"Show the list of all files in save pathes with the count of each file's belonged torrents in client")
+	command.Flags().BoolVarP(&originalOrder, "original-order", "", false,
+		`Used with "--all". Display the list in original (filename asc) order instead of count desc order`)
 	command.Flags().StringArrayVarP(&mapSavePathPrefixs, "map-save-path-prefix", "", nil,
 		`Map save path that ptool sees to the one that the BitTorrent client sees. `+
 			`Format: "original_save_path|client_save_path". E.g. `+
-			`"/root/Downloads|/var/Downloads" will map "/root/Downloads" or "/root/Downloads/..." save path to `+
+			`"/root/Downloads:/var/Downloads" will map "/root/Downloads" or "/root/Downloads/..." save path to `+
 			`"/var/Downloads" or "/var/Downloads/..."`)
 	cmd.RootCmd.AddCommand(command)
 }
 
 func findalone(cmd *cobra.Command, args []string) error {
+	if !showAll && originalOrder {
+		return fmt.Errorf("--original-order must be used with --all flag")
+	}
 	clientName := args[0]
 	savePathes := util.Map(args[1:], func(p string) string {
 		return path.Clean(filepath.ToSlash(p))
@@ -58,7 +75,7 @@ func findalone(cmd *cobra.Command, args []string) error {
 	}
 	savePathMapper := map[string]string{}
 	for _, mapSavePathPrefix := range mapSavePathPrefixs {
-		before, after, found := strings.Cut(mapSavePathPrefix, "|")
+		before, after, found := strings.Cut(mapSavePathPrefix, ":")
 		if !found || before == "" || after == "" {
 			return fmt.Errorf("invalid map-save-path-prefix %q", mapSavePathPrefix)
 		}
@@ -67,7 +84,7 @@ func findalone(cmd *cobra.Command, args []string) error {
 		savePathMapper[before] = after
 	}
 
-	contentRootFiles := map[string]struct{}{}
+	contentRootFiles := map[string]int64{}
 	torrents, err := clientInstance.GetTorrents("", "", true)
 	if err != nil {
 		return fmt.Errorf("failed to get client torrents: %v", err)
@@ -80,9 +97,10 @@ func findalone(cmd *cobra.Command, args []string) error {
 				break
 			}
 		}
-		contentRootFiles[contentPath] = struct{}{}
+		contentRootFiles[contentPath]++
 	}
 
+	var files []File
 	errorCnt := int64(0)
 	for _, savePath := range savePathes {
 		entries, err := os.ReadDir(savePath)
@@ -96,9 +114,19 @@ func findalone(cmd *cobra.Command, args []string) error {
 			if slices.Contains(savePathes, fullpath) {
 				continue
 			}
-			if _, ok := contentRootFiles[fullpath]; !ok {
+			if showAll {
+				files = append(files, File{filepath.Clean(fullpath), contentRootFiles[fullpath]})
+			} else if contentRootFiles[fullpath] == 0 {
 				fmt.Printf("%s\n", filepath.Clean(fullpath)) // output in host sep
 			}
+		}
+	}
+	if showAll {
+		if !originalOrder {
+			slices.SortStableFunc(files, func(a File, b File) int { return int(b.Count - a.Count) })
+		}
+		for _, file := range files {
+			fmt.Printf("%-3d  %s\n", file.Count, file.Path)
 		}
 	}
 	if errorCnt > 0 {

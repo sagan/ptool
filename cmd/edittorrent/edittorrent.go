@@ -89,7 +89,7 @@ func init() {
 	command.Flags().StringVarP(&replaceCommentMetaSavePathPrefix, "replace-comment-meta-save-path-prefix", "", "",
 		`Used with "--use-comment-meta". Update the prefix of 'save_path' property encoded in "comment" field `+
 			`of torrents, replace old prefix with new one. Format: "old_path|new_path". E.g. `+
-			`"/root/Downloads|/var/Downloads" will change ""/root/Downloads" or "/root/Downloads/..." save path to `+
+			`"/root/Downloads:/var/Downloads" will change ""/root/Downloads" or "/root/Downloads/..." save path to `+
 			`"/var/Downloads" or "/var/Downloads/..."`)
 	cmd.RootCmd.AddCommand(command)
 }
@@ -118,7 +118,7 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 	}
 	var savePathReplaces []string
 	if replaceCommentMetaSavePathPrefix != "" {
-		savePathReplaces = strings.Split(replaceCommentMetaSavePathPrefix, "|")
+		savePathReplaces = strings.Split(replaceCommentMetaSavePathPrefix, ":")
 		if len(savePathReplaces) != 2 || savePathReplaces[0] == "" {
 			return fmt.Errorf("invalid --replace-comment-meta-save-path-prefix")
 		}

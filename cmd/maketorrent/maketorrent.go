@@ -28,8 +28,12 @@ var defaultIgnorePatterns = []string{
 	"~$*", // Microsoft Office tmp files
 	"*.bak",
 	"*.tmp",
+	"*.temp",
+	"*.dropbox",
 	"*.torrent",
 	"node_modules/",
+	"System Volume Information",
+	"desktop.ini",
 	"Thumbs.db",
 }
 

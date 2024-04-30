@@ -17,6 +17,7 @@ import (
 var command = &cobra.Command{
 	Use: "edittracker <client> [--category category] [--tag tag] [--filter filter] [infoHash]... " +
 		"--old-tracker {url} --new-tracker {url} [--replace-host]",
+	Aliases:     []string{"replacetracker"},
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "edittracker"},
 	Short:       "Edit tracker of torrents in client.",
 	Long: fmt.Sprintf(`Edit tracker of torrents in client, replace the old tracker url with the new one.
