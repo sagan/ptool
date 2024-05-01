@@ -10,6 +10,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/cmd/common"
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/util"
@@ -55,7 +56,7 @@ The "ptool export" command has the same flag that saves meta info to 'comment' f
 var (
 	addRawUrl          = false
 	slowMode           = false
-	useComment         = false
+	useCommentMeta     = false
 	addCategoryAuto    = false
 	addPaused          = false
 	skipCheck          = false
@@ -70,13 +71,14 @@ var (
 	defaultSite        = ""
 	addTags            = ""
 	savePath           = ""
+	mapSavePathPrefixs []string
 )
 
 func init() {
 	command.Flags().BoolVarP(&addRawUrl, "raw", "", false,
 		`Directly submit http(s) url arg to BitTorrent client (do not try to parse url and download .torrent file)`)
 	command.Flags().BoolVarP(&slowMode, "slow", "", false, "Slow mode. wait after adding each torrent")
-	command.Flags().BoolVarP(&useComment, "use-comment-meta", "", false,
+	command.Flags().BoolVarP(&useCommentMeta, "use-comment-meta", "", false,
 		`Use "comment" field of .torrent file to extract category, tags, savePath and other meta info and apply them`)
 	command.Flags().BoolVarP(&skipCheck, "skip-check", "", false, "Skip hash checking when adding torrents")
 	command.Flags().BoolVarP(&addPaused, "add-paused", "", false, "Add torrents to client in paused state")
@@ -98,6 +100,11 @@ func init() {
 	command.Flags().StringVarP(&savePath, "add-save-path", "", "", "Set save path of added torrents")
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of added torrents")
 	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Add tags to added torrent (comma-separated)")
+	command.Flags().StringArrayVarP(&mapSavePathPrefixs, "map-save-path-prefix", "", nil,
+		`Used with "--use-comment-meta". Map save path from torrent comment to the file system of BitTorrent client`+
+			`Format: "comment_save_path:client_save_path". E.g. `+
+			`"/root/Downloads:/var/Downloads" will map "/root/Downloads" or "/root/Downloads/..." save path to `+
+			`"/var/Downloads" or "/var/Downloads/..."`)
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -105,6 +112,9 @@ func add(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
 	if renameAdded && deleteAdded {
 		return fmt.Errorf("--rename-added and --delete-added flags are NOT compatible")
+	}
+	if !useCommentMeta && len(mapSavePathPrefixs) > 0 {
+		return fmt.Errorf("--map-save-path-prefix must be used with --use-comment-meta flag")
 	}
 	torrents, stdinTorrentContents, err := helper.ParseTorrentsFromArgs(args[1:])
 	if err != nil {
@@ -124,6 +134,13 @@ func add(cmd *cobra.Command, args []string) error {
 	var fixedTags []string
 	if addTags != "" {
 		fixedTags = util.SplitCsv(addTags)
+	}
+	var savePathMapper *common.PathMapper
+	if len(mapSavePathPrefixs) > 0 {
+		savePathMapper, err = common.NewPathMapper(mapSavePathPrefixs)
+		if err != nil {
+			return fmt.Errorf("invalid map-save-path-prefix (s): %v", err)
+		}
 	}
 	errorCnt := int64(0)
 	cntAdded := int64(0)
@@ -170,7 +187,7 @@ func add(cmd *cobra.Command, args []string) error {
 		if siteInstance != nil {
 			hr = siteInstance.GetSiteConfig().GlobalHnR
 		}
-		if useComment {
+		if useCommentMeta {
 			if tinfo == nil {
 				fmt.Printf("✕ %s (%d/%d): can NOT parse comment meta (invalid torrent)\n", torrent, i+1, cntAll)
 				errorCnt++
@@ -184,6 +201,16 @@ func add(cmd *cobra.Command, args []string) error {
 				option.Category = commentMeta.Category
 				option.Tags = commentMeta.Tags
 				option.SavePath = commentMeta.SavePath
+				if option.SavePath != "" && savePathMapper != nil {
+					if _savePath, match := savePathMapper.Before2After(option.SavePath); !match {
+						fmt.Printf("✕ %s (%d/%d): failed to map comment meta save path %q\n",
+							torrent, i+1, cntAll, option.SavePath)
+						errorCnt++
+						continue
+					} else {
+						option.SavePath = _savePath
+					}
+				}
 				tinfo.MetaInfo.Comment = commentMeta.Comment
 				if data, err := tinfo.ToBytes(); err == nil {
 					content = data

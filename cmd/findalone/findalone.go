@@ -5,7 +5,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/cmd/common"
 	"github.com/sagan/ptool/util"
 )
 
@@ -55,7 +55,7 @@ func init() {
 		`Used with "--all". Display the list in original (filename asc) order instead of count desc order`)
 	command.Flags().StringArrayVarP(&mapSavePathPrefixs, "map-save-path-prefix", "", nil,
 		`Map save path that ptool sees to the one that the BitTorrent client sees. `+
-			`Format: "original_save_path|client_save_path". E.g. `+
+			`Format: "original_save_path:client_save_path". E.g. `+
 			`"/root/Downloads:/var/Downloads" will map "/root/Downloads" or "/root/Downloads/..." save path to `+
 			`"/var/Downloads" or "/var/Downloads/..."`)
 	cmd.RootCmd.AddCommand(command)
@@ -73,15 +73,12 @@ func findalone(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create client: %v", err)
 	}
-	savePathMapper := map[string]string{}
-	for _, mapSavePathPrefix := range mapSavePathPrefixs {
-		before, after, found := strings.Cut(mapSavePathPrefix, ":")
-		if !found || before == "" || after == "" {
-			return fmt.Errorf("invalid map-save-path-prefix %q", mapSavePathPrefix)
+	var savePathMapper *common.PathMapper
+	if len(mapSavePathPrefixs) > 0 {
+		savePathMapper, err = common.NewPathMapper(mapSavePathPrefixs)
+		if err != nil {
+			return fmt.Errorf("invalid map-save-path-prefix (s): %v", err)
 		}
-		before = path.Clean(filepath.ToSlash(before))
-		after = path.Clean(filepath.ToSlash(after))
-		savePathMapper[before] = after
 	}
 
 	contentRootFiles := map[string]int64{}
@@ -91,10 +88,13 @@ func findalone(cmd *cobra.Command, args []string) error {
 	}
 	for _, torrent := range torrents {
 		contentPath := filepath.ToSlash(torrent.ContentPath)
-		for before, after := range savePathMapper {
-			if strings.HasPrefix(contentPath, after+"/") {
-				contentPath = before + strings.TrimPrefix(contentPath, after)
-				break
+		if savePathMapper != nil {
+			if _contentPath, match := savePathMapper.After2Before(contentPath); !match {
+				log.Warnf("Torrent %s (%s) save path %q does not match with any map-save-path-prefix rule, ignore it",
+					torrent.Name, torrent.InfoHash, contentPath)
+				continue
+			} else {
+				contentPath = _contentPath
 			}
 		}
 		contentRootFiles[contentPath]++

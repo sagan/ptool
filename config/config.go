@@ -38,6 +38,7 @@ const (
 	CLIENT_TORRENTS_WIDTH      = 120 // min width for printing client torrents
 	GLOBAL_INTERNAL_LOCK_FILE  = "ptool.lock"
 	GLOBAL_LOCK_FILE           = "ptool-global.lock"
+	EXAMPLE_CONFIG_FILE        = "ptool.example" // .toml , .yaml
 
 	DEFAULT_EXPORT_TORRENT_RENAME = "[name128].[infohash16].torrent"
 	// Changed in Feb, 2024.
@@ -86,6 +87,7 @@ type AliasConfigStruct struct {
 	Cmd         string `yaml:"cmd"`
 	DefaultArgs string `yaml:"defaultArgs"`
 	MinArgs     int64  `yaml:"minArgs"`
+	Comment     string `yaml:"comment"`
 	Internal    bool
 }
 
@@ -226,7 +228,7 @@ type ConfigStruct struct {
 
 //go:embed ptool.example.toml
 //go:embed ptool.example.yaml
-var defaultConfigFs embed.FS
+var DefaultConfigFs embed.FS
 
 var (
 	Timeout               = int64(0) // network(http) timeout. It has the highest priority. Set by --timeout global flag
@@ -706,16 +708,8 @@ func CreateDefaultConfig() (err error) {
 		return fmt.Errorf("failed to access config file: %v", err)
 	}
 	var file fs.File
-	if ConfigType == "toml" {
-		if file, err = defaultConfigFs.Open("ptool.example.toml"); err != nil {
-			panic(err)
-		}
-	} else if ConfigType == "yaml" {
-		if file, err = defaultConfigFs.Open("ptool.example.yaml"); err != nil {
-			panic(err)
-		}
-	} else {
-		return fmt.Errorf("unsupported config file type %v", ConfigType)
+	if file, err = DefaultConfigFs.Open(EXAMPLE_CONFIG_FILE + "." + ConfigType); err != nil {
+		return fmt.Errorf("unsupported config file type %q: %v", ConfigType, err)
 	}
 	contents, err := io.ReadAll(file)
 	if err != nil {

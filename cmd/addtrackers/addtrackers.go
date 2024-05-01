@@ -27,21 +27,27 @@ Example:
   ptool addtrackers <client> <infoHashes...> --tracker "https://..."
 The --tracker flag can be set many times.
 
-It will ask for confirmation, unless --force flag is set.`, constants.HELP_INFOHASH_ARGS),
+It will ask for confirmation, unless --force flag is set.
+
+If "--remove-existing" flag is set, torrents' all existing trackers will be removed,
+making the new added tracker(s) become their only (sole) tracker(s).`, constants.HELP_INFOHASH_ARGS),
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: addtrackers,
 }
 
 var (
-	force      = false
-	category   = ""
-	tag        = ""
-	filter     = ""
-	oldTracker = ""
-	trackers   = []string{}
+	removeExisting = false
+	force          = false
+	category       = ""
+	tag            = ""
+	filter         = ""
+	oldTracker     = ""
+	trackers       = []string{}
 )
 
 func init() {
+	command.Flags().BoolVarP(&removeExisting, "remove-existing", "", false,
+		`Remove all existing trackers. The added tracker(s) will become the only (sole) tracker(s) of torrent`)
 	command.Flags().BoolVarP(&force, "force", "", false, "Force updating trackers. Do NOT prompt for confirm")
 	command.Flags().StringVarP(&filter, "filter", "", "", constants.HELP_ARG_FILTER_TORRENT)
 	command.Flags().StringVarP(&category, "category", "", "", constants.HELP_ARG_CATEGORY)
@@ -87,19 +93,23 @@ func addtrackers(cmd *cobra.Command, args []string) error {
 	if !force {
 		client.PrintTorrents(os.Stdout, torrents, "", 1, false)
 		fmt.Printf("\n")
+		condition := ""
+		if oldTracker != "" {
+			condition += fmt.Sprintf("If they currently have this tracker (domain or url): %q", oldTracker)
+		}
 		if !helper.AskYesNoConfirm(fmt.Sprintf(
-			`Will update above %d torrents, add the following trackers to them:
+			`Will update above %d torrents, add the following trackers to them (Remove their existing trackers: %t):
 -----
 %s
 -----
-`, len(torrents), strings.Join(trackers, "\n"))) {
+%s`, len(torrents), removeExisting, strings.Join(trackers, "\n"), condition)) {
 			return fmt.Errorf("abort")
 		}
 	}
 	errorCnt := int64(0)
 	for _, torrent := range torrents {
 		fmt.Printf("Add trackers to torrent %s (%s)\n", torrent.InfoHash, torrent.Name)
-		err := clientInstance.AddTorrentTrackers(torrent.InfoHash, trackers, oldTracker)
+		err := clientInstance.AddTorrentTrackers(torrent.InfoHash, trackers, oldTracker, removeExisting)
 		if err != nil {
 			log.Errorf("Failed to add trackers: %v\n", err)
 			errorCnt++

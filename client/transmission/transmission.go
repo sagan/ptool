@@ -795,7 +795,8 @@ func (trclient *Client) EditTorrentTracker(infoHash string, oldTracker string, n
 	})
 }
 
-func (trclient *Client) AddTorrentTrackers(infoHash string, trackers []string, oldTracker string) error {
+func (trclient *Client) AddTorrentTrackers(infoHash string, trackers []string,
+	oldTracker string, removeExisting bool) error {
 	trtorrent, err := trclient.getTorrent(infoHash, false)
 	if err != nil {
 		return err
@@ -807,16 +808,22 @@ func (trclient *Client) AddTorrentTrackers(infoHash string, trackers []string, o
 			return nil
 		}
 	}
-	trackers = util.Filter(trackers, func(tracker string) bool {
-		return !slices.ContainsFunc(trtorrent.Trackers, func(trtracker *transmissionrpc.Tracker) bool {
-			return trtracker.Announce == tracker
+	if !removeExisting {
+		trackers = util.Filter(trackers, func(tracker string) bool {
+			return !slices.ContainsFunc(trtorrent.Trackers, func(trtracker *transmissionrpc.Tracker) bool {
+				return trtracker.Announce == tracker
+			})
 		})
-	})
+	}
 	if len(trackers) > 0 {
-		return trclient.client.TorrentSet(context.TODO(), transmissionrpc.TorrentSetPayload{
+		payload := transmissionrpc.TorrentSetPayload{
 			IDs:        []int64{*trtorrent.ID},
 			TrackerAdd: trackers,
-		})
+		}
+		if removeExisting {
+			payload.TrackerRemove = util.Map(trtorrent.Trackers, func(t *transmissionrpc.Tracker) int64 { return t.ID })
+		}
+		return trclient.client.TorrentSet(context.TODO(), payload)
 	}
 	return nil
 }

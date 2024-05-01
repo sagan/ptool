@@ -225,6 +225,9 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 		err = fmt.Errorf("unsupported sort field: %s", sort)
 		return
 	}
+	if pageMarker == constants.NONE {
+		pageMarker = ""
+	}
 	// baseUrl is empty; or is query string, e.g. "?seeders_begin=1"
 	if baseUrl == "" || baseUrl == constants.NONE || strings.HasPrefix(baseUrl, "?") {
 		torrentsUrl := ""

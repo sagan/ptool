@@ -40,9 +40,10 @@ const MAX_PARALLEL_DOWNLOAD = 3
 const INACTIVITY_TIMESPAN = 3600 * 3 // If incomplete torrent has no activity for enough time, abort.
 // Could replace a client seeding torrent with a new site torrent if their seeders diff >= this
 const MIN_REPLACE_SEEDERS_DIFF = 3
+const MIN_SEEDING_TIME = 86400 * 10 // completed torrent will NOT be deleted during this time span. 10d
 
 // site torrent params
-const MIN_TORRENT_AGE = 86400 * 7 // site torrent must be published before this time ago
+const MIN_TORRENT_AGE = 86400 * 15 // site torrent must be published before this time ago
 const MIN_FREE_REMAINING_TIME = 3600 * 3
 const MAX_SCANNED_TORRENTS = 1000
 
@@ -80,6 +81,9 @@ func doDynamicSeeding(clientInstance client.Client, siteInstance site.Site, igno
 			util.BytesSizeAround(float64(siteInstance.GetSiteConfig().DynamicSeedingSizeValue)),
 			util.BytesSizeAround(float64(MIN_SIZE)))
 	}
+	if siteInstance.GetSiteConfig().GlobalHnR {
+		return nil, fmt.Errorf("site that enforces global H&R policy is not supported at this time")
+	}
 	dynamicSeedingCat := config.DYNAMIC_SEEDING_CAT_PREFIX + siteInstance.GetName()
 	dynamicSeedingTag := client.GenerateTorrentTagFromSite(siteInstance.GetName())
 	clientStatus, err := clientInstance.GetStatus()
@@ -95,8 +99,8 @@ func doDynamicSeeding(clientInstance client.Client, siteInstance site.Site, igno
 			Tags:     []string{dynamicSeedingTag},
 		},
 	}
-	if clientStatus.NoAdd || clientStatus.NoDel {
-		result.Msg = fmt.Sprintf("Client has %q or %q flag tag. Exit", config.NOADD_TAG, config.NODEL_TAG)
+	if clientStatus.NoAdd {
+		result.Msg = fmt.Sprintf("Client has %q tag. Exit", config.NOADD_TAG)
 		return
 	}
 	downloadingSpeedLimit := clientStatus.DownloadSpeedLimit
@@ -131,10 +135,10 @@ func doDynamicSeeding(clientInstance client.Client, siteInstance site.Site, igno
 	var downloadingTorrents []string
 	var safeTorrents []string   // has enough seeders, safe to delete
 	var normalTorrents []string // seeding is normal
-	var dangerousTorrents []string
+	var protectedTorrents []string
 	var unknownTorrents []string
 	// Invalid: otherTorrents.
-	// Success: downloadingTorrents + dangerousTorrents + unknownTorrents; will never be deleted.
+	// Success: downloadingTorrents + protectedTorrents + unknownTorrents; will never be deleted.
 	// Fail: invalidTorrents + stalledTorrents + safeTorrents + normalTorrents; could be deleted.
 	var statistics = common.NewTorrentsStatistics()
 	for _, torrent := range clientTorrents {
@@ -172,6 +176,9 @@ func doDynamicSeeding(clientInstance client.Client, siteInstance site.Site, igno
 		} else if torrent.Seeders == 0 {
 			unknownTorrents = append(unknownTorrents, torrent.InfoHash)
 			statistics.UpdateClientTorrent(common.TORRENT_SUCCESS, &torrent)
+		} else if timestamp-torrent.Ctime < MIN_SEEDING_TIME {
+			protectedTorrents = append(protectedTorrents, torrent.InfoHash)
+			statistics.UpdateClientTorrent(common.TORRENT_SUCCESS, &torrent)
 		} else if torrent.Seeders > MAX_SEEDERS {
 			safeTorrents = append(safeTorrents, torrent.InfoHash)
 			statistics.UpdateClientTorrent(common.TORRENT_FAILURE, &torrent)
@@ -179,21 +186,23 @@ func doDynamicSeeding(clientInstance client.Client, siteInstance site.Site, igno
 			normalTorrents = append(normalTorrents, torrent.InfoHash)
 			statistics.UpdateClientTorrent(common.TORRENT_FAILURE, &torrent)
 		} else {
-			dangerousTorrents = append(dangerousTorrents, torrent.InfoHash)
+			protectedTorrents = append(protectedTorrents, torrent.InfoHash)
 			statistics.UpdateClientTorrent(common.TORRENT_SUCCESS, &torrent)
 		}
 	}
 	result.Log += fmt.Sprintf("Client torrents: others %d / invalid %d / stalled %d / downloading %d / safe %d "+
-		"/ normal %d / dangerous %d / unknown %d\n", len(otherTorrents), len(invalidTorrents), len(stalledTorrents),
-		len(downloadingTorrents), len(safeTorrents), len(normalTorrents), len(dangerousTorrents), len(unknownTorrents))
+		"/ normal %d / protected %d / unknown %d\n", len(otherTorrents), len(invalidTorrents), len(stalledTorrents),
+		len(downloadingTorrents), len(safeTorrents), len(normalTorrents), len(protectedTorrents), len(unknownTorrents))
 	if len(downloadingTorrents) >= MAX_PARALLEL_DOWNLOAD {
 		result.Msg = "Already currently downloading enough torrents. Exit"
 		return
 	}
 
 	availableSlots := MAX_PARALLEL_DOWNLOAD - len(downloadingTorrents)
-	availableSpace := siteInstance.GetSiteConfig().DynamicSeedingSizeValue -
-		statistics.SuccessSize + statistics.FailureSize
+	availableSpace := siteInstance.GetSiteConfig().DynamicSeedingSizeValue - statistics.SuccessSize
+	if !clientStatus.NoDel {
+		availableSpace += statistics.FailureSize
+	}
 	if availableSpace < min(siteInstance.GetSiteConfig().DynamicSeedingSizeValue/10, MIN_SIZE) {
 		result.Msg = "Insufficient dynamic seeding storage space in client. Exit"
 		return
@@ -229,7 +238,7 @@ site_outer:
 			if scannedTorrents > MAX_SCANNED_TORRENTS {
 				break site_outer
 			}
-			if torrent.DownloadMultiplier != 0 {
+			if torrent.HasHnR || (torrent.Paid && !torrent.Bought) || torrent.DownloadMultiplier != 0 {
 				continue
 			}
 			if torrent.DiscountEndTime > 0 {
@@ -270,30 +279,32 @@ site_outer:
 	for _, torrent := range siteTorrents {
 		var deleteTorrents []string
 		var log string
-		for availableSpace < torrent.Size {
-			if len(invalidTorrents) > 0 {
-				availableSpace += clientTorrentsMap[invalidTorrents[0]].Size
-				log += fmt.Sprintf("Delete client invalid torrent %s\n", clientTorrentsMap[invalidTorrents[0]].Name)
-				deleteTorrents = append(deleteTorrents, invalidTorrents[0])
-				invalidTorrents = invalidTorrents[1:]
-			} else if len(stalledTorrents) > 0 {
-				availableSpace += clientTorrentsMap[stalledTorrents[0]].Size
-				log += fmt.Sprintf("Delete client stalled torrent %s\n", clientTorrentsMap[stalledTorrents[0]].Name)
-				deleteTorrents = append(deleteTorrents, stalledTorrents[0])
-				stalledTorrents = stalledTorrents[1:]
-			} else if len(safeTorrents) > 0 {
-				availableSpace += clientTorrentsMap[safeTorrents[0]].Size
-				log += fmt.Sprintf("Delete safe safe torrent %s\n", clientTorrentsMap[safeTorrents[0]].Name)
-				deleteTorrents = append(deleteTorrents, safeTorrents[0])
-				safeTorrents = safeTorrents[1:]
-			} else if len(normalTorrents) > 0 &&
-				clientTorrentsMap[normalTorrents[0]].Seeders-torrent.Seeders >= MIN_REPLACE_SEEDERS_DIFF {
-				availableSpace += clientTorrentsMap[normalTorrents[0]].Size
-				log += fmt.Sprintf("Delete client normal torrent %s\n", clientTorrentsMap[normalTorrents[0]].Name)
-				deleteTorrents = append(deleteTorrents, normalTorrents[0])
-				normalTorrents = normalTorrents[1:]
-			} else {
-				break
+		if !clientStatus.NoDel {
+			for availableSpace < torrent.Size {
+				if len(invalidTorrents) > 0 {
+					availableSpace += clientTorrentsMap[invalidTorrents[0]].Size
+					log += fmt.Sprintf("Delete client invalid torrent %s\n", clientTorrentsMap[invalidTorrents[0]].Name)
+					deleteTorrents = append(deleteTorrents, invalidTorrents[0])
+					invalidTorrents = invalidTorrents[1:]
+				} else if len(stalledTorrents) > 0 {
+					availableSpace += clientTorrentsMap[stalledTorrents[0]].Size
+					log += fmt.Sprintf("Delete client stalled torrent %s\n", clientTorrentsMap[stalledTorrents[0]].Name)
+					deleteTorrents = append(deleteTorrents, stalledTorrents[0])
+					stalledTorrents = stalledTorrents[1:]
+				} else if len(safeTorrents) > 0 {
+					availableSpace += clientTorrentsMap[safeTorrents[0]].Size
+					log += fmt.Sprintf("Delete safe safe torrent %s\n", clientTorrentsMap[safeTorrents[0]].Name)
+					deleteTorrents = append(deleteTorrents, safeTorrents[0])
+					safeTorrents = safeTorrents[1:]
+				} else if len(normalTorrents) > 0 &&
+					clientTorrentsMap[normalTorrents[0]].Seeders-torrent.Seeders >= MIN_REPLACE_SEEDERS_DIFF {
+					availableSpace += clientTorrentsMap[normalTorrents[0]].Size
+					log += fmt.Sprintf("Delete client normal torrent %s\n", clientTorrentsMap[normalTorrents[0]].Name)
+					deleteTorrents = append(deleteTorrents, normalTorrents[0])
+					normalTorrents = normalTorrents[1:]
+				} else {
+					break
+				}
 			}
 		}
 		if availableSpace < torrent.Size {

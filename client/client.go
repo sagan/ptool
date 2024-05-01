@@ -142,7 +142,7 @@ type Client interface {
 	GetConfig(variable string) (string, error)
 	GetTorrentTrackers(infoHash string) (TorrentTrackers, error)
 	EditTorrentTracker(infoHash string, oldTracker string, newTracker string, replaceHost bool) error
-	AddTorrentTrackers(infoHash string, trackers []string, oldTracker string) error
+	AddTorrentTrackers(infoHash string, trackers []string, oldTracker string, removeExisting bool) error
 	RemoveTorrentTrackers(infoHash string, trackers []string) error
 	// QB only, priority: 0	Do not download; 1	Normal priority; 6	High priority; 7	Maximal priority
 	SetFilePriority(infoHash string, fileIndexes []int64, priority int64) error
@@ -168,9 +168,12 @@ var (
 
 var tracker_invalid_torrent_msgs = []string{
 	"not registered",
+	"not exists",
 	"unauthorized",
 	"require passkey",
 	"require authkey",
+	"种子不存",  // 神站 pttime 的 msg: "PTT:种子不存"
+	"该种子没有", // monikadesign 的 msg: "该种子没有在我们的 Tracker 上注册."
 }
 
 func (trackers TorrentTrackers) SeemsInvalidTorrent() bool {

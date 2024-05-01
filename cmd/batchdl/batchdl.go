@@ -65,6 +65,7 @@ It will output the summary of downloads result in the end:
 }
 
 var (
+	showJson             = false
 	doDownload           = false
 	slowMode             = false
 	downloadSkipExisting = false
@@ -82,6 +83,7 @@ var (
 	allowBreak           = false
 	addCategoryAuto      = false
 	largestFlag          = false
+	latestFlag           = false
 	newestFlag           = false
 	saveAppend           = false
 	maxTorrents          = int64(0)
@@ -114,6 +116,8 @@ var (
 )
 
 func init() {
+	command.Flags().BoolVarP(&showJson, "json", "", false,
+		"Show output in json format (each line be the json object of a torrent)")
 	command.Flags().BoolVarP(&doDownload, "download", "", false, "Do download found torrents to local")
 	command.Flags().BoolVarP(&slowMode, "slow", "", false, "Slow mode. wait after downloading each torrent")
 	command.Flags().BoolVarP(&downloadSkipExisting, "download-skip-existing", "", false,
@@ -131,6 +135,9 @@ func init() {
 		"Skip neutral (do not count uploading & downloading & seeding bonus) torrent")
 	command.Flags().BoolVarP(&largestFlag, "largest", "l", false,
 		`Sort site torrents by size in desc order. Equivalent to "--sort size --order desc"`)
+	command.Flags().BoolVarP(&latestFlag, "latest", "L", false,
+		`Only display or download latest (top page) torrents of site. `+
+			`Equivalent to "--sort none --start-page 0 --one-page"`)
 	command.Flags().BoolVarP(&newestFlag, "newest", "n", false,
 		`Only display or download newest torrents of site. Equivalent to "--sort time --order desc --one-page"`)
 	command.Flags().BoolVarP(&addRespectNoadd, "add-respect-noadd", "", false,
@@ -176,7 +183,8 @@ func init() {
 	command.Flags().StringVarP(&excludes, "excludes", "", "",
 		"Comma-separated list that torrent which title of subtitle contains any one in the list will be skipped")
 	command.Flags().StringVarP(&startPage, "start-page", "", "",
-		"Start fetching torrents from here (should be the returned LastPage value last time you run this command)")
+		"Start fetching torrents from here (should be the returned LastPage value last time you run this command). "+
+			`To force start from the first / top page, set it to "0"`)
 	command.Flags().StringVarP(&downloadDir, "download-dir", "", ".",
 		`Used with "--download". Set the local dir of downloaded torrents. Default == current dir`)
 	command.Flags().StringVarP(&addClient, "add-client", "", "", `Add found torrents to this client`)
@@ -219,8 +227,8 @@ func batchdl(command *cobra.Command, args []string) error {
 		onlyDownloaded = false
 		minSeeders = -1
 	}
-	if largestFlag && newestFlag {
-		return fmt.Errorf("--largest and --newest flags are NOT compatible")
+	if util.CountNonZeroVariables(largestFlag, latestFlag, newestFlag) > 1 {
+		return fmt.Errorf("--largest, --latest and --newest flags are NOT compatible")
 	}
 	if util.CountNonZeroVariables(doDownload, addClient) > 1 {
 		return fmt.Errorf("--download and --add-client flags are NOT compatible")
@@ -240,6 +248,10 @@ func batchdl(command *cobra.Command, args []string) error {
 	if largestFlag {
 		sortFlag = "size"
 		orderFlag = "desc"
+	} else if latestFlag {
+		sortFlag = constants.NONE
+		startPage = "0"
+		onePage = true
 	} else if newestFlag {
 		sortFlag = "time"
 		orderFlag = "desc"
@@ -505,7 +517,11 @@ mainloop:
 			cntTorrentsThisPage++
 			totalSize += torrent.Size
 			if !doDownload && addClient == "" {
-				site.PrintTorrents(os.Stdout, []site.Torrent{torrent}, "", now, cntTorrents != 1, dense, nil)
+				if showJson {
+					util.PrintJson(os.Stdout, torrent)
+				} else {
+					site.PrintTorrents(os.Stdout, []site.Torrent{torrent}, "", now, cntTorrents != 1, dense, nil)
+				}
 				continue
 			}
 			var err error
@@ -529,7 +545,7 @@ mainloop:
 				torrentContent, _filename, _, err = siteInstance.DownloadTorrent(torrent.Id)
 			}
 			if err != nil {
-				fmt.Printf("torrent %s (%s): failed to download: %v\n", torrent.Id, torrent.Name, err)
+				fmt.Fprintf(os.Stderr, "torrent %s (%s): failed to download: %v\n", torrent.Id, torrent.Name, err)
 				consecutiveFail++
 				if maxConsecutiveFail >= 0 && consecutiveFail > maxConsecutiveFail {
 					log.Errorf("Abort due to too many consecutive fails to download torrent from site")
@@ -538,7 +554,7 @@ mainloop:
 			} else {
 				consecutiveFail = 0
 				if tinfo, err := torrentutil.ParseTorrent(torrentContent); err != nil {
-					fmt.Printf("torrent %s (%s): failed to parse: %v\n", torrent.Id, torrent.Name, err)
+					fmt.Fprintf(os.Stderr, "torrent %s (%s): failed to parse: %v\n", torrent.Id, torrent.Name, err)
 				} else {
 					if doDownload {
 						if filename == "" {
@@ -550,9 +566,10 @@ mainloop:
 						}
 						err = os.WriteFile(filepath.Join(downloadDir, filename), torrentContent, constants.PERM)
 						if err != nil {
-							fmt.Printf("torrent %s: failed to write to %s/file %s: %v\n", torrent.Id, downloadDir, _filename, err)
+							fmt.Fprintf(os.Stderr, "torrent %s: failed to write to %s/file %s: %v\n",
+								torrent.Id, downloadDir, _filename, err)
 						} else {
-							fmt.Printf("torrent %s - %s (%s): downloaded to %s/%s\n", torrent.Id, torrent.Name,
+							fmt.Fprintf(os.Stderr, "torrent %s - %s (%s): downloaded to %s/%s\n", torrent.Id, torrent.Name,
 								util.BytesSize(float64(torrent.Size)), downloadDir, filename)
 						}
 					} else if addClient != "" {
@@ -580,10 +597,11 @@ mainloop:
 						}
 						err = clientInstance.AddTorrent(torrentContent, clientAddTorrentOption, nil)
 						if err != nil {
-							fmt.Printf("torrent %s (%s): failed to add to client: %v\n", torrent.Id, torrent.Name, err)
+							fmt.Fprintf(os.Stderr, "torrent %s (%s): failed to add to client: %v\n", torrent.Id, torrent.Name, err)
 						} else {
-							fmt.Printf("torrent %s - %s (%s) (seeders=%d, time=%s): added to client\n", torrent.Id, torrent.Name,
-								util.BytesSize(float64(torrent.Size)), torrent.Seeders, util.FormatDuration(now-torrent.Time))
+							fmt.Fprintf(os.Stderr, "torrent %s - %s (%s) (seeders=%d, time=%s): added to client\n", torrent.Id,
+								torrent.Name, util.BytesSize(float64(torrent.Size)),
+								torrent.Seeders, util.FormatDuration(now-torrent.Time))
 						}
 					}
 				}

@@ -303,6 +303,10 @@ func CountNonZeroVariables(vars ...any) (cnt int) {
 			if v {
 				cnt++
 			}
+		case []string:
+			if len(v) > 0 {
+				cnt++
+			}
 		default:
 			panic("unsupported type")
 		}

@@ -49,7 +49,8 @@ func dynamicseeding(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("unable to acquire lock: %v", err)
 	}
 	defer lock.Unlock()
-	ignoreFile, err := os.OpenFile(filepath.Join(config.ConfigDir, "dynamic-seeding-%s.ignore.txt"),
+	ignoreFile, err := os.OpenFile(filepath.Join(config.ConfigDir,
+		fmt.Sprintf("dynamic-seeding-%s.ignore.txt", sitename)),
 		os.O_CREATE|os.O_RDWR, constants.PERM)
 	if err != nil {
 		return fmt.Errorf("failed to open ignore file: %v", err)

@@ -70,6 +70,7 @@ var (
 	rcloneSavePath       = ""
 	rcloneBinary         = ""
 	rcloneFlags          = ""
+	mapSavePathPrefixs   []string
 )
 
 func init() {
@@ -101,6 +102,11 @@ func init() {
 		`Used with "--rclone-save-path", the additional rclone flags. E.g. "--config rclone.conf"`)
 	command.Flags().StringVarP(&rcloneBinary, "rclone-binary", "", "rclone",
 		`Used with "--rclone-save-path", the path of rclone binary`)
+	command.Flags().StringArrayVarP(&mapSavePathPrefixs, "map-save-path-prefix", "", nil,
+		`Used with "--use-comment-meta". Map save path from torrent comment to the file system of ptool`+
+			`Format: "comment_save_path:ptool_save_path". E.g. `+
+			`"/root/Downloads:/var/Downloads" will map "/root/Downloads" or "/root/Downloads/..." save path to `+
+			`"/var/Downloads" or "/var/Downloads/..."`)
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -108,6 +114,9 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 	if util.CountNonZeroVariables(useCommentMeta, savePath, contentPath, rcloneSavePath, rcloneLsjsonFilename) != 1 {
 		return fmt.Errorf("exact one (not less or more) of the --use-comment-meta, --save-path, --content-path, " +
 			"--rclone-save-path and --rclone-lsjson-file flags must be set")
+	}
+	if !useCommentMeta && len(mapSavePathPrefixs) > 0 {
+		return fmt.Errorf("--map-save-path-prefix must be used with --use-comment-meta flag")
 	}
 	if showSum && showAll {
 		return fmt.Errorf("--sum and --all flags are NOT compatible")
@@ -166,6 +175,13 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to parse rclone lsjson file: %v", err)
 		}
 	}
+	var savePathMapper *common.PathMapper
+	if len(mapSavePathPrefixs) > 0 {
+		savePathMapper, err = common.NewPathMapper(mapSavePathPrefixs)
+		if err != nil {
+			return fmt.Errorf("invalid map-save-path-prefix (s): %v", err)
+		}
+	}
 
 	statistics := common.NewTorrentsStatistics()
 	for _, torrent := range torrents {
@@ -190,6 +206,13 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 			} else {
 				log.Debugf("Found torrent %s comment meta %v", torrent, commentMeta)
 				savePath = commentMeta.SavePath
+				if savePathMapper != nil {
+					if _savePath, match := savePathMapper.Before2After(savePath); !match {
+						err = fmt.Errorf("comment save path %q does not match with any map-save-path-prefix rule", savePath)
+					} else {
+						savePath = _savePath
+					}
+				}
 			}
 			if err != nil {
 				if !showSum {

@@ -3,6 +3,10 @@ package common
 import (
 	"fmt"
 	"io"
+	"path"
+	"path/filepath"
+	"slices"
+	"strings"
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/util"
@@ -83,4 +87,56 @@ func (ts *TorrentsStatistics) Print(output io.Writer) {
 		util.BytesSize(float64(ts.LargestSize)))
 	fmt.Fprintf(output, "Failure torrents: %d (%s)\n", ts.FailureCnt, util.BytesSize(float64(ts.FailureSize)))
 	fmt.Fprintf(output, "Invalid torrents: %d\n", ts.InvalidCnt)
+}
+
+type PathMapper struct {
+	mapper  map[string]string
+	befores []string
+}
+
+func (spm *PathMapper) Before2After(beforePath string) (afterPath string, match bool) {
+	beforePath = path.Clean(filepath.ToSlash(beforePath))
+	for _, before := range spm.befores {
+		if before == "/" {
+			if strings.HasPrefix(beforePath, before) {
+				return spm.mapper[before] + strings.TrimPrefix(beforePath, before), true
+			}
+		} else if strings.HasPrefix(beforePath, before+"/") {
+			return spm.mapper[before] + strings.TrimPrefix(beforePath, before), true
+		}
+	}
+	return beforePath, false
+}
+
+func (spm *PathMapper) After2Before(afterPath string) (beforePath string, match bool) {
+	afterPath = path.Clean(filepath.ToSlash(afterPath))
+	for _, before := range spm.befores {
+		after := spm.mapper[before]
+		if after == "/" {
+			if strings.HasPrefix(afterPath, after) {
+				return before + strings.TrimPrefix(afterPath, after), true
+			}
+		} else if strings.HasPrefix(afterPath, after+"/") {
+			return before + strings.TrimPrefix(afterPath, after), true
+		}
+	}
+	return afterPath, false
+}
+
+func NewPathMapper(rules []string) (*PathMapper, error) {
+	pm := &PathMapper{
+		mapper: map[string]string{},
+	}
+	for _, rule := range rules {
+		before, after, found := strings.Cut(rule, ":")
+		if !found || before == "" || after == "" {
+			return nil, fmt.Errorf("invalid path mapper rule %q", rule)
+		}
+		before = path.Clean(filepath.ToSlash(before))
+		after = path.Clean(filepath.ToSlash(after))
+		pm.mapper[before] = after
+		pm.befores = append(pm.befores, before)
+	}
+	slices.SortFunc(pm.befores, func(a, b string) int { return len(b) - len(a) }) // longest first
+	return pm, nil
 }

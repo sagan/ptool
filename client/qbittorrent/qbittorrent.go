@@ -979,7 +979,9 @@ func (qbclient *Client) EditTorrentTracker(infoHash string, oldTracker string,
 }
 
 // trackers - new trackers full URLs; oldTracker - existing tracker host or URL
-func (qbclient *Client) AddTorrentTrackers(infoHash string, trackers []string, oldTracker string) error {
+func (qbclient *Client) AddTorrentTrackers(infoHash string, trackers []string,
+	oldTracker string, removeExisting bool) error {
+	var existingTrackers []string
 	if oldTracker != "" {
 		torrentTrackers, err := qbclient.GetTorrentTrackers(infoHash)
 		if err != nil {
@@ -989,9 +991,13 @@ func (qbclient *Client) AddTorrentTrackers(infoHash string, trackers []string, o
 		if index == -1 {
 			return nil
 		}
-		trackers = util.Filter(trackers, func(tracker string) bool {
-			return torrentTrackers.FindIndex(tracker) == -1
-		})
+		if removeExisting {
+			existingTrackers = util.Map(torrentTrackers, func(t client.TorrentTracker) string { return t.Url })
+		} else {
+			trackers = util.Filter(trackers, func(tracker string) bool {
+				return torrentTrackers.FindIndex(tracker) == -1
+			})
+		}
 	}
 	if len(trackers) == 0 {
 		return nil
@@ -1000,7 +1006,13 @@ func (qbclient *Client) AddTorrentTrackers(infoHash string, trackers []string, o
 		"hash": {infoHash},
 		"urls": {strings.Join(trackers, "\n")},
 	}
-	return qbclient.apiPost("api/v2/torrents/addTrackers", data)
+	if err := qbclient.apiPost("api/v2/torrents/addTrackers", data); err != nil {
+		return err
+	}
+	if removeExisting && len(existingTrackers) > 0 {
+		return qbclient.RemoveTorrentTrackers(infoHash, existingTrackers)
+	}
+	return nil
 }
 
 func (qbclient *Client) RemoveTorrentTrackers(infoHash string, trackers []string) error {
