@@ -2,6 +2,8 @@ package partialdownload
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"sort"
 
 	"github.com/shibumi/go-pathspec"
@@ -15,9 +17,20 @@ import (
 )
 
 type Chunk struct {
-	Index    int64
-	FilesCnt int64
-	Size     int64
+	Index int64
+	Files int64
+	Size  int64
+}
+
+type Summary struct {
+	InfoHash           string
+	ChunkSize          int64
+	TotalSize          int64
+	TotalFiles         int64
+	SkippedSize        int64
+	SkippedFiles       int64
+	DownloadChunkIndex int64
+	Chunks             []*Chunk
 }
 
 var command = &cobra.Command{
@@ -55,14 +68,13 @@ Additional, it's possible to explicitly skip (ignore) certain files in torrent.
 Skipped files will be excluded from being splitted to chunks and will also be marked as no-download.
 To skip files, use any one (or more) of the following flags:
 * --start-index index : The first file index of the first chunk. Skip prior files in torrent.
-* --excludes pattern : Pattern of .gitignore style. Skip files which filename match.
-* --includes pattern : Pattern of .gitignore style. Skip all files which filename does NOT match.
+* --excludes pattern : Pattern of .gitignore style. Skip files which filename match any provided pattern.
+* --includes pattern : Pattern of .gitignore style. Skip all files which filename does NOT match any provided pattern.
 If any of the above flags is set, the --chunk-size flag can be omitted, in which case
 it's assumed to be 1EiB (effectively infinite), so all non-skipped files will be mark as download.
 
 With --append flag, ptool will only mark files of current (index) chunk as download,
-but will NOT mark files of other chunks as no-download (Leave their download / no-download
-marks unchanged).
+but will NOT mark other files as no-download (Leave their download / no-download marks unchanged).
 
 Use case of this command: You have a cloud VPS / Server with limited disk space, and you want to use this
 machine to download a large torrent. And then upload the downloaded torrent contents
@@ -75,6 +87,7 @@ var (
 	chunkSizeStr  = ""
 	chunkIndex    = int64(0)
 	startIndex    = int64(0)
+	showJson      = false
 	showAll       = false
 	appendMode    = false
 	strict        = false
@@ -84,6 +97,7 @@ var (
 )
 
 func init() {
+	command.Flags().BoolVarP(&showJson, "json", "", false, "Show output in json format")
 	command.Flags().BoolVarP(&showAll, "all", "a", false, "Show full chunks info and exit")
 	command.Flags().BoolVarP(&appendMode, "append", "", false,
 		"Append mode. Mark files of current chunk as download but do NOT mark files of other chunks as no-download")
@@ -101,11 +115,49 @@ func init() {
 	command.Flags().StringVarP(&chunkSizeStr, "chunk-size", "", "", "Set the split chunk size string. e.g. 500GiB")
 	command.Flags().StringArrayVarP(&includes, "includes", "", nil,
 		`Specifiy patterns of files that only these files will be included. All other files will be skipped. `+
-			`Use gitignore-style, checked against the file path in torrent. E.g. "*.txt"`)
+			`Use gitignore-style, checked against the file path in torrent. E.g. "*.txt". `+
+			"Skipped files will be be excluded from being splitting into chunks")
 	command.Flags().StringArrayVarP(&excludes, "excludes", "", nil,
 		`Specifiy patterns of files that will be skipped. `+
-			`Use gitignore-style, checked against the file path in torrent. E.g. "*.txt"`)
+			`Use gitignore-style, checked against the file path in torrent. E.g. "*.txt". `+
+			"Skipped files will be be excluded from being splitting into chunks")
 	cmd.RootCmd.AddCommand(command)
+}
+
+func (summary *Summary) printCommon(output io.Writer) {
+	fmt.Fprintf(output, "Total files: %s (%d) / Chunks: %d; ChunkSize: %s;  Skipped files: %s (%d)\n",
+		util.BytesSize(float64(summary.TotalSize)), summary.TotalFiles, len(summary.Chunks),
+		util.BytesSize(float64(summary.ChunkSize)), util.BytesSize(float64(summary.SkippedSize)), summary.SkippedFiles,
+	)
+}
+
+func (summary *Summary) PrintAll(output io.Writer) {
+	summary.printCommon(output)
+	fmt.Fprintf(output, "%-10s  %-5s  %s\n", "ChunkIndex", "Files", "Size")
+	if summary.SkippedFiles > 0 {
+		fmt.Fprintf(output, "%-10s  %-5d  %s\n",
+			"<skip>", summary.SkippedFiles, util.BytesSize(float64(summary.SkippedSize)))
+	}
+	for _, chunk := range summary.Chunks {
+		fmt.Fprintf(output, "%-10d  %-5d  %s\n",
+			chunk.Index, chunk.Files, util.BytesSize(float64(chunk.Size)))
+	}
+}
+
+func (summary *Summary) PrintSelf(output io.Writer) {
+	summary.printCommon(output)
+	fmt.Fprintf(output, "DownloadChunkIndex: %d; DownloadChunkSize: %s (%d)\n", summary.DownloadChunkIndex,
+		util.BytesSize(float64(summary.Chunks[summary.DownloadChunkIndex].Size)),
+		summary.Chunks[summary.DownloadChunkIndex].Files,
+	)
+}
+
+func NewSummary(infoHash string, chunkSize int64) *Summary {
+	return &Summary{
+		InfoHash:           infoHash,
+		ChunkSize:          chunkSize,
+		DownloadChunkIndex: -1,
+	}
 }
 
 func partialdownload(cmd *cobra.Command, args []string) (err error) {
@@ -122,12 +174,11 @@ func partialdownload(cmd *cobra.Command, args []string) (err error) {
 			return fmt.Errorf("either --chunk-size, or any of --start-index, --includes, --excludes flags must be set")
 		}
 	}
-	clientName := args[0]
-	infoHash := args[1]
-
 	if chunkSize <= 0 {
 		return fmt.Errorf("invalid chunk size %d", chunkSize)
 	}
+	clientName := args[0]
+	infoHash := args[1]
 
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
@@ -152,16 +203,12 @@ func partialdownload(cmd *cobra.Command, args []string) (err error) {
 			return torrentFiles[i].Path < torrentFiles[j].Path
 		})
 	}
-	// scan all files in order and download a (index) sequential files
-	// a chunk contains at least 1 file. Chunk ends when all it's files size >= chunk size
-	chunks := []*Chunk{}
+	summary := NewSummary(infoHash, chunkSize)
 	currentChunkIndex := int64(0)
 	currentChunkSize := int64(0)
 	currentChunkFilesCnt := int64(0)
 	downloadFileIndexes := []int64{}
 	noDownloadFileIndexes := []int64{}
-	allSize := int64(0)
-	skippedSize := int64(0)
 	// For negative chunk-index, scan once to get total chunks count
 	if chunkIndex < 0 {
 		for i, file := range torrentFiles {
@@ -200,37 +247,43 @@ func partialdownload(cmd *cobra.Command, args []string) (err error) {
 		currentChunkIndex = 0
 		currentChunkSize = 0
 	}
+	// scan all files in order and download a (index) sequential files
+	// a chunk contains at least 1 file. Chunk ends when all it's files size >= chunk size
 	for i, file := range torrentFiles {
+		skip := false
 		if int64(i) < startIndex {
-			skippedSize += file.Size
-			noDownloadFileIndexes = append(noDownloadFileIndexes, file.Index)
-			continue
+			skip = true
 		}
-		if len(includes) > 0 {
+		if !skip && len(includes) > 0 {
 			if ignore, err := pathspec.GitIgnore(includes, file.Path); err != nil {
 				return fmt.Errorf("invalid includes: %v", err)
 			} else if !ignore {
 				log.Debugf("Skip non-includes file %q", file.Path)
-				noDownloadFileIndexes = append(noDownloadFileIndexes, file.Index)
-				continue
+				skip = true
 			}
 		}
-		if len(excludes) > 0 {
+		if !skip && len(excludes) > 0 {
 			if ignore, err := pathspec.GitIgnore(excludes, file.Path); err != nil {
 				return fmt.Errorf("invalid excludes: %v", err)
 			} else if ignore {
 				log.Debugf("Skip excludes file %q", file.Path)
-				noDownloadFileIndexes = append(noDownloadFileIndexes, file.Index)
-				continue
+				skip = true
 			}
 		}
-		allSize += file.Size
+		if skip {
+			summary.SkippedFiles++
+			summary.SkippedSize += file.Size
+			noDownloadFileIndexes = append(noDownloadFileIndexes, file.Index)
+			continue
+		}
+		summary.TotalFiles++
+		summary.TotalSize += file.Size
 		if strict && file.Size > chunkSize {
 			return fmt.Errorf("torrent can NOT be strictly splitted to %s chunks: file %s is too large (%s)",
 				util.BytesSize(float64(chunkSize)), file.Path, util.BytesSize(float64(file.Size)))
 		}
 		if currentChunkSize >= chunkSize || (strict && (currentChunkSize+file.Size) > chunkSize) {
-			chunks = append(chunks, &Chunk{currentChunkIndex, currentChunkFilesCnt, currentChunkSize})
+			summary.Chunks = append(summary.Chunks, &Chunk{currentChunkIndex, currentChunkFilesCnt, currentChunkSize})
 			currentChunkIndex++
 			currentChunkSize = 0
 			currentChunkFilesCnt = 0
@@ -243,29 +296,19 @@ func partialdownload(cmd *cobra.Command, args []string) (err error) {
 			noDownloadFileIndexes = append(noDownloadFileIndexes, file.Index)
 		}
 	}
-	chunks = append(chunks, &Chunk{currentChunkIndex, currentChunkFilesCnt, currentChunkSize}) // last chunk
+	// last chunk
+	summary.Chunks = append(summary.Chunks, &Chunk{currentChunkIndex, currentChunkFilesCnt, currentChunkSize})
 	if showAll {
-		fmt.Printf("Torrent Size: %s (%d) / Chunk Size: %s; Skipped files: %d; All %d Chunks:\n",
-			util.BytesSize(float64(allSize)), len(torrentFiles),
-			util.BytesSize(float64(chunkSize)), startIndex, len(chunks))
-		fmt.Printf("%-10s  %-15s  %-5s  %s\n", "ChunkIndex", "FileStartIndex", "Files", "Size")
-		fileStartIndex := int64(0)
-		if startIndex > 0 {
-			fmt.Printf("%-10s  %-15d  %-5d  %s\n",
-				"<skip>", fileStartIndex, startIndex, util.BytesSize(float64(skippedSize)))
-			fileStartIndex += startIndex
+		if showJson {
+			return util.PrintJson(os.Stdout, summary)
 		}
-		for _, chunk := range chunks {
-			fmt.Printf("%-10d  %-15d  %-5d  %s\n",
-				chunk.Index, fileStartIndex, chunk.FilesCnt, util.BytesSize(float64(chunk.Size)))
-			fileStartIndex += chunk.FilesCnt
-		}
+		summary.PrintAll(os.Stdout)
 		return nil
 	}
-	if chunkIndex >= int64(len(chunks)) {
-		return fmt.Errorf("invalid chunkIndex %d. Torrent has %d chunks", chunkIndex, len(chunks))
+	if chunkIndex >= int64(len(summary.Chunks)) {
+		return fmt.Errorf("invalid chunkIndex %d. Torrent has %d chunks", chunkIndex, len(summary.Chunks))
 	}
-	chunk := chunks[chunkIndex]
+	summary.DownloadChunkIndex = chunkIndex
 	// mark file as download
 	if len(downloadFileIndexes) > 0 {
 		err = clientInstance.SetFilePriority(infoHash, downloadFileIndexes, 1)
@@ -288,10 +331,9 @@ func partialdownload(cmd *cobra.Command, args []string) (err error) {
 			log.Infof("No files are marked as non-download")
 		}
 	}
-	fmt.Printf("Torrent Size: %s (%d) / Chunks: %d; Skipped files: %d; "+
-		"DownloadChunkIndex: %d; DownloadChunkSize: %s (%d)",
-		util.BytesSize(float64(allSize)), len(torrentFiles), len(chunks), startIndex,
-		chunkIndex, util.BytesSize(float64(chunk.Size)), chunk.FilesCnt,
-	)
+	if showJson {
+		return util.PrintJson(os.Stdout, summary)
+	}
+	summary.PrintSelf(os.Stdout)
 	return nil
 }
