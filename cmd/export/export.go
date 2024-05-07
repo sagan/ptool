@@ -43,17 +43,17 @@ It will overwrite any existing file on disk with the same name.`, constants.HELP
 }
 
 var (
-	exportSkipExisting = false
-	useCommentMeta     = false
-	category           = ""
-	tag                = ""
-	filter             = ""
-	downloadDir        = ""
-	rename             = ""
+	skipExisting   = false
+	useCommentMeta = false
+	category       = ""
+	tag            = ""
+	filter         = ""
+	downloadDir    = ""
+	rename         = ""
 )
 
 func init() {
-	command.Flags().BoolVarP(&exportSkipExisting, "export-skip-existing", "", false,
+	command.Flags().BoolVarP(&skipExisting, "skip-existing", "", false,
 		`Do NOT re-export torrent that same name file already exists in local dir. `+
 			`If this flag is set, the exported torrent filename ("--rename" flag) will be fixed to `+
 			`"[client].[infohash].torrent" (e.g. "local.293235f712652df08a8665ec2ca118d7e0615c3f.torrent") format`)
@@ -78,8 +78,8 @@ func export(cmd *cobra.Command, args []string) error {
 			infoHashes = _infoHashes
 		}
 	}
-	if exportSkipExisting && rename != config.DEFAULT_EXPORT_TORRENT_RENAME {
-		return fmt.Errorf("--export-skip-existing and --rename flags are NOT compatible")
+	if skipExisting && rename != config.DEFAULT_EXPORT_TORRENT_RENAME {
+		return fmt.Errorf("--skip-existing and --rename flags are NOT compatible")
 	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
@@ -94,7 +94,7 @@ func export(cmd *cobra.Command, args []string) error {
 	cntAll := len(torrents)
 	for i, torrent := range torrents {
 		filename := ""
-		if exportSkipExisting {
+		if skipExisting {
 			filename = fmt.Sprintf("%s.%s.torrent", clientName, torrent.InfoHash)
 			if util.FileExistsWithOptionalSuffix(filepath.Join(downloadDir, filename),
 				constants.ProcessedFilenameSuffixes...) {

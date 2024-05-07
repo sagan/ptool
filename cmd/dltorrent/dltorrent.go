@@ -42,16 +42,16 @@ which supports the following variable placeholders:
 }
 
 var (
-	downloadSkipExisting = false
-	slowMode             = false
-	downloadDir          = ""
-	rename               = ""
-	defaultSite          = ""
-	errSkipExisting      = errors.New("skip existing torrent")
+	skipExisting    = false
+	slowMode        = false
+	downloadDir     = ""
+	rename          = ""
+	defaultSite     = ""
+	errSkipExisting = errors.New("skip existing torrent")
 )
 
 func init() {
-	command.Flags().BoolVarP(&downloadSkipExisting, "download-skip-existing", "", false,
+	command.Flags().BoolVarP(&skipExisting, "skip-existing", "", false,
 		`Do NOT re-download torrent that same name file already exists in local dir. `+
 			`If this flag is set, the download torrent filename ("--rename" flag) will be fixed to `+
 			`"[site].[id].torrent" (e.g. "mteam.12345.torrent") format`)
@@ -63,7 +63,7 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-// @todo: currently, --download-skip-existing flag will NOT work if (torrent) arg is a site torrent url,
+// @todo: currently, --skip-existing flag will NOT work if (torrent) arg is a site torrent url,
 // to fix it the site.Site interface must be changed to separate torrent url parsing from downloading.
 func dltorrent(cmd *cobra.Command, args []string) error {
 	errorCnt := int64(0)
@@ -86,12 +86,12 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 		}
 	}
 	var beforeDownload func(sitename string, id string) error
-	if downloadSkipExisting {
+	if skipExisting {
 		if rename != "" {
-			return fmt.Errorf("--download-skip-existing and --rename flags are NOT compatible")
+			return fmt.Errorf("--skip-existing and --rename flags are NOT compatible")
 		}
 		if outputToStdout {
-			return fmt.Errorf(`--download-skip-existing can NOT be used with "--download-dir -"`)
+			return fmt.Errorf(`--skip-existing can NOT be used with "--download-dir -"`)
 		}
 		beforeDownload = func(sitename, id string) error {
 			if sitename != "" && id != "" {
@@ -135,7 +135,7 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 			continue
 		}
 		filename := ""
-		if downloadSkipExisting && sitename != "" && id != "" {
+		if skipExisting && sitename != "" && id != "" {
 			filename = fmt.Sprintf("%s.%s.torrent", sitename, strings.TrimPrefix(id, sitename+"."))
 		} else if rename == "" {
 			filename = _filename

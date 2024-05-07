@@ -1,3 +1,12 @@
+// 实验性功能：动态保种。
+// 自动从站点下载亟需保种（做种人数 < 10）的种子并做种。用户自行设置每个站点的总保种体积上限。
+// 默认仅会下载免费的并且没有 HnR 的种子。
+// 当前保种的种子如果没有断种风险(做种人数充足)，会在需要时自动删除以腾出空间下载新的（亟需保种）种子。
+// 使用方法：在 ptoo.toml 站点配置里增加 "dynamicSeedingSize = 100GiB" 设置总保种体积上限，
+// 然后定时运行 ptool dynamicseeding <client> <site> 即可。
+// 动态保种添加的种子会放到 dynamic-seeding-<site> 分类里并且打上 site:<site> 标签。
+// 用户也可以将手工下载的该站点种子放到该分类里（也需要打上 site:<site> 标签）以让动态保种管理。
+// @todo : 动态保种种子的辅种，有辅种的种子删除时保留文件。
 package dynamicseeding
 
 import (
@@ -7,7 +16,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gofrs/flock"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -41,14 +49,22 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func dynamicseeding(cmd *cobra.Command, args []string) error {
+func dynamicseeding(cmd *cobra.Command, args []string) (err error) {
 	clientName := args[0]
 	sitename := args[1]
-	lock := flock.New(filepath.Join(config.ConfigDir, fmt.Sprintf("dynamic-seeding-%s.lock", sitename)))
-	if ok, err := lock.TryLock(); err != nil || !ok {
-		return fmt.Errorf("unable to acquire lock: %v", err)
+	clientInstance, err := client.CreateClient(clientName)
+	if err != nil {
+		return fmt.Errorf("failed to create client: %v", err)
+	}
+	lock, err := config.LockConfigDirFile(fmt.Sprintf(config.CLIENT_LOCK_FILE, clientName))
+	if err != nil {
+		return err
 	}
 	defer lock.Unlock()
+	siteInstance, err := site.CreateSite(sitename)
+	if err != nil {
+		return fmt.Errorf("failed to create site: %v", err)
+	}
 	ignoreFile, err := os.OpenFile(filepath.Join(config.ConfigDir,
 		fmt.Sprintf("dynamic-seeding-%s.ignore.txt", sitename)),
 		os.O_CREATE|os.O_RDWR, constants.PERM)
@@ -63,14 +79,6 @@ func dynamicseeding(cmd *cobra.Command, args []string) error {
 		ignores = strings.Split(string(contents), "\n")
 	}
 
-	clientInstance, err := client.CreateClient(clientName)
-	if err != nil {
-		return fmt.Errorf("failed to create client: %v", err)
-	}
-	siteInstance, err := site.CreateSite(sitename)
-	if err != nil {
-		return fmt.Errorf("failed to create site: %v", err)
-	}
 	result, err := doDynamicSeeding(clientInstance, siteInstance, ignores)
 	if err != nil {
 		return err
@@ -80,7 +88,6 @@ func dynamicseeding(cmd *cobra.Command, args []string) error {
 		log.Warnf("Dry-run. Exit")
 		return nil
 	}
-
 	var newIgnores []string
 	errorCnt := int64(0)
 	deletedSize := int64(0)

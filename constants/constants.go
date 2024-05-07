@@ -64,9 +64,27 @@ var OpenTrackers = []string{
 	"udp://tracker.torrent.eu.org:451/announce", // Since 2016: https://github.com/ngosang/trackerslist/issues/26
 	// Runned by Internet Archive.
 	// According to https://help.archive.org/help/archive-bittorrents/,
-	//  they are not open ("they track our only own torrents").
+	// they are not open ("they track our only own torrents").
 	// "udp://bt1.archive.org:6969/announce",
 	// "udp://bt1.archive.org:6969/announce",
 	"http://sukebei.tracker.wf:8888/announce", // nyaa
 	"http://nyaa.tracker.wf:7777/announce",
+}
+
+// Ignored file patterns in .gitignore style.
+// Several cmds skip handling these files.
+var DefaultIgnorePatterns = []string{
+	".*",
+	"$*",
+	"~$*", // Microsoft Office tmp files
+	"*.bak",
+	"*.tmp",
+	"*.temp",
+	"*.dropbox",
+	"*.torrent",
+	"node_modules/",
+	"lost+found/",
+	"System Volume Information",
+	"desktop.ini",
+	"Thumbs.db",
 }

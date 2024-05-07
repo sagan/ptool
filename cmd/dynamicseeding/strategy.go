@@ -3,6 +3,7 @@ package dynamicseeding
 import (
 	"fmt"
 	"io"
+	"math/rand"
 	"os"
 	"slices"
 	"sort"
@@ -125,6 +126,12 @@ func doDynamicSeeding(clientInstance client.Client, siteInstance site.Site, igno
 	fmt.Fprintf(os.Stderr, "client category %q torrents:\n", dynamicSeedingCat)
 	client.PrintTorrents(os.Stderr, clientTorrents, "", 1, false)
 
+	var maxScan = util.FirstNonZeroIntegerArg(siteInstance.GetSiteConfig().DynamicSeedingMaxScan, MAX_SCANNED_TORRENTS)
+	var minSeeders = util.FirstNonZeroIntegerArg(siteInstance.GetSiteConfig().DynamicSeedingMinSeeders, MIN_SEEDERS)
+	var maxSeeders = util.FirstNonZeroIntegerArg(siteInstance.GetSiteConfig().DynamicSeedingMaxSeeders, MAX_SEEDERS)
+	var replaceSeeders = util.FirstNonZeroIntegerArg(siteInstance.GetSiteConfig().DynamicSeedingReplaceSeeders,
+		MIN_REPLACE_SEEDERS_DIFF)
+
 	// triage for client torrents
 	clientTorrentsMap := map[string]*client.Torrent{}
 	// Torrents that are excluded from dynamic seeding deciding stragety.
@@ -179,10 +186,10 @@ func doDynamicSeeding(clientInstance client.Client, siteInstance site.Site, igno
 		} else if timestamp-torrent.Ctime < MIN_SEEDING_TIME {
 			protectedTorrents = append(protectedTorrents, torrent.InfoHash)
 			statistics.UpdateClientTorrent(common.TORRENT_SUCCESS, &torrent)
-		} else if torrent.Seeders > MAX_SEEDERS {
+		} else if torrent.Seeders > maxSeeders {
 			safeTorrents = append(safeTorrents, torrent.InfoHash)
 			statistics.UpdateClientTorrent(common.TORRENT_FAILURE, &torrent)
-		} else if torrent.Seeders > MIN_SEEDERS {
+		} else if torrent.Seeders > minSeeders {
 			normalTorrents = append(normalTorrents, torrent.InfoHash)
 			statistics.UpdateClientTorrent(common.TORRENT_FAILURE, &torrent)
 		} else {
@@ -223,6 +230,8 @@ site_outer:
 			result.Log += fmt.Sprintf("failed to get site torrents: %v\n", err)
 			break
 		}
+		rand.Shuffle(len(torrents), func(i, j int) { torrents[i], torrents[j] = torrents[j], torrents[i] })
+		slices.SortStableFunc(torrents, func(a, b site.Torrent) int { return int(a.Seeders - b.Seeders) })
 		for _, torrent := range torrents {
 			if torrent.Id != "" && slices.Contains(ignores, torrent.ID()) {
 				log.Debugf("Ignore site torrent %s (%s) which is recently deleted from client", torrent.Name, torrent.Id)
@@ -231,11 +240,11 @@ site_outer:
 			if torrent.Seeders < 1 || torrent.IsCurrentActive {
 				continue
 			}
-			if torrent.Seeders >= MAX_SEEDERS {
+			if torrent.Seeders >= maxSeeders {
 				break site_outer
 			}
 			scannedTorrents++
-			if scannedTorrents > MAX_SCANNED_TORRENTS {
+			if maxScan > 0 && scannedTorrents > maxScan {
 				break site_outer
 			}
 			if torrent.HasHnR || (torrent.Paid && !torrent.Bought) || torrent.DownloadMultiplier != 0 {
@@ -254,7 +263,7 @@ site_outer:
 				siteInstance.GetSiteConfig().DynamicSeedingTorrentMinSizeValue > 0 &&
 					torrent.Size < siteInstance.GetSiteConfig().DynamicSeedingTorrentMinSizeValue ||
 				torrent.MatchFiltersOr(siteInstance.GetSiteConfig().DynamicSeedingExcludes) ||
-				torrent.Seeders+torrent.Leechers >= MAX_SEEDERS {
+				torrent.Seeders+torrent.Leechers >= maxSeeders {
 				continue
 			}
 			siteTorrents = append(siteTorrents, torrent)
@@ -297,7 +306,7 @@ site_outer:
 					deleteTorrents = append(deleteTorrents, safeTorrents[0])
 					safeTorrents = safeTorrents[1:]
 				} else if len(normalTorrents) > 0 &&
-					clientTorrentsMap[normalTorrents[0]].Seeders-torrent.Seeders >= MIN_REPLACE_SEEDERS_DIFF {
+					clientTorrentsMap[normalTorrents[0]].Seeders-torrent.Seeders >= replaceSeeders {
 					availableSpace += clientTorrentsMap[normalTorrents[0]].Size
 					log += fmt.Sprintf("Delete client normal torrent %s\n", clientTorrentsMap[normalTorrents[0]].Name)
 					deleteTorrents = append(deleteTorrents, normalTorrents[0])

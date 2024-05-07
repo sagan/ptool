@@ -44,16 +44,21 @@ func init() {
 	cmd.RootCmd.AddCommand(command)
 }
 
-func brush(cmd *cobra.Command, args []string) error {
-	clientInstance, err := client.CreateClient(args[0])
+func brush(cmd *cobra.Command, args []string) (err error) {
+	clientName := args[0]
+	sitenames := config.ParseGroupAndOtherNamesWithoutDeduplicate(args[1:]...)
+	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
 		return err
 	}
+	lock, err := config.LockConfigDirFile(fmt.Sprintf(config.CLIENT_LOCK_FILE, clientName))
+	if err != nil {
+		return err
+	}
+	defer lock.Unlock()
 	if clientInstance.GetClientConfig().Type == "transmission" {
 		log.Warnf("Warning: brush function of transmission client has NOT been tested")
 	}
-	sitenames := config.ParseGroupAndOtherNamesWithoutDeduplicate(args[1:]...)
-
 	if !ordered {
 		rand.Shuffle(len(sitenames), func(i, j int) { sitenames[i], sitenames[j] = sitenames[j], sitenames[i] })
 	}

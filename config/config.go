@@ -38,6 +38,7 @@ const (
 	CLIENT_TORRENTS_WIDTH      = 120 // min width for printing client torrents
 	GLOBAL_INTERNAL_LOCK_FILE  = "ptool.lock"
 	GLOBAL_LOCK_FILE           = "ptool-global.lock"
+	CLIENT_LOCK_FILE           = "client-%s.lock"
 	EXAMPLE_CONFIG_FILE        = "ptool.example" // .toml , .yaml
 
 	DEFAULT_EXPORT_TORRENT_RENAME = "[name128].[infohash16].torrent"
@@ -129,6 +130,10 @@ type SiteConfigStruct struct {
 	DynamicSeedingSize             string     `yaml:"dynamicSeedingSize"`
 	DynamicSeedingTorrentMinSize   string     `yaml:"dynamicSeedingTorrentMinSize"`
 	DynamicSeedingTorrentMaxSize   string     `yaml:"dynamicSeedingTorrentMaxSize"`
+	DynamicSeedingMaxScan          int64      `yaml:"dynamicSeedingMaxScan"`
+	DynamicSeedingMinSeeders       int64      `yaml:"dynamicSeedingMinSeeders"`
+	DynamicSeedingMaxSeeders       int64      `yaml:"dynamicSeedingMaxSeeders"`
+	DynamicSeedingReplaceSeeders   int64      `yaml:"dynamicSeedingReplaceSeeders"`
 	SearchQueryVariable            string     `yaml:"searchQueryVariable"`
 	TorrentsExtraUrls              []string   `yaml:"torrentsExtraUrls"`
 	Cookie                         string     `yaml:"cookie"`
@@ -272,7 +277,7 @@ var InternalAliases = []*AliasConfigStruct{
 	},
 	{
 		Name:     "dlsite",
-		Cmd:      "batchdl --download --download-skip-existing",
+		Cmd:      "batchdl --download --skip-existing",
 		MinArgs:  1,
 		Internal: true,
 	},
@@ -337,9 +342,9 @@ func Set() error {
 	if err := os.MkdirAll(ConfigDir, constants.PERM); err != nil {
 		return fmt.Errorf("config dir does NOT exists and can not be created: %v", err)
 	}
-	lock := flock.New(filepath.Join(ConfigDir, GLOBAL_INTERNAL_LOCK_FILE))
-	if ok, err := lock.TryLock(); err != nil || !ok {
-		return fmt.Errorf("unable to acquire global lock: %v", err)
+	lock, err := LockConfigDirFile(GLOBAL_INTERNAL_LOCK_FILE)
+	if err != nil {
+		return err
 	}
 	defer lock.Unlock()
 	sites := Get().Sites
@@ -695,9 +700,9 @@ func CreateDefaultConfig() (err error) {
 	if err := os.MkdirAll(ConfigDir, constants.PERM); err != nil {
 		return fmt.Errorf("failed to create config dir: %v", err)
 	}
-	lock := flock.New(filepath.Join(ConfigDir, GLOBAL_INTERNAL_LOCK_FILE))
-	if ok, err := lock.TryLock(); err != nil || !ok {
-		return fmt.Errorf("unable to acquire global lock: %v", err)
+	lock, err := LockConfigDirFile(GLOBAL_INTERNAL_LOCK_FILE)
+	if err != nil {
+		return err
 	}
 	defer lock.Unlock()
 	configFile := filepath.Join(ConfigDir, ConfigFile)
@@ -740,4 +745,13 @@ func GetProxy(proxies ...string) string {
 		}
 	}
 	return ""
+}
+
+// Lock the file with provided name in config dir.
+func LockConfigDirFile(name string) (*flock.Flock, error) {
+	lock := flock.New(filepath.Join(ConfigDir, name))
+	if ok, err := lock.TryLock(); err != nil || !ok {
+		return nil, fmt.Errorf("unable to acquire lock <config_dir>/%q: %v", name, err)
+	}
+	return lock, nil
 }

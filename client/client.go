@@ -172,8 +172,11 @@ var tracker_invalid_torrent_msgs = []string{
 	"unauthorized",
 	"require passkey",
 	"require authkey",
-	"种子不存",  // 神站 pttime 的 msg: "PTT:种子不存"
+	"already are downloading", // "You already are downloading the same torrent"
+	"种子不存在",
 	"该种子没有", // monikadesign 的 msg: "该种子没有在我们的 Tracker 上注册."
+	"下载相同种子",
+	"下載相同種子",
 }
 
 func (trackers TorrentTrackers) SeemsInvalidTorrent() bool {
@@ -465,10 +468,10 @@ func IsSubstituteTag(tag string) bool {
 
 func PrintTorrentTrackers(trackers TorrentTrackers) {
 	fmt.Printf("Trackers:\n")
-	fmt.Printf("%-8s  %-40s  %s\n", "Status", "Msg", "Url")
+	fmt.Printf("%-8s  %-60s  %s\n", "Status", "Msg", "Url")
 	for _, tracker := range trackers {
 		fmt.Printf("%-8s  ", tracker.Status)
-		util.PrintStringInWidth(os.Stdout, tracker.Msg, 40, true)
+		util.PrintStringInWidth(os.Stdout, tracker.Msg, 60, true)
 		fmt.Printf("  %s\n", tracker.Url)
 	}
 }

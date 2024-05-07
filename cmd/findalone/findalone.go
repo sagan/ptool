@@ -6,6 +6,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/shibumi/go-pathspec"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/exp/slices"
@@ -13,6 +14,7 @@ import (
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/cmd/common"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/util"
 )
 
@@ -110,6 +112,10 @@ func findalone(cmd *cobra.Command, args []string) error {
 			continue
 		}
 		for _, entry := range entries {
+			if util.First(pathspec.GitIgnore(constants.DefaultIgnorePatterns, entry.Name())) {
+				log.Debugf("Skip ignored file %q", entry.Name())
+				continue
+			}
 			fullpath := path.Join(savePath, entry.Name())
 			if slices.Contains(savePathes, fullpath) {
 				continue

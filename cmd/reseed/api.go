@@ -17,6 +17,7 @@ import (
 	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/util"
+	"github.com/shibumi/go-pathspec"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -208,13 +209,18 @@ func scan(dirs ...string) (file File, savePathMap map[string]string, err error) 
 			}
 			relpath = strings.ReplaceAll(relpath, `/`, `\`)
 			inTopLevelDir := !strings.Contains(relpath, `\`)
-			if info.IsDir() {
-				if inTopLevelDir && (strings.HasPrefix(info.Name(), ".") || strings.HasPrefix(info.Name(), "$")) {
-					return filepath.SkipDir
-				}
+			isTorrentFile := !info.IsDir() && strings.HasSuffix(util.TrimAnySuffix(path,
+				constants.ProcessedFilenameSuffixes...), ".torrent")
+			ignore := false
+			if inTopLevelDir {
+				ignore = isTorrentFile || util.First(pathspec.GitIgnore(constants.DefaultIgnorePatterns, relpath))
 			} else {
-				if strings.HasSuffix(path, ".torrent") ||
-					util.HasAnySuffix(path, constants.ProcessedFilenameSuffixes...) {
+				ignore = isTorrentFile
+			}
+			if ignore {
+				if info.IsDir() {
+					return filepath.SkipDir
+				} else {
 					return nil
 				}
 			}

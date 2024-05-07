@@ -16,7 +16,7 @@ replace github.com/stromland/cobra-prompt => ./cobra-prompt
 
 require (
 	github.com/Noooste/azuretls-client v1.4.12
-	github.com/PuerkitoBio/goquery v1.9.1
+	github.com/PuerkitoBio/goquery v1.9.2
 	github.com/anacrolix/torrent v1.55.0
 	github.com/c-bata/go-prompt v0.2.6
 	github.com/ettle/strcase v0.2.0
@@ -27,14 +27,14 @@ require (
 	github.com/hekmon/transmissionrpc/v2 v2.0.1
 	github.com/jpillora/go-tld v1.2.1
 	github.com/mattn/go-runewidth v0.0.15
-	github.com/pelletier/go-toml/v2 v2.2.1
+	github.com/pelletier/go-toml/v2 v2.2.2
 	github.com/shibumi/go-pathspec v1.3.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.2
 	github.com/stromland/cobra-prompt v0.5.0
-	golang.org/x/exp v0.0.0-20240416160154-fe59bbe5cc7f
-	golang.org/x/net v0.24.0
+	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
+	golang.org/x/net v0.25.0
 	gorm.io/gorm v1.25.10
 )
 
@@ -49,10 +49,10 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
-	modernc.org/libc v1.50.4 // indirect
+	modernc.org/libc v1.50.5 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.8.0 // indirect
-	modernc.org/sqlite v1.29.8 // indirect
+	modernc.org/sqlite v1.29.9 // indirect
 )
 
 require (
@@ -88,10 +88,10 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.22.0 // indirect
-	golang.org/x/sys v0.19.0 // indirect
-	golang.org/x/term v0.19.0
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/crypto v0.23.0 // indirect
+	golang.org/x/sys v0.20.0 // indirect
+	golang.org/x/term v0.20.0
+	golang.org/x/text v0.15.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

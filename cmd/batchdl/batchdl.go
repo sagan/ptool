@@ -65,54 +65,54 @@ It will output the summary of downloads result in the end:
 }
 
 var (
-	showJson             = false
-	doDownload           = false
-	slowMode             = false
-	downloadSkipExisting = false
-	downloadAll          = false
-	onePage              = false
-	addPaused            = false
-	dense                = false
-	addRespectNoadd      = false
-	includeDownloaded    = false
-	onlyDownloaded       = false
-	freeOnly             = false
-	noPaid               = false
-	noNeutral            = false
-	nohr                 = false
-	allowBreak           = false
-	addCategoryAuto      = false
-	largestFlag          = false
-	latestFlag           = false
-	newestFlag           = false
-	saveAppend           = false
-	maxTorrents          = int64(0)
-	minSeeders           = int64(0)
-	maxSeeders           = int64(0)
-	maxConsecutiveFail   = int64(0)
-	addCategory          = ""
-	addClient            = ""
-	addTags              = ""
-	tag                  = ""
-	filter               = ""
-	excludes             = ""
-	addSavePath          = ""
-	minTorrentSizeStr    = ""
-	maxTorrentSizeStr    = ""
-	maxTotalSizeStr      = ""
-	freeTimeAtLeastStr   = ""
-	publishedAfterStr    = ""
-	startPage            = ""
-	downloadDir          = ""
-	baseUrl              = ""
-	rename               = ""
-	sortFlag             = ""
-	orderFlag            = ""
-	saveFilename         = ""
-	saveOkFilename       = ""
-	saveFailFilename     = ""
-	saveJsonFilename     = ""
-	includes             = []string{}
+	showJson           = false
+	doDownload         = false
+	slowMode           = false
+	skipExisting       = false
+	downloadAll        = false
+	onePage            = false
+	addPaused          = false
+	dense              = false
+	addRespectNoadd    = false
+	includeDownloaded  = false
+	onlyDownloaded     = false
+	freeOnly           = false
+	noPaid             = false
+	noNeutral          = false
+	nohr               = false
+	allowBreak         = false
+	addCategoryAuto    = false
+	largestFlag        = false
+	latestFlag         = false
+	newestFlag         = false
+	saveAppend         = false
+	maxTorrents        = int64(0)
+	minSeeders         = int64(0)
+	maxSeeders         = int64(0)
+	maxConsecutiveFail = int64(0)
+	addCategory        = ""
+	addClient          = ""
+	addTags            = ""
+	tag                = ""
+	filter             = ""
+	excludes           = ""
+	addSavePath        = ""
+	minTorrentSizeStr  = ""
+	maxTorrentSizeStr  = ""
+	maxTotalSizeStr    = ""
+	freeTimeAtLeastStr = ""
+	publishedAfterStr  = ""
+	startPage          = ""
+	downloadDir        = ""
+	baseUrl            = ""
+	rename             = ""
+	sortFlag           = ""
+	orderFlag          = ""
+	saveFilename       = ""
+	saveOkFilename     = ""
+	saveFailFilename   = ""
+	saveJsonFilename   = ""
+	includes           = []string{}
 )
 
 func init() {
@@ -120,7 +120,7 @@ func init() {
 		"Show output in json format (each line be the json object of a torrent)")
 	command.Flags().BoolVarP(&doDownload, "download", "", false, "Do download found torrents to local")
 	command.Flags().BoolVarP(&slowMode, "slow", "", false, "Slow mode. wait after downloading each torrent")
-	command.Flags().BoolVarP(&downloadSkipExisting, "download-skip-existing", "", false,
+	command.Flags().BoolVarP(&skipExisting, "skip-existing", "", false,
 		`Used with "--download". Do NOT re-download torrent that same name file already exists in local dir. `+
 			`If this flag is set, the download torrent filename ("--rename" flag) will be fixed to `+
 			`"[site].[id].torrent" (e.g. "mteam.12345.torrent") format`)
@@ -233,7 +233,7 @@ func batchdl(command *cobra.Command, args []string) error {
 	if util.CountNonZeroVariables(doDownload, addClient) > 1 {
 		return fmt.Errorf("--download and --add-client flags are NOT compatible")
 	}
-	if !doDownload && (downloadSkipExisting || downloadDir != ".") {
+	if !doDownload && (skipExisting || downloadDir != ".") {
 		return fmt.Errorf(`found flags that are can only be used with "--download"`)
 	} else if addClient == "" && util.CountNonZeroVariables(
 		addCategoryAuto, addCategory, addClient, addPaused, addRespectNoadd, addSavePath) > 0 {
@@ -242,8 +242,8 @@ func batchdl(command *cobra.Command, args []string) error {
 	if !doDownload && addClient == "" && (saveOkFilename != "" || saveFailFilename != "") {
 		return fmt.Errorf(`found flags that are can only be used with "--download" or "--add-client"`)
 	}
-	if util.CountNonZeroVariables(downloadSkipExisting, rename) > 1 {
-		return fmt.Errorf("--download-skip-existing and --rename flags are NOT compatible")
+	if util.CountNonZeroVariables(skipExisting, rename) > 1 {
+		return fmt.Errorf("--skip-existing and --rename flags are NOT compatible")
 	}
 	if largestFlag {
 		sortFlag = "size"
@@ -526,7 +526,7 @@ mainloop:
 			}
 			var err error
 			filename := ""
-			if doDownload && downloadSkipExisting && torrent.Id != "" {
+			if doDownload && skipExisting && torrent.Id != "" {
 				filename = fmt.Sprintf("%s.%s.torrent", sitename, torrent.ID())
 				if util.FileExistsWithOptionalSuffix(filepath.Join(downloadDir, filename),
 					constants.ProcessedFilenameSuffixes...) {

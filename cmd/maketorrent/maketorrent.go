@@ -22,21 +22,6 @@ import (
 	"github.com/sagan/ptool/util/torrentutil"
 )
 
-var defaultIgnorePatterns = []string{
-	".*",
-	"$*",
-	"~$*", // Microsoft Office tmp files
-	"*.bak",
-	"*.tmp",
-	"*.temp",
-	"*.dropbox",
-	"*.torrent",
-	"node_modules/",
-	"System Volume Information",
-	"desktop.ini",
-	"Thumbs.db",
-}
-
 var command = &cobra.Command{
 	Use:         "maketorrent {content-path}",
 	Aliases:     []string{"createtorrent", "mktorrent"},
@@ -63,7 +48,7 @@ It's possible to provide your own customized exclude-pattern(s) using "--exclude
 If "--public" flag is set, ptool will add the following open trackers to created .torrent file:
   %s
 To create a private torrent (for uploading to Private Trackers site), set "--private" flag.`,
-		strings.Join(defaultIgnorePatterns, " ; "), strings.Join(constants.OpenTrackers, "\n  ")),
+		strings.Join(constants.DefaultIgnorePatterns, " ; "), strings.Join(constants.OpenTrackers, "\n  ")),
 	Args: cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 	RunE: maketorrent,
 }
@@ -87,7 +72,7 @@ var (
 func init() {
 	command.Flags().BoolVarP(&all, "all", "a", false, `Index all files of content folder to created torrent. `+
 		`If not set, ptool will ignore files with certain patterns names inside content folder: `+
-		strings.Join(defaultIgnorePatterns, " ; "))
+		strings.Join(constants.DefaultIgnorePatterns, " ; "))
 	command.Flags().BoolVarP(&private, "private", "p", false, `Mark created torrent as private ("info.private" field)`)
 	command.Flags().BoolVarP(&public, "public", "P", false, `Mark created torrent as public (non-private), `+
 		`ptool will automatically add common pre-defined open trackers to it`)
@@ -163,7 +148,7 @@ func maketorrent(cmd *cobra.Command, args []string) (err error) {
 		info.Private = &private
 	}
 	if !all {
-		excludes = append(excludes, defaultIgnorePatterns...)
+		excludes = append(excludes, constants.DefaultIgnorePatterns...)
 	}
 	log.Infof("Creating torrent for %q", contentPath)
 	if err := infoBuildFromFilePath(info, contentPath, excludes); err != nil {
