@@ -118,6 +118,16 @@ func brush(cmd *cobra.Command, args []string) (err error) {
 			continue
 		}
 		brushSiteOption := strategy.GetBrushSiteOptions(siteInstance, util.Now())
+		brushMaxTorrents := clientInstance.GetClientConfig().BrushMaxTorrents
+		if siteInstance.GetSiteConfig().BrushAllowAddTorrentsPercent != 0 {
+			p := float64(siteInstance.GetSiteConfig().BrushAllowAddTorrentsPercent) / 100.0
+			brushMaxTorrents = int64(p * float64(clientInstance.GetClientConfig().BrushMaxTorrents))
+		}
+
+		currentTorrents := len(getTorrentsOfSite(clientTorrents, sitename))
+		brushSiteOption.AllowAddTorrents = brushMaxTorrents - int64(currentTorrents)
+		log.Printf("Site %s already have %d torrents, max %d, allow %d", sitename,
+			len(getTorrentsOfSite(clientTorrents, sitename)), brushMaxTorrents, brushSiteOption.AllowAddTorrents)
 		brushClientOption := strategy.GetBrushClientOptions(clientInstance)
 		log.Printf(
 			"Brush Options: minDiskSpace=%v, slowUploadSpeedTier=%v, torrentUploadSpeedLimit=%v/s,"+
@@ -312,4 +322,14 @@ func brush(cmd *cobra.Command, args []string) (err error) {
 		return fmt.Errorf("no sites successed")
 	}
 	return nil
+}
+
+func getTorrentsOfSite(torrents []*client.Torrent, siteName string) []*client.Torrent {
+	var ret []*client.Torrent
+	for _, torrent := range torrents {
+		if torrent.GetSiteFromTag() == siteName {
+			ret = append(ret, torrent)
+		}
+	}
+	return ret
 }

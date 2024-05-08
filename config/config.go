@@ -198,6 +198,7 @@ type SiteConfigStruct struct {
 	DynamicSeedingTorrentMinSizeValue int64
 	DynamicSeedingTorrentMaxSizeValue int64
 	AutoComment                       string // 自动更新 ptool.toml 时系统生成的 comment。会被写入 Comment 字段
+	BrushAllowAddTorrentsPercent      int    `yaml:"brushAllowAddTorrentsPercent"` // Site种子数量占比(0~100]: ConfigStruct.BrushMaxTorrents; 0 = no limit
 }
 
 type ConfigStruct struct {
@@ -621,6 +622,10 @@ func (siteConfig *SiteConfigStruct) Register() {
 				siteConfig.DynamicSeedingTorrentMinSize, err)
 		}
 		siteConfig.DynamicSeedingTorrentMinSizeValue = v
+	}
+
+	if siteConfig.BrushAllowAddTorrentsPercent < 0 || siteConfig.BrushAllowAddTorrentsPercent > 100 {
+		log.Fatalf("Invalid allowAddTorrentsPercent value %v in site config, should between [0, 100]", siteConfig.BrushAllowAddTorrentsPercent)
 	}
 
 	sitesConfigMap[siteConfig.GetName()] = siteConfig
