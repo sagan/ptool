@@ -109,7 +109,7 @@ func GetReseedTorrents(username string, password string, sites []*config.SiteCon
 	savePath ...string) (results []*Torrent, results2 []*Torrent, err error) {
 	file, savePathMap, err := scan(savePath...)
 	if err != nil {
-		err = fmt.Errorf("failed to scan savePath(s): %v", err)
+		err = fmt.Errorf("failed to scan savePath(s): %w", err)
 		return
 	}
 	if len(file) == 0 {
@@ -118,18 +118,18 @@ func GetReseedTorrents(username string, password string, sites []*config.SiteCon
 	}
 	token, err := Login(username, password)
 	if err != nil {
-		err = fmt.Errorf("failed to login to reseed server: %v", err)
+		err = fmt.Errorf("failed to login to reseed server: %w", err)
 		return
 	}
 	reseedSites, err := GetSites(token)
 	if err != nil {
-		err = fmt.Errorf("failed to get reseed sites: %v", err)
+		err = fmt.Errorf("failed to get reseed sites: %w", err)
 		return
 	}
 	reseed2LocalMap := GenerateReseed2LocalSiteMap(reseedSites, sites)
 	client, err := socketio.NewClient(RESEED_API, nil)
 	if err != nil {
-		err = fmt.Errorf("failed to create sock.io client: %v", err)
+		err = fmt.Errorf("failed to create sock.io client: %w", err)
 		return
 	}
 	// must provide a "reply" event listener
@@ -141,7 +141,7 @@ func GetReseedTorrents(username string, password string, sites []*config.SiteCon
 		header.Set("Authorization", "Bearar "+token)
 	}
 	if err = client.Connect(header); err != nil {
-		err = fmt.Errorf("failed to connect to reseed backend: %v", err)
+		err = fmt.Errorf("failed to connect to reseed backend: %w", err)
 		return
 	}
 	timeoutPeriod := time.Second * time.Duration(timeout)
@@ -289,7 +289,7 @@ func Login(username string, password string) (token string, err error) {
 	}
 	var result *ReseedLoginResult
 	if err = util.PostUrlForJson(RESEED_API+"login", data, &result, nil); err != nil {
-		return "", fmt.Errorf("failed to login: %v", err)
+		return "", fmt.Errorf("failed to login: %w", err)
 	}
 	if !result.Success {
 		return "", fmt.Errorf("failed login: %s", result.Msg)

@@ -164,7 +164,7 @@ func partialdownload(cmd *cobra.Command, args []string) (err error) {
 	var chunkSize int64
 	if chunkSizeStr != "" {
 		if chunkSize, err = util.RAMInBytes(chunkSizeStr); err != nil {
-			return fmt.Errorf("invalid chunk-size: %v", err)
+			return fmt.Errorf("invalid chunk-size: %w", err)
 		}
 	}
 	if chunkSize <= 0 {
@@ -182,11 +182,11 @@ func partialdownload(cmd *cobra.Command, args []string) (err error) {
 
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		return fmt.Errorf("failed to create client: %v", err)
+		return fmt.Errorf("failed to create client: %w", err)
 	}
 	torrentFiles, err := clientInstance.GetTorrentContents(infoHash)
 	if err != nil {
-		return fmt.Errorf("failed to get client files: %v", err)
+		return fmt.Errorf("failed to get client files: %w", err)
 	}
 	if len(torrentFiles) == 0 {
 		return fmt.Errorf("target torrent has no files")
@@ -217,14 +217,14 @@ func partialdownload(cmd *cobra.Command, args []string) (err error) {
 			}
 			if len(includes) > 0 {
 				if ignore, err := pathspec.GitIgnore(includes, file.Path); err != nil {
-					return fmt.Errorf("invalid includes: %v", err)
+					return fmt.Errorf("invalid includes: %w", err)
 				} else if !ignore {
 					continue
 				}
 			}
 			if len(excludes) > 0 {
 				if ignore, err := pathspec.GitIgnore(excludes, file.Path); err != nil {
-					return fmt.Errorf("invalid excludes: %v", err)
+					return fmt.Errorf("invalid excludes: %w", err)
 				} else if ignore {
 					continue
 				}
@@ -256,7 +256,7 @@ func partialdownload(cmd *cobra.Command, args []string) (err error) {
 		}
 		if !skip && len(includes) > 0 {
 			if ignore, err := pathspec.GitIgnore(includes, file.Path); err != nil {
-				return fmt.Errorf("invalid includes: %v", err)
+				return fmt.Errorf("invalid includes: %w", err)
 			} else if !ignore {
 				log.Debugf("Skip non-includes file %q", file.Path)
 				skip = true
@@ -264,7 +264,7 @@ func partialdownload(cmd *cobra.Command, args []string) (err error) {
 		}
 		if !skip && len(excludes) > 0 {
 			if ignore, err := pathspec.GitIgnore(excludes, file.Path); err != nil {
-				return fmt.Errorf("invalid excludes: %v", err)
+				return fmt.Errorf("invalid excludes: %w", err)
 			} else if ignore {
 				log.Debugf("Skip excludes file %q", file.Path)
 				skip = true
@@ -313,7 +313,7 @@ func partialdownload(cmd *cobra.Command, args []string) (err error) {
 	if len(downloadFileIndexes) > 0 {
 		err = clientInstance.SetFilePriority(infoHash, downloadFileIndexes, 1)
 		if err != nil {
-			return fmt.Errorf("failed to mark files as download: %v", err)
+			return fmt.Errorf("failed to mark files as download: %w", err)
 		}
 		log.Infof("Marked %d files as download.", len(downloadFileIndexes))
 	} else {
@@ -324,7 +324,7 @@ func partialdownload(cmd *cobra.Command, args []string) (err error) {
 		if len(noDownloadFileIndexes) > 0 {
 			err = clientInstance.SetFilePriority(infoHash, noDownloadFileIndexes, 0)
 			if err != nil {
-				return fmt.Errorf("failed to mark files as no-download: %v", err)
+				return fmt.Errorf("failed to mark files as no-download: %w", err)
 			}
 			log.Infof("Marked %d files as no-download.", len(noDownloadFileIndexes))
 		} else {

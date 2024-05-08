@@ -3,7 +3,6 @@ package mtorrent
 import (
 	"encoding/json"
 	"fmt"
-	"net"
 	"net/http"
 	neturl "net/url"
 	"strings"
@@ -192,9 +191,6 @@ func (m *Site) do(path string, query neturl.Values, body any, result any) error 
 		NoCookie: true, // disable azuretls internal cookie jar
 	}, reqHeaders)
 	if err != nil {
-		if _, ok := err.(net.Error); ok {
-			return fmt.Errorf("failed to fetch url: <network error>: %w", err)
-		}
 		return fmt.Errorf("failed to fetch url: %w", err)
 	}
 	log.Tracef("Azuretls.Do response status=%d", res.StatusCode)
@@ -264,7 +260,7 @@ func getMultiplier(config map[string]float64, discount string) float64 {
 func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.ConfigStruct) (site.Site, error) {
 	httpClient, httpHeaders, err := site.CreateSiteHttpClient(siteConfig, config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create site http client: %v", err)
+		return nil, fmt.Errorf("failed to create site http client: %w", err)
 	}
 	s := &Site{
 		Name:        name,

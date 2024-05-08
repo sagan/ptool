@@ -176,7 +176,7 @@ func importsites(cmd *cobra.Command, args []string) error {
 			fmt.Printf("Successfully update config file %s\n", configFile)
 			return nil
 		} else {
-			return fmt.Errorf("failed to update config file %s : %v", configFile, err)
+			return fmt.Errorf("failed to update config file %s : %w", configFile, err)
 		}
 	} else {
 		fmt.Printf("!No new sites found in cookiecloud datas\n")

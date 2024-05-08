@@ -32,13 +32,13 @@ func checktag(cmd *cobra.Command, args []string) error {
 	tag := args[1]
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		return fmt.Errorf("failed to create client: %v", err)
+		return fmt.Errorf("failed to create client: %w", err)
 	}
 	tags := util.SplitCsv(tag)
 
 	clientTags, err := clientInstance.GetTags()
 	if err != nil {
-		return fmt.Errorf("failed to get client %s tags: %v", clientName, err)
+		return fmt.Errorf("failed to get client %s tags: %w", clientName, err)
 	}
 	ok := false
 	for _, tag := range tags {
@@ -50,7 +50,7 @@ func checktag(cmd *cobra.Command, args []string) error {
 		}
 	}
 	if !ok {
-		return fmt.Errorf("none of tags %v exists in client %s", tags, clientName)
+		return fmt.Errorf("none of tags %w exists in client %s", tags, clientName)
 	}
 	return nil
 }

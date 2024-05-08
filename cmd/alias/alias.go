@@ -50,7 +50,7 @@ func aliascmd(_ *cobra.Command, args []string) error {
 	}
 	aliasArgs, err := shlex.Split(argsCmd)
 	if err != nil {
-		return fmt.Errorf("failed to parse alias %s cmdline '%s': %v", aliasName, argsCmd, err)
+		return fmt.Errorf("failed to parse alias %s cmdline '%s': %w", aliasName, argsCmd, err)
 	}
 	if len(args) < int(aliasConfig.MinArgs) {
 		return fmt.Errorf("alias '%s' requires at least %d arg(s), only received %d",
@@ -60,7 +60,7 @@ func aliascmd(_ *cobra.Command, args []string) error {
 	aliasArgs = append(aliasArgs, args...)
 	if len(args) == int(aliasConfig.MinArgs) && aliasConfig.DefaultArgs != "" {
 		if aliasDefaultArgs, err := shlex.Split(aliasConfig.DefaultArgs); err != nil {
-			return fmt.Errorf("failed to parse alias '%s' defaultArgs '%s': %v", aliasName, aliasConfig.DefaultArgs, err)
+			return fmt.Errorf("failed to parse alias '%s' defaultArgs '%s': %w", aliasName, aliasConfig.DefaultArgs, err)
 		} else {
 			aliasArgs = append(aliasArgs, aliasDefaultArgs...)
 		}

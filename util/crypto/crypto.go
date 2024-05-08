@@ -31,7 +31,7 @@ func DecryptCryptoJsAesMsg(password string, ciphertext string) ([]byte, error) {
 	const blocklen = 16
 	rawEncrypted, err := base64.StdEncoding.DecodeString(ciphertext)
 	if err != nil {
-		return nil, fmt.Errorf("failed to base64 decode Encrypted: %v", err)
+		return nil, fmt.Errorf("failed to base64 decode Encrypted: %w", err)
 	}
 	if len(rawEncrypted) < 17 || len(rawEncrypted)%blocklen != 0 || string(rawEncrypted[:8]) != "Salted__" {
 		return nil, fmt.Errorf("invalid ciphertext")
@@ -41,14 +41,14 @@ func DecryptCryptoJsAesMsg(password string, ciphertext string) ([]byte, error) {
 	key, iv := BytesToKey(salt, []byte(password), md5.New(), keylen, blocklen)
 	newCipher, err := aes.NewCipher(key)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create aes cipher: %v", err)
+		return nil, fmt.Errorf("failed to create aes cipher: %w", err)
 	}
 	cfbdec := cipher.NewCBCDecrypter(newCipher, iv)
 	decrypted := make([]byte, len(encrypted))
 	cfbdec.CryptBlocks(decrypted, encrypted)
 	decrypted, err = pkcs7strip(decrypted, blocklen)
 	if err != nil {
-		return nil, fmt.Errorf("failed to strip pkcs7 paddings (password may be incorrect): %v", err)
+		return nil, fmt.Errorf("failed to strip pkcs7 paddings (password may be incorrect): %w", err)
 	}
 	return decrypted, nil
 }

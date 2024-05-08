@@ -45,11 +45,11 @@ func xseedcheck(cmd *cobra.Command, args []string) error {
 	torrent := args[2]
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		return fmt.Errorf("failed to create client: %v", err)
+		return fmt.Errorf("failed to create client: %w", err)
 	}
 	_, tinfo, _, _, _, _, _, err := helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, nil, false, nil)
 	if err != nil {
-		return fmt.Errorf("failed to get %s: %v", torrent, err)
+		return fmt.Errorf("failed to get %s: %w", torrent, err)
 	}
 	if tinfo.InfoHash == infoHash {
 		fmt.Printf("Result: identical. Torrent %s has the same infoHash with client %s torrent.\n", torrent, clientName)
@@ -57,7 +57,7 @@ func xseedcheck(cmd *cobra.Command, args []string) error {
 	}
 	clientTorrentContents, err := clientInstance.GetTorrentContents(infoHash)
 	if err != nil {
-		return fmt.Errorf("failed to get client torrent contents info: %v", err)
+		return fmt.Errorf("failed to get client torrent contents info: %w", err)
 	}
 	compareResult := tinfo.XseedCheckWithClientTorrent(clientTorrentContents)
 	if compareResult == 0 {

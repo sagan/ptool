@@ -26,12 +26,12 @@ func init() {
 func gettags(cmd *cobra.Command, args []string) error {
 	clientInstance, err := client.CreateClient(args[0])
 	if err != nil {
-		return fmt.Errorf("failed to create client: %v", err)
+		return fmt.Errorf("failed to create client: %w", err)
 	}
 
 	tags, err := clientInstance.GetTags()
 	if err != nil {
-		return fmt.Errorf("failed to get tags: %v", err)
+		return fmt.Errorf("failed to get tags: %w", err)
 	}
 	fmt.Printf("%s\n", strings.Join(tags, ", "))
 	return nil

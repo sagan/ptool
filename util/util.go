@@ -335,7 +335,7 @@ func BytesHasAnyStringPrefix(data []byte, prefixes ...string) bool {
 func PrintJson(output io.Writer, value any) error {
 	bytes, err := json.MarshalIndent(value, "", "  ")
 	if err != nil {
-		return fmt.Errorf("failed to marshal json: %v", err)
+		return fmt.Errorf("failed to marshal json: %w", err)
 	}
 	fmt.Fprintln(output, string(bytes))
 	return nil

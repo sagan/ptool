@@ -96,7 +96,7 @@ func GetUrlDocWithAzuretls(url string, client *azuretls.Session,
 		var _err error
 		doc, _err = goquery.NewDocumentFromReader(bytes.NewReader(res.Body))
 		if err == nil && _err != nil {
-			err = fmt.Errorf("failed to parse site page DOM, error: %v", _err)
+			err = fmt.Errorf("failed to parse site page DOM, error: %w", _err)
 		}
 	}
 	return

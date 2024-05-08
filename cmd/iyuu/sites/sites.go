@@ -36,7 +36,7 @@ func sites(cmd *cobra.Command, args []string) error {
 	if showBindable {
 		bindableSites, err := iyuu.IyuuApiGetRecommendSites()
 		if err != nil {
-			return fmt.Errorf("failed to get iyuu bindable sites: %v", err)
+			return fmt.Errorf("failed to get iyuu bindable sites: %w", err)
 		}
 		fmt.Printf("%-20s  %7s  %20s\n", "SiteName", "SiteId", "BindParams")
 		for _, site := range bindableSites {
@@ -55,7 +55,7 @@ func sites(cmd *cobra.Command, args []string) error {
 
 	iyuuApiSites, err := iyuu.IyuuApiSites(config.Get().IyuuToken)
 	if err != nil {
-		return fmt.Errorf("failed to get iyuu sites: %v", err)
+		return fmt.Errorf("failed to get iyuu sites: %w", err)
 	}
 	iyuuSites := util.Map(iyuuApiSites, func(site iyuu.IyuuApiSite) iyuu.Site {
 		return site.ToSite()

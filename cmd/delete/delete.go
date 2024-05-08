@@ -58,7 +58,7 @@ func delete(cmd *cobra.Command, args []string) error {
 	infoHashes := args[1:]
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		return fmt.Errorf("failed to create client: %v", err)
+		return fmt.Errorf("failed to create client: %w", err)
 	}
 	minTorrentSize, _ := util.RAMInBytes(minTorrentSizeStr)
 	maxTorrentSize, _ := util.RAMInBytes(maxTorrentSizeStr)
@@ -85,14 +85,14 @@ func delete(cmd *cobra.Command, args []string) error {
 		}
 		if force {
 			if err = clientInstance.DeleteTorrents(infoHashes, !preserve); err != nil {
-				return fmt.Errorf("failed to delete torrents: %v", err)
+				return fmt.Errorf("failed to delete torrents: %w", err)
 			}
 			return nil
 		}
 	}
 	torrents, err := client.QueryTorrents(clientInstance, category, tag, filter, infoHashes...)
 	if err != nil {
-		return fmt.Errorf("failed to fetch client torrents: %v", err)
+		return fmt.Errorf("failed to fetch client torrents: %w", err)
 	}
 	if tracker != "" || minTorrentSize >= 0 || maxTorrentSize >= 0 {
 		torrents = util.Filter(torrents, func(t client.Torrent) bool {
@@ -119,7 +119,7 @@ func delete(cmd *cobra.Command, args []string) error {
 	infoHashes = util.Map(torrents, func(t client.Torrent) string { return t.InfoHash })
 	err = clientInstance.DeleteTorrents(infoHashes, !preserve)
 	if err != nil {
-		return fmt.Errorf("failed to delete torrents: %v", err)
+		return fmt.Errorf("failed to delete torrents: %w", err)
 	}
 	fmt.Printf("%d torrents deleted.\n", len(torrents))
 	return nil

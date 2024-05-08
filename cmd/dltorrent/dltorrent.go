@@ -70,7 +70,7 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 	torrents := args
 	if len(torrents) == 1 && torrents[0] == "-" {
 		if data, err := helper.ReadArgsFromStdin(); err != nil {
-			return fmt.Errorf("failed to parse stdin to info torrent ids: %v", err)
+			return fmt.Errorf("failed to parse stdin to info torrent ids: %w", err)
 		} else if len(data) == 0 {
 			return nil
 		} else {

@@ -81,11 +81,11 @@ func xseedadd(cmd *cobra.Command, args []string) error {
 	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		return fmt.Errorf("failed to create client: %v", err)
+		return fmt.Errorf("failed to create client: %w", err)
 	}
 	clientTorrents, err := clientInstance.GetTorrents("seeding", category, true)
 	if err != nil {
-		return fmt.Errorf("failed to get client torrents: %v", err)
+		return fmt.Errorf("failed to get client torrents: %w", err)
 	}
 	var fixedTags []string
 	if addTags != "" {

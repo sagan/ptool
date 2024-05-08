@@ -35,11 +35,11 @@ func sites(cmd *cobra.Command, args []string) error {
 	}
 	token, err := reseed.Login(config.Get().ReseedUsername, config.Get().ReseedPassword)
 	if err != nil {
-		return fmt.Errorf("failed to login to reseed server: %v", err)
+		return fmt.Errorf("failed to login to reseed server: %w", err)
 	}
 	sites, err := reseed.GetSites(token)
 	if err != nil {
-		return fmt.Errorf("failed to get reseed sites: %v", err)
+		return fmt.Errorf("failed to get reseed sites: %w", err)
 	}
 	reseed2LocalMap := reseed.GenerateReseed2LocalSiteMap(sites, config.Get().Sites)
 	sort.Slice(sites, func(i, j int) bool {

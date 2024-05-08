@@ -26,14 +26,14 @@ func init() {
 func deletetags(cmd *cobra.Command, args []string) error {
 	clientInstance, err := client.CreateClient(args[0])
 	if err != nil {
-		return fmt.Errorf("failed to create client: %v", err)
+		return fmt.Errorf("failed to create client: %w", err)
 	}
 
 	tags := args[1:]
 
 	err = clientInstance.DeleteTags(tags...)
 	if err != nil {
-		return fmt.Errorf("failed to delete tags: %v", err)
+		return fmt.Errorf("failed to delete tags: %w", err)
 	}
 	return nil
 }

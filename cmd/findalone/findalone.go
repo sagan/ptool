@@ -73,20 +73,20 @@ func findalone(cmd *cobra.Command, args []string) error {
 	})
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		return fmt.Errorf("failed to create client: %v", err)
+		return fmt.Errorf("failed to create client: %w", err)
 	}
 	var savePathMapper *common.PathMapper
 	if len(mapSavePathPrefixs) > 0 {
 		savePathMapper, err = common.NewPathMapper(mapSavePathPrefixs)
 		if err != nil {
-			return fmt.Errorf("invalid map-save-path-prefix (s): %v", err)
+			return fmt.Errorf("invalid map-save-path-prefix (s): %w", err)
 		}
 	}
 
 	contentRootFiles := map[string]int64{}
 	torrents, err := clientInstance.GetTorrents("", "", true)
 	if err != nil {
-		return fmt.Errorf("failed to get client torrents: %v", err)
+		return fmt.Errorf("failed to get client torrents: %w", err)
 	}
 	for _, torrent := range torrents {
 		contentPath := filepath.ToSlash(torrent.ContentPath)

@@ -128,7 +128,7 @@ func GetTorrentContent(torrent string, defaultSite string,
 				var res *azuretls.Response
 				var header http.Header
 				if res, header, err = util.FetchUrlWithAzuretls(downloadUrl, httpClient, "", "", headers); err != nil {
-					err = fmt.Errorf("%s: failed to fetch: %v", torrent, err)
+					err = fmt.Errorf("%s: failed to fetch: %w", torrent, err)
 				} else {
 					content = res.Body
 					filename = util.ExtractFilenameFromHttpHeader(header)
@@ -145,7 +145,7 @@ func GetTorrentContent(torrent string, defaultSite string,
 			}
 			siteInstance, err = site.CreateSite(sitename)
 			if err != nil {
-				err = fmt.Errorf("failed to create site %s: %v", sitename, err)
+				err = fmt.Errorf("failed to create site %s: %w", sitename, err)
 				return
 			}
 			content, filename, id, err = siteInstance.DownloadTorrent(torrent)
@@ -217,9 +217,9 @@ func ReadArgsFromStdin() ([]string, error) {
 	if config.InShell {
 		return nil, fmt.Errorf(`can NOT read args from stdin in shell mode`)
 	} else if stdin, err := io.ReadAll(os.Stdin); err != nil {
-		return nil, fmt.Errorf("failed to read stdin: %v", err)
+		return nil, fmt.Errorf("failed to read stdin: %w", err)
 	} else if data, err := shlex.Split(string(stdin)); err != nil {
-		return nil, fmt.Errorf("failed to parse stdin to tokens: %v", err)
+		return nil, fmt.Errorf("failed to parse stdin to tokens: %w", err)
 	} else {
 		return data, nil
 	}
@@ -328,11 +328,11 @@ func ParseTorrentsFromArgs(args []string) (torrents []string, stdinTorrentConten
 		if config.InShell {
 			err = fmt.Errorf(`"-" arg can not be used in shell`)
 		} else if stdin, _err := io.ReadAll(os.Stdin); _err != nil {
-			err = fmt.Errorf("failed to read stdin: %v", _err)
+			err = fmt.Errorf("failed to read stdin: %w", _err)
 		} else if util.BytesHasAnyStringPrefix(stdin, constants.TorrentFileMagicNumbers...) {
 			stdinTorrentContents = stdin
 		} else if data, _err := shlex.Split(string(stdin)); _err != nil {
-			err = fmt.Errorf("failed to parse stdin to tokens: %v", _err)
+			err = fmt.Errorf("failed to parse stdin to tokens: %w", _err)
 		} else {
 			torrents = data
 		}
@@ -354,7 +354,7 @@ func ParseInfoHashesFromArgs(args []string) (infoHashes []string, err error) {
 	infoHashes = args
 	if len(infoHashes) == 1 && infoHashes[0] == "-" {
 		if data, _err := ReadArgsFromStdin(); _err != nil {
-			err = fmt.Errorf("failed to parse stdin to info hashes: %v", _err)
+			err = fmt.Errorf("failed to parse stdin to info hashes: %w", _err)
 		} else {
 			infoHashes = data
 		}

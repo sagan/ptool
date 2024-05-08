@@ -83,7 +83,7 @@ func export(cmd *cobra.Command, args []string) error {
 	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		return fmt.Errorf("failed to create client: %v", err)
+		return fmt.Errorf("failed to create client: %w", err)
 	}
 
 	torrents, err := client.QueryTorrents(clientInstance, category, tag, filter, infoHashes...)
@@ -111,15 +111,15 @@ func export(cmd *cobra.Command, args []string) error {
 		if useCommentMeta {
 			var useCommentErr error
 			if tinfo, err := torrentutil.ParseTorrent(content); err != nil {
-				useCommentErr = fmt.Errorf("failed to parse: %v", err)
+				useCommentErr = fmt.Errorf("failed to parse: %w", err)
 			} else if err := tinfo.EncodeComment(&torrentutil.TorrentCommentMeta{
 				Category: torrent.Category,
 				Tags:     torrent.Tags,
 				SavePath: torrent.SavePath,
 			}); err != nil {
-				useCommentErr = fmt.Errorf("failed to encode: %v", err)
+				useCommentErr = fmt.Errorf("failed to encode: %w", err)
 			} else if data, err := tinfo.ToBytes(); err != nil {
-				useCommentErr = fmt.Errorf("failed to re-generate torrent: %v", err)
+				useCommentErr = fmt.Errorf("failed to re-generate torrent: %w", err)
 			} else {
 				content = data
 			}

@@ -28,12 +28,12 @@ func createtags(cmd *cobra.Command, args []string) error {
 	tags := args[1:]
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		return fmt.Errorf("failed to create client: %v", err)
+		return fmt.Errorf("failed to create client: %w", err)
 	}
 
 	err = clientInstance.CreateTags(tags...)
 	if err != nil {
-		return fmt.Errorf("Failed to create tags: %v", err)
+		return fmt.Errorf("Failed to create tags: %w", err)
 	}
 	return nil
 }

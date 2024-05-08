@@ -155,7 +155,7 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 			args := []string{"lsjson", "--recursive"}
 			if rcloneFlags != "" {
 				if flags, err := shlex.Split(rcloneFlags); err != nil {
-					return fmt.Errorf("failed to parse rclone flags: %v", err)
+					return fmt.Errorf("failed to parse rclone flags: %w", err)
 				} else {
 					args = append(args, flags...)
 				}
@@ -168,18 +168,18 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 			rcloneLsjsonContents, err = os.ReadFile(rcloneLsjsonFilename)
 		}
 		if err != nil {
-			return fmt.Errorf("failed to get rclone lsjson : %v", err)
+			return fmt.Errorf("failed to get rclone lsjson : %w", err)
 		}
 		rcloneSavePathFs, err = rclone.GetFsFromRcloneLsjsonResult(rcloneLsjsonContents)
 		if err != nil {
-			return fmt.Errorf("failed to parse rclone lsjson file: %v", err)
+			return fmt.Errorf("failed to parse rclone lsjson file: %w", err)
 		}
 	}
 	var savePathMapper *common.PathMapper
 	if len(mapSavePathPrefixs) > 0 {
 		savePathMapper, err = common.NewPathMapper(mapSavePathPrefixs)
 		if err != nil {
-			return fmt.Errorf("invalid map-save-path-prefix (s): %v", err)
+			return fmt.Errorf("invalid map-save-path-prefix (s): %w", err)
 		}
 	}
 

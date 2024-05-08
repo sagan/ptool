@@ -195,18 +195,18 @@ func NewDb(statFilename string) (*StatDb, error) {
 
 	f, err := os.OpenFile(statFilename, os.O_RDWR|os.O_APPEND|os.O_CREATE, constants.PERM)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open stats file %s: %v", statFilename, err)
+		return nil, fmt.Errorf("failed to open stats file %s: %w", statFilename, err)
 	}
 	db.statFilename = statFilename
 	db.file = f
 
 	sqldb, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
-		return nil, fmt.Errorf("error create stats sqldb: %v", err)
+		return nil, fmt.Errorf("error create stats sqldb: %w", err)
 	}
 	err = sqldb.AutoMigrate(&TorrentTraffic{})
 	if err != nil {
-		return nil, fmt.Errorf("sql schema init error: %v", err)
+		return nil, fmt.Errorf("sql schema init error: %w", err)
 	}
 	db.sqldb = sqldb
 	db.file.Seek(0, 0)

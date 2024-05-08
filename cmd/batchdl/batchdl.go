@@ -276,7 +276,7 @@ func batchdl(command *cobra.Command, args []string) error {
 	if freeTimeAtLeastStr != "" {
 		t, err := util.ParseTimeDuration(freeTimeAtLeastStr)
 		if err != nil {
-			return fmt.Errorf("invalid --free-time value %s: %v", freeTimeAtLeastStr, err)
+			return fmt.Errorf("invalid --free-time value %s: %w", freeTimeAtLeastStr, err)
 		}
 		freeTimeAtLeast = t
 	}
@@ -284,7 +284,7 @@ func batchdl(command *cobra.Command, args []string) error {
 	if publishedAfterStr != "" {
 		publishedAfter, err = util.ParseTime(publishedAfterStr, nil)
 		if err != nil {
-			return fmt.Errorf("invalid published-after: %v", err)
+			return fmt.Errorf("invalid published-after: %w", err)
 		}
 	}
 	if nohr && siteInstance.GetSiteConfig().GlobalHnR {
@@ -299,11 +299,11 @@ func batchdl(command *cobra.Command, args []string) error {
 	if addClient != "" {
 		clientInstance, err = client.CreateClient(addClient)
 		if err != nil {
-			return fmt.Errorf("failed to create client %s: %v", addClient, err)
+			return fmt.Errorf("failed to create client %s: %w", addClient, err)
 		}
 		status, err := clientInstance.GetStatus()
 		if err != nil {
-			return fmt.Errorf("failed to get client %s status: %v", clientInstance.GetName(), err)
+			return fmt.Errorf("failed to get client %s status: %w", clientInstance.GetName(), err)
 		}
 		if addRespectNoadd && status.NoAdd {
 			log.Warnf("Client has _noadd flag and --add-respect-noadd flag is set. Abort task")
@@ -332,7 +332,7 @@ func batchdl(command *cobra.Command, args []string) error {
 				*saveFiles[i], err = os.OpenFile(filename, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, constants.PERM)
 			}
 			if err != nil {
-				return fmt.Errorf("failed to create save file %s: %v", filename, err)
+				return fmt.Errorf("failed to create save file %s: %w", filename, err)
 			}
 		}
 	}

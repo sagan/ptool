@@ -122,7 +122,7 @@ func add(cmd *cobra.Command, args []string) error {
 	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		return fmt.Errorf("failed to create client: %v", err)
+		return fmt.Errorf("failed to create client: %w", err)
 	}
 	option := &client.TorrentOption{
 		Pause:              addPaused,
@@ -139,7 +139,7 @@ func add(cmd *cobra.Command, args []string) error {
 	if len(mapSavePathPrefixs) > 0 {
 		savePathMapper, err = common.NewPathMapper(mapSavePathPrefixs)
 		if err != nil {
-			return fmt.Errorf("invalid map-save-path-prefix (s): %v", err)
+			return fmt.Errorf("invalid map-save-path-prefix (s): %w", err)
 		}
 	}
 	errorCnt := int64(0)

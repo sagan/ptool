@@ -51,7 +51,7 @@ func hardlinkcp(cmd *cobra.Command, args []string) error {
 	dest = filepath.Clean(dest)
 	sourceStat, err := os.Stat(source)
 	if err != nil {
-		return fmt.Errorf("failed to access source %s: %v", source, err)
+		return fmt.Errorf("failed to access source %s: %w", source, err)
 	}
 	if sourceStat.IsDir() {
 		sourceIsDir = true
@@ -63,7 +63,7 @@ func hardlinkcp(cmd *cobra.Command, args []string) error {
 	if _, err := os.Stat(dest); err == nil {
 		return fmt.Errorf("dest %s already exists", dest)
 	} else if !os.IsNotExist(err) {
-		return fmt.Errorf("dest %s can NOT be accessed: %v", dest, err)
+		return fmt.Errorf("dest %s can NOT be accessed: %w", dest, err)
 	}
 	if !sourceIsDir && destIsDir {
 		return fmt.Errorf(`dest specified as a dir (has a "/" or "\" prefix) but source is NOT a dir`)

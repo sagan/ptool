@@ -87,7 +87,7 @@ func (dzsite *Site) DownloadTorrent(torrentUrl string) (content []byte, filename
 		doc, _, errFetch := util.GetUrlDocWithAzuretls(torrentUrl, dzsite.HttpClient,
 			dzsite.GetSiteConfig().Cookie, site.GetUa(dzsite), dzsite.GetDefaultHttpHeaders())
 		if errFetch != nil {
-			return nil, "", "", fmt.Errorf("failed to get thread doc: %v", errFetch)
+			return nil, "", "", fmt.Errorf("failed to get thread doc: %w", errFetch)
 		}
 		dlLink := doc.Find(`a[href^="download.php?id="]`).AttrOr("href", "")
 		idRegexp := regexp.MustCompile(`\bid=(?P<id>\d+)\b`)
@@ -118,11 +118,11 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 	}
 	location, err := time.LoadLocation(siteConfig.GetTimezone())
 	if err != nil {
-		return nil, fmt.Errorf("invalid site timezone %s: %v", siteConfig.GetTimezone(), err)
+		return nil, fmt.Errorf("invalid site timezone %s: %w", siteConfig.GetTimezone(), err)
 	}
 	httpClient, httpHeaders, err := site.CreateSiteHttpClient(siteConfig, config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create site http client: %v", err)
+		return nil, fmt.Errorf("failed to create site http client: %w", err)
 	}
 	site := &Site{
 		Name:        name,

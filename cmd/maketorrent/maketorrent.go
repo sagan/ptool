@@ -133,14 +133,14 @@ func maketorrent(cmd *cobra.Command, args []string) (err error) {
 		} else {
 			ts, err := util.ParseTime(creationDate, nil)
 			if err != nil {
-				return fmt.Errorf("invalid creation-date: %v", err)
+				return fmt.Errorf("invalid creation-date: %w", err)
 			}
 			mi.CreationDate = ts
 		}
 	}
 	info := &metainfo.Info{}
 	if pieceLength, err := util.RAMInBytes(pieceLengthStr); err != nil {
-		return fmt.Errorf("invalid piece-length: %v", err)
+		return fmt.Errorf("invalid piece-length: %w", err)
 	} else {
 		info.PieceLength = pieceLength
 	}
@@ -152,7 +152,7 @@ func maketorrent(cmd *cobra.Command, args []string) (err error) {
 	}
 	log.Infof("Creating torrent for %q", contentPath)
 	if err := infoBuildFromFilePath(info, contentPath, excludes); err != nil {
-		return fmt.Errorf("failed to build info from content-path: %v", err)
+		return fmt.Errorf("failed to build info from content-path: %w", err)
 	}
 	if len(info.Files) == 0 {
 		return fmt.Errorf("no files found in content-path")
@@ -161,7 +161,7 @@ func maketorrent(cmd *cobra.Command, args []string) (err error) {
 		info.Name = infoName
 	}
 	if mi.InfoBytes, err = bencode.Marshal(info); err != nil {
-		return fmt.Errorf("failed to marshal info: %v", err)
+		return fmt.Errorf("failed to marshal info: %w", err)
 	}
 	if output == "" {
 		if info.Name != "" && info.Name != metainfo.NoName {

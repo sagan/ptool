@@ -35,27 +35,27 @@ func renametag(cmd *cobra.Command, args []string) error {
 	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		return fmt.Errorf("failed to create client: %v", err)
+		return fmt.Errorf("failed to create client: %w", err)
 	}
 	torrents, err := client.QueryTorrents(clientInstance, "", oldTag, "")
 	if err != nil {
-		return fmt.Errorf("failed to query client torrents of old-tag: %v", err)
+		return fmt.Errorf("failed to query client torrents of old-tag: %w", err)
 	}
 	if len(torrents) > 0 {
 		infoHashes := util.Map(torrents, func(t client.Torrent) string { return t.InfoHash })
 		err = clientInstance.AddTagsToTorrents(infoHashes, []string{newTag})
 		if err != nil {
-			return fmt.Errorf("failed to add new-tag to client torrents: %v", err)
+			return fmt.Errorf("failed to add new-tag to client torrents: %w", err)
 		}
 	} else {
 		err = clientInstance.CreateTags(newTag)
 		if err != nil {
-			return fmt.Errorf("failed to create new-tag in client: %v", err)
+			return fmt.Errorf("failed to create new-tag in client: %w", err)
 		}
 	}
 	err = clientInstance.DeleteTags(util.SplitCsv(oldTag)...)
 	if err != nil {
-		return fmt.Errorf("failed to delete old-tag(s) from client: %v", err)
+		return fmt.Errorf("failed to delete old-tag(s) from client: %w", err)
 	}
 	return nil
 }

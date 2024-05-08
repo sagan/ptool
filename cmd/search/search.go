@@ -118,7 +118,7 @@ func search(cmd *cobra.Command, args []string) error {
 	for _, sitename := range sitenames {
 		siteInstance, err := site.CreateSite(sitename)
 		if err != nil {
-			return fmt.Errorf("failed to create site %s: %v", sitename, err)
+			return fmt.Errorf("failed to create site %s: %w", sitename, err)
 		}
 		siteInstancesMap[sitename] = siteInstance
 	}

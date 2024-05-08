@@ -404,11 +404,11 @@ func (meta *TorrentMeta) VerifyAgaintSavePathFs(savePathFs fs.FS) error {
 		filename := relativePath + file.Path
 		f, err := savePathFs.Open(filename)
 		if err != nil {
-			return fmt.Errorf("failed to access file %q: %v", file.Path, err)
+			return fmt.Errorf("failed to access file %q: %w", file.Path, err)
 		}
 		stat, err := f.Stat()
 		if err != nil {
-			return fmt.Errorf("failed to get file %q stat: %v", file.Path, err)
+			return fmt.Errorf("failed to get file %q stat: %w", file.Path, err)
 		}
 		if stat.Size() != file.Size {
 			return fmt.Errorf("file %q has wrong length: expect=%d, actual=%d", file.Path, file.Size, stat.Size())
@@ -438,7 +438,7 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash i
 		}
 		stat, err := os.Stat(filename)
 		if err != nil {
-			return fmt.Errorf("failed to get file %q stat: %v", file.Path, err)
+			return fmt.Errorf("failed to get file %q stat: %w", file.Path, err)
 		}
 		if stat.Size() != file.Size {
 			return fmt.Errorf("file %q has wrong length: expect=%d, actual=%d", file.Path, file.Size, stat.Size())
@@ -472,7 +472,7 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash i
 			for len > 0 {
 				if currentFile == nil {
 					if currentFile, err = os.Open(filenames[currentFileIndex]); err != nil {
-						return fmt.Errorf("piece %d/%d: failed to open file %s: %v",
+						return fmt.Errorf("piece %d/%d: failed to open file %s: %w",
 							i, piecesCnt-1, filenames[currentFileIndex], err)
 					}
 					log.Tracef("piece %d/%d: open file %s", i, piecesCnt-1, filenames[currentFileIndex])

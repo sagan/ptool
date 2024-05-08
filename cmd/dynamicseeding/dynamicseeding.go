@@ -54,7 +54,7 @@ func dynamicseeding(cmd *cobra.Command, args []string) (err error) {
 	sitename := args[1]
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		return fmt.Errorf("failed to create client: %v", err)
+		return fmt.Errorf("failed to create client: %w", err)
 	}
 	lock, err := config.LockConfigDirFile(fmt.Sprintf(config.CLIENT_LOCK_FILE, clientName))
 	if err != nil {
@@ -63,18 +63,18 @@ func dynamicseeding(cmd *cobra.Command, args []string) (err error) {
 	defer lock.Unlock()
 	siteInstance, err := site.CreateSite(sitename)
 	if err != nil {
-		return fmt.Errorf("failed to create site: %v", err)
+		return fmt.Errorf("failed to create site: %w", err)
 	}
 	ignoreFile, err := os.OpenFile(filepath.Join(config.ConfigDir,
 		fmt.Sprintf("dynamic-seeding-%s.ignore.txt", sitename)),
 		os.O_CREATE|os.O_RDWR, constants.PERM)
 	if err != nil {
-		return fmt.Errorf("failed to open ignore file: %v", err)
+		return fmt.Errorf("failed to open ignore file: %w", err)
 	}
 	defer ignoreFile.Close()
 	var ignores []string
 	if contents, err := io.ReadAll(ignoreFile); err != nil {
-		return fmt.Errorf("failed to read ignore file: %v", err)
+		return fmt.Errorf("failed to read ignore file: %w", err)
 	} else {
 		ignores = strings.Split(string(contents), "\n")
 	}

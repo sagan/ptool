@@ -134,7 +134,7 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 		} else {
 			ts, err := util.ParseTime(updateCreationDate, nil)
 			if err != nil {
-				return fmt.Errorf("invalid update-creation-date: %v", err)
+				return fmt.Errorf("invalid update-creation-date: %w", err)
 			}
 			creationDate = ts
 		}

@@ -59,7 +59,7 @@ func recheck(cmd *cobra.Command, args []string) error {
 	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		return fmt.Errorf("failed to create client: %v", err)
+		return fmt.Errorf("failed to create client: %w", err)
 	}
 	if infohashesOnly {
 		if len(infoHashes) == 0 {
@@ -67,7 +67,7 @@ func recheck(cmd *cobra.Command, args []string) error {
 		}
 		if force {
 			if err = clientInstance.RecheckTorrents(infoHashes); err != nil {
-				return fmt.Errorf("failed to recheck torrents: %v", err)
+				return fmt.Errorf("failed to recheck torrents: %w", err)
 			}
 			return nil
 		}
@@ -75,7 +75,7 @@ func recheck(cmd *cobra.Command, args []string) error {
 
 	torrents, err := client.QueryTorrents(clientInstance, category, tag, filter, infoHashes...)
 	if err != nil {
-		return fmt.Errorf("failed to fetch client torrents: %v", err)
+		return fmt.Errorf("failed to fetch client torrents: %w", err)
 	}
 	if len(torrents) == 0 {
 		log.Infof("No matched torrents found")

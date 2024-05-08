@@ -584,10 +584,10 @@ func (ts *TrackerStats) UnmarshalJSON(data []byte) (err error) {
 		} else if v == 0. {
 			ts.LastScrapeTimedOut = false
 		} else {
-			return fmt.Errorf("can't convert 'lastScrapeTimedOut' value '%v' into boolean", tmp.LastScrapeTimedOut)
+			return fmt.Errorf("can't convert 'lastScrapeTimedOut' value '%w' into boolean", tmp.LastScrapeTimedOut)
 		}
 	default:
-		return fmt.Errorf("can't convert 'lastScrapeTimedOut' value '%v' into boolean", tmp.LastScrapeTimedOut)
+		return fmt.Errorf("can't convert 'lastScrapeTimedOut' value '%w' into boolean", tmp.LastScrapeTimedOut)
 	}
 	// Create the real time value from the timestamps
 	ts.LastAnnounceStartTime = time.Unix(tmp.LastAnnounceStartTime, 0)

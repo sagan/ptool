@@ -89,11 +89,11 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 	}
 	minTorrentSize, err := util.RAMInBytes(minTorrentSizeStr)
 	if err != nil {
-		return fmt.Errorf("invalid min-torrent-size: %v", err)
+		return fmt.Errorf("invalid min-torrent-size: %w", err)
 	}
 	maxTorrentSize, err := util.RAMInBytes(maxTorrentSizeStr)
 	if err != nil {
-		return fmt.Errorf("invalid max-torrent-size: %v", err)
+		return fmt.Errorf("invalid max-torrent-size: %w", err)
 	}
 	errorCnt := int64(0)
 	parsedTorrents := map[string]struct{}{}

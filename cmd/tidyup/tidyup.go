@@ -51,11 +51,11 @@ func tidyup(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		return fmt.Errorf("failed to create client: %v", err)
+		return fmt.Errorf("failed to create client: %w", err)
 	}
 	torrents, err := client.QueryTorrents(clientInstance, category, tag, filter)
 	if err != nil {
-		return fmt.Errorf("failed to get torrents: %v", err)
+		return fmt.Errorf("failed to get torrents: %w", err)
 	}
 	domainSiteMap := map[string]string{}
 	cntTorrents := int64(0)

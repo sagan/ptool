@@ -35,12 +35,12 @@ func createcategory(cmd *cobra.Command, args []string) error {
 	category := args[1]
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		return fmt.Errorf("failed to create client: %v", err)
+		return fmt.Errorf("failed to create client: %w", err)
 	}
 
 	err = clientInstance.MakeCategory(category, savePath)
 	if err != nil {
-		return fmt.Errorf("failed to create category: %v", err)
+		return fmt.Errorf("failed to create category: %w", err)
 	}
 	return nil
 }

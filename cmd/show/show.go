@@ -141,7 +141,7 @@ func show(cmd *cobra.Command, args []string) error {
 	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		return fmt.Errorf("failed to create client: %v", err)
+		return fmt.Errorf("failed to create client: %w", err)
 	}
 	if largestFlag && newestFlag {
 		return fmt.Errorf("--largest and --newest flags are NOT compatible")
@@ -171,25 +171,25 @@ func show(cmd *cobra.Command, args []string) error {
 	if addedAfterStr != "" {
 		addedAfter, err = util.ParseTimeWithNow(addedAfterStr, nil, now)
 		if err != nil {
-			return fmt.Errorf("invalid added-after: %v", err)
+			return fmt.Errorf("invalid added-after: %w", err)
 		}
 	}
 	if completedBeforeStr != "" {
 		completedBefore, err = util.ParseTimeWithNow(completedBeforeStr, nil, now)
 		if err != nil {
-			return fmt.Errorf("invalid completed-before: %v", err)
+			return fmt.Errorf("invalid completed-before: %w", err)
 		}
 	}
 	if activeSinceStr != "" {
 		activeSince, err = util.ParseTimeWithNow(activeSinceStr, nil, now)
 		if err != nil {
-			return fmt.Errorf("invalid active-since: %v", err)
+			return fmt.Errorf("invalid active-since: %w", err)
 		}
 	}
 	if notActiveSinceStr != "" {
 		notActiveSince, err = util.ParseTimeWithNow(notActiveSinceStr, nil, now)
 		if err != nil {
-			return fmt.Errorf("invalid not-active-since: %v", err)
+			return fmt.Errorf("invalid not-active-since: %w", err)
 		}
 	}
 	if addedAfter > 0 && completedBefore > 0 && addedAfter > completedBefore {
@@ -219,7 +219,7 @@ func show(cmd *cobra.Command, args []string) error {
 		}
 		torrent, err := clientInstance.GetTorrent(infoHashes[0])
 		if err != nil {
-			return fmt.Errorf("failed to get torrent %s details: %v", infoHashes[0], err)
+			return fmt.Errorf("failed to get torrent %s details: %w", infoHashes[0], err)
 		}
 		if torrent == nil {
 			return fmt.Errorf("torrent %s not found", infoHashes[0])
@@ -251,7 +251,7 @@ func show(cmd *cobra.Command, args []string) error {
 		torrents, err = client.QueryTorrents(clientInstance, category, tag, filter, infoHashes...)
 	}
 	if err != nil {
-		return fmt.Errorf("failed to fetch client torrents: %v", err)
+		return fmt.Errorf("failed to fetch client torrents: %w", err)
 	}
 	if hasFilterCondition {
 		torrents = util.Filter(torrents, func(t client.Torrent) bool {

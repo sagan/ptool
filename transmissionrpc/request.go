@@ -69,7 +69,7 @@ func (c *Client) request(ctx context.Context, method string, arguments interface
 	if resp, err = c.httpC.Do(req); err != nil {
 		mg.Wait()
 		if encErr != nil {
-			err = fmt.Errorf("request error: %w | json payload marshall error: %v", err, encErr)
+			err = fmt.Errorf("request error: %w | json payload marshall error: %w", err, encErr)
 		} else {
 			err = fmt.Errorf("request error: %w", err)
 		}

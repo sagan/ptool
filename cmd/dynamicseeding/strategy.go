@@ -89,7 +89,7 @@ func doDynamicSeeding(clientInstance client.Client, siteInstance site.Site, igno
 	dynamicSeedingTag := client.GenerateTorrentTagFromSite(siteInstance.GetName())
 	clientStatus, err := clientInstance.GetStatus()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get client status: %v", err)
+		return nil, fmt.Errorf("failed to get client status: %w", err)
 	}
 	result = &Result{
 		Timestamp: timestamp,
@@ -115,7 +115,7 @@ func doDynamicSeeding(clientInstance client.Client, siteInstance site.Site, igno
 	}
 	clientTorrents, err := clientInstance.GetTorrents("", dynamicSeedingCat, true)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get client current dynamic seeding torrents: %v", err)
+		return nil, fmt.Errorf("failed to get client current dynamic seeding torrents: %w", err)
 	}
 	sort.Slice(clientTorrents, func(i, j int) bool {
 		if clientTorrents[i].Seeders != clientTorrents[j].Seeders {

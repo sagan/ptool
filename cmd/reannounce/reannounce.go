@@ -46,7 +46,7 @@ func reannounce(cmd *cobra.Command, args []string) error {
 	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		return fmt.Errorf("failed to create client: %v", err)
+		return fmt.Errorf("failed to create client: %w", err)
 	}
 
 	infoHashes, err = client.SelectTorrents(clientInstance, category, tag, filter, infoHashes...)

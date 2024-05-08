@@ -34,14 +34,14 @@ var cdCmd = &cobra.Command{
 		if len(args) == 0 {
 			dir, err = os.UserHomeDir()
 			if err != nil {
-				return fmt.Errorf("failed to get user home dir: %v", err)
+				return fmt.Errorf("failed to get user home dir: %w", err)
 			}
 		} else {
 			dir = args[0]
 		}
 		err = os.Chdir(dir)
 		if err != nil {
-			return fmt.Errorf("failed to change work dir to %s: %v", args[0], err)
+			return fmt.Errorf("failed to change work dir to %s: %w", args[0], err)
 		}
 		pwd, _ := os.Getwd()
 		fmt.Printf("Changed work dir to %s\n", pwd)
@@ -57,7 +57,7 @@ var pwdCwd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cwd, err := os.Getwd()
 		if err != nil {
-			return fmt.Errorf("failed to get cwd: %v", err)
+			return fmt.Errorf("failed to get cwd: %w", err)
 		}
 		fmt.Printf("%s\n", cwd)
 		return nil
@@ -76,7 +76,7 @@ var execCmd = &cobra.Command{
 		out, err := externalCmd.CombinedOutput()
 		fmt.Printf("%s\n", out)
 		if err != nil {
-			return fmt.Errorf("failed to execute %s: %v", args[0], err)
+			return fmt.Errorf("failed to execute %s: %w", args[0], err)
 		}
 		return nil
 	},

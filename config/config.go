@@ -340,7 +340,7 @@ func UpdateSites(updatesites []*SiteConfigStruct) {
 // For now, new config data will NOT take effect for current ptool process.
 func Set() error {
 	if err := os.MkdirAll(ConfigDir, constants.PERM); err != nil {
-		return fmt.Errorf("config dir does NOT exists and can not be created: %v", err)
+		return fmt.Errorf("config dir does NOT exists and can not be created: %w", err)
 	}
 	lock, err := LockConfigDirFile(GLOBAL_INTERNAL_LOCK_FILE)
 	if err != nil {
@@ -698,7 +698,7 @@ func (configData *ConfigStruct) GetIyuuDomain() string {
 
 func CreateDefaultConfig() (err error) {
 	if err := os.MkdirAll(ConfigDir, constants.PERM); err != nil {
-		return fmt.Errorf("failed to create config dir: %v", err)
+		return fmt.Errorf("failed to create config dir: %w", err)
 	}
 	lock, err := LockConfigDirFile(GLOBAL_INTERNAL_LOCK_FILE)
 	if err != nil {
@@ -710,11 +710,11 @@ func CreateDefaultConfig() (err error) {
 		if err == nil {
 			return fmt.Errorf("config file already exists")
 		}
-		return fmt.Errorf("failed to access config file: %v", err)
+		return fmt.Errorf("failed to access config file: %w", err)
 	}
 	var file fs.File
 	if file, err = DefaultConfigFs.Open(EXAMPLE_CONFIG_FILE + "." + ConfigType); err != nil {
-		return fmt.Errorf("unsupported config file type %q: %v", ConfigType, err)
+		return fmt.Errorf("unsupported config file type %q: %w", ConfigType, err)
 	}
 	contents, err := io.ReadAll(file)
 	if err != nil {
@@ -751,7 +751,7 @@ func GetProxy(proxies ...string) string {
 func LockConfigDirFile(name string) (*flock.Flock, error) {
 	lock := flock.New(filepath.Join(ConfigDir, name))
 	if ok, err := lock.TryLock(); err != nil || !ok {
-		return nil, fmt.Errorf("unable to acquire lock <config_dir>/%q: %v", name, err)
+		return nil, fmt.Errorf("unable to acquire lock <config_dir>/%q: %w", name, err)
 	}
 	return lock, nil
 }

@@ -35,7 +35,7 @@ func example(cmd *cobra.Command, args []string) error {
 		format = config.ConfigType
 	}
 	if file, err := config.DefaultConfigFs.Open(config.EXAMPLE_CONFIG_FILE + "." + format); err != nil {
-		return fmt.Errorf("unsupported config file type %q: %v", format, err)
+		return fmt.Errorf("unsupported config file type %q: %w", format, err)
 	} else {
 		fmt.Printf("# %s.%s\n\n", config.EXAMPLE_CONFIG_FILE, format)
 		io.Copy(os.Stdout, file)

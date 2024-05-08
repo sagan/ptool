@@ -120,11 +120,11 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 	}
 	location, err := time.LoadLocation(siteConfig.GetTimezone())
 	if err != nil {
-		return nil, fmt.Errorf("invalid site timezone %s: %v", siteConfig.GetTimezone(), err)
+		return nil, fmt.Errorf("invalid site timezone %s: %w", siteConfig.GetTimezone(), err)
 	}
 	httpClient, httpHeaders, err := site.CreateSiteHttpClient(siteConfig, config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create site http client: %v", err)
+		return nil, fmt.Errorf("failed to create site http client: %w", err)
 	}
 	site := &Site{
 		Name:        name,

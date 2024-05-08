@@ -632,7 +632,7 @@ func (trclient *Client) SetConfig(variable string, value string) error {
 			value := argValue.(string)
 			util.SetStructFieldValue(&args, key, &value)
 		} else {
-			return fmt.Errorf("invalid value type: %v", kind)
+			return fmt.Errorf("invalid value type: %w", kind)
 		}
 		return transmissionbt.SessionArgumentsSet(context.TODO(), args)
 	}

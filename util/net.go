@@ -2,6 +2,7 @@ package util
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -54,10 +55,7 @@ func FetchUrl(url string, client *http.Client, header http.Header) (*http.Respon
 	}
 	res, err := client.Do(req)
 	if err != nil {
-		if _, ok := err.(net.Error); ok {
-			return nil, nil, fmt.Errorf("failed to fetch url: <network error>: %v", err)
-		}
-		return nil, nil, fmt.Errorf("failed to fetch url: %v", err)
+		return nil, nil, fmt.Errorf("failed to fetch url: %w", err)
 	}
 	log.Tracef("FetchUrl response status=%d", res.StatusCode)
 	if res.StatusCode != 200 {
@@ -92,10 +90,7 @@ func FetchUrlWithAzuretls(url string, client *azuretls.Session,
 		NoCookie: true, // disable azuretls internal cookie jar
 	}, reqHeaders)
 	if err != nil {
-		if _, ok := err.(net.Error); ok {
-			return nil, nil, fmt.Errorf("failed to fetch url: <network error>: %v", err)
-		}
-		return nil, nil, fmt.Errorf("failed to fetch url: %v", err)
+		return nil, nil, fmt.Errorf("failed to fetch url: %w", err)
 	}
 	log.Tracef("FetchUrlWithAzuretls response status=%d", res.StatusCode)
 	if res.StatusCode != 200 {
@@ -189,4 +184,17 @@ func ExtractFilenameFromHttpHeader(header http.Header) (filename string) {
 		}
 	}
 	return
+}
+
+// Check any error in the err tree is net.Error
+func AsNetworkError(err error) bool {
+	// errors.As can not be used to against interface. So we must DIY.
+	// See https://github.com/golang/go/issues/49177 .
+	for err != nil {
+		if _, ok := err.(net.Error); ok {
+			return true
+		}
+		err = errors.Unwrap(err)
+	}
+	return false
 }

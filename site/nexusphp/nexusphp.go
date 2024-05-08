@@ -91,7 +91,7 @@ func (npclient *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Tor
 	doc, res, err := util.GetUrlDocWithAzuretls(searchUrl, npclient.HttpClient,
 		npclient.SiteConfig.Cookie, site.GetUa(npclient), npclient.GetDefaultHttpHeaders())
 	if !npclient.SiteConfig.AcceptAnyHttpStatus && err != nil || doc == nil {
-		return nil, fmt.Errorf("failed to parse site page dom: %v", err)
+		return nil, fmt.Errorf("failed to parse site page dom: %w", err)
 	}
 	if strings.Contains(res.Request.Url, "/login.php") {
 		return nil, fmt.Errorf("not logined (cookie may has expired)")
@@ -109,7 +109,7 @@ func (npclient *Site) DownloadTorrent(torrentUrl string) (content []byte, filena
 	}
 	urlObj, err := url.Parse(torrentUrl)
 	if err != nil {
-		return nil, "", "", fmt.Errorf("invalid torrent url: %v", err)
+		return nil, "", "", fmt.Errorf("invalid torrent url: %w", err)
 	}
 	id = parseTorrentIdFromUrl(torrentUrl, npclient.torrentsParserOption.idRegexp)
 	downloadUrlPrefix := strings.TrimPrefix(npclient.SiteConfig.TorrentDownloadUrlPrefix, "/")
@@ -167,7 +167,7 @@ func (npclient *Site) getDigithash(id string) (string, error) {
 	doc, _, err := util.GetUrlDocWithAzuretls(detailsUrl, npclient.HttpClient,
 		npclient.SiteConfig.Cookie, site.GetUa(npclient), npclient.GetDefaultHttpHeaders())
 	if err != nil {
-		return "", fmt.Errorf("failed to get torrent detail page: %v", err)
+		return "", fmt.Errorf("failed to get torrent detail page: %w", err)
 	}
 	downloadUrlPrefix := strings.TrimPrefix(npclient.SiteConfig.TorrentDownloadUrlPrefix, "/")
 	if downloadUrlPrefix == "" {
@@ -196,7 +196,7 @@ func (npclient *Site) getDigithash(id string) (string, error) {
 func (npclient *Site) GetStatus() (*site.Status, error) {
 	err := npclient.sync()
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch site data: %v", err)
+		return nil, fmt.Errorf("failed to fetch site data: %w", err)
 	}
 	return npclient.siteStatus, nil
 }
@@ -205,7 +205,7 @@ func (npclient *Site) GetLatestTorrents(full bool) ([]site.Torrent, error) {
 	latestTorrents := []site.Torrent{}
 	err := npclient.sync()
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch site data: %v", err)
+		return nil, fmt.Errorf("failed to fetch site data: %w", err)
 	}
 	if full {
 		npclient.syncExtra()
@@ -245,7 +245,7 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 	torrentsPageUrl := npclient.SiteConfig.ParseSiteUrl(baseUrl, false)
 	torrentsPageUrlObj, err := url.Parse(torrentsPageUrl)
 	if err != nil {
-		err = fmt.Errorf("invalid base-url: %v", err)
+		err = fmt.Errorf("invalid base-url: %w", err)
 		return
 	}
 	torrentsPageUrlQuery := torrentsPageUrlObj.Query()
@@ -276,7 +276,7 @@ func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, 
 	doc, res, _err := util.GetUrlDocWithAzuretls(torrentsPageUrl+pageStr, npclient.HttpClient,
 		npclient.SiteConfig.Cookie, site.GetUa(npclient), npclient.GetDefaultHttpHeaders())
 	if !npclient.SiteConfig.AcceptAnyHttpStatus && _err != nil || doc == nil {
-		err = fmt.Errorf("failed to fetch torrents page dom: %v", _err)
+		err = fmt.Errorf("failed to fetch torrents page dom: %w", _err)
 		return
 	}
 	if strings.Contains(res.Request.Url, "/login.php") {
@@ -305,7 +305,7 @@ labelLastPage:
 		doc, res, _err = util.GetUrlDocWithAzuretls(torrentsPageUrl+pageStr, npclient.HttpClient,
 			npclient.SiteConfig.Cookie, site.GetUa(npclient), npclient.GetDefaultHttpHeaders())
 		if !npclient.SiteConfig.AcceptAnyHttpStatus && _err != nil || doc == nil {
-			err = fmt.Errorf("failed to fetch torrents page dom: %v", _err)
+			err = fmt.Errorf("failed to fetch torrents page dom: %w", _err)
 			return
 		}
 		if strings.Contains(res.Request.Url, "/login.php") {
@@ -362,7 +362,7 @@ func (npclient *Site) sync() error {
 	doc, res, err := util.GetUrlDocWithAzuretls(url, npclient.HttpClient,
 		npclient.SiteConfig.Cookie, site.GetUa(npclient), npclient.GetDefaultHttpHeaders())
 	if !npclient.SiteConfig.AcceptAnyHttpStatus && err != nil || doc == nil {
-		return fmt.Errorf("failed to get site page dom: %v", err)
+		return fmt.Errorf("failed to get site page dom: %w", err)
 	}
 	if strings.Contains(res.Request.Url, "/login.php") {
 		return fmt.Errorf("not logined (cookie may has expired)")
@@ -472,11 +472,11 @@ func NewSite(name string, siteConfig *config.SiteConfigStruct, config *config.Co
 	}
 	location, err := time.LoadLocation(siteConfig.GetTimezone())
 	if err != nil {
-		return nil, fmt.Errorf("invalid site timezone %s: %v", siteConfig.GetTimezone(), err)
+		return nil, fmt.Errorf("invalid site timezone %s: %w", siteConfig.GetTimezone(), err)
 	}
 	httpClient, httpHeaders, err := site.CreateSiteHttpClient(siteConfig, config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create site http client: %v", err)
+		return nil, fmt.Errorf("failed to create site http client: %w", err)
 	}
 	site := &Site{
 		Name:        name,

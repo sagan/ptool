@@ -216,17 +216,17 @@ func PrintTorrents(output io.Writer, torrents []Torrent, filter string, now int6
 	widthExcludingName := 0
 	widthName := 0
 	if scores == nil {
-		widthExcludingName = 81 // 6+11+19+4+4+4+15+2+8*2
+		widthExcludingName = 89 // 6+11+19+4+4+4+23+2+8*2
 		widthName = width - widthExcludingName
 		if !noHeader {
-			fmt.Fprintf(output, "%-*s  %6s  %-11s  %-19s  %4s  %4s  %4s  %-15s  %2s\n",
+			fmt.Fprintf(output, "%-*s  %6s  %-11s  %-19s  %4s  %4s  %4s  %-23s  %2s\n",
 				widthName, "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "P")
 		}
 	} else {
-		widthExcludingName = 88 // 6+11+19+4+4+4+15+5+2+9*2
+		widthExcludingName = 96 // 6+11+19+4+4+4+23+5+2+9*2
 		widthName = width - widthExcludingName
 		if !noHeader {
-			fmt.Fprintf(output, "%-*s  %6s  %-11s  %-19s  %4s  %4s  %4s  %-15s  %5s  %2s\n",
+			fmt.Fprintf(output, "%-*s  %6s  %-11s  %-19s  %4s  %4s  %4s  %-23s  %5s  %2s\n",
 				widthName, "Name", "Size", "Free", "Time", "↑S", "↓L", "✓C", "ID", "Score", "P")
 		}
 	}
@@ -277,7 +277,7 @@ func PrintTorrents(output io.Writer, torrents []Torrent, filter string, now int6
 		}
 		remain := util.PrintStringInWidth(output, name, int64(widthName), true)
 		if scores == nil {
-			fmt.Fprintf(output, "  %6s  %-11s  %-19s  %4d  %4d  %4d  %-15s  %2s\n",
+			fmt.Fprintf(output, "  %6s  %-11s  %-19s  %4d  %4d  %4d  %-23s  %2s\n",
 				util.BytesSizeAround(float64(torrent.Size)),
 				freeStr,
 				util.FormatTime(torrent.Time),
@@ -288,7 +288,7 @@ func PrintTorrents(output io.Writer, torrents []Torrent, filter string, now int6
 				process,
 			)
 		} else {
-			fmt.Fprintf(output, "  %6s  %-11s  %-19s  %4s  %4s  %4s  %-15s  %5.0f  %2s\n",
+			fmt.Fprintf(output, "  %6s  %-11s  %-19s  %4s  %4s  %4s  %-23s  %5.0f  %2s\n",
 				util.BytesSizeAround(float64(torrent.Size)),
 				freeStr,
 				util.FormatTime(torrent.Time),
@@ -444,17 +444,17 @@ func CreateSiteHttpClient(siteConfig *config.SiteConfigStruct, globalConfig *con
 	}
 	if ja3 != "" {
 		if err := session.ApplyJa3(ja3, navigator); err != nil {
-			return nil, nil, fmt.Errorf("failed to set ja3: %v", err)
+			return nil, nil, fmt.Errorf("failed to set ja3: %w", err)
 		}
 	}
 	if h2fingerprint != "" {
 		if err := session.ApplyHTTP2(h2fingerprint); err != nil {
-			return nil, nil, fmt.Errorf("failed to set h2 finterprint: %v", err)
+			return nil, nil, fmt.Errorf("failed to set h2 finterprint: %w", err)
 		}
 	}
 	if proxy != "" {
 		if err := session.SetProxy(proxy); err != nil {
-			return nil, nil, fmt.Errorf("failed to set proxy: %v", err)
+			return nil, nil, fmt.Errorf("failed to set proxy: %w", err)
 		}
 	}
 	if insecure {
@@ -484,7 +484,7 @@ func DownloadTorrentByUrl(siteInstance Site, httpClient *azuretls.Session, torre
 	res, header, err := util.FetchUrlWithAzuretls(torrentUrl, httpClient,
 		siteInstance.GetSiteConfig().Cookie, GetUa(siteInstance), siteInstance.GetDefaultHttpHeaders())
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to fetch torrents from site: %v", err)
+		return nil, "", fmt.Errorf("failed to fetch torrents from site: %w", err)
 	}
 	mimeType, _, _ := mime.ParseMediaType(header.Get("content-type"))
 	if mimeType != "" && mimeType != "application/octet-stream" && mimeType != "application/x-bittorrent" {

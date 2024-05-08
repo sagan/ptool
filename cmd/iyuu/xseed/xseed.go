@@ -128,7 +128,7 @@ func xseed(cmd *cobra.Command, args []string) error {
 	for _, clientName := range clientNames {
 		clientInstance, err := client.CreateClient(clientName)
 		if err != nil {
-			return fmt.Errorf("failed to create client: %v", err)
+			return fmt.Errorf("failed to create client: %w", err)
 		}
 		clientInstanceMap[clientName] = clientInstance
 
@@ -328,7 +328,7 @@ mainloop:
 				if siteInstancesMap[sitename] == nil {
 					siteInstance, err := site.CreateSite(sitename)
 					if err != nil {
-						return fmt.Errorf("failed to create iyuu sid %d (local %s) site instance: %v",
+						return fmt.Errorf("failed to create iyuu sid %d (local %s) site instance: %w",
 							xseedTorrent.Sid, sitename, err)
 					}
 					siteInstancesMap[sitename] = siteInstance

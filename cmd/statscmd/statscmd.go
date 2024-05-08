@@ -45,7 +45,7 @@ func statscmd(cmd *cobra.Command, args []string) error {
 	}
 	statDb, err := stats.NewDb(statsFilename)
 	if err != nil {
-		return fmt.Errorf("failed to create stats db: %v", err)
+		return fmt.Errorf("failed to create stats db: %w", err)
 	}
 	if len(clientnames) == 0 {
 		statDb.ShowTrafficStats("")

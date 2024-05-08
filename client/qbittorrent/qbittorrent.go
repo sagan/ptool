@@ -137,7 +137,7 @@ func (qbclient *Client) GetClientConfig() *config.ClientConfigStruct {
 func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.TorrentOption, meta map[string]int64) error {
 	err := qbclient.login()
 	if err != nil {
-		return fmt.Errorf("login error: %v", err)
+		return fmt.Errorf("login error: %w", err)
 	}
 	name := client.GenerateNameWithMeta(option.Name, meta)
 	body := new(bytes.Buffer)
@@ -191,7 +191,7 @@ func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 	resp, err := qbclient.HttpClient.Post(qbclient.ClientConfig.Url+"api/v2/torrents/add",
 		mp.FormDataContentType(), body)
 	if err != nil {
-		return fmt.Errorf("add torrent error: %v", err)
+		return fmt.Errorf("add torrent error: %w", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
@@ -206,7 +206,7 @@ func (qbclient *Client) PauseTorrents(infoHashes []string) error {
 	}
 	err := qbclient.login()
 	if err != nil {
-		return fmt.Errorf("login error: %v", err)
+		return fmt.Errorf("login error: %w", err)
 	}
 	data := url.Values{
 		"hashes": {strings.Join(infoHashes, "|")},
@@ -220,7 +220,7 @@ func (qbclient *Client) ResumeTorrents(infoHashes []string) error {
 	}
 	err := qbclient.login()
 	if err != nil {
-		return fmt.Errorf("login error: %v", err)
+		return fmt.Errorf("login error: %w", err)
 	}
 	data := url.Values{
 		"hashes": {strings.Join(infoHashes, "|")},
@@ -234,7 +234,7 @@ func (qbclient *Client) RecheckTorrents(infoHashes []string) error {
 	}
 	err := qbclient.login()
 	if err != nil {
-		return fmt.Errorf("login error: %v", err)
+		return fmt.Errorf("login error: %w", err)
 	}
 	data := url.Values{
 		"hashes": {strings.Join(infoHashes, "|")},
@@ -248,7 +248,7 @@ func (qbclient *Client) ReannounceTorrents(infoHashes []string) error {
 	}
 	err := qbclient.login()
 	if err != nil {
-		return fmt.Errorf("login error: %v", err)
+		return fmt.Errorf("login error: %w", err)
 	}
 	data := url.Values{
 		"hashes": {strings.Join(infoHashes, "|")},
@@ -262,7 +262,7 @@ func (qbclient *Client) AddTagsToTorrents(infoHashes []string, tags []string) er
 	}
 	err := qbclient.login()
 	if err != nil {
-		return fmt.Errorf("login error: %v", err)
+		return fmt.Errorf("login error: %w", err)
 	}
 	data := url.Values{
 		"hashes": {strings.Join(infoHashes, "|")},
@@ -277,7 +277,7 @@ func (qbclient *Client) RemoveTagsFromTorrents(infoHashes []string, tags []strin
 	}
 	err := qbclient.login()
 	if err != nil {
-		return fmt.Errorf("login error: %v", err)
+		return fmt.Errorf("login error: %w", err)
 	}
 	data := url.Values{
 		"hashes": {strings.Join(infoHashes, "|")},
@@ -296,7 +296,7 @@ func (qbclient *Client) SetTorrentsSavePath(infoHashes []string, savePath string
 	}
 	err := qbclient.login()
 	if err != nil {
-		return fmt.Errorf("login error: %v", err)
+		return fmt.Errorf("login error: %w", err)
 	}
 	data := url.Values{
 		"hashes":   {strings.Join(infoHashes, "|")},
@@ -336,7 +336,7 @@ func (qbclient *Client) SetAllTorrentsSavePath(savePath string) error {
 func (qbclient *Client) GetTags() ([]string, error) {
 	err := qbclient.login()
 	if err != nil {
-		return nil, fmt.Errorf("login error: %v", err)
+		return nil, fmt.Errorf("login error: %w", err)
 	}
 	var tags []string
 	err = qbclient.apiRequest("api/v2/torrents/tags", &tags)
@@ -346,7 +346,7 @@ func (qbclient *Client) GetTags() ([]string, error) {
 func (qbclient *Client) CreateTags(tags ...string) error {
 	err := qbclient.login()
 	if err != nil {
-		return fmt.Errorf("login error: %v", err)
+		return fmt.Errorf("login error: %w", err)
 	}
 	data := url.Values{
 		"tags": {strings.Join(tags, ",")},
@@ -357,7 +357,7 @@ func (qbclient *Client) CreateTags(tags ...string) error {
 func (qbclient *Client) DeleteTags(tags ...string) error {
 	err := qbclient.login()
 	if err != nil {
-		return fmt.Errorf("login error: %v", err)
+		return fmt.Errorf("login error: %w", err)
 	}
 	data := url.Values{
 		"tags": {strings.Join(tags, ",")},
@@ -368,7 +368,7 @@ func (qbclient *Client) DeleteTags(tags ...string) error {
 func (qbclient *Client) MakeCategory(category string, savePath string) error {
 	err := qbclient.login()
 	if err != nil {
-		return fmt.Errorf("login error: %v", err)
+		return fmt.Errorf("login error: %w", err)
 	}
 	data := url.Values{
 		"category": {category},
@@ -390,7 +390,7 @@ func (qbclient *Client) MakeCategory(category string, savePath string) error {
 func (qbclient *Client) DeleteCategories(categories []string) error {
 	err := qbclient.login()
 	if err != nil {
-		return fmt.Errorf("login error: %v", err)
+		return fmt.Errorf("login error: %w", err)
 	}
 	data := url.Values{
 		"categories": {strings.Join(categories, "\n")},
@@ -401,7 +401,7 @@ func (qbclient *Client) DeleteCategories(categories []string) error {
 func (qbclient *Client) GetCategories() ([]client.TorrentCategory, error) {
 	err := qbclient.login()
 	if err != nil {
-		return nil, fmt.Errorf("login error: %v", err)
+		return nil, fmt.Errorf("login error: %w", err)
 	}
 	var categories map[string]client.TorrentCategory
 	err = qbclient.apiRequest("api/v2/torrents/categories", &categories)
@@ -421,7 +421,7 @@ func (qbclient *Client) SetTorrentsCatetory(infoHashes []string, category string
 	}
 	err := qbclient.login()
 	if err != nil {
-		return fmt.Errorf("login error: %v", err)
+		return fmt.Errorf("login error: %w", err)
 	}
 	if category == constants.NONE {
 		category = ""
@@ -443,7 +443,7 @@ func (qbclient *Client) DeleteTorrents(infoHashes []string, deleteFiles bool) er
 	}
 	err := qbclient.login()
 	if err != nil {
-		return fmt.Errorf("login error: %v", err)
+		return fmt.Errorf("login error: %w", err)
 	}
 	deleteFilesStr := "false"
 	if deleteFiles {
@@ -607,7 +607,7 @@ func (qbclient *Client) sync() error {
 	}
 	err := qbclient.login()
 	if err != nil {
-		return fmt.Errorf("login error: %v", err)
+		return fmt.Errorf("login error: %w", err)
 	}
 	err = qbclient.apiRequest("api/v2/sync/maindata", &qbclient.data)
 	if err != nil {
@@ -691,7 +691,7 @@ func (qbclient *Client) GetStatus() (*client.Status, error) {
 func (qbclient *Client) setPreferences(preferences map[string]any) error {
 	err := qbclient.login()
 	if err != nil {
-		return fmt.Errorf("login error: %v", err)
+		return fmt.Errorf("login error: %w", err)
 	}
 	data, err := json.Marshal(preferences)
 	if err != nil {
@@ -707,7 +707,7 @@ func (qbclient *Client) setPreferences(preferences map[string]any) error {
 func (qbclient *Client) getPreferences() (*apiPreferences, error) {
 	err := qbclient.login()
 	if err != nil {
-		return nil, fmt.Errorf("login error: %v", err)
+		return nil, fmt.Errorf("login error: %w", err)
 	}
 	if qbclient.preferences != nil {
 		return qbclient.preferences, nil
@@ -719,7 +719,7 @@ func (qbclient *Client) getPreferences() (*apiPreferences, error) {
 func (qbclient *Client) GetConfig(variable string) (string, error) {
 	err := qbclient.login()
 	if err != nil {
-		return "", fmt.Errorf("login error: %v", err)
+		return "", fmt.Errorf("login error: %w", err)
 	}
 	if strings.HasPrefix(variable, "qb_") && len(variable) > 3 {
 		preferences, err := qbclient.getPreferences()
@@ -771,7 +771,7 @@ func (qbclient *Client) GetConfig(variable string) (string, error) {
 func (qbclient *Client) SetConfig(variable string, value string) error {
 	err := qbclient.login()
 	if err != nil {
-		return fmt.Errorf("login error: %v", err)
+		return fmt.Errorf("login error: %w", err)
 	}
 	if strings.HasPrefix(variable, "qb_") && len(variable) > 3 {
 		data := map[string]any{}
@@ -861,7 +861,7 @@ func (qbclient *Client) GetTorrents(stateFilter string, category string, showAll
 func (qbclient *Client) GetTorrentContents(infoHash string) ([]client.TorrentContentFile, error) {
 	err := qbclient.login()
 	if err != nil {
-		return nil, fmt.Errorf("login error: %v", err)
+		return nil, fmt.Errorf("login error: %w", err)
 	}
 	apiUrl := qbclient.ClientConfig.Url + "api/v2/torrents/files?hash=" + infoHash
 	qbTorrentContents := []apiTorrentContent{}
@@ -889,7 +889,7 @@ func (qbclient *Client) GetTorrentContents(infoHash string) ([]client.TorrentCon
 func (qbclient *Client) GetTorrentTrackers(infoHash string) (client.TorrentTrackers, error) {
 	err := qbclient.login()
 	if err != nil {
-		return nil, fmt.Errorf("login error: %v", err)
+		return nil, fmt.Errorf("login error: %w", err)
 	}
 	apiUrl := qbclient.ClientConfig.Url + "api/v2/torrents/trackers?hash=" + infoHash
 	qbTorrentTrackers := []apiTorrentTracker{}
@@ -938,7 +938,7 @@ func (qbclient *Client) EditTorrentTracker(infoHash string, oldTracker string,
 		}
 		trackers, err := qbclient.GetTorrentTrackers(torrent.InfoHash)
 		if err != nil {
-			return fmt.Errorf("failed to get torrent %s trackers: %v", torrent.InfoHash, err)
+			return fmt.Errorf("failed to get torrent %s trackers: %w", torrent.InfoHash, err)
 		}
 		oldTrackerUrl := ""
 		newTrackerUrl := ""

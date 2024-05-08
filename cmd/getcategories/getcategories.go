@@ -33,12 +33,12 @@ func getcategories(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		return fmt.Errorf("failed to create client: %v", err)
+		return fmt.Errorf("failed to create client: %w", err)
 	}
 
 	cats, err := clientInstance.GetCategories()
 	if err != nil {
-		return fmt.Errorf("failed to get categories: %v", err)
+		return fmt.Errorf("failed to get categories: %w", err)
 	}
 	if showNamesOnly {
 		fmt.Printf("%s\n", strings.Join(util.Map(cats, func(cat client.TorrentCategory) string {

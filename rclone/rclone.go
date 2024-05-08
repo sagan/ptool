@@ -150,7 +150,7 @@ func (l *LsjsonItem) ReadDir(name string) (entries []fs.DirEntry, err error) {
 func GetFsFromRcloneLsjsonResult(lsjsonOutput []byte) (fs.ReadDirFS, error) {
 	var items []*LsjsonItem
 	if err := json.Unmarshal(lsjsonOutput, &items); err != nil {
-		return nil, fmt.Errorf("failed to parse json: %v", err)
+		return nil, fmt.Errorf("failed to parse json: %w", err)
 	}
 	rootItem := &LsjsonItem{}
 	for i, item := range items {
@@ -163,7 +163,7 @@ func GetFsFromRcloneLsjsonResult(lsjsonOutput []byte) (fs.ReadDirFS, error) {
 		}
 		parentItem, err := rootItem.getItemByPath(relativePath)
 		if err != nil {
-			return nil, fmt.Errorf("invalid lsjson output: failed to get parent of index %d item: %v", i, err)
+			return nil, fmt.Errorf("invalid lsjson output: failed to get parent of index %d item: %w", i, err)
 		}
 		if parentItem.children == nil {
 			parentItem.children = map[string]*LsjsonItem{}

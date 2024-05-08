@@ -62,7 +62,7 @@ func GetCookiecloudData(server string, uuid string, password string,
 	if proxy != "" && proxy != constants.NONE {
 		proxyUrl, err := url.Parse(proxy)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse proxy %s: %v", proxy, err)
+			return nil, fmt.Errorf("failed to parse proxy %s: %w", proxy, err)
 		}
 		httpClient.Transport = &http.Transport{
 			Proxy: http.ProxyURL(proxyUrl),
@@ -71,17 +71,17 @@ func GetCookiecloudData(server string, uuid string, password string,
 	var data *CookieCloudBody
 	err := util.FetchJson(server+"get/"+uuid, &data, httpClient, nil)
 	if err != nil || data == nil {
-		return nil, fmt.Errorf("failed to get cookiecloud data: err=%v, null data=%t", err, data == nil)
+		return nil, fmt.Errorf("failed to get cookiecloud data: err=%w, null data=%t", err, data == nil)
 	}
 	keyPassword := crypto.Md5String(uuid, "-", password)[:16]
 	decrypted, err := crypto.DecryptCryptoJsAesMsg(keyPassword, data.Encrypted)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decrypt data: err=%v", err)
+		return nil, fmt.Errorf("failed to decrypt data: err=%w", err)
 	}
 	var cookiecloudData *CookiecloudData
 	err = json.Unmarshal(decrypted, &cookiecloudData)
 	if err != nil || cookiecloudData == nil {
-		return nil, fmt.Errorf("failed to parse decrypted data as json: err=%v", err)
+		return nil, fmt.Errorf("failed to parse decrypted data as json: err=%w", err)
 	}
 	return cookiecloudData, nil
 }
@@ -97,7 +97,7 @@ func (cookiecloudData *CookiecloudData) GetEffectiveCookie(urlOrDomain string, a
 	if util.IsUrl(urlOrDomain) {
 		urlObj, err := url.Parse(urlOrDomain)
 		if err != nil {
-			return "", nil, fmt.Errorf("arg is not a valid url: %v", err)
+			return "", nil, fmt.Errorf("arg is not a valid url: %w", err)
 		}
 		hostname = urlObj.Hostname()
 		path = urlObj.Path

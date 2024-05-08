@@ -129,7 +129,7 @@ func sync(cmd *cobra.Command, args []string) error {
 			log.Tracef("Checking site %s", sitename)
 			sitestatus, err := siteInstance.GetStatus()
 			if err != nil {
-				if strings.Contains(err.Error(), "<network error>") {
+				if util.AsNetworkError(err) {
 					ch <- &site_test_result{
 						sitename: sitename,
 						url:      siteInstance.GetSiteConfig().Url,
@@ -269,7 +269,7 @@ func sync(cmd *cobra.Command, args []string) error {
 			fmt.Printf("Successfully update config file %s\n", configFile)
 			return nil
 		} else {
-			return fmt.Errorf("failed to update config file %s : %v", configFile, err)
+			return fmt.Errorf("failed to update config file %s : %w", configFile, err)
 		}
 	} else {
 		fmt.Printf("!No new cookie found for any site\n")

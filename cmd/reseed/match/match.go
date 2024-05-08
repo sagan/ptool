@@ -93,13 +93,13 @@ func match(cmd *cobra.Command, args []string) error {
 	}
 	if doDownload {
 		if err := os.MkdirAll(downloadDir, constants.PERM); err != nil {
-			return fmt.Errorf("failed to create download-dir %s: %v", downloadDir, err)
+			return fmt.Errorf("failed to create download-dir %s: %w", downloadDir, err)
 		}
 	}
 	results, results2, err := reseed.GetReseedTorrents(config.Get().ReseedUsername, config.Get().ReseedPassword,
 		config.Get().Sites, timeout, savePathes...)
 	if err != nil {
-		return fmt.Errorf("failed to get xseed torrents from reseed server: %v", err)
+		return fmt.Errorf("failed to get xseed torrents from reseed server: %w", err)
 	}
 	var torrents []*reseed.Torrent
 	torrents = append(torrents, results...)
@@ -179,9 +179,9 @@ func match(cmd *cobra.Command, args []string) error {
 				Tags:     tags,
 				SavePath: torrent.SavePath,
 			}); err != nil {
-				useCommentErr = fmt.Errorf("failed to encode: %v", err)
+				useCommentErr = fmt.Errorf("failed to encode: %w", err)
 			} else if data, err := tinfo.ToBytes(); err != nil {
-				useCommentErr = fmt.Errorf("failed to re-generate torrent: %v", err)
+				useCommentErr = fmt.Errorf("failed to re-generate torrent: %w", err)
 			} else {
 				content = data
 			}

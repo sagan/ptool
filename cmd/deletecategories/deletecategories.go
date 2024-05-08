@@ -28,7 +28,7 @@ func deletecategories(cmd *cobra.Command, args []string) error {
 	categories := args[1:]
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
-		return fmt.Errorf("failed to create client: %v", err)
+		return fmt.Errorf("failed to create client: %w", err)
 	}
 
 	err = clientInstance.DeleteCategories(categories)

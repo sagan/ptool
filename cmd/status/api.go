@@ -28,7 +28,7 @@ func fetchClientStatus(clientInstance client.Client, showTorrents bool, showAllT
 	clientStatus, err := clientInstance.GetStatus()
 	response.ClientStatus = clientStatus
 	if err != nil {
-		response.Error = fmt.Errorf("cann't get client %s status: error=%v", clientInstance.GetName(), err)
+		response.Error = fmt.Errorf("cann't get client %s status: error=%w", clientInstance.GetName(), err)
 		ch <- response
 		return
 	}
@@ -49,7 +49,7 @@ func fetchClientStatus(clientInstance client.Client, showTorrents bool, showAllT
 		}
 		response.ClientTorrents = clientTorrents
 		if err != nil {
-			response.Error = fmt.Errorf("cann't get client %s torrents: %v", clientInstance.GetName(), err)
+			response.Error = fmt.Errorf("cann't get client %s torrents: %w", clientInstance.GetName(), err)
 		}
 	}
 	ch <- response
@@ -65,7 +65,7 @@ func fetchSiteStatus(siteInstance site.Site, showTorrents bool, full bool, showS
 	SiteStatus, err := siteInstance.GetStatus()
 	response.SiteStatus = SiteStatus
 	if err != nil {
-		response.Error = fmt.Errorf("cann't get site %s status: error=%v", siteInstance.GetName(), err)
+		response.Error = fmt.Errorf("cann't get site %s status: error=%w", siteInstance.GetName(), err)
 		ch <- response
 		return
 	}
@@ -73,7 +73,7 @@ func fetchSiteStatus(siteInstance site.Site, showTorrents bool, full bool, showS
 	if showTorrents {
 		siteTorrents, err := siteInstance.GetLatestTorrents(full)
 		if err != nil {
-			response.Error = fmt.Errorf("cann't get site %s torrents: %v", siteInstance.GetName(), err)
+			response.Error = fmt.Errorf("cann't get site %s torrents: %w", siteInstance.GetName(), err)
 		} else {
 			if showScore {
 				brushSiteOption := strategy.GetBrushSiteOptions(siteInstance, util.Now())
