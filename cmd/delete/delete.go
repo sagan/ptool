@@ -29,6 +29,7 @@ It will ask for confirmation of deletion, unless --force flag is set.`, constant
 
 var (
 	preserve          = false
+	preserveXseed     = false
 	force             = false
 	filter            = ""
 	category          = ""
@@ -41,6 +42,8 @@ var (
 func init() {
 	command.Flags().BoolVarP(&preserve, "preserve", "p", false,
 		"Preserve (don't delete) torrent content files on the disk")
+	command.Flags().BoolVarP(&preserveXseed, "preserve-if-xseed-exist", "P", false,
+		"Preserve (don't delete) torrent content files on the disk if other xseed torrents exist")
 	command.Flags().BoolVarP(&force, "force", "", false, "Force deletion. Do NOT prompt for confirm")
 	command.Flags().StringVarP(&filter, "filter", "", "", constants.HELP_ARG_FILTER_TORRENT)
 	command.Flags().StringVarP(&category, "category", "", "", constants.HELP_ARG_CATEGORY)
@@ -54,6 +57,9 @@ func init() {
 }
 
 func delete(cmd *cobra.Command, args []string) error {
+	if preserve && preserveXseed {
+		return fmt.Errorf("--preserve and --preserve-if-xseed-exist flags are NOT compatible")
+	}
 	clientName := args[0]
 	infoHashes := args[1:]
 	clientInstance, err := client.CreateClient(clientName)
@@ -79,7 +85,8 @@ func delete(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if infohashesOnly {
+	// the quick way, directly submit the deletion request to client
+	if infohashesOnly && !preserveXseed {
 		if len(infoHashes) == 0 {
 			return fmt.Errorf("no torrent to delete")
 		}
@@ -104,23 +111,49 @@ func delete(cmd *cobra.Command, args []string) error {
 			return true
 		})
 	}
-	if len(torrents) == 0 {
+	// if preserve-xseed flag is set, the torrents which contains other-not-delete xseed torrents
+	var torrentsWithXseed []*client.Torrent
+	if preserveXseed {
+		torrents, torrentsWithXseed, err = client.FilterTorrentsXseed(clientInstance, torrents)
+		if err != nil {
+			return err
+		}
+	}
+	if len(torrents) == 0 && len(torrentsWithXseed) == 0 {
 		log.Infof("No matched torrents found")
 		return nil
 	}
 	if !force {
-		client.PrintTorrents(os.Stdout, torrents, "", 1, false)
-		fmt.Printf("\n")
-		if !helper.AskYesNoConfirm(fmt.Sprintf("Above %d torrents will be deteled (Preserve disk files = %t)",
-			len(torrents), preserve)) {
+		if len(torrents) > 0 {
+			client.PrintTorrents(os.Stdout, torrents, "", 1, false)
+			fmt.Printf("Above %d torrents will be deteled (Delete disk files = %t)\n", len(torrents), !preserve)
+			fmt.Printf("\n")
+		}
+		if len(torrentsWithXseed) > 0 {
+			client.PrintTorrents(os.Stdout, torrentsWithXseed, "", 1, false)
+			fmt.Printf("Above %d torrents will be deleted, they have none-delete xseed torrents exists,\n"+
+				"so their disk files will NOT be deleted.\n", len(torrentsWithXseed))
+			fmt.Printf("\n")
+		}
+		if !helper.AskYesNoConfirm("") {
 			return fmt.Errorf("abort")
 		}
 	}
-	infoHashes = util.Map(torrents, func(t *client.Torrent) string { return t.InfoHash })
-	err = clientInstance.DeleteTorrents(infoHashes, !preserve)
-	if err != nil {
-		return fmt.Errorf("failed to delete torrents: %w", err)
+	if len(torrentsWithXseed) > 0 {
+		infoHashes := util.Map(torrentsWithXseed, func(t *client.Torrent) string { return t.InfoHash })
+		err = clientInstance.DeleteTorrents(infoHashes, false)
+		if err != nil {
+			return fmt.Errorf("failed to delete torrents: %w", err)
+		}
+		fmt.Printf("%d torrents deleted (delete files = false).\n", len(torrentsWithXseed))
 	}
-	fmt.Printf("%d torrents deleted.\n", len(torrents))
+	if len(torrents) > 0 {
+		infoHashes := util.Map(torrents, func(t *client.Torrent) string { return t.InfoHash })
+		err = clientInstance.DeleteTorrents(infoHashes, !preserve)
+		if err != nil {
+			return fmt.Errorf("failed to delete torrents: %w", err)
+		}
+		fmt.Printf("%d torrents deleted (delete files = %t).\n", len(torrents), !preserve)
+	}
 	return nil
 }

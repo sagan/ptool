@@ -35,7 +35,19 @@ type Client struct {
 	freeSpace                 int64
 	unfinishedSize            int64
 	unfinishedDownloadingSize int64
+	contentPathTorrents       map[string][]*transmissionrpc.Torrent
 	lastTorrent               *transmissionrpc.Torrent // a **really** simple cache with capacity of only one
+}
+
+func (trclient *Client) GetTorrentsByContentPath(contentPath string) ([]*client.Torrent, error) {
+	if err := trclient.sync(); err != nil {
+		return nil, err
+	}
+	torrents := []*client.Torrent{}
+	for _, t := range trclient.contentPathTorrents[contentPath] {
+		torrents = append(torrents, tr2Torrent(t))
+	}
+	return torrents, nil
 }
 
 var (
@@ -115,21 +127,31 @@ func (trclient *Client) sync() error {
 		return err
 	}
 	torrentsMap := map[string]*transmissionrpc.Torrent{}
-	unfinishedSize := int64(0)
-	unfinishedDownloadingSize := int64(0)
 	for i := range torrents {
 		torrentsMap[*torrents[i].HashString] = &torrents[i]
-		usize := int64(float64(*torrents[i].SizeWhenDone) * (1 - *torrents[i].PercentDone))
-		unfinishedSize += usize
-		if *torrents[i].Status != 0 {
-			unfinishedDownloadingSize += usize
-		}
 	}
 	trclient.datatime = now
 	trclient.torrents = torrentsMap
+	trclient.buildDerivative()
+	return nil
+}
+
+func (trclient *Client) buildDerivative() {
+	unfinishedSize := int64(0)
+	unfinishedDownloadingSize := int64(0)
+	var contentPathTorrents = map[string][]*transmissionrpc.Torrent{}
+	for _, torrent := range trclient.torrents {
+		usize := int64(float64(*torrent.SizeWhenDone) * (1 - *torrent.PercentDone))
+		unfinishedSize += usize
+		if *torrent.Status != 0 {
+			unfinishedDownloadingSize += usize
+		}
+		contentPath := getContentPath(torrent)
+		contentPathTorrents[contentPath] = append(contentPathTorrents[contentPath], torrent)
+	}
 	trclient.unfinishedSize = unfinishedSize
 	trclient.unfinishedDownloadingSize = unfinishedDownloadingSize
-	return nil
+	trclient.contentPathTorrents = contentPathTorrents
 }
 
 func (trclient *Client) syncMeta() error {
@@ -366,16 +388,22 @@ func (trclient *Client) ModifyTorrent(infoHash string, option *client.TorrentOpt
 }
 
 // suboptimal due to limit of transmissionrpc library
-func (trclient *Client) DeleteTorrents(infoHashes []string, deleteFiles bool) error {
+func (trclient *Client) DeleteTorrents(infoHashes []string, deleteFiles bool) (err error) {
 	transmissionbt := trclient.client
 	if err := trclient.sync(); err != nil {
 		return err
 	}
-	transmissionbt.TorrentRemove(context.TODO(), transmissionrpc.TorrentRemovePayload{
+	err = transmissionbt.TorrentRemove(context.TODO(), transmissionrpc.TorrentRemovePayload{
 		IDs:             trclient.getIds(infoHashes),
 		DeleteLocalData: deleteFiles,
 	})
-	return nil
+	if err == nil && trclient.Cached() {
+		for _, infoHash := range infoHashes {
+			delete(trclient.torrents, infoHash)
+		}
+		trclient.buildDerivative()
+	}
+	return
 }
 
 func (trclient *Client) PauseTorrents(infoHashes []string) error {
@@ -581,6 +609,7 @@ func (trclient *Client) PurgeCache() {
 	trclient.sessionStats = nil
 	trclient.torrents = nil
 	trclient.lastTorrent = nil
+	trclient.contentPathTorrents = nil
 }
 
 func (trclient *Client) GetStatus() (*client.Status, error) {
@@ -931,6 +960,14 @@ func tr2State(trtorrent *transmissionrpc.Torrent) string {
 	}
 }
 
+func getContentPath(trtorrent *transmissionrpc.Torrent) string {
+	sep := "/"
+	if strings.Contains(*trtorrent.DownloadDir, `\`) {
+		sep = `\`
+	}
+	return *trtorrent.DownloadDir + sep + *trtorrent.Name
+}
+
 func tr2Torrent(trtorrent *transmissionrpc.Torrent) *client.Torrent {
 	uploadSpeedLimit := int64(0)
 	downloadSpeedLimit := int64(0)
@@ -963,7 +1000,7 @@ func tr2Torrent(trtorrent *transmissionrpc.Torrent) *client.Torrent {
 		UploadedSpeedLimit: uploadSpeedLimit,
 		Category:           "",
 		SavePath:           *trtorrent.DownloadDir,
-		ContentPath:        *trtorrent.DownloadDir + "/" + *trtorrent.Name,
+		ContentPath:        getContentPath(trtorrent),
 		Tags:               trtorrent.Labels,
 		Seeders:            *trtorrent.PeersSendingToUs, // it's meaning is inconsistent with qb for now
 		Size:               int64(*trtorrent.SizeWhenDone / 8),

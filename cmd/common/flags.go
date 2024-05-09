@@ -98,6 +98,7 @@ var pureFlags = []string{
 	"parameters",
 	"partial",
 	"preserve",
+	"preserve-if-xseed-exist",
 	"private",
 	"public",
 	"raw",

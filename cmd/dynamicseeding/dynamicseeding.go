@@ -130,7 +130,7 @@ func dynamicseeding(cmd *cobra.Command, args []string) (err error) {
 			}
 			result.AddTorrents = result.AddTorrents[1:]
 		} else {
-			if err := clientInstance.DeleteTorrents([]string{result.DeleteTorrents[0].InfoHash}, true); err != nil {
+			if err := client.DeleteTorrentsAuto(clientInstance, []string{result.DeleteTorrents[0].InfoHash}); err != nil {
 				log.Errorf("Failed to delete client torrent %s (%s): %v",
 					result.DeleteTorrents[0].Name, result.DeleteTorrents[0].InfoHash, err)
 				errorCnt++

@@ -105,6 +105,7 @@ type Client interface {
 	// category: "none" is a special value to select uncategoried torrents.
 	// stateFilter: _all|_active|_done|_undone, or any state value (possibly with a _ prefix)
 	GetTorrents(stateFilter string, category string, showAll bool) ([]*Torrent, error)
+	GetTorrentsByContentPath(contentPath string) ([]*Torrent, error)
 	AddTorrent(torrentContent []byte, option *TorrentOption, meta map[string]int64) error
 	ModifyTorrent(infoHash string, option *TorrentOption, meta map[string]int64) error
 	DeleteTorrents(infoHashes []string, deleteFiles bool) error
@@ -639,6 +640,61 @@ func PrintTorrents(output io.Writer, torrents []*Torrent, filter string, showSum
 		fmt.Fprintf(output, "// Smallest / Average / Largest torrent size: %s / %s / %s\n",
 			util.BytesSize(float64(smallestSize)), util.BytesSize(float64(averageSize)), util.BytesSize(float64(largestSize)))
 	}
+}
+
+// Separate client torrents into 2 groups: torrentsNoXseed and torrentsXseed.
+// The first ones does NOT have other xseed torrent of same content path,
+// or the xseed torrent itself is also in the group.
+// The second ones has other xseed torrent of same content path.
+func FilterTorrentsXseed(clientInstance Client, torrents []*Torrent) (
+	torrentsNoXseed, torrentsXseed []*Torrent, err error) {
+	for _, t := range torrents {
+		sameContentPathTorrents, err := clientInstance.GetTorrentsByContentPath(t.ContentPath)
+		if err != nil {
+			return nil, nil, err
+		}
+		hasXseedTorrent := slices.ContainsFunc(sameContentPathTorrents, func(st *Torrent) bool {
+			return !slices.ContainsFunc(torrents, func(dt *Torrent) bool {
+				return dt.InfoHash == st.InfoHash
+			})
+		})
+		if hasXseedTorrent {
+			torrentsXseed = append(torrentsXseed, t)
+		} else {
+			torrentsNoXseed = append(torrentsNoXseed, t)
+		}
+	}
+	return
+}
+
+// Delete torrents from client. If torrent has no other xseed torrent (with same content path),
+// delete files; Otherwise preserve files.
+func DeleteTorrentsAuto(clientInstance Client, infoHashes []string) (err error) {
+	var torrents []*Torrent
+	for _, infoHash := range infoHashes {
+		if torrent, _ := clientInstance.GetTorrent(infoHash); torrent != nil {
+			torrents = append(torrents, torrent)
+		}
+	}
+	torrents, torrentsXseed, err := FilterTorrentsXseed(clientInstance, torrents)
+	if err != nil {
+		return err
+	}
+	if len(torrentsXseed) > 0 {
+		infoHashes := util.Map(torrentsXseed, func(t *Torrent) string { return t.InfoHash })
+		err = clientInstance.DeleteTorrents(infoHashes, false)
+		if err != nil {
+			return fmt.Errorf("failed to delete torrents: %w", err)
+		}
+	}
+	if len(torrents) > 0 {
+		infoHashes := util.Map(torrents, func(t *Torrent) string { return t.InfoHash })
+		err = clientInstance.DeleteTorrents(infoHashes, true)
+		if err != nil {
+			return fmt.Errorf("failed to delete torrents: %w", err)
+		}
+	}
+	return nil
 }
 
 // Parse and return torrents that meet criterion.

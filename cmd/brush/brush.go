@@ -173,7 +173,7 @@ func brush(cmd *cobra.Command, args []string) (err error) {
 			if dryRun {
 				continue
 			}
-			err := clientInstance.DeleteTorrents([]string{torrent.InfoHash}, true)
+			err := client.DeleteTorrentsAuto(clientInstance, []string{torrent.InfoHash})
 			log.Printf("Delete torrent result: error=%v", err)
 			if err == nil {
 				cntDeleteTorrents++

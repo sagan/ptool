@@ -66,6 +66,7 @@ var (
 	tag                = ""
 	tracker            = ""
 	savePath           = ""
+	contentPath        = ""
 	savePathPrefix     = ""
 	minTorrentSizeStr  = ""
 	maxTorrentSizeStr  = ""
@@ -116,6 +117,8 @@ func init() {
 	command.Flags().StringVarP(&savePathPrefix, "save-path-prefix", "", "",
 		`Filter torrent by it's save path prefix. E.g. "/root/Downloads" will match any torrent which save path `+
 			`is "/root/Downloads" or any sub path inside it like "/root/Downloads/Videos"`)
+	command.Flags().StringVarP(&contentPath, "content-path", "", "",
+		`Filter torrent by it's content path. E.g. "/root/Downloads/[BDMV]Clannad"`)
 	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1",
 		"Skip torrent with size smaller than (<) this value. -1 == no limit")
 	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1",
@@ -136,8 +139,8 @@ func show(cmd *cobra.Command, args []string) error {
 	if showInfoHashOnly && (showFiles || showTrackers) {
 		return fmt.Errorf("--show-files or --show-trackers is NOT compatible with --show-info-hash-only flag")
 	}
-	if savePath != "" && savePathPrefix != "" {
-		return fmt.Errorf("--save-path and --save-path-prefix flags are NOT compatible")
+	if util.CountNonZeroVariables(savePath, savePathPrefix, contentPath) > 1 {
+		return fmt.Errorf("--save-path, --save-path-prefix and --content-path flags are NOT compatible")
 	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
@@ -162,6 +165,9 @@ func show(cmd *cobra.Command, args []string) error {
 	}
 	if savePathPrefix != "" {
 		savePathPrefix = path.Clean(savePathPrefix)
+	}
+	if contentPath != "" {
+		contentPath = path.Clean(contentPath)
 	}
 	minTorrentSize, _ := util.RAMInBytes(minTorrentSizeStr)
 	maxTorrentSize, _ := util.RAMInBytes(maxTorrentSizeStr)
@@ -203,9 +209,9 @@ func show(cmd *cobra.Command, args []string) error {
 		excludesList = util.SplitCsv(excludes)
 	}
 
-	hasFilterCondition := savePath != "" || savePathPrefix != "" || tracker != "" || minTorrentSize >= 0 ||
-		maxTorrentSize >= 0 || addedAfter > 0 || completedBefore > 0 || activeSince > 0 || notActiveSince > 0 || partial ||
-		excludes != ""
+	hasFilterCondition := savePath != "" || savePathPrefix != "" || contentPath != "" ||
+		tracker != "" || minTorrentSize >= 0 || maxTorrentSize >= 0 || addedAfter > 0 || completedBefore > 0 ||
+		activeSince > 0 || notActiveSince > 0 || partial || excludes != ""
 	noConditionFlags := category == "" && tag == "" && filter == "" && !hasFilterCondition
 	var torrents []*client.Torrent
 	if showAll {
@@ -256,9 +262,10 @@ func show(cmd *cobra.Command, args []string) error {
 	if hasFilterCondition {
 		torrents = util.Filter(torrents, func(t *client.Torrent) bool {
 			if savePath != "" && t.SavePath != savePath ||
-				excludes != "" && t.MatchFiltersOr(excludesList) ||
 				savePathPrefix != "" && t.SavePath != savePathPrefix && !strings.HasPrefix(t.SavePath, savePathPrefix+`/`) &&
 					!strings.HasPrefix(t.SavePath, savePathPrefix+`\`) ||
+				contentPath != "" && t.ContentPath != contentPath ||
+				excludes != "" && t.MatchFiltersOr(excludesList) ||
 				tracker != "" && !t.MatchTracker(tracker) ||
 				minTorrentSize >= 0 && t.Size < minTorrentSize ||
 				maxTorrentSize >= 0 && t.Size > maxTorrentSize ||

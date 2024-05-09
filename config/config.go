@@ -24,7 +24,7 @@ import (
 const (
 	BRUSH_CAT                  = "_brush"
 	FALLBACK_CAT               = "Others" // --add-category-auto fallback category if does NOT match with any site
-	DYNAMIC_SEEDING_CAT_PREFIX = "_dynamic-seeding-"
+	DYNAMIC_SEEDING_CAT_PREFIX = "dynamic-seeding-"
 	XSEED_TAG                  = "_xseed"
 	NOADD_TAG                  = "_noadd"
 	NODEL_TAG                  = "_nodel"

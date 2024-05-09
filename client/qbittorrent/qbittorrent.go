@@ -36,6 +36,19 @@ type Client struct {
 	datatime                  int64
 	unfinishedSize            int64
 	unfinishedDownloadingSize int64
+	contentPathTorrents       map[string][]*apiTorrentInfo
+}
+
+func (qbclient *Client) GetTorrentsByContentPath(contentPath string) ([]*client.Torrent, error) {
+	err := qbclient.sync()
+	if err != nil {
+		return nil, err
+	}
+	var torrents []*client.Torrent
+	for _, t := range qbclient.contentPathTorrents[contentPath] {
+		torrents = append(torrents, t.ToTorrent())
+	}
+	return torrents, nil
 }
 
 func (qbclient *Client) SetAllTorrentsShareLimits(ratioLimit float64, seedingTimeLimit int64) error {
@@ -437,23 +450,26 @@ func (qbclient *Client) SetAllTorrentsCatetory(category string) error {
 	return qbclient.SetTorrentsCatetory([]string{"all"}, category)
 }
 
-func (qbclient *Client) DeleteTorrents(infoHashes []string, deleteFiles bool) error {
+func (qbclient *Client) DeleteTorrents(infoHashes []string, deleteFiles bool) (err error) {
 	if len(infoHashes) == 0 {
 		return nil
 	}
-	err := qbclient.login()
+	err = qbclient.login()
 	if err != nil {
 		return fmt.Errorf("login error: %w", err)
 	}
-	deleteFilesStr := "false"
-	if deleteFiles {
-		deleteFilesStr = "true"
-	}
 	data := url.Values{
 		"hashes":      {strings.Join(infoHashes, "|")},
-		"deleteFiles": {deleteFilesStr},
+		"deleteFiles": {fmt.Sprint(deleteFiles)},
 	}
-	return qbclient.apiPost("api/v2/torrents/delete", data)
+	err = qbclient.apiPost("api/v2/torrents/delete", data)
+	if err == nil && qbclient.Cached() {
+		for _, infoHash := range infoHashes {
+			delete(qbclient.data.Torrents, infoHash)
+		}
+		qbclient.buildDerivative()
+	}
+	return
 }
 
 func (qbclient *Client) ModifyTorrent(infoHash string,
@@ -595,6 +611,7 @@ func (qbclient *Client) PurgeCache() {
 	qbclient.unfinishedSize = 0
 	qbclient.unfinishedDownloadingSize = 0
 	qbclient.datatime = 0
+	qbclient.contentPathTorrents = nil
 }
 
 func (qbclient *Client) Cached() bool {
@@ -614,9 +631,15 @@ func (qbclient *Client) sync() error {
 		return err
 	}
 	qbclient.datatime = util.Now()
-	// make hash available in torrent itself as well as map key
+	qbclient.buildDerivative()
+	return nil
+}
+
+func (qbclient *Client) buildDerivative() {
 	unfinishedSize := int64(0)
 	unfinishedDownloadingSize := int64(0)
+	contentPathTorrents := map[string][]*apiTorrentInfo{}
+	// make hash available in torrent itself as well as map key
 	for hash, torrent := range qbclient.data.Torrents {
 		torrent.Hash = hash
 		qbclient.data.Torrents[hash] = torrent
@@ -625,10 +648,11 @@ func (qbclient *Client) sync() error {
 		if torrent.State != "pausedDL" {
 			unfinishedDownloadingSize += usize
 		}
+		contentPathTorrents[torrent.Content_path] = append(contentPathTorrents[torrent.Content_path], torrent)
 	}
 	qbclient.unfinishedSize = unfinishedSize
 	qbclient.unfinishedDownloadingSize = unfinishedDownloadingSize
-	return nil
+	qbclient.contentPathTorrents = contentPathTorrents
 }
 
 func (qbclient *Client) TorrentRootPathExists(rootFolder string) bool {
