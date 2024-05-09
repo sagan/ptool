@@ -92,7 +92,7 @@ func brush(cmd *cobra.Command, args []string) (err error) {
 			continue
 		}
 		noadd := !force && status.NoAdd
-		var siteTorrents []site.Torrent
+		var siteTorrents []*site.Torrent
 		if status.UploadSpeedLimit > 0 && (status.UploadSpeedLimit < strategy.SLOW_UPLOAD_SPEED ||
 			(float64(status.UploadSpeed)/float64(status.UploadSpeedLimit)) >= strategy.BANDWIDTH_FULL_PERCENT) {
 			log.Printf(
@@ -153,7 +153,7 @@ func brush(cmd *cobra.Command, args []string) (err error) {
 
 		// delete
 		for _, torrent := range result.DeleteTorrents {
-			clientTorrent := util.FindInSlice(clientTorrents, func(t client.Torrent) bool {
+			clientTorrent := *util.FindInSlice(clientTorrents, func(t *client.Torrent) bool {
 				return t.InfoHash == torrent.InfoHash
 			})
 			// double check

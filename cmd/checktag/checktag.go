@@ -50,7 +50,7 @@ func checktag(cmd *cobra.Command, args []string) error {
 		}
 	}
 	if !ok {
-		return fmt.Errorf("none of tags %w exists in client %s", tags, clientName)
+		return fmt.Errorf("none of tags %v exists in client %s", tags, clientName)
 	}
 	return nil
 }

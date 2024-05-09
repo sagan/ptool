@@ -92,6 +92,6 @@ func recheck(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("abort")
 		}
 	}
-	infoHashes = util.Map(torrents, func(t client.Torrent) string { return t.InfoHash })
+	infoHashes = util.Map(torrents, func(t *client.Torrent) string { return t.InfoHash })
 	return clientInstance.RecheckTorrents(infoHashes)
 }

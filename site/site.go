@@ -22,6 +22,7 @@ import (
 	"github.com/sagan/ptool/util/impersonateutil"
 )
 
+// @todo: considering changing it to interface
 type Torrent struct {
 	Name               string
 	Description        string
@@ -64,12 +65,12 @@ type Site interface {
 	DownloadTorrent(url string) (content []byte, filename string, id string, err error)
 	// download torrent by torrent id (e.g. "12345")
 	DownloadTorrentById(id string) (content []byte, filename string, err error)
-	GetLatestTorrents(full bool) ([]Torrent, error)
+	GetLatestTorrents(full bool) ([]*Torrent, error)
 	// sort: size|name|none(or "")
 	GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (
-		torrents []Torrent, nextPageMarker string, err error)
+		torrents []*Torrent, nextPageMarker string, err error)
 	// can use "%s" as keyword placeholder in baseUrl
-	SearchTorrents(keyword string, baseUrl string) ([]Torrent, error)
+	SearchTorrents(keyword string, baseUrl string) ([]*Torrent, error)
 	GetStatus() (*Status, error)
 	PurgeCache()
 }
@@ -207,7 +208,7 @@ func CreateSite(name string) (Site, error) {
 	return siteInstance, err
 }
 
-func PrintTorrents(output io.Writer, torrents []Torrent, filter string, now int64,
+func PrintTorrents(output io.Writer, torrents []*Torrent, filter string, now int64,
 	noHeader bool, dense bool, scores map[string]float64) {
 	width, _, _ := term.GetSize(int(os.Stdout.Fd()))
 	if width < config.SITE_TORRENTS_WIDTH {

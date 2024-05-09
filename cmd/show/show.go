@@ -207,7 +207,7 @@ func show(cmd *cobra.Command, args []string) error {
 		maxTorrentSize >= 0 || addedAfter > 0 || completedBefore > 0 || activeSince > 0 || notActiveSince > 0 || partial ||
 		excludes != ""
 	noConditionFlags := category == "" && tag == "" && filter == "" && !hasFilterCondition
-	var torrents []client.Torrent
+	var torrents []*client.Torrent
 	if showAll {
 		torrents, err = client.QueryTorrents(clientInstance, "", "", "")
 	} else if noConditionFlags && len(infoHashes) == 0 {
@@ -254,7 +254,7 @@ func show(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to fetch client torrents: %w", err)
 	}
 	if hasFilterCondition {
-		torrents = util.Filter(torrents, func(t client.Torrent) bool {
+		torrents = util.Filter(torrents, func(t *client.Torrent) bool {
 			if savePath != "" && t.SavePath != savePath ||
 				excludes != "" && t.MatchFiltersOr(excludesList) ||
 				savePathPrefix != "" && t.SavePath != savePathPrefix && !strings.HasPrefix(t.SavePath, savePathPrefix+`/`) &&

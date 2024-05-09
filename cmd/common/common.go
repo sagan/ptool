@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"path"
-	"path/filepath"
 	"slices"
 	"strings"
 
@@ -95,7 +94,7 @@ type PathMapper struct {
 }
 
 func (spm *PathMapper) Before2After(beforePath string) (afterPath string, match bool) {
-	beforePath = path.Clean(filepath.ToSlash(beforePath))
+	beforePath = path.Clean(util.ToSlash(beforePath))
 	for _, before := range spm.befores {
 		if before == "/" {
 			if strings.HasPrefix(beforePath, before) {
@@ -109,7 +108,7 @@ func (spm *PathMapper) Before2After(beforePath string) (afterPath string, match 
 }
 
 func (spm *PathMapper) After2Before(afterPath string) (beforePath string, match bool) {
-	afterPath = path.Clean(filepath.ToSlash(afterPath))
+	afterPath = path.Clean(util.ToSlash(afterPath))
 	for _, before := range spm.befores {
 		after := spm.mapper[before]
 		if after == "/" {
@@ -132,8 +131,8 @@ func NewPathMapper(rules []string) (*PathMapper, error) {
 		if !found || before == "" || after == "" {
 			return nil, fmt.Errorf("invalid path mapper rule %q", rule)
 		}
-		before = path.Clean(filepath.ToSlash(before))
-		after = path.Clean(filepath.ToSlash(after))
+		before = path.Clean(util.ToSlash(before))
+		after = path.Clean(util.ToSlash(after))
 		pm.mapper[before] = after
 		pm.befores = append(pm.befores, before)
 	}

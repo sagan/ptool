@@ -64,15 +64,15 @@ func (dzsite *Site) GetStatus() (*site.Status, error) {
 }
 
 func (dzsite *Site) GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (
-	torrents []site.Torrent, nextPageMarker string, err error) {
+	torrents []*site.Torrent, nextPageMarker string, err error) {
 	return nil, "", fmt.Errorf("not implemented yet")
 }
 
-func (dzsite *Site) GetLatestTorrents(full bool) ([]site.Torrent, error) {
+func (dzsite *Site) GetLatestTorrents(full bool) ([]*site.Torrent, error) {
 	return nil, fmt.Errorf("not implemented yet")
 }
 
-func (dzsite *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Torrent, error) {
+func (dzsite *Site) SearchTorrents(keyword string, baseUrl string) ([]*site.Torrent, error) {
 	return nil, fmt.Errorf("not implemented yet")
 }
 

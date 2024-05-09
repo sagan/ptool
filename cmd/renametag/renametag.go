@@ -42,7 +42,7 @@ func renametag(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to query client torrents of old-tag: %w", err)
 	}
 	if len(torrents) > 0 {
-		infoHashes := util.Map(torrents, func(t client.Torrent) string { return t.InfoHash })
+		infoHashes := util.Map(torrents, func(t *client.Torrent) string { return t.InfoHash })
 		err = clientInstance.AddTagsToTorrents(infoHashes, []string{newTag})
 		if err != nil {
 			return fmt.Errorf("failed to add new-tag to client torrents: %w", err)

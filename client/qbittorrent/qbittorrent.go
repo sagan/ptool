@@ -398,17 +398,17 @@ func (qbclient *Client) DeleteCategories(categories []string) error {
 	return qbclient.apiPost("api/v2/torrents/removeCategories", data)
 }
 
-func (qbclient *Client) GetCategories() ([]client.TorrentCategory, error) {
+func (qbclient *Client) GetCategories() ([]*client.TorrentCategory, error) {
 	err := qbclient.login()
 	if err != nil {
 		return nil, fmt.Errorf("login error: %w", err)
 	}
-	var categories map[string]client.TorrentCategory
+	var categories map[string]*client.TorrentCategory
 	err = qbclient.apiRequest("api/v2/torrents/categories", &categories)
 	if err != nil {
 		return nil, err
 	}
-	cats := []client.TorrentCategory{}
+	cats := []*client.TorrentCategory{}
 	for _, category := range categories {
 		cats = append(cats, category)
 	}
@@ -829,12 +829,12 @@ func (qbclient *Client) GetTorrent(infoHash string) (*client.Torrent, error) {
 	return qbtorrent.ToTorrent(), nil
 }
 
-func (qbclient *Client) GetTorrents(stateFilter string, category string, showAll bool) ([]client.Torrent, error) {
+func (qbclient *Client) GetTorrents(stateFilter string, category string, showAll bool) ([]*client.Torrent, error) {
 	err := qbclient.sync()
 	if err != nil {
 		return nil, err
 	}
-	torrents := []client.Torrent{}
+	torrents := []*client.Torrent{}
 
 	for _, qbtorrent := range qbclient.data.Torrents {
 		if category != "" {
@@ -853,25 +853,25 @@ func (qbclient *Client) GetTorrents(stateFilter string, category string, showAll
 		if !torrent.MatchStateFilter(stateFilter) {
 			continue
 		}
-		torrents = append(torrents, *torrent)
+		torrents = append(torrents, torrent)
 	}
 	return torrents, nil
 }
 
-func (qbclient *Client) GetTorrentContents(infoHash string) ([]client.TorrentContentFile, error) {
+func (qbclient *Client) GetTorrentContents(infoHash string) ([]*client.TorrentContentFile, error) {
 	err := qbclient.login()
 	if err != nil {
 		return nil, fmt.Errorf("login error: %w", err)
 	}
 	apiUrl := qbclient.ClientConfig.Url + "api/v2/torrents/files?hash=" + infoHash
-	qbTorrentContents := []apiTorrentContent{}
+	var qbTorrentContents []apiTorrentContent
 	err = util.FetchJson(apiUrl, &qbTorrentContents, qbclient.HttpClient, nil)
 	if err != nil {
 		return nil, err
 	}
-	torrentContents := []client.TorrentContentFile{}
+	torrentContents := []*client.TorrentContentFile{}
 	for _, qbTorrentContent := range qbTorrentContents {
-		torrentContents = append(torrentContents, client.TorrentContentFile{
+		torrentContents = append(torrentContents, &client.TorrentContentFile{
 			Index:    qbTorrentContent.Index,
 			Path:     strings.ReplaceAll(qbTorrentContent.Name, `\`, "/"),
 			Size:     qbTorrentContent.Size,
@@ -892,7 +892,7 @@ func (qbclient *Client) GetTorrentTrackers(infoHash string) (client.TorrentTrack
 		return nil, fmt.Errorf("login error: %w", err)
 	}
 	apiUrl := qbclient.ClientConfig.Url + "api/v2/torrents/trackers?hash=" + infoHash
-	qbTorrentTrackers := []apiTorrentTracker{}
+	var qbTorrentTrackers []apiTorrentTracker
 	err = util.FetchJson(apiUrl, &qbTorrentTrackers, qbclient.HttpClient, nil)
 	if err != nil {
 		return nil, err

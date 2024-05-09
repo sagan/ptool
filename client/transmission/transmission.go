@@ -172,11 +172,11 @@ func (trclient *Client) GetTorrent(infoHash string) (*client.Torrent, error) {
 	return tr2Torrent(trtorrent), nil
 }
 
-func (trclient *Client) GetTorrents(stateFilter string, category string, showAll bool) ([]client.Torrent, error) {
+func (trclient *Client) GetTorrents(stateFilter string, category string, showAll bool) ([]*client.Torrent, error) {
 	if err := trclient.sync(); err != nil {
 		return nil, err
 	}
-	torrents := []client.Torrent{}
+	torrents := []*client.Torrent{}
 	for _, trtorrent := range trclient.torrents {
 		torrent := tr2Torrent(trtorrent)
 		if category != "" {
@@ -194,7 +194,7 @@ func (trclient *Client) GetTorrents(stateFilter string, category string, showAll
 		if !torrent.MatchStateFilter(stateFilter) {
 			continue
 		}
-		torrents = append(torrents, *torrent)
+		torrents = append(torrents, torrent)
 	}
 	return torrents, nil
 }
@@ -499,17 +499,17 @@ func (trclient *Client) DeleteCategories(categories []string) error {
 	return fmt.Errorf("unsupported")
 }
 
-func (trclient *Client) GetCategories() ([]client.TorrentCategory, error) {
+func (trclient *Client) GetCategories() ([]*client.TorrentCategory, error) {
 	if err := trclient.sync(); err != nil {
 		return nil, err
 	}
-	cats := []client.TorrentCategory{}
+	cats := []*client.TorrentCategory{}
 	catsFlag := map[string]bool{}
 	for _, trtorrent := range trclient.torrents {
 		torrent := tr2Torrent(trtorrent)
 		cat := torrent.GetCategoryFromTag()
 		if cat != "" && !catsFlag[cat] {
-			cats = append(cats, client.TorrentCategory{
+			cats = append(cats, &client.TorrentCategory{
 				Name: cat,
 			})
 			catsFlag[cat] = true
@@ -554,14 +554,14 @@ func (trclient *Client) TorrentRootPathExists(rootFolder string) bool {
 	return false
 }
 
-func (trclient *Client) GetTorrentContents(infoHash string) ([]client.TorrentContentFile, error) {
+func (trclient *Client) GetTorrentContents(infoHash string) ([]*client.TorrentContentFile, error) {
 	torrent, err := trclient.getTorrent(infoHash, true)
 	if err != nil {
 		return nil, err
 	}
-	files := []client.TorrentContentFile{}
+	files := []*client.TorrentContentFile{}
 	for i, trTorrentFile := range torrent.Files {
-		files = append(files, client.TorrentContentFile{
+		files = append(files, &client.TorrentContentFile{
 			Path:     trTorrentFile.Name,
 			Size:     trTorrentFile.Length,
 			Ignored:  !torrent.FileStats[i].Wanted,

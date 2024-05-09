@@ -52,8 +52,8 @@ type Result struct {
 	Timestamp         int64
 	Sitename          string
 	Size              int64
-	DeleteTorrents    []client.Torrent
-	AddTorrents       []site.Torrent
+	DeleteTorrents    []*client.Torrent
+	AddTorrents       []*site.Torrent
 	AddTorrentsOption *client.TorrentOption
 	Msg               string
 	Log               string
@@ -149,7 +149,7 @@ func doDynamicSeeding(clientInstance client.Client, siteInstance site.Site, igno
 	// Fail: invalidTorrents + stalledTorrents + safeTorrents + normalTorrents; could be deleted.
 	var statistics = common.NewTorrentsStatistics()
 	for _, torrent := range clientTorrents {
-		clientTorrentsMap[torrent.InfoHash] = &torrent
+		clientTorrentsMap[torrent.InfoHash] = torrent
 		if !torrent.HasTag(dynamicSeedingTag) {
 			otherTorrents = append(otherTorrents, torrent.InfoHash)
 			continue
@@ -167,34 +167,34 @@ func doDynamicSeeding(clientInstance client.Client, siteInstance site.Site, igno
 		if !torrent.IsComplete() {
 			if trackerStatus == TRACKER_INVALID && timestamp-torrent.Atime > NEW_TORRENT_TIMESPAN {
 				invalidTorrents = append(invalidTorrents, torrent.InfoHash)
-				statistics.UpdateClientTorrent(common.TORRENT_INVALID, &torrent)
+				statistics.UpdateClientTorrent(common.TORRENT_INVALID, torrent)
 			} else if (timestamp - torrent.ActivityTime) >= INACTIVITY_TIMESPAN {
 				stalledTorrents = append(stalledTorrents, torrent.InfoHash)
-				statistics.UpdateClientTorrent(common.TORRENT_FAILURE, &torrent)
+				statistics.UpdateClientTorrent(common.TORRENT_FAILURE, torrent)
 			} else {
 				downloadingTorrents = append(downloadingTorrents, torrent.InfoHash)
-				statistics.UpdateClientTorrent(common.TORRENT_SUCCESS, &torrent)
+				statistics.UpdateClientTorrent(common.TORRENT_SUCCESS, torrent)
 			}
 		} else if torrent.State != "seeding" {
 			otherTorrents = append(otherTorrents, torrent.InfoHash)
 		} else if trackerStatus == TRACKER_INVALID {
 			invalidTorrents = append(invalidTorrents, torrent.InfoHash)
-			statistics.UpdateClientTorrent(common.TORRENT_INVALID, &torrent)
+			statistics.UpdateClientTorrent(common.TORRENT_INVALID, torrent)
 		} else if torrent.Seeders == 0 {
 			unknownTorrents = append(unknownTorrents, torrent.InfoHash)
-			statistics.UpdateClientTorrent(common.TORRENT_SUCCESS, &torrent)
+			statistics.UpdateClientTorrent(common.TORRENT_SUCCESS, torrent)
 		} else if timestamp-torrent.Ctime < MIN_SEEDING_TIME {
 			protectedTorrents = append(protectedTorrents, torrent.InfoHash)
-			statistics.UpdateClientTorrent(common.TORRENT_SUCCESS, &torrent)
+			statistics.UpdateClientTorrent(common.TORRENT_SUCCESS, torrent)
 		} else if torrent.Seeders > maxSeeders {
 			safeTorrents = append(safeTorrents, torrent.InfoHash)
-			statistics.UpdateClientTorrent(common.TORRENT_FAILURE, &torrent)
+			statistics.UpdateClientTorrent(common.TORRENT_FAILURE, torrent)
 		} else if torrent.Seeders > minSeeders {
 			normalTorrents = append(normalTorrents, torrent.InfoHash)
-			statistics.UpdateClientTorrent(common.TORRENT_FAILURE, &torrent)
+			statistics.UpdateClientTorrent(common.TORRENT_FAILURE, torrent)
 		} else {
 			protectedTorrents = append(protectedTorrents, torrent.InfoHash)
-			statistics.UpdateClientTorrent(common.TORRENT_SUCCESS, &torrent)
+			statistics.UpdateClientTorrent(common.TORRENT_SUCCESS, torrent)
 		}
 	}
 	result.Log += fmt.Sprintf("Client torrents: others %d / invalid %d / stalled %d / downloading %d / safe %d "+
@@ -219,7 +219,7 @@ func doDynamicSeeding(clientInstance client.Client, siteInstance site.Site, igno
 		// See https://github.com/xiaomlove/nexusphp/blob/php8/public/torrents.php .
 		dynamicSeedingUrl = util.AppendUrlQueryString(dynamicSeedingUrl, "seeders_begin=1")
 	}
-	var siteTorrents []site.Torrent
+	var siteTorrents []*site.Torrent
 	var siteTorrentsSize int64
 	var scannedTorrents int64
 	marker := ""
@@ -231,7 +231,7 @@ site_outer:
 			break
 		}
 		rand.Shuffle(len(torrents), func(i, j int) { torrents[i], torrents[j] = torrents[j], torrents[i] })
-		slices.SortStableFunc(torrents, func(a, b site.Torrent) int { return int(a.Seeders - b.Seeders) })
+		slices.SortStableFunc(torrents, func(a, b *site.Torrent) int { return int(a.Seeders - b.Seeders) })
 		for _, torrent := range torrents {
 			if torrent.Id != "" && slices.Contains(ignores, torrent.ID()) {
 				log.Debugf("Ignore site torrent %s (%s) which is recently deleted from client", torrent.Name, torrent.Id)
@@ -324,7 +324,7 @@ site_outer:
 		result.Log += log
 		result.Log += fmt.Sprintf("Add site torrent %s\n", torrent.Name)
 		for _, torrent := range deleteTorrents {
-			result.DeleteTorrents = append(result.DeleteTorrents, *clientTorrentsMap[torrent])
+			result.DeleteTorrents = append(result.DeleteTorrents, clientTorrentsMap[torrent])
 		}
 	}
 

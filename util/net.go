@@ -31,7 +31,7 @@ func FetchJson(url string, v any, client *http.Client, header http.Header) error
 	if err != nil {
 		return err
 	}
-	err = json.Unmarshal(body, &v)
+	err = json.Unmarshal(body, v)
 	if err != nil {
 		log.Tracef("FetchJson failed to unmarshal, response body: %s", string(body))
 	}
@@ -117,16 +117,16 @@ func PostUrlForJson(url string, data url.Values, v any, client *http.Client) err
 	if err != nil {
 		return err
 	}
+	defer res.Body.Close()
 	log.Tracef("PostUrlForJson response: len=%d", res.ContentLength)
-	body, _ := io.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
 	if res.StatusCode != 200 {
 		return fmt.Errorf("PostUrlForJson response error: status=%d", res.StatusCode)
 	}
-	err = json.Unmarshal(body, &v)
+	err = json.Unmarshal(body, v)
 	if err != nil {
 		log.Tracef("PostUrlForJson error encountered when unmarshaling: %v", err)
 	}

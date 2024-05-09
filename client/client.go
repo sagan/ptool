@@ -18,6 +18,7 @@ import (
 	"github.com/sagan/ptool/util"
 )
 
+// @todo: considering changing it to interface
 type Torrent struct {
 	InfoHash           string
 	Name               string
@@ -103,7 +104,7 @@ type Client interface {
 	GetTorrent(infoHash string) (*Torrent, error)
 	// category: "none" is a special value to select uncategoried torrents.
 	// stateFilter: _all|_active|_done|_undone, or any state value (possibly with a _ prefix)
-	GetTorrents(stateFilter string, category string, showAll bool) ([]Torrent, error)
+	GetTorrents(stateFilter string, category string, showAll bool) ([]*Torrent, error)
 	AddTorrent(torrentContent []byte, option *TorrentOption, meta map[string]int64) error
 	ModifyTorrent(infoHash string, option *TorrentOption, meta map[string]int64) error
 	DeleteTorrents(infoHashes []string, deleteFiles bool) error
@@ -127,13 +128,13 @@ type Client interface {
 	// create category if not existed, edit category if already exists
 	MakeCategory(category string, savePath string) error
 	DeleteCategories(categories []string) error
-	GetCategories() ([]TorrentCategory, error)
+	GetCategories() ([]*TorrentCategory, error)
 	SetTorrentsCatetory(infoHashes []string, category string) error
 	SetAllTorrentsCatetory(category string) error
 	SetTorrentsShareLimits(infoHashes []string, ratioLimit float64, seedingTimeLimit int64) error
 	SetAllTorrentsShareLimits(ratioLimit float64, seedingTimeLimit int64) error
 	TorrentRootPathExists(rootFolder string) bool
-	GetTorrentContents(infoHash string) ([]TorrentContentFile, error)
+	GetTorrentContents(infoHash string) ([]*TorrentContentFile, error)
 	PurgeCache()
 	GetStatus() (*Status, error)
 	GetName() string
@@ -476,7 +477,7 @@ func PrintTorrentTrackers(trackers TorrentTrackers) {
 	}
 }
 
-func PrintTorrentFiles(files []TorrentContentFile, showRaw bool) {
+func PrintTorrentFiles(files []*TorrentContentFile, showRaw bool) {
 	fmt.Printf("Files (%d):\n", len(files))
 	fmt.Printf("%-5s  %-5s  %-10s  %-5s  %s\n", "No.", "Index", "Size", "Done?", "Path")
 	ignoredFilesCnt := int64(0)
@@ -541,7 +542,7 @@ func (torrent *Torrent) Print() {
 }
 
 // showSum: 0 - no; 1 - yes; 2 - sum only
-func PrintTorrents(output io.Writer, torrents []Torrent, filter string, showSum int64, dense bool) {
+func PrintTorrents(output io.Writer, torrents []*Torrent, filter string, showSum int64, dense bool) {
 	width, _, _ := term.GetSize(int(os.Stdout.Fd()))
 	if width < config.CLIENT_TORRENTS_WIDTH {
 		width = config.CLIENT_TORRENTS_WIDTH
@@ -644,7 +645,7 @@ func PrintTorrents(output io.Writer, torrents []Torrent, filter string, showSum 
 // tag: comma-separated list, a torrent matches if it has any tag that in the list;
 // specially, "none" means untagged torrents.
 func QueryTorrents(clientInstance Client, category string, tag string, filter string,
-	hashOrStateFilters ...string) ([]Torrent, error) {
+	hashOrStateFilters ...string) ([]*Torrent, error) {
 	isAll := len(hashOrStateFilters) == 0
 	for _, arg := range hashOrStateFilters {
 		if !IsValidInfoHashOrStateFilter(arg) {
@@ -661,7 +662,7 @@ func QueryTorrents(clientInstance Client, category string, tag string, filter st
 	if category == "" && tag == "" && filter == "" && isAll {
 		return torrents, nil
 	}
-	torrents2 := []Torrent{}
+	torrents2 := []*Torrent{}
 	for _, torrent := range torrents {
 		if tag != "" {
 			if tag == constants.NONE {

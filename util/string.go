@@ -232,3 +232,7 @@ func Clean(s string) string {
 		return -1
 	}, s)
 }
+
+func ToSlash(path string) string {
+	return strings.ReplaceAll(path, `\`, "/")
+}

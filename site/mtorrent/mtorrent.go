@@ -92,13 +92,13 @@ func (m *Site) DownloadTorrentById(id string) (content []byte, filename string, 
 	return
 }
 
-func (m *Site) GetLatestTorrents(full bool) ([]site.Torrent, error) {
+func (m *Site) GetLatestTorrents(full bool) ([]*site.Torrent, error) {
 	modes := []string{TorrentSearchMode_Normal}
 	if full {
 		modes = append(modes, TorrentSearchMode_Adult)
 	}
 
-	var mergedTorrents []site.Torrent
+	var mergedTorrents []*site.Torrent
 	for _, mode := range modes {
 		if list, err := m.search(WithMode(mode)); err != nil {
 			log.Errorf("search mode %s failed: %v", mode, err)
@@ -116,7 +116,7 @@ func (m *Site) GetLatestTorrents(full bool) ([]site.Torrent, error) {
 	return mergedTorrents, nil
 }
 
-func (m *Site) GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (torrents []site.Torrent, nextPageMarker string, err error) {
+func (m *Site) GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (torrents []*site.Torrent, nextPageMarker string, err error) {
 	if sort != "" && sort != constants.NONE && sortFields[sort] == "" {
 		err = fmt.Errorf("unsupported sort field: %s", sort)
 		return
@@ -147,7 +147,7 @@ func (m *Site) GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl
 	return
 }
 
-func (m *Site) SearchTorrents(keyword string, baseUrl string) (torrents []site.Torrent, err error) {
+func (m *Site) SearchTorrents(keyword string, baseUrl string) (torrents []*site.Torrent, err error) {
 	list, err := m.search(WithKeyword(keyword))
 	if err == nil {
 		torrents = m.convertTorrents(list)
@@ -220,10 +220,10 @@ func (m *Site) search(options ...TorrentSearchRequestOption) (list *TorrentList,
 	return
 }
 
-func (m *Site) convertTorrents(list *TorrentList) []site.Torrent {
-	var torrents []site.Torrent
+func (m *Site) convertTorrents(list *TorrentList) []*site.Torrent {
+	var torrents []*site.Torrent
 	for _, torrent := range list.Data {
-		torrents = append(torrents, site.Torrent{
+		torrents = append(torrents, &site.Torrent{
 			Name:               torrent.Name,
 			Description:        torrent.Description,
 			Id:                 fmt.Sprintf("%s.%s", m.Name, torrent.Id),

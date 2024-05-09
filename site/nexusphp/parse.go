@@ -58,8 +58,8 @@ type TorrentsParserOption struct {
 }
 
 func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
-	doctime int64, sitename string) (torrents []site.Torrent, err error) {
-	torrents = []site.Torrent{}
+	doctime int64, sitename string) (torrents []*site.Torrent, err error) {
+	torrents = []*site.Torrent{}
 	if option.selectorTorrent == "" {
 		option.selectorTorrent = SELECTOR_TORRENT
 	}
@@ -491,7 +491,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 			if id != "" && sitename != "" {
 				id = sitename + "." + id
 			}
-			torrents = append(torrents, site.Torrent{
+			torrents = append(torrents, &site.Torrent{
 				Name:               name,
 				Description:        description,
 				Id:                 id,

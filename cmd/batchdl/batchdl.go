@@ -346,7 +346,7 @@ func batchdl(command *cobra.Command, args []string) error {
 	totalAllSize := int64(0)
 	errorCnt := int64(0)
 	consecutiveFail := int64(0)
-	var torrents []site.Torrent
+	var torrents []*site.Torrent
 	var marker = startPage
 	var lastMarker = ""
 	doneHandle := func() {
@@ -520,7 +520,7 @@ mainloop:
 				if showJson {
 					util.PrintJson(os.Stdout, torrent)
 				} else {
-					site.PrintTorrents(os.Stdout, []site.Torrent{torrent}, "", now, cntTorrents != 1, dense, nil)
+					site.PrintTorrents(os.Stdout, []*site.Torrent{torrent}, "", now, cntTorrents != 1, dense, nil)
 				}
 				continue
 			}

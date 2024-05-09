@@ -17,7 +17,7 @@ import (
 
 type SearchResult struct {
 	site     string
-	torrents []site.Torrent
+	torrents []*site.Torrent
 	err      error
 }
 
@@ -131,7 +131,7 @@ func search(cmd *cobra.Command, args []string) error {
 		}(sitename)
 	}
 
-	torrents := []site.Torrent{}
+	torrents := []*site.Torrent{}
 	errorStr := ""
 	cntSuccessSites := int64(0)
 	cntNoResultSites := int64(0)

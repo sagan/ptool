@@ -95,7 +95,7 @@ func delete(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to fetch client torrents: %w", err)
 	}
 	if tracker != "" || minTorrentSize >= 0 || maxTorrentSize >= 0 {
-		torrents = util.Filter(torrents, func(t client.Torrent) bool {
+		torrents = util.Filter(torrents, func(t *client.Torrent) bool {
 			if tracker != "" && !t.MatchTracker(tracker) ||
 				minTorrentSize >= 0 && t.Size < minTorrentSize ||
 				maxTorrentSize >= 0 && t.Size > maxTorrentSize {
@@ -116,7 +116,7 @@ func delete(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("abort")
 		}
 	}
-	infoHashes = util.Map(torrents, func(t client.Torrent) string { return t.InfoHash })
+	infoHashes = util.Map(torrents, func(t *client.Torrent) string { return t.InfoHash })
 	err = clientInstance.DeleteTorrents(infoHashes, !preserve)
 	if err != nil {
 		return fmt.Errorf("failed to delete torrents: %w", err)

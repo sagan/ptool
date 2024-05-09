@@ -340,7 +340,7 @@ func (meta *TorrentMeta) FprintFiles(f io.Writer, addRootDirPrefix bool, useRawS
 // return 1 if client torrent contains all files of this torrent.
 // return -2 if the ROOT folder(file) of the two are different, but all innner files are SAME.
 // return -1 if contents of the two torrents are NOT same.
-func (meta *TorrentMeta) XseedCheckWithClientTorrent(clientTorrentContents []client.TorrentContentFile) int64 {
+func (meta *TorrentMeta) XseedCheckWithClientTorrent(clientTorrentContents []*client.TorrentContentFile) int64 {
 	if len(clientTorrentContents) < len(meta.Files) || len(meta.Files) == 0 {
 		return -1
 	}
@@ -554,7 +554,7 @@ func RenameTorrent(rename string, sitename string, id string, filename string, t
 
 // Get appropriate filename for exported .torrent file.
 // available variable placeholders: [client], [size], [infohash], [infohash16], [category], [name], [name128]
-func RenameExportedTorrent(client string, torrent client.Torrent, rename string) string {
+func RenameExportedTorrent(client string, torrent *client.Torrent, rename string) string {
 	filename := rename
 	filename = strings.ReplaceAll(filename, "[client]", client)
 	filename = strings.ReplaceAll(filename, "[size]", util.BytesSize(float64(torrent.Size)))

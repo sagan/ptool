@@ -25,8 +25,8 @@ type Site struct {
 	HttpClient           *azuretls.Session
 	HttpHeaders          [][]string
 	siteStatus           *site.Status
-	latestTorrents       []site.Torrent
-	extraTorrents        []site.Torrent
+	latestTorrents       []*site.Torrent
+	extraTorrents        []*site.Torrent
 	datatime             int64
 	datetimeExtra        int64
 	cuhash               string
@@ -68,7 +68,7 @@ func (npclient *Site) GetSiteConfig() *config.SiteConfigStruct {
 	return npclient.SiteConfig
 }
 
-func (npclient *Site) SearchTorrents(keyword string, baseUrl string) ([]site.Torrent, error) {
+func (npclient *Site) SearchTorrents(keyword string, baseUrl string) ([]*site.Torrent, error) {
 	if baseUrl == "" {
 		if npclient.SiteConfig.SearchUrl != "" {
 			baseUrl = npclient.SiteConfig.SearchUrl
@@ -201,8 +201,8 @@ func (npclient *Site) GetStatus() (*site.Status, error) {
 	return npclient.siteStatus, nil
 }
 
-func (npclient *Site) GetLatestTorrents(full bool) ([]site.Torrent, error) {
-	latestTorrents := []site.Torrent{}
+func (npclient *Site) GetLatestTorrents(full bool) ([]*site.Torrent, error) {
+	latestTorrents := []*site.Torrent{}
 	err := npclient.sync()
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch site data: %w", err)
@@ -220,7 +220,7 @@ func (npclient *Site) GetLatestTorrents(full bool) ([]site.Torrent, error) {
 }
 
 func (npclient *Site) GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (
-	torrents []site.Torrent, nextPageMarker string, err error) {
+	torrents []*site.Torrent, nextPageMarker string, err error) {
 	if sort != "" && sort != constants.NONE && sortFields[sort] == "" {
 		err = fmt.Errorf("unsupported sort field: %s", sort)
 		return
@@ -336,7 +336,7 @@ labelLastPage:
 	return
 }
 
-func (npclient *Site) parseTorrentsFromDoc(doc *goquery.Document, datatime int64) ([]site.Torrent, error) {
+func (npclient *Site) parseTorrentsFromDoc(doc *goquery.Document, datatime int64) ([]*site.Torrent, error) {
 	torrents, err := parseTorrents(doc, npclient.torrentsParserOption, datatime, npclient.GetName())
 	if npclient.SiteConfig.UseCuhash && npclient.cuhash == "" &&
 		len(torrents) > 0 && torrents[0].DownloadUrl != "" {
@@ -443,7 +443,7 @@ func (npclient *Site) syncExtra() error {
 	if npclient.datetimeExtra > 0 {
 		return nil
 	}
-	extraTorrents := []site.Torrent{}
+	extraTorrents := []*site.Torrent{}
 	for _, extraUrl := range npclient.SiteConfig.TorrentsExtraUrls {
 		doc, res, err := util.GetUrlDocWithAzuretls(npclient.SiteConfig.ParseSiteUrl(extraUrl, false), npclient.HttpClient,
 			npclient.SiteConfig.Cookie, site.GetUa(npclient), npclient.GetDefaultHttpHeaders())

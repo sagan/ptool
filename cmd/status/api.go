@@ -14,9 +14,9 @@ type StatusResponse struct {
 	Name              string
 	Kind              int64
 	ClientStatus      *client.Status
-	ClientTorrents    []client.Torrent
+	ClientTorrents    []*client.Torrent
 	SiteStatus        *site.Status
-	SiteTorrents      []site.Torrent // latest site torrents
+	SiteTorrents      []*site.Torrent // latest site torrents
 	SiteTorrentScores map[string]float64
 	Error             error
 }
@@ -79,7 +79,7 @@ func fetchSiteStatus(siteInstance site.Site, showTorrents bool, full bool, showS
 				brushSiteOption := strategy.GetBrushSiteOptions(siteInstance, util.Now())
 				scores := map[string]float64{}
 				for _, torrent := range siteTorrents {
-					scores[torrent.Id], _, _ = strategy.RateSiteTorrent(&torrent, brushSiteOption)
+					scores[torrent.Id], _, _ = strategy.RateSiteTorrent(torrent, brushSiteOption)
 				}
 				response.SiteTorrentScores = scores
 			}

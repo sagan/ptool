@@ -41,7 +41,7 @@ func getcategories(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to get categories: %w", err)
 	}
 	if showNamesOnly {
-		fmt.Printf("%s\n", strings.Join(util.Map(cats, func(cat client.TorrentCategory) string {
+		fmt.Printf("%s\n", strings.Join(util.Map(cats, func(cat *client.TorrentCategory) string {
 			return cat.Name
 		}), ", "))
 	} else {

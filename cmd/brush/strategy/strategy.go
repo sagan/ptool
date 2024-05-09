@@ -139,7 +139,7 @@ func isTorrentStalled(torrent *client.Torrent) bool {
  * Also：
  *   * Use the current seeders / leechers info of torrent when make decisions
  */
-func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTorrents []site.Torrent,
+func Decide(clientStatus *client.Status, clientTorrents []*client.Torrent, siteTorrents []*site.Torrent,
 	siteOption *BrushSiteOptionStruct, clientOption *BrushClientOptionStruct) (result *AlgorithmResult) {
 	result = &AlgorithmResult{}
 
@@ -165,15 +165,15 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 
 	for i, torrent := range clientTorrents {
 		clientTorrentsMap[torrent.InfoHash] = &clientTorrentInfoStruct{
-			Torrent: &clientTorrents[i],
+			Torrent: clientTorrents[i],
 		}
 	}
 	for i, siteTorrent := range siteTorrents {
-		siteTorrentsMap[siteTorrent.InfoHash] = &siteTorrents[i]
+		siteTorrentsMap[siteTorrent.InfoHash] = siteTorrents[i]
 	}
 
 	for _, siteTorrent := range siteTorrents {
-		score, predictionUploadSpeed, _ := RateSiteTorrent(&siteTorrent, siteOption)
+		score, predictionUploadSpeed, _ := RateSiteTorrent(siteTorrent, siteOption)
 		if score > 0 {
 			candidateTorrent := candidateTorrentStruct{
 				Name:                  siteTorrent.Name,
@@ -195,13 +195,13 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 
 	// mark torrents
 	for _, torrent := range clientTorrents {
-		if countAsDownloading(&torrent, siteOption.Now) {
+		if countAsDownloading(torrent, siteOption.Now) {
 			cntDownloadingTorrents++
 		}
 
 		// mark torrents that discount time ends as stall
 		if torrent.Meta["dcet"] > 0 && torrent.Meta["dcet"]-siteOption.Now <= 3600 && torrent.Ctime <= 0 {
-			if canStallTorrent(&torrent) {
+			if canStallTorrent(torrent) {
 				meta := util.CopyMap(torrent.Meta, true)
 				meta["stt"] = siteOption.Now
 				stallTorrents = append(stallTorrents, AlgorithmModifyTorrent{
@@ -246,7 +246,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 					averageUploadSpeedSinceSct := (torrent.Uploaded - torrent.Meta["sctu"]) /
 						(siteOption.Now - torrent.Meta["sct"])
 					if averageUploadSpeedSinceSct < clientOption.SlowUploadSpeedTier {
-						if canStallTorrent(&torrent) &&
+						if canStallTorrent(torrent) &&
 							torrent.DownloadSpeed >= RATIO_CHECK_MIN_DOWNLOAD_SPEED &&
 							float64(torrent.UploadSpeed)/float64(torrent.DownloadSpeed) < clientOption.MinRatio &&
 							siteOption.Now-torrent.Atime >= NEW_TORRENTS_STALL_EXEMPTION_TIMESPAN {
@@ -350,7 +350,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	// if still not enough free space, delete ALL stalled incomplete torrents
 	if freespace >= 0 && freespace <= clientOption.MinDiskSpace && freespace+freespaceChange <= freespaceTarget {
 		for _, torrent := range clientTorrents {
-			if clientTorrentsMap[torrent.InfoHash].DeleteFlag || !isTorrentStalled(&torrent) {
+			if clientTorrentsMap[torrent.InfoHash].DeleteFlag || !isTorrentStalled(torrent) {
 				continue
 			}
 			result.DeleteTorrents = append(result.DeleteTorrents, AlgorithmOperationTorrent{
@@ -361,7 +361,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 			freespaceChange += torrent.SizeCompleted
 			estimateUploadSpeed -= torrent.UploadSpeed
 			clientTorrentsMap[torrent.InfoHash].DeleteFlag = true
-			if countAsDownloading(&torrent, siteOption.Now) {
+			if countAsDownloading(torrent, siteOption.Now) {
 				cntDownloadingTorrents--
 			}
 			cntTorrents--
@@ -404,7 +404,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 			if clientTorrentsMap[torrent.InfoHash].DeleteFlag || clientTorrentsMap[torrent.InfoHash].StallFlag {
 				continue
 			}
-			if canStallTorrent(&torrent) {
+			if canStallTorrent(torrent) {
 				meta := util.CopyMap(torrent.Meta, true)
 				meta["stt"] = siteOption.Now
 				stallTorrents = append(stallTorrents, AlgorithmModifyTorrent{
@@ -422,7 +422,7 @@ func Decide(clientStatus *client.Status, clientTorrents []client.Torrent, siteTo
 	if freespace+freespaceChange >= max(clientOption.MinDiskSpace, RESUME_TORRENTS_FREE_DISK_SPACE_TIER) {
 		for _, torrent := range clientTorrents {
 			if torrent.State != "error" || torrent.UploadSpeed < clientOption.SlowUploadSpeedTier*4 ||
-				isTorrentStalled(&torrent) || clientTorrentsMap[torrent.InfoHash].ResumeFlag {
+				isTorrentStalled(torrent) || clientTorrentsMap[torrent.InfoHash].ResumeFlag {
 				continue
 			}
 			resumeTorrents = append(resumeTorrents, AlgorithmOperationTorrent{

@@ -91,7 +91,7 @@ func xseedadd(cmd *cobra.Command, args []string) error {
 	if addTags != "" {
 		fixedTags = util.SplitCsv(addTags)
 	}
-	clientTorrents = util.Filter(clientTorrents, func(t client.Torrent) bool {
+	clientTorrents = util.Filter(clientTorrents, func(t *client.Torrent) bool {
 		return t.IsFullComplete() && !t.HasTag(config.NOXSEED_TAG) && (tag == "" || t.HasAnyTag(tag))
 	})
 	sort.Slice(clientTorrents, func(i, j int) bool {
@@ -150,7 +150,7 @@ func xseedadd(cmd *cobra.Command, args []string) error {
 				log.Debugf("Torrent %s does NOT has the same contents with client %s torrent.\n", torrent, clientName)
 			}
 			if compareResult >= 0 {
-				matchClientTorrent = &clientTorrent
+				matchClientTorrent = clientTorrent
 				break
 			}
 		}
