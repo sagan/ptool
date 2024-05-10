@@ -62,11 +62,11 @@ func brush(cmd *cobra.Command, args []string) (err error) {
 	if !ordered {
 		rand.Shuffle(len(sitenames), func(i, j int) { sitenames[i], sitenames[j] = sitenames[j], sitenames[i] })
 	}
+	sitenames = util.UniqueSlice(sitenames)
 	cntSuccessSite := int64(0)
 	cntSkipSite := int64(0)
 	cntAddTorrents := int64(0)
 	cntDeleteTorrents := int64(0)
-	doneSiteFlag := map[string]bool{}
 	var statDb *stats.StatDb
 	if config.Get().BrushEnableStats {
 		statDb, err = stats.NewDb(filepath.Join(config.ConfigDir, config.STATS_FILENAME))
@@ -76,10 +76,6 @@ func brush(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	for i, sitename := range sitenames {
-		if doneSiteFlag[sitename] {
-			continue
-		}
-		doneSiteFlag[sitename] = true
 		siteInstance, err := site.CreateSite(sitename)
 		if err != nil {
 			log.Errorf("Failed to get instance of site %s: %v", sitename, err)
@@ -96,7 +92,7 @@ func brush(cmd *cobra.Command, args []string) (err error) {
 		if status.UploadSpeedLimit > 0 && (status.UploadSpeedLimit < strategy.SLOW_UPLOAD_SPEED ||
 			(float64(status.UploadSpeed)/float64(status.UploadSpeedLimit)) >= strategy.BANDWIDTH_FULL_PERCENT) {
 			log.Printf(
-				"Client %s upload bandwidth is already full (Upload speed/limit: %s/s/%s/s). Do not fetch site new torrents\n",
+				"Client %s upload bandwidth is already full (Up speed/limit: %s/s/%s/s). Do not fetch site new torrents\n",
 				clientInstance.GetName(),
 				util.BytesSize(float64(status.UploadSpeed)),
 				util.BytesSize(float64(status.UploadSpeedLimit)),
@@ -141,7 +137,8 @@ func brush(cmd *cobra.Command, args []string) (err error) {
 		)
 		result := strategy.Decide(status, clientTorrents, siteTorrents, brushSiteOption, brushClientOption)
 		log.Printf(
-			"Current client %s torrents: %d; Download speed / limit: %s/s / %s/s; Upload speed / limit: %s/s / %s/s;Free disk space: %s;",
+			"Current client %s torrents: %d; Download speed / limit: %s/s / %s/s; "+
+				"Upload speed / limit: %s/s / %s/s;Free disk space: %s;",
 			clientInstance.GetName(),
 			len(clientTorrents),
 			util.BytesSize(float64(status.DownloadSpeed)),
@@ -162,6 +159,9 @@ func brush(cmd *cobra.Command, args []string) (err error) {
 		)
 
 		// delete
+		var deleteTorrentStats []*stats.TorrentStat
+		var deleteTorrentInfoHashes []string
+		log.Printf("Delete torrents:")
 		for _, torrent := range result.DeleteTorrents {
 			clientTorrent := *util.FindInSlice(clientTorrents, func(t *client.Torrent) bool {
 				return t.InfoHash == torrent.InfoHash
@@ -172,41 +172,43 @@ func brush(cmd *cobra.Command, args []string) (err error) {
 				continue
 			}
 			duration := brushSiteOption.Now - clientTorrent.Atime
-			log.Printf("Delete client %s torrent: %v / %v / %v.", clientInstance.GetName(), torrent.Name, torrent.InfoHash, torrent.Msg)
-			log.Printf("Torrent total downloads / uploads: %s / %s; Lifespan: %s; Average download / upload speed of lifespan: %s/s / %s/s",
+			log.Printf("Torrent %s (%v): %v", torrent.Name, torrent.InfoHash, torrent.Msg)
+			log.Printf("Total Dl / Up: %s / %s; Lifespan: %s; Average lifespan Dl / Up speed: %s/s / %s/s",
 				util.BytesSize(float64(clientTorrent.Downloaded)),
 				util.BytesSize(float64(clientTorrent.Uploaded)),
 				util.GetDurationString(duration),
 				util.BytesSize(float64(clientTorrent.Downloaded)/float64(duration)),
 				util.BytesSize(float64(clientTorrent.Uploaded)/float64(duration)),
 			)
-			if dryRun {
-				continue
-			}
-			err := client.DeleteTorrentsAuto(clientInstance, []string{torrent.InfoHash})
-			log.Printf("Delete torrent result: error=%v", err)
+			deleteTorrentStats = append(deleteTorrentStats, &stats.TorrentStat{
+				Client:     clientInstance.GetName(),
+				Site:       clientTorrent.GetSiteFromTag(),
+				InfoHash:   clientTorrent.InfoHash,
+				Category:   clientTorrent.Category,
+				Name:       clientTorrent.Name,
+				Atime:      clientTorrent.Atime,
+				Size:       clientTorrent.Size,
+				Uploaded:   clientTorrent.Uploaded,
+				Downloaded: clientTorrent.Downloaded,
+				Msg:        torrent.Msg,
+			})
+			deleteTorrentInfoHashes = append(deleteTorrentInfoHashes, clientTorrent.InfoHash)
+		}
+		if !dryRun {
+			err := client.DeleteTorrentsAuto(clientInstance, deleteTorrentInfoHashes)
+			log.Printf("Delete torrents result: error=%v", err)
 			if err == nil {
-				cntDeleteTorrents++
+				cntDeleteTorrents += int64(len(deleteTorrentInfoHashes))
 				if statDb != nil {
-					statDb.AddTorrentStat(brushSiteOption.Now, 1, &stats.TorrentStat{
-						Client:     clientInstance.GetName(),
-						Site:       clientTorrent.GetSiteFromTag(),
-						InfoHash:   clientTorrent.InfoHash,
-						Category:   clientTorrent.Category,
-						Name:       clientTorrent.Name,
-						Atime:      clientTorrent.Atime,
-						Size:       clientTorrent.Size,
-						Uploaded:   clientTorrent.Uploaded,
-						Downloaded: clientTorrent.Downloaded,
-						Msg:        torrent.Msg,
-					})
+					statDb.AddTorrentStats(brushSiteOption.Now, 1, deleteTorrentStats)
 				}
 			}
 		}
 
 		// stall
 		for _, torrent := range result.StallTorrents {
-			log.Printf("Stall client %s torrent: %v / %v / %v", clientInstance.GetName(), torrent.Name, torrent.InfoHash, torrent.Msg)
+			log.Printf("Stall client %s torrent: %v / %v / %v",
+				clientInstance.GetName(), torrent.Name, torrent.InfoHash, torrent.Msg)
 			if dryRun {
 				continue
 			}
@@ -219,19 +221,22 @@ func brush(cmd *cobra.Command, args []string) (err error) {
 		// resume
 		if len(result.ResumeTorrents) > 0 {
 			for _, torrent := range result.ResumeTorrents {
-				log.Printf("Resume client %s torrent: %v / %v / %v", clientInstance.GetName(), torrent.Name, torrent.InfoHash, torrent.Msg)
+				log.Printf("Resume client %s torrent: %v / %v / %v",
+					clientInstance.GetName(), torrent.Name, torrent.InfoHash, torrent.Msg)
 			}
 			if !dryRun {
-				err := clientInstance.ResumeTorrents(util.Map(result.ResumeTorrents, func(t strategy.AlgorithmOperationTorrent) string {
-					return t.InfoHash
-				}))
+				err := clientInstance.ResumeTorrents(util.Map(result.ResumeTorrents,
+					func(t strategy.AlgorithmOperationTorrent) string {
+						return t.InfoHash
+					}))
 				log.Printf("Resume torrents result: error=%v", err)
 			}
 		}
 
 		// modify
 		for _, torrent := range result.ModifyTorrents {
-			log.Printf("Modify client %s torrent: %v / %v / %v / %v ", clientInstance.GetName(), torrent.Name, torrent.InfoHash, torrent.Msg, torrent.Meta)
+			log.Printf("Modify client %s torrent: %v / %v / %v / %v ",
+				clientInstance.GetName(), torrent.Name, torrent.InfoHash, torrent.Msg, torrent.Meta)
 			if dryRun {
 				continue
 			}
@@ -242,7 +247,8 @@ func brush(cmd *cobra.Command, args []string) (err error) {
 		// add
 		cndAddTorrents := 0
 		for _, torrent := range result.AddTorrents {
-			log.Printf("Add site %s torrent to client %s: %s / %s / %v", siteInstance.GetName(), clientInstance.GetName(), torrent.Name, torrent.Msg, torrent.Meta)
+			log.Printf("Add site %s torrent to client %s: %s / %s / %v",
+				siteInstance.GetName(), clientInstance.GetName(), torrent.Name, torrent.Msg, torrent.Meta)
 			if dryRun {
 				continue
 			}
@@ -279,8 +285,6 @@ func brush(cmd *cobra.Command, args []string) (err error) {
 				Tags:             tags,
 				UploadSpeedLimit: siteInstance.GetSiteConfig().TorrentUploadSpeedLimitValue,
 			}
-			// torrentname := fmt.Sprint(torrent.Name, "_", i, ".torrent")
-			// os.WriteFile(tmpdir+"/"+torrentname, torrentdata, constants.PERM)
 			if !dryRun {
 				err = clientInstance.AddTorrent(torrentdata, torrentOption, torrent.Meta)
 				log.Printf("Add torrent result: error=%v", err)
@@ -310,14 +314,15 @@ func brush(cmd *cobra.Command, args []string) (err error) {
 			cntSkipSite += int64(len(sitenames) - 1 - i)
 			break
 		}
-		if i < len(sitenames)-1 && (len(result.AddTorrents) > 0 || len(result.ModifyTorrents) > 0 || len(result.DeleteTorrents) > 0 || len(result.StallTorrents) > 0) {
+		if i < len(sitenames)-1 && (len(result.AddTorrents) > 0 || len(result.ModifyTorrents) > 0 ||
+			len(result.DeleteTorrents) > 0 || len(result.StallTorrents) > 0) {
 			clientInstance.PurgeCache()
 			util.Sleep(3)
 		}
 	}
 
-	fmt.Printf("Finish brushing %d sites: successSites=%d, skipSites=%d; Added / Deleted torrents: %d / %d to client %s\n",
-		len(sitenames), cntSuccessSite, cntSkipSite, cntAddTorrents, cntDeleteTorrents, clientInstance.GetName())
+	fmt.Printf("Finish brushing %d sites: successSites=%d, skipSites=%d; Added / Deleted torrents: %d / %d\n",
+		len(sitenames), cntSuccessSite, cntSkipSite, cntAddTorrents, cntDeleteTorrents)
 	if cntSuccessSite == 0 {
 		return fmt.Errorf("no sites successed")
 	}

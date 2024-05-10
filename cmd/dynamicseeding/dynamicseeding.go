@@ -88,69 +88,77 @@ func dynamicseeding(cmd *cobra.Command, args []string) (err error) {
 		log.Warnf("Dry-run. Exit")
 		return nil
 	}
-	var newIgnores []string
 	errorCnt := int64(0)
-	deletedSize := int64(0)
+	// add
 	addedSize := int64(0)
 	tags := result.AddTorrentsOption.Tags
-	for len(result.AddTorrents) > 0 || len(result.DeleteTorrents) > 0 {
-		if len(result.AddTorrents) > 0 && (addedSize <= deletedSize || len(result.DeleteTorrents) == 0) {
-			torrent := result.AddTorrents[0].Id
-			if torrent == "" {
-				torrent = result.AddTorrents[0].DownloadUrl
-			}
-			if contents, _, _, err := siteInstance.DownloadTorrent(torrent); err != nil {
-				log.Errorf("Failed to download site torrent %s", torrent)
-				errorCnt++
-			} else if tinfo, err := torrentutil.ParseTorrent(contents); err != nil {
-				log.Errorf("Failed to download site torrent %s: is not a valid torrent: %v", torrent, err)
-				errorCnt++
-			} else {
-				var _tags []string
-				_tags = append(_tags, tags...)
-				if tinfo.IsPrivate() {
-					_tags = append(_tags, config.PRIVATE_TAG)
-				} else {
-					_tags = append(_tags, config.PUBLIC_TAG)
-				}
-				result.AddTorrentsOption.Name = result.AddTorrents[0].Name
-				result.AddTorrentsOption.Tags = _tags
-				meta := map[string]int64{}
-				if result.AddTorrents[0].Id != "" {
-					if id := util.ParseInt(result.AddTorrents[0].ID()); id != 0 {
-						meta["id"] = id
-					}
-				}
-				if err := clientInstance.AddTorrent(contents, result.AddTorrentsOption, meta); err != nil {
-					log.Errorf("Failed to add site torrent %s to client: %v", torrent, err)
-					errorCnt++
-				} else {
-					addedSize += result.AddTorrents[0].Size
-				}
-			}
-			result.AddTorrents = result.AddTorrents[1:]
+	for len(result.AddTorrents) > 0 {
+		torrent := result.AddTorrents[0].Id
+		if torrent == "" {
+			torrent = result.AddTorrents[0].DownloadUrl
+		}
+		if contents, _, _, err := siteInstance.DownloadTorrent(torrent); err != nil {
+			log.Errorf("Failed to download site torrent %s", torrent)
+			errorCnt++
+		} else if tinfo, err := torrentutil.ParseTorrent(contents); err != nil {
+			log.Errorf("Failed to download site torrent %s: is not a valid torrent: %v", torrent, err)
+			errorCnt++
 		} else {
-			if err := client.DeleteTorrentsAuto(clientInstance, []string{result.DeleteTorrents[0].InfoHash}); err != nil {
-				log.Errorf("Failed to delete client torrent %s (%s): %v",
-					result.DeleteTorrents[0].Name, result.DeleteTorrents[0].InfoHash, err)
-				errorCnt++
+			var _tags []string
+			_tags = append(_tags, tags...)
+			if tinfo.IsPrivate() {
+				_tags = append(_tags, config.PRIVATE_TAG)
 			} else {
-				deletedSize += result.DeleteTorrents[0].Size
-				if result.DeleteTorrents[0].Meta["id"] > 0 {
-					newIgnores = append(newIgnores, fmt.Sprint(result.DeleteTorrents[0].Meta["id"]))
+				_tags = append(_tags, config.PUBLIC_TAG)
+			}
+			result.AddTorrentsOption.Name = result.AddTorrents[0].Name
+			result.AddTorrentsOption.Tags = _tags
+			meta := map[string]int64{}
+			if result.AddTorrents[0].Id != "" {
+				if id := util.ParseInt(result.AddTorrents[0].ID()); id != 0 {
+					meta["id"] = id
 				}
 			}
-			result.DeleteTorrents = result.DeleteTorrents[1:]
+			if err := clientInstance.AddTorrent(contents, result.AddTorrentsOption, meta); err != nil {
+				log.Errorf("Failed to add site torrent %s to client: %v", torrent, err)
+				errorCnt++
+			} else {
+				addedSize += result.AddTorrents[0].Size
+			}
 		}
+		result.AddTorrents = result.AddTorrents[1:]
 	}
-	if len(newIgnores) > 0 {
-		ignores = append(ignores, newIgnores...)
-		if len(ignores) > IGNORE_FILE_SIZE {
-			ignores = ignores[len(ignores)-IGNORE_FILE_SIZE:]
+	// delete
+	deleteSize := int64(0)
+	var deleteInfoHashes []string
+	var deleteIds []string
+	log.Infof("Delete torrents:")
+	for len(result.DeleteTorrents) > 0 {
+		if deleteSize >= addedSize {
+			break
 		}
-		ignoreFile.Truncate(0)
-		ignoreFile.Seek(0, 0)
-		ignoreFile.WriteString(strings.Join(ignores, "\n"))
+		deleteSize += result.DeleteTorrents[0].Size
+		if result.DeleteTorrents[0].Meta["id"] > 0 {
+			deleteIds = append(deleteIds, fmt.Sprint(result.DeleteTorrents[0].Meta["id"]))
+		}
+		deleteInfoHashes = append(deleteInfoHashes, result.DeleteTorrents[0].InfoHash)
+		log.Infof("Torrent %s (%s)", result.DeleteTorrents[0].Name, result.DeleteTorrents[0].InfoHash)
+		result.DeleteTorrents = result.DeleteTorrents[1:]
+	}
+	if len(deleteInfoHashes) > 0 {
+		err := client.DeleteTorrentsAuto(clientInstance, deleteInfoHashes)
+		log.Infof("Delete torrents result: %v", err)
+		if err != nil {
+			errorCnt++
+		} else if len(deleteIds) > 0 {
+			ignores = append(ignores, deleteIds...)
+			if len(ignores) > IGNORE_FILE_SIZE {
+				ignores = ignores[len(ignores)-IGNORE_FILE_SIZE:]
+			}
+			ignoreFile.Truncate(0)
+			ignoreFile.Seek(0, 0)
+			ignoreFile.WriteString(strings.Join(ignores, "\n"))
+		}
 	}
 	if errorCnt > 0 {
 		return fmt.Errorf("%d errors", errorCnt)

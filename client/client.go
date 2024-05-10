@@ -643,8 +643,8 @@ func PrintTorrents(output io.Writer, torrents []*Torrent, filter string, showSum
 }
 
 // Separate client torrents into 2 groups: torrentsNoXseed and torrentsXseed.
-// The first ones does NOT have other xseed torrent of same content path,
-// or the xseed torrent itself is also in the group.
+// The first ones does NOT have any other xseed torrent of same content path,
+// or all xseed torrents themselves are also in the group.
 // The second ones has other xseed torrent of same content path.
 func FilterTorrentsXseed(clientInstance Client, torrents []*Torrent) (
 	torrentsNoXseed, torrentsXseed []*Torrent, err error) {

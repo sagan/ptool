@@ -2,7 +2,6 @@ package stats
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -53,16 +52,16 @@ type StatDb struct {
 	sqldb        *gorm.DB
 }
 
-func (db *StatDb) AddTorrentStat(ts int64, event int64, torrentStat *TorrentStat) {
-	buf := bytes.NewBuffer(nil)
-	json.NewEncoder(buf).Encode(Stat{
-		Ts:    ts,
-		Event: event,
-		Data:  torrentStat,
-	})
+func (db *StatDb) AddTorrentStats(ts int64, event int64, torrentStats []*TorrentStat) {
 	db.mu.Lock()
-	db.file.Write(buf.Bytes())
-	db.mu.Unlock()
+	defer db.mu.Unlock()
+	for _, torrentStat := range torrentStats {
+		json.NewEncoder(db.file).Encode(Stat{
+			Ts:    ts,
+			Event: event,
+			Data:  torrentStat,
+		})
+	}
 }
 
 func (db *StatDb) ShowTrafficStats(client string) {
