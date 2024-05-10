@@ -40,6 +40,7 @@ type BrushSiteOptionStruct struct {
 	TorrentMaxSizeLimit     int64
 	Now                     int64
 	Excludes                []string
+	AllowAddTorrents        int64
 }
 
 type BrushClientOptionStruct struct {
@@ -369,11 +370,8 @@ func Decide(clientStatus *client.Status, clientTorrents []*client.Torrent, siteT
 	}
 
 	// delete torrents due to max brush torrents limit
-	if cntTorrents > clientOption.MaxTorrents && len(candidateTorrents) > 0 {
-		cntDeleteDueToMaxTorrents := cntTorrents - clientOption.MaxTorrents
-		if cntDeleteDueToMaxTorrents > int64(len(candidateTorrents)) {
-			cntDeleteDueToMaxTorrents = int64(len(candidateTorrents))
-		}
+	cntDeleteDueToMaxTorrents := max(cntTorrents-clientOption.MaxTorrents, -siteOption.AllowAddTorrents)
+	if cntDeleteDueToMaxTorrents > 0 && len(candidateTorrents) > 0 {
 		for _, deleteTorrent := range deleteCandidateTorrents {
 			torrent := clientTorrentsMap[deleteTorrent.InfoHash].Torrent
 			if clientTorrentsMap[torrent.InfoHash].DeleteFlag {
@@ -468,8 +466,10 @@ func Decide(clientStatus *client.Status, clientTorrents []*client.Torrent, siteT
 	// add new torrents
 	if (freespace == -1 || freespace+freespaceChange > clientOption.MinDiskSpace) &&
 		cntTorrents <= clientOption.MaxTorrents {
+		var added int64
 		for cntDownloadingTorrents < clientOption.MaxDownloadingTorrents &&
-			estimateUploadSpeed <= targetUploadSpeed*2 && len(candidateTorrents) > 0 {
+			estimateUploadSpeed <= targetUploadSpeed*2 && len(candidateTorrents) > 0 &&
+			added < siteOption.AllowAddTorrents {
 			candidateTorrent := candidateTorrents[0]
 			candidateTorrents = candidateTorrents[1:]
 			result.AddTorrents = append(result.AddTorrents, AlgorithmAddTorrent{
@@ -478,6 +478,7 @@ func Decide(clientStatus *client.Status, clientTorrents []*client.Torrent, siteT
 				Meta:        candidateTorrent.Meta,
 				Msg:         fmt.Sprintf("new torrrent of score %.0f", candidateTorrent.Score),
 			})
+			added++
 			cntTorrents++
 			cntDownloadingTorrents++
 			estimateUploadSpeed += candidateTorrent.PredictionUploadSpeed
