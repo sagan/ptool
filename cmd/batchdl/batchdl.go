@@ -177,10 +177,10 @@ func init() {
 		"If set, only display or download torrent which title or subtitle contains this string")
 	command.Flags().StringVarP(&tag, "tag", "", "",
 		"Comma-separated list. If set, only display or download torrent which tags contain any one in the list")
-	command.Flags().StringArrayVarP(&includes, "includes", "", nil,
+	command.Flags().StringArrayVarP(&includes, "include", "", nil,
 		"Comma-separated list(s). If set, only torrents which title or subtitle contains any one in the list will be "+
 			"displayed or downloaded. Can be set multiple times, in which case every list MUST be matched")
-	command.Flags().StringVarP(&excludes, "excludes", "", "",
+	command.Flags().StringVarP(&excludes, "exclude", "", "",
 		"Comma-separated list that torrent which title of subtitle contains any one in the list will be skipped")
 	command.Flags().StringVarP(&startPage, "start-page", "", "",
 		"Start fetching torrents from here (should be the returned LastPage value last time you run this command). "+

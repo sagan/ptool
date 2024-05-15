@@ -2,6 +2,7 @@ package cobraprompt
 
 import (
 	"context"
+	"encoding/csv"
 	"os"
 	"strings"
 
@@ -140,7 +141,19 @@ func findSuggestions(co *CobraPrompt, d *prompt.Document) []prompt.Suggest {
 	persistFlagValues, _ := command.Flags().GetBool(PersistFlagValuesFlag)
 	addFlags := func(flag *pflag.Flag) {
 		if flag.Changed && !persistFlagValues {
-			flag.Value.Set(flag.DefValue)
+			if sv, ok := flag.Value.(pflag.SliceValue); ok {
+				// flag.DefValue is  "[" + writeAsCSV(values) + "]"
+				stringReader := strings.NewReader(flag.DefValue[1 : len(flag.DefValue)-1])
+				csvReader := csv.NewReader(stringReader)
+				values, err := csvReader.Read()
+				if err == nil {
+					sv.Replace(values)
+				} else {
+					sv.Replace(nil)
+				}
+			} else {
+				flag.Value.Set(flag.DefValue)
+			}
 		}
 		if flag.Hidden && !co.ShowHiddenFlags {
 			return

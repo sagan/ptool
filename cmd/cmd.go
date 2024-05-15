@@ -33,7 +33,7 @@ visit https://github.com/sagan/ptool for source codes and other infomation.`,
 	SilenceUsage:       true,
 	DisableSuggestions: true,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		if config.InShell && config.Get().ShellMaxHistory > 0 {
+		if config.InShell && config.Get().ShellMaxHistory > 0 && (os.Args[1] != "exit" && os.Args[1] != "exitf") {
 			in := strings.Join(os.Args[1:], " ")
 			ShellHistory.Write(in)
 		}

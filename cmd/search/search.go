@@ -89,10 +89,10 @@ func init() {
 	command.Flags().StringVarP(&publishedInStr, "published-in", "", "",
 		`Time duration. Only showing torrent that was published in the past time of this value. E.g. "30d"`)
 	command.Flags().StringVarP(&filter, "filter", "", "", "Filter search result additionally by title or subtitle")
-	command.Flags().StringArrayVarP(&includes, "includes", "", nil,
+	command.Flags().StringArrayVarP(&includes, "include", "", nil,
 		"Comma-separated list that ONLY torrent which title or subtitle contains any one in the list will be included. "+
 			"Can be provided multiple times, in which case every list MUST be matched")
-	command.Flags().StringVarP(&excludes, "excludes", "", "",
+	command.Flags().StringVarP(&excludes, "exclude", "", "",
 		"Comma-separated list that torrent which title or subtitle contains any one in the list will be skipped")
 	cmd.RootCmd.AddCommand(command)
 }

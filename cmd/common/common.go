@@ -127,7 +127,12 @@ func NewPathMapper(rules []string) (*PathMapper, error) {
 		mapper: map[string]string{},
 	}
 	for _, rule := range rules {
-		before, after, found := strings.Cut(rule, ":")
+		sep := "|"
+		// use ":" as sep only when "|" not exists and no Windows abs path (e.g. "E:\Downloads") exists
+		if !strings.Contains(rule, "|") && !strings.Contains(rule, `:\`) {
+			sep = ":"
+		}
+		before, after, found := strings.Cut(rule, sep)
 		if !found || before == "" || after == "" {
 			return nil, fmt.Errorf("invalid path mapper rule %q", rule)
 		}

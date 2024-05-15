@@ -625,7 +625,7 @@ ptool partialdownload <client> <infoHash> --chunk-size 1TiB -a
 ptool partialdownload <client> <infoHash> --chunk-size 1TiB --chunk-index 0
 
 # 也可以用于跳过种子里特定文件。查看命令帮助了解更多用法。
-ptool partialdownload <client> <infohash> --excludes "*.txt"
+ptool partialdownload <client> <infohash> --exclude "*.txt"
 ```
 
 ### 手动添加辅种种子到客户端 (xseedadd)

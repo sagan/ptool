@@ -123,7 +123,7 @@ func init() {
 		"Skip torrent with size smaller than (<) this value. -1 == no limit")
 	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1",
 		"Skip torrent with size larger than (>) this value. -1 == no limit")
-	command.Flags().StringVarP(&excludes, "excludes", "", "",
+	command.Flags().StringVarP(&excludes, "exclude", "", "",
 		"Comma-separated list that torrent which name contains any one in the list will be skipped")
 	cmd.AddEnumFlagP(command, &sortFlag, "sort", "", common.ClientTorrentSortFlag)
 	cmd.AddEnumFlagP(command, &orderFlag, "order", "", common.OrderFlag)

@@ -119,9 +119,9 @@ func (trclient *Client) sync() error {
 	transmissionbt := trclient.client
 	now := util.Now()
 	torrents, err := transmissionbt.TorrentGet(context.TODO(), []string{
-		"addedDate", "doneDate", "downloadDir", "downloadedEver", "downloadLimit", "downloadLimited",
-		"hashString", "id", "labels", "name", "peersGettingFromUs", "peersSendingToUs", "percentDone", "rateDownload", "rateUpload",
-		"sizeWhenDone", "status", "trackers", "totalSize", "uploadedEver", "uploadLimit", "uploadLimited",
+		"activityDate", "addedDate", "doneDate", "downloadDir", "downloadedEver", "downloadLimit", "downloadLimited",
+		"hashString", "id", "labels", "name", "peersGettingFromUs", "peersSendingToUs", "percentDone", "rateDownload",
+		"rateUpload", "sizeWhenDone", "status", "trackers", "totalSize", "uploadedEver", "uploadLimit", "uploadLimited",
 	}, nil)
 	if err != nil {
 		return err

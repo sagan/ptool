@@ -39,3 +39,7 @@ const HELP_ARG_TAG_XSEED = `Comma-separated tag list. Only xseed torrents which 
 const HELP_ARG_TIMES = `Time string (local timezone). ` +
 	`Supported formats: "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd", a unix timestamp integer (seconds), ` +
 	`or a time duration (e.g. "5d") which references to a past time point from now`
+const HELP_ARG_PATH_MAPPERS = `E.g. ` +
+	`"/root/Downloads|/var/Downloads" will map "/root/Downloads" or "/root/Downloads/..." path to ` +
+	`"/var/Downloads" or "/var/Downloads/...". You can also use ":" instead of "|" as the separator ` +
+	`if both pathes do not contain ":" char.`

@@ -104,9 +104,7 @@ func init() {
 		`Used with "--rclone-save-path", the path of rclone binary`)
 	command.Flags().StringArrayVarP(&mapSavePathPrefixs, "map-save-path-prefix", "", nil,
 		`Used with "--use-comment-meta". Map save path from torrent comment to the file system of ptool`+
-			`Format: "comment_save_path:ptool_save_path". E.g. `+
-			`"/root/Downloads:/var/Downloads" will map "/root/Downloads" or "/root/Downloads/..." save path to `+
-			`"/var/Downloads" or "/var/Downloads/..."`)
+			`Format: "comment_save_path|ptool_save_path". `+constants.HELP_ARG_PATH_MAPPERS)
 	cmd.RootCmd.AddCommand(command)
 }
 

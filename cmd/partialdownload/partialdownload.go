@@ -53,7 +53,7 @@ Examples:
   ptool partialdownload local <info-hash> --chunk-size 500GiB --chunk-index -1
 
   # Exclude certain files of torrent from being downloaded
-  ptool partialdownload <client> <infohash> --excludes "*.txt"
+  ptool partialdownload <client> <infohash> --exclude "*.txt"
 
 Without --strict flag, ptool will always split torrent contents to chunks.
 The size of each chunk may be larger then chunk size. And there may be less
@@ -68,8 +68,8 @@ Additional, it's possible to explicitly skip (ignore) certain files in torrent.
 Skipped files will be excluded from being splitted to chunks and will also be marked as no-download.
 To skip files, use any one (or more) of the following flags:
 * --start-index index : The first file index of the first chunk. Skip prior files in torrent.
-* --excludes pattern : Pattern of .gitignore style. Skip files which filename match any provided pattern.
-* --includes pattern : Pattern of .gitignore style. Skip all files which filename does NOT match any provided pattern.
+* --exclude pattern : Pattern of .gitignore style. Skip files which filename match any provided pattern.
+* --include pattern : Pattern of .gitignore style. Skip all files which filename does NOT match any provided pattern.
 If any of the above flags is set, the --chunk-size flag can be omitted, in which case
 it's assumed to be 1EiB (effectively infinite), so all non-skipped files will be mark as download.
 
@@ -113,11 +113,11 @@ func init() {
 			"Negative value is related to the total files number, e.g. -100 means skip all but the last 100 files. "+
 			"Skipped files will be be excluded from being splitting into chunks")
 	command.Flags().StringVarP(&chunkSizeStr, "chunk-size", "", "", "Set the split chunk size string. e.g. 500GiB")
-	command.Flags().StringArrayVarP(&includes, "includes", "", nil,
+	command.Flags().StringArrayVarP(&includes, "include", "", nil,
 		`Specifiy patterns of files that only these files will be included. All other files will be skipped. `+
 			`Use gitignore-style, checked against the file path in torrent. E.g. "*.txt". `+
 			"Skipped files will be be excluded from being splitting into chunks")
-	command.Flags().StringArrayVarP(&excludes, "excludes", "", nil,
+	command.Flags().StringArrayVarP(&excludes, "exclude", "", nil,
 		`Specifiy patterns of files that will be skipped. `+
 			`Use gitignore-style, checked against the file path in torrent. E.g. "*.txt". `+
 			"Skipped files will be be excluded from being splitting into chunks")
@@ -171,7 +171,7 @@ func partialdownload(cmd *cobra.Command, args []string) (err error) {
 		if len(includes) > 0 || len(excludes) > 0 || startIndex != 0 {
 			chunkSize = constants.INFINITE_SIZE
 		} else {
-			return fmt.Errorf("either --chunk-size, or any of --start-index, --includes, --excludes flags must be set")
+			return fmt.Errorf("either --chunk-size, or any of --start-index, --include, --exclude flags must be set")
 		}
 	}
 	if chunkSize <= 0 {

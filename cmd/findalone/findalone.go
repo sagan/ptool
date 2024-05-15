@@ -57,9 +57,7 @@ func init() {
 		`Used with "--all". Display the list in original (filename asc) order instead of count desc order`)
 	command.Flags().StringArrayVarP(&mapSavePathPrefixs, "map-save-path-prefix", "", nil,
 		`Map save path that ptool sees to the one that the BitTorrent client sees. `+
-			`Format: "original_save_path:client_save_path". E.g. `+
-			`"/root/Downloads:/var/Downloads" will map "/root/Downloads" or "/root/Downloads/..." save path to `+
-			`"/var/Downloads" or "/var/Downloads/..."`)
+			`Format: "original_save_path|client_save_path". `+constants.HELP_ARG_PATH_MAPPERS)
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -92,7 +90,7 @@ func findalone(cmd *cobra.Command, args []string) error {
 		contentPath := util.ToSlash(torrent.ContentPath)
 		if savePathMapper != nil {
 			if _contentPath, match := savePathMapper.After2Before(contentPath); !match {
-				log.Warnf("Torrent %s (%s) save path %q does not match with any map-save-path-prefix rule, ignore it",
+				log.Debugf("Torrent %s (%s) save path %q does not match with any map-save-path-prefix rule, ignore it",
 					torrent.Name, torrent.InfoHash, contentPath)
 				continue
 			} else {

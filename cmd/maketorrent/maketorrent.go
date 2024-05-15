@@ -37,13 +37,13 @@ Examples:
   ptool maketorrent ./MyVideos # output: ./MyVideos.torrent
 
   # --public : add common open trackers to created torrent
-  # --excludes : Prevent *.txt files from being indexed in created torrent
-  ptool maketorrent ./MyVideos --public --excludes "*.txt"
+  # --exclude : Prevent *.txt files from being indexed in created torrent
+  ptool maketorrent ./MyVideos --public --exclude "*.txt"
 
 By default, certain patterns files inside content-path will be ignored and NOT indexed in created .torrent file:
   %s
 If "--all" flag is set, the default exclude-patterns will be disabled and ALL files will in indexed.
-It's possible to provide your own customized exclude-pattern(s) using "--excludes" flag.
+It's possible to provide your own customized exclude-pattern(s) using "--exclude" flag.
 
 If "--public" flag is set, ptool will add the following open trackers to created .torrent file:
   %s
@@ -90,7 +90,7 @@ func init() {
 			`or a unix timestamp integer (seconds). Default to now; To unset this field, set it to "`+constants.NONE+`"`)
 	command.Flags().StringArrayVarP(&trackers, "tracker", "", nil,
 		`Set the trackers ("Announce" & "AnnounceList" field) of created torrent`)
-	command.Flags().StringArrayVarP(&excludes, "excludes", "", nil,
+	command.Flags().StringArrayVarP(&excludes, "exclude", "", nil,
 		`Specifiy patterns of files that will NOT be included (indexed) to created torrent. `+
 			`Use gitignore-style, checked against relative path of the file to the root folder. `+
 			`E.g. "*.txt"`)

@@ -76,7 +76,8 @@ var OpenTrackers = []string{
 var DefaultIgnorePatterns = []string{
 	".*",
 	"$*",
-	"~$*", // Microsoft Office tmp files
+	"~$*",     // Microsoft Office tmp files
+	"*.aria2", // aria2 control files
 	"*.bak",
 	"*.tmp",
 	"*.temp",
