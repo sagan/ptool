@@ -101,7 +101,7 @@ func init() {
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of added torrents")
 	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Add tags to added torrent (comma-separated)")
 	command.Flags().StringArrayVarP(&mapSavePathPrefixs, "map-save-path-prefix", "", nil,
-		`Used with "--use-comment-meta". Map save path from torrent comment to the file system of BitTorrent client`+
+		`Used with "--use-comment-meta". Map save path from torrent comment to the file system of BitTorrent client. `+
 			`Format: "comment_save_path|client_save_path". `+constants.HELP_ARG_PATH_MAPPERS)
 	cmd.RootCmd.AddCommand(command)
 }

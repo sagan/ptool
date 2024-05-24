@@ -399,9 +399,9 @@ var (
 		"mteam": {
 			Type:                "mtorrent",
 			Aliases:             []string{"m-team", "mt"},
-			Url:                 "https://kp.m-team.cc/",
+			Url:                 "https://api.m-team.cc/", // @todo: add a separated ApiUrl (or similar) field.
 			Domains:             []string{"m-team.io"},
-			NoCookie:            true,
+			NoCookie:            true, // @todo: add a "Token" field for API authentication.
 			TorrentsExtraUrls:   []string{"adult.php", "music.php"},
 			BrushExcludes:       []string{"[原盤首發]"}, // 馒头原盘首发限速，刷流效果极差
 			FlowControlInterval: 30,                 // 馒头流控极为严格。很容易出“休息120秒”页面
