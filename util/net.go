@@ -207,12 +207,17 @@ func AsNetworkError(err error) bool {
 // Common func for uploading image or other file to public server using post + multipart/form-data request.
 func PostUploadFile(client *azuretls.Session, apiUrl string, filename string, fileFieldname string,
 	additionalFields url.Values, responseFileUrlField string) (fileUrl string, err error) {
+	if fileFieldname == "" {
+		fileFieldname = "file"
+	}
+	if responseFileUrlField == "" {
+		responseFileUrlField = "url"
+	}
 	body := new(bytes.Buffer)
 	mp := multipart.NewWriter(body)
-	defer mp.Close()
 	h := make(textproto.MIMEHeader)
-	h.Set("Content-Disposition",
-		fmt.Sprintf(`form-data; name="%s"; filename="%s"`, fileFieldname, filepath.Base(filename)))
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="%s"; filename="%s"`,
+		EscapeQuotes(fileFieldname), EscapeQuotes(filepath.Base(filename))))
 	h.Set("Content-Type", mime.TypeByExtension(filepath.Ext(filename)))
 	filePartWriter, err := mp.CreatePart(h)
 	if err != nil {
@@ -228,14 +233,16 @@ func PostUploadFile(client *azuretls.Session, apiUrl string, filename string, fi
 	for field := range additionalFields {
 		mp.WriteField(field, additionalFields.Get(field))
 	}
+	mp.Close()
 	req := &azuretls.Request{
 		Url:    apiUrl,
 		Method: http.MethodPost,
 		Body:   body.Bytes(),
 		OrderedHeaders: [][]string{
-			{"Content-Type", "multipart/form-data"},
+			{"Content-Type", mp.FormDataContentType()},
 		},
 	}
+	log.Tracef("Upload file %q to %s", filename, apiUrl)
 	response, err := client.Do(req)
 	if err != nil {
 		return "", err

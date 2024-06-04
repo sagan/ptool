@@ -85,6 +85,8 @@ var DefaultIgnorePatterns = []string{
 	"~$*",     // Microsoft Office tmp files
 	"*.aria2", // aria2 control files
 	"*.bak",
+	"*.lnk", // windows shortcuts
+	"*.swp", // vim temp files
 	"*.tmp",
 	"*.temp",
 	"*.dropbox",

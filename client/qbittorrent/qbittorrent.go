@@ -155,7 +155,6 @@ func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 	name := client.GenerateNameWithMeta(option.Name, meta)
 	body := new(bytes.Buffer)
 	mp := multipart.NewWriter(body)
-	defer mp.Close()
 	if util.IsTorrentUrl(string(torrentContent)) {
 		mp.WriteField("urls", string(torrentContent))
 	} else {
@@ -201,6 +200,7 @@ func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 			mp.WriteField("seedingTimeLimit", fmt.Sprint(value))
 		}
 	}
+	mp.Close()
 	resp, err := qbclient.HttpClient.Post(qbclient.ClientConfig.Url+"api/v2/torrents/add",
 		mp.FormDataContentType(), body)
 	if err != nil {

@@ -237,3 +237,9 @@ func Clean(s string) string {
 func ToSlash(path string) string {
 	return strings.ReplaceAll(path, `\`, "/")
 }
+
+var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
+
+func EscapeQuotes(s string) string {
+	return quoteEscaper.Replace(s)
+}

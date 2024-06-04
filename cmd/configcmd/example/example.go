@@ -24,9 +24,8 @@ var (
 )
 
 func init() {
-	command.Flags().StringVarP(&format, "format", "", config.ConfigType,
-		`Select the format of example config file to display, e.g. "toml", "yaml". `+
-			`By default it uses the format of current config file`)
+	command.Flags().StringVarP(&format, "format", "", "", `Select the format of example config file to display, `+
+		`e.g. "toml", "yaml". By default it uses the format of current config file`)
 	configcmd.Command.AddCommand(command)
 }
 

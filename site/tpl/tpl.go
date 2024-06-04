@@ -359,11 +359,14 @@ var (
 			SelectorUserInfoDownloaded: ".ratio-bar .badge-user:has(.fa-arrow-down)",
 		},
 		"kamept": {
-			Type:                        "nexusphp",
-			Aliases:                     []string{"kame"},
-			Url:                         "https://kamept.com/",
-			TorrentsExtraUrls:           []string{"special.php"},           // 龟龟的后花园
-			ImageUploadUrl:              "https://pic.kamept.com/upload/k", // 龟龟图床
+			Type:              "nexusphp",
+			Aliases:           []string{"kame"},
+			Url:               "https://kamept.com/",
+			TorrentsExtraUrls: []string{"special.php"}, // 龟龟的后花园
+			// 龟龟图床 https://pic.kamept.com/ .
+			// 返回的图片 URL: https://p.kamept.com/ffffff-Full.webp .
+			// 有 Referer 限制，仅限 kamept 站内引用（直接打开图片也会 403）。
+			ImageUploadUrl:              "https://pic.kamept.com/upload/k",
 			ImageUploadFileField:        "file",
 			ImageUploadResponseUrlField: "url",
 			Comment:                     "KamePT",

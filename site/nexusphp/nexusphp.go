@@ -40,9 +40,9 @@ func (npclient *Site) PublishTorrent(contents []byte, metadata url.Values) (id s
 	coverFile := metadata.Get("_cover")
 	if coverFile != "" {
 		if npclient.SiteConfig.ImageUploadUrl != "" {
-			_, err := util.PostUploadFile(npclient.HttpClient, npclient.SiteConfig.ImageUploadUrl, coverFile,
+			coverUrl, err := util.PostUploadFile(npclient.HttpClient, npclient.SiteConfig.ImageUploadUrl, coverFile,
 				npclient.SiteConfig.ImageUploadFileField, nil, npclient.SiteConfig.ImageUploadResponseUrlField)
-			log.Debugf("upload cover: err=%v", err)
+			log.Debugf("upload cover: err=%v, url=%s", err, coverUrl)
 		}
 	}
 	return "", site.ErrUnimplemented
