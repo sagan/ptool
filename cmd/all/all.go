@@ -31,6 +31,7 @@ import (
 	_ "github.com/sagan/ptool/cmd/parsetorrent"
 	_ "github.com/sagan/ptool/cmd/partialdownload"
 	_ "github.com/sagan/ptool/cmd/pause"
+	_ "github.com/sagan/ptool/cmd/publish"
 	_ "github.com/sagan/ptool/cmd/reannounce"
 	_ "github.com/sagan/ptool/cmd/recheck"
 	_ "github.com/sagan/ptool/cmd/removetags"

@@ -51,6 +51,11 @@ type Site struct {
 	HttpHeaders [][]string
 }
 
+// PublishTorrent implements site.Site.
+func (m *Site) PublishTorrent(contents []byte, metadata neturl.Values) (id string, err error) {
+	return "", site.ErrUnimplemented
+}
+
 func (m *Site) GetName() string {
 	return m.Name
 }

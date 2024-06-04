@@ -265,6 +265,14 @@ func FileExists(name string) bool {
 	return false
 }
 
+func TouchFile(name string) error {
+	file, err := os.OpenFile(name, os.O_RDONLY|os.O_CREATE, 0600)
+	if err != nil {
+		return err
+	}
+	return file.Close()
+}
+
 // Check whether a file (or dir) with name or name + suffix exists in file system.
 // suffix could be any one in suffixes.
 func FileExistsWithOptionalSuffix(name string, suffixes ...string) bool {
@@ -277,6 +285,15 @@ func FileExistsWithOptionalSuffix(name string, suffixes ...string) bool {
 		}
 	}
 	return false
+}
+
+func ExistsFileWithAnySuffix(name string, suffixes []string) string {
+	for _, suffix := range suffixes {
+		if path := name + suffix; FileExists(path) {
+			return path
+		}
+	}
+	return ""
 }
 
 // Return count of variable in vars that fulfil the condition that variable is non-zero value

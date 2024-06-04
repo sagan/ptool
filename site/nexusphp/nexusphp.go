@@ -35,6 +35,19 @@ type Site struct {
 	torrentsParserOption *TorrentsParserOption
 }
 
+// PublishTorrent implements site.Site.
+func (npclient *Site) PublishTorrent(contents []byte, metadata url.Values) (id string, err error) {
+	coverFile := metadata.Get("_cover")
+	if coverFile != "" {
+		if npclient.SiteConfig.ImageUploadUrl != "" {
+			_, err := util.PostUploadFile(npclient.HttpClient, npclient.SiteConfig.ImageUploadUrl, coverFile,
+				npclient.SiteConfig.ImageUploadFileField, nil, npclient.SiteConfig.ImageUploadResponseUrlField)
+			log.Debugf("upload cover: err=%v", err)
+		}
+	}
+	return "", site.ErrUnimplemented
+}
+
 const (
 	DEFAULT_TORRENTS_URL = "torrents.php"
 )

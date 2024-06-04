@@ -9,15 +9,21 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"path/filepath"
+	"slices"
 	"strings"
 
+	"github.com/anacrolix/torrent/bencode"
 	"github.com/anacrolix/torrent/metainfo"
+	"github.com/shibumi/go-pathspec"
+	log "github.com/sirupsen/logrus"
+	"golang.org/x/term"
+
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/site/public"
 	"github.com/sagan/ptool/site/tpl"
 	"github.com/sagan/ptool/util"
-	log "github.com/sirupsen/logrus"
 )
 
 type TorrentCommentMeta struct {
@@ -42,6 +48,23 @@ type TorrentMeta struct {
 	Files             []TorrentMetaFile
 	MetaInfo          *metainfo.MetaInfo
 	Info              *metainfo.Info
+}
+
+type TorrentMakeOptions struct {
+	ContentPath    string
+	Output         string
+	Public         bool
+	Private        bool
+	All            bool
+	Force          bool
+	Comment        string
+	InfoName       string
+	UrlList        metainfo.UrlList
+	Trackers       []string
+	CreatedBy      string
+	CreationDate   string
+	PieceLengthStr string
+	Excludes       []string
 }
 
 var (
@@ -565,4 +588,175 @@ func RenameExportedTorrent(client string, torrent *client.Torrent, rename string
 	filename = strings.ReplaceAll(filename, "[name128]", util.StringPrefixInBytes(torrent.Name, 128))
 	filename = constants.FilenameInvalidCharsRegex.ReplaceAllString(filename, "")
 	return filename
+}
+
+// Create a torrent, return info of created torrent.
+// It may change the values of any fields in options.
+func MakeTorrent(options *TorrentMakeOptions) (tinfo *TorrentMeta, err error) {
+	mi := &metainfo.MetaInfo{
+		AnnounceList: make([][]string, 0),
+		Comment:      options.Comment,
+		UrlList:      options.UrlList,
+	}
+	if options.Public {
+		options.Trackers = append(options.Trackers, constants.OpenTrackers...)
+		util.UniqueSlice(options.Trackers)
+	}
+	for _, a := range options.Trackers {
+		mi.AnnounceList = append(mi.AnnounceList, []string{a})
+	}
+	if len(options.Trackers) > 0 {
+		mi.Announce = options.Trackers[0]
+	}
+	mi.SetDefaults()
+	if options.CreatedBy != "" {
+		if options.CreatedBy == constants.NONE {
+			mi.CreatedBy = ""
+		} else {
+			mi.CreatedBy = options.CreatedBy
+		}
+	}
+	if options.CreationDate != "" {
+		if options.CreationDate == constants.NONE {
+			mi.CreationDate = 0
+		} else {
+			ts, err := util.ParseTime(options.CreationDate, nil)
+			if err != nil {
+				return nil, fmt.Errorf("invalid creation-date: %w", err)
+			}
+			mi.CreationDate = ts
+		}
+	}
+	info := &metainfo.Info{}
+	if pieceLength, err := util.RAMInBytes(options.PieceLengthStr); err != nil {
+		return nil, fmt.Errorf("invalid piece-length: %w", err)
+	} else {
+		info.PieceLength = pieceLength
+	}
+	if options.Private {
+		private := true
+		info.Private = &private
+	}
+	if !options.All {
+		options.Excludes = append(options.Excludes, constants.DefaultIgnorePatterns...)
+	}
+	log.Infof("Creating torrent for %q", options.ContentPath)
+	if err := infoBuildFromFilePath(info, options.ContentPath, options.Excludes); err != nil {
+		return nil, fmt.Errorf("failed to build info from content-path: %w", err)
+	}
+	if len(info.Files) == 0 {
+		return nil, fmt.Errorf("no files found in content-path")
+	}
+	if options.InfoName != "" {
+		info.Name = options.InfoName
+	}
+	if mi.InfoBytes, err = bencode.Marshal(info); err != nil {
+		return nil, fmt.Errorf("failed to marshal info: %w", err)
+	}
+	if options.Output == "" {
+		if info.Name != "" && info.Name != metainfo.NoName {
+			options.Output = info.Name + ".torrent"
+		} else {
+			log.Warnf("The created torrent has NO root folder, use it's info-hash as output file name")
+			options.Output = mi.HashInfoBytes().String() + ".torrent"
+		}
+	}
+	log.Infof("Output to %q", options.Output)
+	if options.Output == "-" {
+		if term.IsTerminal(int(os.Stdout.Fd())) {
+			err = fmt.Errorf(constants.HELP_TIP_TTY_BINARY_OUTPUT)
+		} else {
+			err = mi.Write(os.Stdout)
+		}
+	} else {
+		if !options.Force && util.FileExists(options.Output) {
+			err = fmt.Errorf(`output file %q already exists. use "--force" to overwrite`, options.Output)
+		} else {
+			var outputFile *os.File
+			if outputFile, err = os.OpenFile(options.Output, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, constants.PERM); err == nil {
+				defer outputFile.Close()
+				err = mi.Write(outputFile)
+			}
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	tinfo, err = FromMetaInfo(mi, info)
+	if err != nil {
+		return nil, err
+	}
+	return tinfo, err
+}
+
+// Adapted from metainfo.BuildFromFilePath.
+// excludes: gitignore style exclude-file-patterns.
+func infoBuildFromFilePath(info *metainfo.Info, root string, excludes []string) (err error) {
+	info.Name = func() string {
+		b := filepath.Base(root)
+		switch b {
+		case ".", "..", string(filepath.Separator):
+			return metainfo.NoName
+		default:
+			return b
+		}
+	}()
+	info.Files = nil
+	err = filepath.Walk(root, func(path string, fi os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if len(excludes) > 0 {
+			if relativePath, err := filepath.Rel(root, path); err == nil && relativePath != "." {
+				if ignore, _ := pathspec.GitIgnore(excludes, relativePath); ignore {
+					log.Warnf("Ignore %s", relativePath)
+					if fi.IsDir() {
+						return filepath.SkipDir
+					} else {
+						return nil
+					}
+				}
+			}
+		}
+		if fi.IsDir() {
+			// Directories are implicit in torrent files.
+			return nil
+		} else if path == root {
+			// The root is a file.
+			info.Length = fi.Size()
+			return nil
+		}
+		relPath, err := filepath.Rel(root, path)
+		if err != nil {
+			return fmt.Errorf("error getting relative path: %s", err)
+		}
+		info.Files = append(info.Files, metainfo.FileInfo{
+			Path:   strings.Split(relPath, string(filepath.Separator)),
+			Length: fi.Size(),
+		})
+		return nil
+	})
+	if err != nil {
+		return
+	}
+	slices.SortStableFunc(info.Files, func(l, r metainfo.FileInfo) int {
+		lp := strings.Join(l.Path, "/")
+		rp := strings.Join(r.Path, "/")
+		if lp < rp {
+			return -1
+		} else if lp > rp {
+			return 1
+		}
+		return 0
+	})
+	if info.PieceLength == 0 {
+		info.PieceLength = metainfo.ChoosePieceLength(info.TotalLength())
+	}
+	err = info.GeneratePieces(func(fi metainfo.FileInfo) (io.ReadCloser, error) {
+		return os.Open(filepath.Join(root, strings.Join(fi.Path, string(filepath.Separator))))
+	})
+	if err != nil {
+		err = fmt.Errorf("error generating pieces: %s", err)
+	}
+	return
 }

@@ -28,6 +28,11 @@ type Site struct {
 	HttpHeaders [][]string
 }
 
+// PublishTorrent implements site.Site.
+func (usite *Site) PublishTorrent(contents []byte, metadata url.Values) (id string, err error) {
+	return "", site.ErrUnimplemented
+}
+
 const (
 	SELECTOR_USERNAME        = `.myBlock:has(a[href$="account.php"]) .myBlock-caption`
 	SELECTOR_USER_UPLOADED   = `.myBlock:has(a[href$="account.php"]) tr:has(td:contains("Uploaded")) td:last-child`
@@ -81,15 +86,15 @@ func (usite *Site) GetStatus() (*site.Status, error) {
 
 func (usite *Site) GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (
 	torrents []*site.Torrent, nextPageMarker string, err error) {
-	return nil, "", fmt.Errorf("not implemented yet")
+	return nil, "", site.ErrUnimplemented
 }
 
 func (usite *Site) GetLatestTorrents(full bool) ([]*site.Torrent, error) {
-	return nil, fmt.Errorf("not implemented yet")
+	return nil, site.ErrUnimplemented
 }
 
 func (usite *Site) SearchTorrents(keyword string, baseUrl string) ([]*site.Torrent, error) {
-	return nil, fmt.Errorf("not implemented yet")
+	return nil, site.ErrUnimplemented
 }
 
 func (usite *Site) DownloadTorrent(torrentUrl string) (content []byte, filename string, id string, err error) {

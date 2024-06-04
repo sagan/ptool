@@ -30,6 +30,11 @@ type Site struct {
 	HttpHeaders [][]string
 }
 
+// PublishTorrent implements site.Site.
+func (dzsite *Site) PublishTorrent(contents []byte, metadata url.Values) (id string, err error) {
+	return "", site.ErrUnimplemented
+}
+
 func (dzsite *Site) GetDefaultHttpHeaders() [][]string {
 	return dzsite.HttpHeaders
 }
@@ -65,15 +70,15 @@ func (dzsite *Site) GetStatus() (*site.Status, error) {
 
 func (dzsite *Site) GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (
 	torrents []*site.Torrent, nextPageMarker string, err error) {
-	return nil, "", fmt.Errorf("not implemented yet")
+	return nil, "", site.ErrUnimplemented
 }
 
 func (dzsite *Site) GetLatestTorrents(full bool) ([]*site.Torrent, error) {
-	return nil, fmt.Errorf("not implemented yet")
+	return nil, site.ErrUnimplemented
 }
 
 func (dzsite *Site) SearchTorrents(keyword string, baseUrl string) ([]*site.Torrent, error) {
-	return nil, fmt.Errorf("not implemented yet")
+	return nil, site.ErrUnimplemented
 }
 
 func (dzsite *Site) DownloadTorrent(torrentUrl string) (content []byte, filename string, id string, err error) {

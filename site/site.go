@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"mime"
+	"net/url"
 	"os"
 	"slices"
 	"strconv"
@@ -71,6 +72,8 @@ type Site interface {
 		torrents []*Torrent, nextPageMarker string, err error)
 	// can use "%s" as keyword placeholder in baseUrl
 	SearchTorrents(keyword string, baseUrl string) ([]*Torrent, error)
+	// Publish (upload) new torrent to site, return uploaded torrent id
+	PublishTorrent(contents []byte, metadata url.Values) (id string, err error)
 	GetStatus() (*Status, error)
 	PurgeCache()
 }
@@ -82,6 +85,11 @@ type RegInfo struct {
 }
 
 type SiteCreator func(*RegInfo) (Site, error)
+
+var (
+	// Error that indicates the feature is not implemented in current site.
+	ErrUnimplemented = fmt.Errorf("not implemented yet")
+)
 
 var (
 	registryMap  = map[string]*RegInfo{}

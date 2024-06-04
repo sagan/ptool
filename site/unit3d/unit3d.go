@@ -6,6 +6,7 @@ package unit3d
 
 import (
 	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -25,6 +26,11 @@ type Site struct {
 	Config      *config.ConfigStruct
 	HttpClient  *azuretls.Session
 	HttpHeaders [][]string
+}
+
+// PublishTorrent implements site.Site.
+func (usite *Site) PublishTorrent(contents []byte, metadata url.Values) (id string, err error) {
+	return "", site.ErrUnimplemented
 }
 
 const (
@@ -83,15 +89,15 @@ func (usite *Site) GetStatus() (*site.Status, error) {
 
 func (usite *Site) GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (
 	torrents []*site.Torrent, nextPageMarker string, err error) {
-	return nil, "", fmt.Errorf("not implemented yet")
+	return nil, "", site.ErrUnimplemented
 }
 
 func (usite *Site) GetLatestTorrents(full bool) ([]*site.Torrent, error) {
-	return nil, fmt.Errorf("not implemented yet")
+	return nil, site.ErrUnimplemented
 }
 
 func (usite *Site) SearchTorrents(keyword string, baseUrl string) ([]*site.Torrent, error) {
-	return nil, fmt.Errorf("not implemented yet")
+	return nil, site.ErrUnimplemented
 }
 
 func (usite *Site) DownloadTorrent(torrentUrl string) (content []byte, filename string, id string, err error) {

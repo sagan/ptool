@@ -6,6 +6,7 @@ package tnode
 
 import (
 	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -26,6 +27,11 @@ type Site struct {
 	HttpClient  *azuretls.Session
 	HttpHeaders [][]string
 	csrfToken   string
+}
+
+// PublishTorrent implements site.Site.
+func (tnsite *Site) PublishTorrent(contents []byte, metadata url.Values) (id string, err error) {
+	return "", site.ErrUnimplemented
 }
 
 func (tnsite *Site) GetDefaultHttpHeaders() [][]string {
@@ -85,15 +91,15 @@ func (tnsite *Site) GetStatus() (*site.Status, error) {
 
 func (tnsite *Site) GetAllTorrents(sort string, desc bool, pageMarker string, baseUrl string) (
 	torrents []*site.Torrent, nextPageMarker string, err error) {
-	return nil, "", fmt.Errorf("not implemented yet")
+	return nil, "", site.ErrUnimplemented
 }
 
 func (tnsite *Site) GetLatestTorrents(full bool) ([]*site.Torrent, error) {
-	return nil, fmt.Errorf("not implemented yet")
+	return nil, site.ErrUnimplemented
 }
 
 func (tnsite *Site) SearchTorrents(keyword string, baseUrl string) ([]*site.Torrent, error) {
-	return nil, fmt.Errorf("not implemented yet")
+	return nil, site.ErrUnimplemented
 }
 
 func (tnsite *Site) DownloadTorrent(torrentUrl string) (content []byte, filename string, id string, err error) {

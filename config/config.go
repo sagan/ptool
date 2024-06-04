@@ -179,6 +179,9 @@ type SiteConfigStruct struct {
 	SelectorUserInfoUserName       string     `yaml:"selectorUserInfoUserName"`
 	SelectorUserInfoUploaded       string     `yaml:"selectorUserInfoUploaded"`
 	SelectorUserInfoDownloaded     string     `yaml:"selectorUserInfoDownloaded"`
+	ImageUploadUrl                 string     `yaml:"imageUploadUrl"`
+	ImageUploadFileField           string     `yaml:"imageUploadFileField"`
+	ImageUploadResponseUrlField    string     `yaml:"mageUploadResponseUrlField"`
 	TorrentDownloadUrl             string     `yaml:"torrentDownloadUrl"` // use {id} placeholders in url
 	TorrentDownloadUrlPrefix       string     `yaml:"torrentDownloadUrlPrefix"`
 	Passkey                        string     `yaml:"passkey"`

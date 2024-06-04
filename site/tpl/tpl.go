@@ -359,11 +359,14 @@ var (
 			SelectorUserInfoDownloaded: ".ratio-bar .badge-user:has(.fa-arrow-down)",
 		},
 		"kamept": {
-			Type:              "nexusphp",
-			Aliases:           []string{"kame"},
-			Url:               "https://kamept.com/",
-			TorrentsExtraUrls: []string{"special.php"}, // 龟龟的后花园
-			Comment:           "KamePT",
+			Type:                        "nexusphp",
+			Aliases:                     []string{"kame"},
+			Url:                         "https://kamept.com/",
+			TorrentsExtraUrls:           []string{"special.php"},           // 龟龟的后花园
+			ImageUploadUrl:              "https://pic.kamept.com/upload/k", // 龟龟图床
+			ImageUploadFileField:        "file",
+			ImageUploadResponseUrlField: "url",
+			Comment:                     "KamePT",
 		},
 		"keepfrds": {
 			Type:                   "nexusphp",

@@ -30,6 +30,10 @@ const INFINITE_SIZE = 1024 * 1024 * 1024 * 1024 * 1024 * 1024 // 1EiB
 
 const CLIENT_DEFAULT_DOWNLOADING_SPEED_LIMIT = 300 * 1024 * 1024 / 8 // BT客户端默认下载速度上限：300Mbps
 
+const TORRENT_DEFAULT_PIECE_LENGTH = "16MiB"
+const META_TORRENT_FILE = ".torrent"
+const METADATA_FILE = "metadata.nfo"
+
 // type, name, ↑info, ↓info, others
 const STATUS_FMT = "%-6s  %-15s  %-27s  %-27s  %-s\n"
 
@@ -51,6 +55,8 @@ var ProcessedFilenameSuffixes = []string{
 	FILENAME_SUFFIX_FAIL,
 	FILENAME_SUFFIX_BACKUP,
 }
+
+var ImgExts = []string{".webp", ".png", ".jpg", ".jpeg"}
 
 // Sources:
 // https://github.com/nyaadevs/nyaa/blob/master/trackers.txt ,

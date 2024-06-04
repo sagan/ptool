@@ -1,14 +1,19 @@
 package util
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"mime"
+	"mime/multipart"
 	"net"
 	"net/http"
+	"net/textproto"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/Noooste/azuretls-client"
@@ -197,4 +202,55 @@ func AsNetworkError(err error) bool {
 		err = errors.Unwrap(err)
 	}
 	return false
+}
+
+// Common func for uploading image or other file to public server using post + multipart/form-data request.
+func PostUploadFile(client *azuretls.Session, apiUrl string, filename string, fileFieldname string,
+	additionalFields url.Values, responseFileUrlField string) (fileUrl string, err error) {
+	body := new(bytes.Buffer)
+	mp := multipart.NewWriter(body)
+	defer mp.Close()
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition",
+		fmt.Sprintf(`form-data; name="%s"; filename="%s"`, fileFieldname, filepath.Base(filename)))
+	h.Set("Content-Type", mime.TypeByExtension(filepath.Ext(filename)))
+	filePartWriter, err := mp.CreatePart(h)
+	if err != nil {
+		return "", err
+	}
+	file, err := os.Open(filename)
+	if err != nil {
+		return "", err
+	}
+	if _, err = io.Copy(filePartWriter, file); err != nil {
+		return "", err
+	}
+	for field := range additionalFields {
+		mp.WriteField(field, additionalFields.Get(field))
+	}
+	req := &azuretls.Request{
+		Url:    apiUrl,
+		Method: http.MethodPost,
+		Body:   body.Bytes(),
+		OrderedHeaders: [][]string{
+			{"Content-Type", "multipart/form-data"},
+		},
+	}
+	response, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	if response.StatusCode != 200 {
+		return "", fmt.Errorf("status=%d", response.StatusCode)
+	}
+	var res map[string]any
+	err = json.Unmarshal(response.Body, &res)
+	if err != nil || res == nil {
+		return "", fmt.Errorf("failed to parse response as json: %w", err)
+	}
+	if str, ok := res[responseFileUrlField].(string); !ok {
+		return "", fmt.Errorf("result %q field is not a string", responseFileUrlField)
+	} else {
+		return str, nil
+	}
 }
