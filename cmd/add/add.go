@@ -71,7 +71,7 @@ var (
 	defaultSite        = ""
 	addTags            = ""
 	savePath           = ""
-	mapSavePathPrefixs []string
+	mapSavePaths       []string
 )
 
 func init() {
@@ -100,7 +100,7 @@ func init() {
 	command.Flags().StringVarP(&savePath, "add-save-path", "", "", "Set save path of added torrents")
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of added torrents")
 	command.Flags().StringVarP(&addTags, "add-tags", "", "", "Add tags to added torrent (comma-separated)")
-	command.Flags().StringArrayVarP(&mapSavePathPrefixs, "map-save-path-prefix", "", nil,
+	command.Flags().StringArrayVarP(&mapSavePaths, "map-save-path", "", nil,
 		`Used with "--use-comment-meta". Map save path from torrent comment to the file system of BitTorrent client. `+
 			`Format: "comment_save_path|client_save_path". `+constants.HELP_ARG_PATH_MAPPERS)
 	cmd.RootCmd.AddCommand(command)
@@ -111,8 +111,8 @@ func add(cmd *cobra.Command, args []string) error {
 	if renameAdded && deleteAdded {
 		return fmt.Errorf("--rename-added and --delete-added flags are NOT compatible")
 	}
-	if !useCommentMeta && len(mapSavePathPrefixs) > 0 {
-		return fmt.Errorf("--map-save-path-prefix must be used with --use-comment-meta flag")
+	if !useCommentMeta && len(mapSavePaths) > 0 {
+		return fmt.Errorf("--map-save-path must be used with --use-comment-meta flag")
 	}
 	torrents, stdinTorrentContents, err := helper.ParseTorrentsFromArgs(args[1:])
 	if err != nil {
@@ -134,10 +134,10 @@ func add(cmd *cobra.Command, args []string) error {
 		fixedTags = util.SplitCsv(addTags)
 	}
 	var savePathMapper *common.PathMapper
-	if len(mapSavePathPrefixs) > 0 {
-		savePathMapper, err = common.NewPathMapper(mapSavePathPrefixs)
+	if len(mapSavePaths) > 0 {
+		savePathMapper, err = common.NewPathMapper(mapSavePaths)
 		if err != nil {
-			return fmt.Errorf("invalid map-save-path-prefix (s): %w", err)
+			return fmt.Errorf("invalid map-save-path(s): %w", err)
 		}
 	}
 	errorCnt := int64(0)

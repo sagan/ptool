@@ -70,7 +70,7 @@ var (
 	rcloneSavePath       = ""
 	rcloneBinary         = ""
 	rcloneFlags          = ""
-	mapSavePathPrefixs   []string
+	mapSavePaths         []string
 )
 
 func init() {
@@ -102,7 +102,7 @@ func init() {
 		`Used with "--rclone-save-path", the additional rclone flags. E.g. "--config rclone.conf"`)
 	command.Flags().StringVarP(&rcloneBinary, "rclone-binary", "", "rclone",
 		`Used with "--rclone-save-path", the path of rclone binary`)
-	command.Flags().StringArrayVarP(&mapSavePathPrefixs, "map-save-path-prefix", "", nil,
+	command.Flags().StringArrayVarP(&mapSavePaths, "map-save-path", "", nil,
 		`Used with "--use-comment-meta". Map save path from torrent comment to the file system of ptool. `+
 			`Format: "comment_save_path|ptool_save_path". `+constants.HELP_ARG_PATH_MAPPERS)
 	cmd.RootCmd.AddCommand(command)
@@ -113,8 +113,8 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("exact one (not less or more) of the --use-comment-meta, --save-path, --content-path, " +
 			"--rclone-save-path and --rclone-lsjson-file flags must be set")
 	}
-	if !useCommentMeta && len(mapSavePathPrefixs) > 0 {
-		return fmt.Errorf("--map-save-path-prefix must be used with --use-comment-meta flag")
+	if !useCommentMeta && len(mapSavePaths) > 0 {
+		return fmt.Errorf("--map-save-path must be used with --use-comment-meta flag")
 	}
 	if showSum && showAll {
 		return fmt.Errorf("--sum and --all flags are NOT compatible")
@@ -174,10 +174,10 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 		}
 	}
 	var savePathMapper *common.PathMapper
-	if len(mapSavePathPrefixs) > 0 {
-		savePathMapper, err = common.NewPathMapper(mapSavePathPrefixs)
+	if len(mapSavePaths) > 0 {
+		savePathMapper, err = common.NewPathMapper(mapSavePaths)
 		if err != nil {
-			return fmt.Errorf("invalid map-save-path-prefix (s): %w", err)
+			return fmt.Errorf("invalid map-save-path (s): %w", err)
 		}
 	}
 
@@ -206,7 +206,7 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 				savePath = commentMeta.SavePath
 				if savePathMapper != nil {
 					if _savePath, match := savePathMapper.Before2After(savePath); !match {
-						err = fmt.Errorf("comment save path %q does not match with any map-save-path-prefix rule", savePath)
+						err = fmt.Errorf("comment save path %q does not match with any map-save-path rule", savePath)
 					} else {
 						savePath = _savePath
 					}

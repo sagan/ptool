@@ -1,6 +1,7 @@
 package nexusphp
 
 import (
+	"bytes"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/Noooste/azuretls-client"
 	"github.com/PuerkitoBio/goquery"
+	"github.com/noirbizarre/gonja"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/sagan/ptool/config"
@@ -35,17 +37,63 @@ type Site struct {
 	torrentsParserOption *TorrentsParserOption
 }
 
-// PublishTorrent implements site.Site.
+// Upload torrent to nexusphp site.
+// See: https://github.com/xiaomlove/nexusphp/blob/php8/public/takeupload.php .
+// Upload: POST /takeupload.php with multipart/form-data
+// Form data:
+//
+//	file // .torrent
+//	name // 标题
+//	small_descr  // 副标题
+//	descr // 简介, bbcode
+//	type // 分类
+//	uplver=yes // 匿名发布
 func (npclient *Site) PublishTorrent(contents []byte, metadata url.Values) (id string, err error) {
+	if npclient.SiteConfig.UploadTorrentPayload == "" {
+		return "", fmt.Errorf("uploadTorrentPayload is not set")
+	}
+	payload, err := url.ParseQuery(npclient.SiteConfig.UploadTorrentPayload)
+	if err != nil {
+		return "", fmt.Errorf("invalid uploadTorrentPayload")
+	}
+	metadataRaw := map[string]any{}
+	for key := range metadata {
+		metadataRaw[key] = metadata[key]
+	}
+	for key := range payload {
+		tpl, err := gonja.FromString(payload.Get(key))
+		if err != nil {
+			return "", fmt.Errorf("failed to parse uploadTorrentPayload: %w", err)
+		}
+		out, err := tpl.Execute(metadataRaw)
+		if err != nil {
+			return "", fmt.Errorf("failed to render payload: %w", err)
+		}
+		payload.Set(key, out)
+	}
+	log.Fatalf("payload: %v", payload)
 	coverFile := metadata.Get("_cover")
 	if coverFile != "" {
 		if npclient.SiteConfig.ImageUploadUrl != "" {
-			coverUrl, err := util.PostUploadFile(npclient.HttpClient, npclient.SiteConfig.ImageUploadUrl, coverFile,
-				npclient.SiteConfig.ImageUploadFileField, nil, npclient.SiteConfig.ImageUploadResponseUrlField)
-			log.Debugf("upload cover: err=%v, url=%s", err, coverUrl)
+			coverUrl, err := util.PostUploadFileForUrl(npclient.HttpClient, npclient.SiteConfig.ImageUploadUrl, coverFile,
+				nil, npclient.SiteConfig.ImageUploadFileField, nil, nil, npclient.SiteConfig.ImageUploadResponseUrlField)
+			log.Debugf("uploaded cover: err=%v, url=%s", err, coverUrl)
 		}
 	}
-	return "", site.ErrUnimplemented
+	uploadUrl := npclient.SiteConfig.ParseSiteUrl("takeupload.php", false)
+
+	headers := util.GetHttpReqHeaders(npclient.HttpHeaders, npclient.SiteConfig.Cookie, "")
+	res, err := util.PostUploadFile(npclient.HttpClient, uploadUrl, "a.torrent", bytes.NewReader(contents), "file",
+		payload, headers)
+	if err != nil {
+		return "", err
+	}
+	// On success upload, should got redirected to "/details.php?id=12345&uploaded=1".
+	id = parseTorrentIdFromUrl(res.Request.Url, npclient.torrentsParserOption.idRegexp)
+	if id == "" {
+		return "", fmt.Errorf("got no id from uploaded page, url=%s", res.Request.Url)
+	}
+	return id, nil
 }
 
 const (

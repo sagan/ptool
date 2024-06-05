@@ -34,7 +34,7 @@ Only the top-level files of save path(s) will be read, it doesn't scan the dir r
 
 If ptool and the BitTorrent client use different file system (e.g. the client runs in Docker),
 then you may want to set the mapper rule of "ptool save path" to "client save path",
-which can be done using "--map-save-path-prefix" flag. The flag can be set multiple times.
+which can be done using "--map-save-path" flag. The flag can be set multiple times.
 
 If --all flag is set, it will list all files in save pathes instead of only "alone" files,
 and display each file's count of belonged torrents in client.
@@ -45,9 +45,9 @@ It prints found "alone" files or dirs to stdout.`,
 }
 
 var (
-	showAll            = false
-	originalOrder      = false
-	mapSavePathPrefixs []string
+	showAll       = false
+	originalOrder = false
+	mapSavePaths  []string
 )
 
 func init() {
@@ -55,7 +55,7 @@ func init() {
 		"Show the list of all files in save pathes with the count of each file's belonged torrents in client")
 	command.Flags().BoolVarP(&originalOrder, "original-order", "", false,
 		`Used with "--all". Display the list in original (filename asc) order instead of count desc order`)
-	command.Flags().StringArrayVarP(&mapSavePathPrefixs, "map-save-path-prefix", "", nil,
+	command.Flags().StringArrayVarP(&mapSavePaths, "map-save-path", "", nil,
 		`Map save path that ptool sees to the one that the BitTorrent client sees. `+
 			`Format: "original_save_path|client_save_path". `+constants.HELP_ARG_PATH_MAPPERS)
 	cmd.RootCmd.AddCommand(command)
@@ -74,10 +74,10 @@ func findalone(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to create client: %w", err)
 	}
 	var savePathMapper *common.PathMapper
-	if len(mapSavePathPrefixs) > 0 {
-		savePathMapper, err = common.NewPathMapper(mapSavePathPrefixs)
+	if len(mapSavePaths) > 0 {
+		savePathMapper, err = common.NewPathMapper(mapSavePaths)
 		if err != nil {
-			return fmt.Errorf("invalid map-save-path-prefix (s): %w", err)
+			return fmt.Errorf("invalid map-save-path(s): %w", err)
 		}
 	}
 
@@ -90,7 +90,7 @@ func findalone(cmd *cobra.Command, args []string) error {
 		contentPath := util.ToSlash(torrent.ContentPath)
 		if savePathMapper != nil {
 			if _contentPath, match := savePathMapper.After2Before(contentPath); !match {
-				log.Debugf("Torrent %s (%s) save path %q does not match with any map-save-path-prefix rule, ignore it",
+				log.Debugf("Torrent %s (%s) save path %q does not match with any map-save-path rule, ignore it",
 					torrent.Name, torrent.InfoHash, contentPath)
 				continue
 			} else {

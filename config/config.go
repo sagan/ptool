@@ -23,6 +23,7 @@ import (
 
 const (
 	BRUSH_CAT                  = "_brush"
+	SEEDING_CAT                = "_seeding"
 	FALLBACK_CAT               = "Others" // --add-category-auto fallback category if does NOT match with any site
 	DYNAMIC_SEEDING_CAT_PREFIX = "dynamic-seeding-"
 	XSEED_TAG                  = "_xseed"
@@ -182,10 +183,13 @@ type SiteConfigStruct struct {
 	ImageUploadUrl                 string     `yaml:"imageUploadUrl"`
 	ImageUploadFileField           string     `yaml:"imageUploadFileField"`
 	ImageUploadResponseUrlField    string     `yaml:"mageUploadResponseUrlField"`
-	TorrentDownloadUrl             string     `yaml:"torrentDownloadUrl"` // use {id} placeholders in url
-	TorrentDownloadUrlPrefix       string     `yaml:"torrentDownloadUrlPrefix"`
-	Passkey                        string     `yaml:"passkey"`
-	UseCuhash                      bool       `yaml:"useCuhash"` // hdcity 使用机制。种子下载地址里必须有cuhash参数
+	// jinja2 syntax url values.
+	// E.g. "name={{title}}&uplver=yes".
+	UploadTorrentPayload     string `yaml:"uploadTorrentPayload"`
+	TorrentDownloadUrl       string `yaml:"torrentDownloadUrl"` // use {id} placeholders in url
+	TorrentDownloadUrlPrefix string `yaml:"torrentDownloadUrlPrefix"`
+	Passkey                  string `yaml:"passkey"`
+	UseCuhash                bool   `yaml:"useCuhash"` // hdcity 使用机制。种子下载地址里必须有cuhash参数
 	// ttg 使用机制。种子下载地址末段必须有4位数字校验码或Passkey参数(即使有 Cookie)
 	UseDigitHash                      bool   `yaml:"useDigitHash"`
 	TorrentUrlIdRegexp                string `yaml:"torrentUrlIdRegexp"`

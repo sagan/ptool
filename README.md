@@ -644,7 +644,7 @@ ptool findalone <client> <save-path>...
 
 findalone 命令可以扫描并列出下载目录(save path)里所有当前未在 BitTorrent 客户端里做种的文件。可以提供多个 save-path。只有 save path 文件夹自身里的文件会被检查（不会递归读取子级目录）。会将找到的"孤立"文件(或文件夹)的完整路径输出到 stdout。
 
-如果 ptool 运行在宿主机而 BitTorrent 客户端运行在 Docker 里，使用 `--map-save-path-prefix` 参数指定两者路径的映射关系。
+如果 ptool 运行在宿主机而 BitTorrent 客户端运行在 Docker 里，使用 `--map-save-path` 参数指定两者路径的映射关系。
 
 如果指定 `--all` 参数，会显示下载目录里所有文件以及每个文件对应的客户端里的种子个数。
 
@@ -653,7 +653,7 @@ findalone 命令可以扫描并列出下载目录(save path)里所有当前未�
 ```
 ptool findalone local D:\Downloads E:\Downloads F:\Downloads
 
-ptool findalone local --map-save-path-prefix "/root/Downloads:/Downloads" /root/Downloads
+ptool findalone local --map-save-path "/root/Downloads:/Downloads" /root/Downloads
 ```
 
 ### 同步 Cookies & 导入站点 (cookiecloud)

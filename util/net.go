@@ -204,14 +204,43 @@ func AsNetworkError(err error) bool {
 	return false
 }
 
+// Upload file to server, then extract the "file url" from server response.
+func PostUploadFileForUrl(client *azuretls.Session, url string, filename string, file io.Reader, fileFieldname string,
+	additionalFields url.Values, headers [][]string, responseUrlField string) (fileUrl string, err error) {
+	if responseUrlField == "" {
+		responseUrlField = "url"
+	}
+	response, err := PostUploadFile(client, url, filename, file, fileFieldname, additionalFields, headers)
+	if err != nil {
+		return "", err
+	}
+	var res map[string]any
+	err = json.Unmarshal(response.Body, &res)
+	if err != nil || res == nil {
+		return "", fmt.Errorf("failed to parse response as json: %w", err)
+	}
+	fields := strings.Split(responseUrlField, ".")
+	for i := 0; i < len(fields)-1; i++ {
+		if obj, ok := res[fields[i]].(map[string]any); !ok {
+			return "", fmt.Errorf("result %q field is not a obj", fields[i])
+		} else {
+			res = obj
+		}
+	}
+	if str, ok := res[fields[len(fields)-1]].(string); !ok || str == "" {
+		return "", fmt.Errorf("result %q field is not a string", fields[len(fields)-1])
+	} else {
+		return str, nil
+	}
+}
+
 // Common func for uploading image or other file to public server using post + multipart/form-data request.
-func PostUploadFile(client *azuretls.Session, apiUrl string, filename string, fileFieldname string,
-	additionalFields url.Values, responseFileUrlField string) (fileUrl string, err error) {
+// If file is nil, open and read from filename instead.
+// If file is not nil, filename is only used to derive mime and can be a dummy name.
+func PostUploadFile(client *azuretls.Session, url string, filename string, file io.Reader, fileFieldname string,
+	additionalFields url.Values, headers [][]string) (res *azuretls.Response, err error) {
 	if fileFieldname == "" {
 		fileFieldname = "file"
-	}
-	if responseFileUrlField == "" {
-		responseFileUrlField = "url"
 	}
 	body := new(bytes.Buffer)
 	mp := multipart.NewWriter(body)
@@ -221,43 +250,39 @@ func PostUploadFile(client *azuretls.Session, apiUrl string, filename string, fi
 	h.Set("Content-Type", mime.TypeByExtension(filepath.Ext(filename)))
 	filePartWriter, err := mp.CreatePart(h)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	file, err := os.Open(filename)
-	if err != nil {
-		return "", err
+	if file == nil {
+		f, err := os.Open(filename)
+		if err != nil {
+			return nil, err
+		}
+		defer f.Close()
+		file = f
 	}
 	if _, err = io.Copy(filePartWriter, file); err != nil {
-		return "", err
+		return nil, err
 	}
 	for field := range additionalFields {
 		mp.WriteField(field, additionalFields.Get(field))
 	}
 	mp.Close()
 	req := &azuretls.Request{
-		Url:    apiUrl,
+		Url:    url,
 		Method: http.MethodPost,
 		Body:   body.Bytes(),
 		OrderedHeaders: [][]string{
 			{"Content-Type", mp.FormDataContentType()},
 		},
 	}
-	log.Tracef("Upload file %q to %s", filename, apiUrl)
-	response, err := client.Do(req)
+	req.OrderedHeaders = append(req.OrderedHeaders, headers...)
+	log.Tracef("Upload file %q to %s", filename, url)
+	res, err = client.Do(req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	if response.StatusCode != 200 {
-		return "", fmt.Errorf("status=%d", response.StatusCode)
+	if res.StatusCode != 200 {
+		return res, fmt.Errorf("status=%d", res.StatusCode)
 	}
-	var res map[string]any
-	err = json.Unmarshal(response.Body, &res)
-	if err != nil || res == nil {
-		return "", fmt.Errorf("failed to parse response as json: %w", err)
-	}
-	if str, ok := res[responseFileUrlField].(string); !ok {
-		return "", fmt.Errorf("result %q field is not a string", responseFileUrlField)
-	} else {
-		return str, nil
-	}
+	return res, nil
 }
