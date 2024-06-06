@@ -113,10 +113,8 @@ func Assign(dst any, src any, excludeFieldIndexes []int) {
 		if fieldType.Kind() == reflect.Bool && !srcValue.Bool() {
 			continue
 		}
-		if fieldType.Kind() == reflect.Slice && srcValue.Pointer() == 0 {
-			continue
-		}
-		if fieldType.Kind() == reflect.Pointer && srcValue.Pointer() == 0 {
+		if (fieldType.Kind() == reflect.Slice || fieldType.Kind() == reflect.Map ||
+			fieldType.Kind() == reflect.Pointer) && srcValue.Pointer() == 0 {
 			continue
 		}
 		dstField.Set(srcValue)

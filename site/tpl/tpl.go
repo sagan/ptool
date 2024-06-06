@@ -369,7 +369,41 @@ var (
 			ImageUploadUrl:              "https://pic.kamept.com/upload/k",
 			ImageUploadFileField:        "file",
 			ImageUploadResponseUrlField: "url",
-			Comment:                     "KamePT",
+			UploadTorrentAdditionalPayload: map[string]string{
+				"descr": `
+{% if _cover %}
+	[img]{{_cover}}[/img]
+{% endif %}
+{% if number | regex_search("\\bRJ\\d{5,12}\\b") %}
+[dlsite]{{number | regex_search("\\bRJ\\d{5,12}\\b")}}[/dlsite]
+{% endif %}
+{{_text}}{% if comment %}
+
+---
+
+{{comment}}{% endif %}`,
+				// 420: 外语音声; 415: 游戏; 435: 同人志.
+				// dlsite work_type genres: https://www.dlsite.com/maniax/worktype/list .
+				"type": `
+{% if "ボイス・ASMR" in tags %}420
+{% elif
+	"アクション" in tags or
+	"クイズ" in tags or
+	"アドベンチャー" in tags or
+	"ロールプレイング" in tags or
+	"テーブル" in tags or
+	"デジタルノベル" in tags or
+	"シミュレーション" in tags or
+	"タイピング" in tags or
+	"シューティング" in tags or
+	"パズル" in tags or
+	"その他ゲーム" in tags
+%}415
+{% elif "マンガ" in tags %}435
+{% endif %}
+`,
+			},
+			Comment: "KamePT",
 		},
 		"keepfrds": {
 			Type:                   "nexusphp",

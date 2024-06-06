@@ -183,13 +183,24 @@ type SiteConfigStruct struct {
 	ImageUploadUrl                 string     `yaml:"imageUploadUrl"`
 	ImageUploadFileField           string     `yaml:"imageUploadFileField"`
 	ImageUploadResponseUrlField    string     `yaml:"mageUploadResponseUrlField"`
-	// jinja2 syntax url values.
-	// E.g. "name={{title}}&uplver=yes".
-	UploadTorrentPayload     string `yaml:"uploadTorrentPayload"`
-	TorrentDownloadUrl       string `yaml:"torrentDownloadUrl"` // use {id} placeholders in url
-	TorrentDownloadUrlPrefix string `yaml:"torrentDownloadUrlPrefix"`
-	Passkey                  string `yaml:"passkey"`
-	UseCuhash                bool   `yaml:"useCuhash"` // hdcity 使用机制。种子下载地址里必须有cuhash参数
+	// Payload that will be sent to site when uploading torrent.
+	// Key => value. Values are using jinja2 syntax. E.g. "{{title}}".
+	// Jinja context variables:
+	//   title: Resource title. (this variable is guaranteed to exist, all others are optional).
+	//   _text: full description plain text.
+	//   _cover: uploaded cover image url.
+	// Rendered results will be TrimSpaced.
+	// If UploadTorrentPayload is nil, schema dependent default values will be used,
+	// and values of UploadTorrentAdditionalPayload will be assigned to previous values.
+	// Jinja rendering uses gonja, which, unfortunately, is not fully compatible with python version.
+	// For example, {{% if str.startswith("xxx") %}} will NOT work as startswith is a method of python built in string,
+	// which is not available in Go. All these methods must be replaced by filters instead.
+	UploadTorrentPayload           map[string]string `yaml:"uploadTorrentPayload"`
+	UploadTorrentAdditionalPayload map[string]string `yaml:"uploadTorrentAdditionalPayload"`
+	TorrentDownloadUrl             string            `yaml:"torrentDownloadUrl"` // use {id} placeholders in url
+	TorrentDownloadUrlPrefix       string            `yaml:"torrentDownloadUrlPrefix"`
+	Passkey                        string            `yaml:"passkey"`
+	UseCuhash                      bool              `yaml:"useCuhash"` // hdcity 使用机制。种子下载地址里必须有cuhash参数
 	// ttg 使用机制。种子下载地址末段必须有4位数字校验码或Passkey参数(即使有 Cookie)
 	UseDigitHash                      bool   `yaml:"useDigitHash"`
 	TorrentUrlIdRegexp                string `yaml:"torrentUrlIdRegexp"`

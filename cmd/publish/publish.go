@@ -30,7 +30,7 @@ const PUBLISHED_TORRENT_FILENAME = ".%s.torrent"
 const COVER = "cover"
 
 var command = &cobra.Command{
-	Use:   "publish --site {site} {--content-path {content-path} | --save-path } --client {client}",
+	Use:   "publish --site {site} {--content-path {content-path} | --save-path {save-path} } --client {client}",
 	Short: "Publish (upload) torrent to site.",
 	Long:  `Publish (upload) torrent to site.`,
 	Args:  cobra.MatchAll(cobra.ExactArgs(0), cobra.OnlyValidArgs),
@@ -42,29 +42,40 @@ var (
 	ErrNoMetadataFile      = fmt.Errorf("no metadata file")
 	ErrExisting            = fmt.Errorf("same contents torrent exists in site")
 	ErrAlreadyPublished    = fmt.Errorf("already published")
+	ErrSmall               = fmt.Errorf("torrent contents is too small")
 	ErrFs                  = fmt.Errorf("file system read error")
 )
 
 var (
-	checkExisting = false
-	showJson      = false
-	sitename      = ""
-	clientname    = ""
-	contentPath   = ""
-	savePath      = ""
-	fields        []string
-	mapSavePaths  []string
+	checkExisting     = false
+	showJson          = false
+	maxTorrents       = int64(0)
+	minTorrentSizeStr = ""
+	sitename          = ""
+	clientname        = ""
+	contentPath       = ""
+	savePath          = ""
+	comment           = ""
+	commentFile       = ""
+	fields            []string
+	mapSavePaths      []string
 )
 
 func init() {
 	command.Flags().BoolVarP(&checkExisting, "check-existing", "", false,
 		"Check whether same contents torrent already exists in site before publishing")
 	command.Flags().BoolVarP(&showJson, "json", "", false, "Show output in json format")
+	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "", -1,
+		"Number limit of publishing torrents. -1 == no limit")
+	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "100MiB",
+		"Do not publish torrent which contents size is smaller than (<) this value. -1 == no limit")
 	command.Flags().StringVarP(&sitename, "site", "", "", "Publish site")
 	command.Flags().StringVarP(&clientname, "client", "", "",
 		"Local client name. Add torrent to it to start seeding it after published the torrent")
 	command.Flags().StringVarP(&contentPath, "content-path", "", "", "Content path to publish")
 	command.Flags().StringVarP(&savePath, "save-path", "", "", "Save path of contents to publish")
+	command.Flags().StringVarP(&comment, "comment", "", "", `Publish comment. Equivalent to '--meta "comment=..."'`)
+	command.Flags().StringVarP(&commentFile, "comment-file", "", "", `Read comment from file`)
 	command.Flags().StringArrayVarP(&fields, "meta", "", nil,
 		`Additional meta info values when uploading torrent to site. E.g. "type=42&subtype=12"`)
 	command.MarkFlagRequired("site")
@@ -78,15 +89,30 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 	if util.CountNonZeroVariables(contentPath, savePath) != 1 {
 		return fmt.Errorf("exact one of the --content-path and --save-path flsgs must be set")
 	}
-	fieldValues := url.Values{}
+	if comment != "" && commentFile != "" {
+		return fmt.Errorf("--comment and --comment-file flags are NOT compatible")
+	}
+	if commentFile != "" {
+		contents, err := os.ReadFile(commentFile)
+		if err != nil {
+			return fmt.Errorf("failed to read comment file: %w", err)
+		}
+		comment = string(contents)
+	}
+	comment = strings.TrimSpace(comment)
+	minTorrentSize, _ := util.RAMInBytes(minTorrentSizeStr)
+	metaValues := url.Values{}
 	for _, field := range fields {
 		values, err := url.ParseQuery(field)
 		if err != nil {
 			return fmt.Errorf("inalid field value: %w", err)
 		}
 		for name, value := range values {
-			fieldValues[name] = value
+			metaValues[name] = value
 		}
+	}
+	if comment != "" {
+		metaValues.Set("comment", comment)
 	}
 	var savePathMapper *common.PathMapper
 	if len(mapSavePaths) > 0 {
@@ -112,8 +138,8 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 
 	if contentPath != "" {
 		id, err := publicTorrent(siteInstance, clientInstance,
-			contentPath, fieldValues, false, checkExisting, savePathMapper)
-		ok := printResult(contentPath, id, err, clientname)
+			contentPath, metaValues, false, checkExisting, savePathMapper, minTorrentSize)
+		ok, _ := printResult(contentPath, id, err, sitename, clientname)
 		if !ok {
 			return err
 		} else {
@@ -122,6 +148,7 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	errorCnt := int64(0)
+	cntHandled := int64(0)
 	entries, err := os.ReadDir(savePath)
 	if err != nil {
 		return fmt.Errorf("failed to read dir: %w", err)
@@ -132,10 +159,16 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 		}
 		contentPath := filepath.Join(savePath, entry.Name())
 		id, err := publicTorrent(siteInstance, clientInstance,
-			contentPath, fieldValues, true, checkExisting, savePathMapper)
-		ok := printResult(contentPath, id, err, clientname)
+			contentPath, metaValues, true, checkExisting, savePathMapper, minTorrentSize)
+		ok, published := printResult(contentPath, id, err, sitename, clientname)
 		if !ok {
 			errorCnt++
+		}
+		if !ok || published {
+			cntHandled++
+		}
+		if maxTorrents > 0 && cntHandled >= maxTorrents {
+			break
 		}
 	}
 	if errorCnt > 0 {
@@ -171,12 +204,13 @@ func parseMetadataFile(metadataFile string) (metadata map[string]string, err err
 	if err = yaml.Unmarshal(contents, &metadata); err != nil {
 		return nil, err
 	}
-	metadata["text"] = text
+	metadata["_text"] = text
 	return metadata, nil
 }
 
 func publicTorrent(siteInstance site.Site, clientInstance client.Client, contentPath string, otherFields url.Values,
-	mustMetadataFile bool, checkExisting bool, savePathMapper *common.PathMapper) (id string, err error) {
+	mustMetadataFile bool, checkExisting bool, savePathMapper *common.PathMapper,
+	minTorrentSize int64) (id string, err error) {
 	sitename := siteInstance.GetName()
 	metadata := url.Values{}
 	if metadataFile := filepath.Join(contentPath, constants.METADATA_FILE); util.FileExists(metadataFile) {
@@ -195,7 +229,7 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 		metadata[name] = value
 	}
 	if metadata.Get("title") == "" {
-		return "", fmt.Errorf("the following meta fields must has value: title")
+		return "", fmt.Errorf("no title meta data provided")
 	}
 
 	publishedFlagFile := filepath.Join(contentPath, fmt.Sprintf(PUBLISHED_FLAG_FILE, sitename))
@@ -236,9 +270,13 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 			Private:        true,
 			PieceLengthStr: constants.TORRENT_DEFAULT_PIECE_LENGTH,
 			Output:         torrent,
+			MinSize:        minTorrentSize,
 			Excludes:       []string{constants.METADATA_FILE},
 		})
 		if err != nil {
+			if err == torrentutil.ErrSmall {
+				return "", ErrSmall
+			}
 			return "", fmt.Errorf("failed to make torrent: %w", err)
 		}
 	} else {
@@ -307,7 +345,7 @@ func downloadPublishedTorrent(siteInstance site.Site, clientInstance client.Clie
 			return fmt.Errorf("failed to read downloaded torrent file: %w", err)
 		}
 	}
-	savePath := filepath.Base(contentPath)
+	savePath := filepath.Dir(contentPath)
 	if savePathMapper != nil {
 		newSavePath, match := savePathMapper.Before2After(savePath)
 		if !match {
@@ -327,26 +365,24 @@ func downloadPublishedTorrent(siteInstance site.Site, clientInstance client.Clie
 }
 
 // Print result of publishTorrent().
-// If result should be reported as en error, return false. Otherwise return true.
-func printResult(path string, id string, err error, clientname string) (ok bool) {
-	if err == nil {
+// If result should be reported as en error, return ok=false. Otherwise return ok=true.
+func printResult(contentPath string, id string, err error,
+	sitename string, clientname string) (ok bool, published bool) {
+	switch err {
+	case nil:
+		torrentFilename := filepath.Join(contentPath, fmt.Sprintf(PUBLISHED_TORRENT_FILENAME, sitename))
 		if clientname != "" {
-			fmt.Printf("✓ %q: published as %s\n", path, id)
+			fmt.Printf("✓ %q: published as id %s (%s)\n", contentPath, id, torrentFilename)
 		} else {
-			fmt.Printf("✓ %q: published as %s; added to client\n", path, id)
+			fmt.Printf("✓ %q: published as id %s (%s); added to client\n", contentPath, id, torrentFilename)
 		}
-		return true
-	} else if err == ErrNoMetadataFile {
-		fmt.Printf("- %q: no metadata file, skip it\n", path)
-		return true
-	} else if err == ErrAlreadyPublished {
-		fmt.Printf("- %q: already published to site before\n", path)
-		return true
-	} else if err == ErrExisting {
-		fmt.Printf("- %q: already exists in site\n", path)
-		return true
-	} else {
-		fmt.Printf("X %q: failed to publish: %v\n", path, err)
-		return false
+		ok = true
+		published = true
+	case ErrNoMetadataFile, ErrAlreadyPublished, ErrExisting, ErrSmall:
+		fmt.Printf("- %q: %v\n", contentPath, err)
+		ok = true
+	default:
+		fmt.Printf("X %q: failed to publish: %v\n", contentPath, err)
 	}
+	return
 }

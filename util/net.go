@@ -274,6 +274,7 @@ func PostUploadFile(client *azuretls.Session, url string, filename string, file 
 		OrderedHeaders: [][]string{
 			{"Content-Type", mp.FormDataContentType()},
 		},
+		NoCookie: true,
 	}
 	req.OrderedHeaders = append(req.OrderedHeaders, headers...)
 	log.Tracef("Upload file %q to %s", filename, url)

@@ -64,11 +64,13 @@ type TorrentMakeOptions struct {
 	CreatedBy      string
 	CreationDate   string
 	PieceLengthStr string
+	MinSize        int64
 	Excludes       []string
 }
 
 var (
 	ErrNoChange = errors.New("no change made")
+	ErrSmall    = errors.New("torrent contents is too small")
 )
 
 func ParseTorrent(torrentdata []byte) (*TorrentMeta, error) {
@@ -441,10 +443,14 @@ func (meta *TorrentMeta) VerifyAgaintSavePathFs(savePathFs fs.FS) error {
 }
 
 // checkHash: 0 - none; 1 - quick; 2+ - full.
-func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash int64) error {
+func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash int64) (err error) {
 	var filenames []string
 	prefixPath := ""
 	if contentPath != "" {
+		contentPath, err = filepath.Abs(contentPath)
+		if err != nil {
+			return fmt.Errorf("invalid content-path: %w", err)
+		}
 		prefixPath = contentPath + "/"
 	} else {
 		prefixPath = savePath + "/"
@@ -646,6 +652,15 @@ func MakeTorrent(options *TorrentMakeOptions) (tinfo *TorrentMeta, err error) {
 	}
 	if len(info.Files) == 0 {
 		return nil, fmt.Errorf("no files found in content-path")
+	}
+	if options.MinSize > 0 {
+		size := int64(0)
+		for _, file := range info.Files {
+			size += file.Length
+		}
+		if size < options.MinSize {
+			return nil, ErrSmall
+		}
 	}
 	if options.InfoName != "" {
 		info.Name = options.InfoName
