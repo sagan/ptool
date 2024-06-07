@@ -226,7 +226,7 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 			err = tinfo.VerifyAgaintSavePathFs(rcloneSavePathFs)
 		} else {
 			log.Infof("Verifying %s (savepath=%s, contentpath=%s, checkhash=%t)", torrent, savePath, contentPath, checkHash)
-			err = tinfo.Verify(savePath, contentPath, checkMode)
+			_, err = tinfo.Verify(savePath, contentPath, checkMode)
 		}
 		if err != nil {
 			if !showSum {

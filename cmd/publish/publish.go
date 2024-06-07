@@ -21,6 +21,7 @@ import (
 	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/util"
+	"github.com/sagan/ptool/util/helper"
 	"github.com/sagan/ptool/util/torrentutil"
 )
 
@@ -47,6 +48,7 @@ var (
 )
 
 var (
+	dryRun            = false
 	checkExisting     = false
 	showJson          = false
 	maxTorrents       = int64(0)
@@ -57,11 +59,13 @@ var (
 	savePath          = ""
 	comment           = ""
 	commentFile       = ""
+	imageFiles        []string
 	fields            []string
 	mapSavePaths      []string
 )
 
 func init() {
+	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do NOT actually upload torrent to site")
 	command.Flags().BoolVarP(&checkExisting, "check-existing", "", false,
 		"Check whether same contents torrent already exists in site before publishing")
 	command.Flags().BoolVarP(&showJson, "json", "", false, "Show output in json format")
@@ -76,8 +80,12 @@ func init() {
 	command.Flags().StringVarP(&savePath, "save-path", "", "", "Save path of contents to publish")
 	command.Flags().StringVarP(&comment, "comment", "", "", `Publish comment. Equivalent to '--meta "comment=..."'`)
 	command.Flags().StringVarP(&commentFile, "comment-file", "", "", `Read comment from file`)
+	command.Flags().StringArrayVarP(&imageFiles, "image", "", nil,
+		`Extra image (in addition to "cover.*") file names that will also be used in meta of uploaded torrent. `+
+			`Filename or filename pattern relative to content path of torrent. E.g. "screenshot-*.png". `+
+			`Non-existent file names or names without a valid image extension are ignored`)
 	command.Flags().StringArrayVarP(&fields, "meta", "", nil,
-		`Additional meta info values when uploading torrent to site. E.g. "type=42&subtype=12"`)
+		`Manually set meta values of torrent(s) to publish. Url query string format. E.g. "title=foo&author=bar"`)
 	command.MarkFlagRequired("site")
 	command.Flags().StringArrayVarP(&mapSavePaths, "map-save-path", "", nil,
 		`Used with "--use-comment-meta". Map save path from local file system to the file system of BitTorrent client. `+
@@ -114,6 +122,7 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 	if comment != "" {
 		metaValues.Set("comment", comment)
 	}
+
 	var savePathMapper *common.PathMapper
 	if len(mapSavePaths) > 0 {
 		savePathMapper, err = common.NewPathMapper(mapSavePaths)
@@ -124,6 +133,9 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 	siteInstance, err := site.CreateSite(sitename)
 	if err != nil {
 		return fmt.Errorf("failed to create site: %w", err)
+	}
+	if _, err := siteInstance.GetStatus(); err != nil {
+		return fmt.Errorf("failed to get site status: %w", err)
 	}
 	var clientInstance client.Client
 	if clientname != "" {
@@ -138,7 +150,7 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 
 	if contentPath != "" {
 		id, err := publicTorrent(siteInstance, clientInstance,
-			contentPath, metaValues, false, checkExisting, savePathMapper, minTorrentSize)
+			contentPath, metaValues, false, checkExisting, savePathMapper, minTorrentSize, imageFiles, dryRun)
 		ok, _ := printResult(contentPath, id, err, sitename, clientname)
 		if !ok {
 			return err
@@ -159,7 +171,7 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 		}
 		contentPath := filepath.Join(savePath, entry.Name())
 		id, err := publicTorrent(siteInstance, clientInstance,
-			contentPath, metaValues, true, checkExisting, savePathMapper, minTorrentSize)
+			contentPath, metaValues, true, checkExisting, savePathMapper, minTorrentSize, imageFiles, dryRun)
 		ok, published := printResult(contentPath, id, err, sitename, clientname)
 		if !ok {
 			errorCnt++
@@ -185,7 +197,9 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 // ---
 //
 // any text...
-func parseMetadataFile(metadataFile string) (metadata map[string]string, err error) {
+//
+// Spaces inside meta key are converted to "_".
+func parseMetadataFile(metadataFile string) (metadata url.Values, err error) {
 	contents, err := os.ReadFile(metadataFile)
 	if err != nil {
 		return nil, err
@@ -199,37 +213,86 @@ func parseMetadataFile(metadataFile string) (metadata map[string]string, err err
 	if index < 3 {
 		return nil, ErrInvalidMetadataFile
 	}
+	metaTxt := strings.TrimSpace(string(contents[:index+len(deli)]))
 	text := strings.TrimSpace(string(contents[index+len(deli):]))
 	contents = contents[:index]
-	if err = yaml.Unmarshal(contents, &metadata); err != nil {
+	var rawMetadata map[string]any
+	if err = yaml.Unmarshal(contents, &rawMetadata); err != nil {
 		return nil, err
 	}
-	metadata["_text"] = text
+	metadata = url.Values{}
+	for key, value := range rawMetadata {
+		if strings.ContainsAny(key, " \t") {
+			key = strings.ReplaceAll(key, " ", "_")
+			key = strings.ReplaceAll(key, "\t", "_")
+		}
+		switch v := value.(type) {
+		case string:
+			metadata.Set(key, v)
+		case []string:
+			metadata[key] = v
+		case []any:
+			for _, vi := range v {
+				metadata.Add(key, fmt.Sprint(vi))
+			}
+		default:
+			metadata.Set(key, fmt.Sprint(v))
+		}
+	}
+	metadata.Set("_text", text)
+	metadata.Set("_meta", metaTxt)
 	return metadata, nil
 }
 
 func publicTorrent(siteInstance site.Site, clientInstance client.Client, contentPath string, otherFields url.Values,
 	mustMetadataFile bool, checkExisting bool, savePathMapper *common.PathMapper,
-	minTorrentSize int64) (id string, err error) {
+	minTorrentSize int64, imageFiles []string, dryRun bool) (id string, err error) {
 	sitename := siteInstance.GetName()
-	metadata := url.Values{}
+	var metadata url.Values
 	if metadataFile := filepath.Join(contentPath, constants.METADATA_FILE); util.FileExists(metadataFile) {
 		log.Debugf("Parse medadata file %s", metadataFile)
-		if metadataFileValues, err := parseMetadataFile(metadataFile); err == nil {
-			for key, value := range metadataFileValues {
-				metadata.Set(key, value)
-			}
-		} else {
+		metadata, err = parseMetadataFile(metadataFile)
+		if err != nil {
 			return "", ErrInvalidMetadataFile
 		}
 	} else if mustMetadataFile {
 		return "", ErrNoMetadataFile
+	} else {
+		metadata = url.Values{}
 	}
 	for name, value := range otherFields {
 		metadata[name] = value
 	}
 	if metadata.Get("title") == "" {
-		return "", fmt.Errorf("no title meta data provided")
+		return "", fmt.Errorf("no title meta data found")
+	}
+	if len(imageFiles) > 0 {
+		var images []string
+		for _, imageFile := range imageFiles {
+			imageFilePath := ""
+			if filepath.IsAbs(imageFile) {
+				imageFilePath = filepath.Clean(imageFile)
+			} else {
+				imageFilePath = filepath.Join(contentPath, imageFile)
+			}
+			files := helper.GetWildcardFilenames(imageFilePath)
+			if files == nil {
+				files = append(files, imageFilePath)
+			}
+			for _, file := range files {
+				if !util.HasAnySuffix(file, constants.ImgExts...) || !util.FileExists(file) {
+					continue
+				}
+				images = append(images, file)
+			}
+			images = util.UniqueSlice(images)
+		}
+		if len(images) > 0 {
+			metadata["_images"] = images
+		}
+	}
+	if dryRun {
+		metadata.Set("_dryrun", "1")
 	}
 
 	publishedFlagFile := filepath.Join(contentPath, fmt.Sprintf(PUBLISHED_FLAG_FILE, sitename))
@@ -282,6 +345,10 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 	} else {
 		log.Debugf("torrent file %q exists, use it", torrent)
 	}
+	torrentStat, err := os.Stat(torrent)
+	if err != nil {
+		return "", fmt.Errorf("failed to read torrent stat: %w", err)
+	}
 	torrentContents, err := os.ReadFile(torrent)
 	if err != nil {
 		return "", fmt.Errorf("failed to read torrent: %w", err)
@@ -290,8 +357,10 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 	if err != nil {
 		return "", fmt.Errorf("failed to parse torrent: %w", err)
 	}
-	if result := tinfo.Verify("", contentPath, 0); result != nil {
+	if ts, err := tinfo.Verify("", contentPath, 0); err != nil {
 		return "", fmt.Errorf("content-path is NOT consistent with existing .torrent file")
+	} else if ts > torrentStat.ModTime().Unix() {
+		return "", fmt.Errorf("content-path files modification time is newer than existing .torrent file")
 	}
 	coverImage := util.ExistsFileWithAnySuffix(filepath.Join(contentPath, COVER), constants.ImgExts)
 	if coverImage != "" {
@@ -378,8 +447,18 @@ func printResult(contentPath string, id string, err error,
 		}
 		ok = true
 		published = true
-	case ErrNoMetadataFile, ErrAlreadyPublished, ErrExisting, ErrSmall:
+	case constants.ErrDryRun:
+		fmt.Printf("→ %q: Ready to publish to site (Dry Run)\n", contentPath)
+		ok = true
+		published = true
+	case ErrAlreadyPublished:
+		fmt.Printf("* %q: %v\n", contentPath, err)
+		ok = true
+	case ErrNoMetadataFile, ErrExisting:
 		fmt.Printf("- %q: %v\n", contentPath, err)
+		ok = true
+	case ErrSmall:
+		fmt.Printf("! %q: %v\n", contentPath, err)
 		ok = true
 	default:
 		fmt.Printf("X %q: failed to publish: %v\n", contentPath, err)

@@ -17,6 +17,7 @@ import (
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/constants"
+	"github.com/sagan/ptool/flags"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/util/osutil"
 )
@@ -151,6 +152,8 @@ func init() {
 	config.DefaultConfigFile = configFile
 
 	// global flags
+	RootCmd.PersistentFlags().BoolVarP(&flags.DumpHeaders, "dump-headers", "", false,
+		`Dump HTTP headers to log (error level) - may contain sensitive info`)
 	RootCmd.PersistentFlags().BoolVarP(&config.Insecure, "insecure", "", false,
 		`Temporarily disable all TLS / https cert verifications during this session. `+
 			`To permanently disable TLS cert verifications, `+
@@ -182,7 +185,9 @@ func init() {
 	RootCmd.PersistentFlags().StringVarP(&config.Tz, "timezone", "", "",
 		`Force set the timezone used by the program during this session. It will overwrite the system timezone. `+
 			`E.g. "UTC", "Asia/Shanghai"`)
-	RootCmd.PersistentFlags().CountVarP(&config.VerboseLevel, "verbose", "v", "verbose (-v, -vv, -vvv)")
+	RootCmd.PersistentFlags().CountVarP(&config.VerboseLevel, "verbose", "v", `verbose (-v, -vv, -vvv). `+
+		`Print lots more stuff (repeat for more). `+
+		`Log level: Default=warn(3), "-v"=info(4), "-vv"=debug(5), "-vvv"=trace(6)`)
 }
 
 // clean all resources created during this session and exit

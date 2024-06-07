@@ -1,5 +1,6 @@
 // ptool uses gonja (https://github.com/noirbizarre/gonja) as template language.
-// This package implements some jinja filters that are currently missing in gonja.
+// gonja is a Go port of Jinja which supported features & syntaxes is a subset of the latter.
+// This package implements some Jinja filters that are currently missing in gonja.
 package jinja
 
 import (
@@ -15,7 +16,7 @@ import (
 func init() {
 	// regex_search is a ansible filter that is commonly used in Jinja.
 	// See https://docs.ansible.com/ansible/latest/collections/ansible/builtin/regex_search_filter.html .
-	// Only basic usage is implemented for now.
+	// Only basic (1-arg) usage is implemented for now.
 	gonja.DefaultEnv.Filters.Register("regex_search", func(e *exec.Evaluator, in *exec.Value,
 		params *exec.VarArgs) *exec.Value {
 		if p := params.ExpectArgs(1); p.IsError() {

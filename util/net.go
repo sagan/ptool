@@ -17,7 +17,6 @@ import (
 	"strings"
 
 	"github.com/Noooste/azuretls-client"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -30,21 +29,15 @@ func FetchJson(url string, v any, client *http.Client, header http.Header) error
 	if err != nil {
 		return err
 	}
-	log.Tracef("FetchJson response: len=%d", res.ContentLength)
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return err
 	}
-	err = json.Unmarshal(body, v)
-	if err != nil {
-		log.Tracef("FetchJson failed to unmarshal, response body: %s", string(body))
-	}
-	return err
+	return json.Unmarshal(body, v)
 }
 
 func FetchUrl(url string, client *http.Client, header http.Header) (*http.Response, http.Header, error) {
-	log.Tracef("FetchUrl url=%s", url)
 	if client == nil {
 		client = http.DefaultClient
 	}
@@ -58,11 +51,12 @@ func FetchUrl(url string, client *http.Client, header http.Header) (*http.Respon
 	if client == nil {
 		client = http.DefaultClient
 	}
+	LogHttpRequest(req)
 	res, err := client.Do(req)
+	LogHttpResponse(res, err)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch url: %w", err)
 	}
-	log.Tracef("FetchUrl response status=%d", res.StatusCode)
 	if res.StatusCode != 200 {
 		defer res.Body.Close()
 		return nil, res.Header, fmt.Errorf("failed to fetch url: status=%d", res.StatusCode)
@@ -76,28 +70,25 @@ func FetchJsonWithAzuretls(url string, v any, client *azuretls.Session,
 	if err != nil {
 		return err
 	}
-	log.Tracef("FetchJsonWithAzuretls response: len=%d", res.ContentLength)
 	err = json.Unmarshal(res.Body, &v)
-	if err != nil {
-		log.Tracef("FetchJsonWithAzuretls failed to unmarshal, response body: %s", string(res.Body))
-	}
 	return err
 }
 
 // If http response status is not 200, it return the response, header and an error
 func FetchUrlWithAzuretls(url string, client *azuretls.Session,
 	cookie string, ua string, headers [][]string) (*azuretls.Response, http.Header, error) {
-	log.Tracef("FetchUrlWithAzuretls url=%s hasCookie=%t", url, cookie != "")
-	reqHeaders := GetHttpReqHeaders(headers, cookie, ua)
-	res, err := client.Do(&azuretls.Request{
-		Method:   http.MethodGet,
-		Url:      url,
-		NoCookie: true, // disable azuretls internal cookie jar
-	}, reqHeaders)
+	req := &azuretls.Request{
+		Method:         http.MethodGet,
+		Url:            url,
+		NoCookie:       true, // disable azuretls internal cookie jar
+		OrderedHeaders: GetHttpReqHeaders(headers, cookie, ua),
+	}
+	LogAzureHttpRequest(req)
+	res, err := client.Do(req)
+	LogAzureHttpResponse(res, err)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch url: %w", err)
 	}
-	log.Tracef("FetchUrlWithAzuretls response status=%d", res.StatusCode)
 	if res.StatusCode != 200 {
 		return res, http.Header(res.Header), fmt.Errorf("failed to fetch url: status=%d", res.StatusCode)
 	}
@@ -117,13 +108,13 @@ func PostUrlForJson(url string, data url.Values, v any, client *http.Client) err
 	if client == nil {
 		client = http.DefaultClient
 	}
-	log.Tracef("PostUrlForJson request url=%s, data=%v", url, data)
+	LogHttpPostFormRequest(url, data)
 	res, err := client.PostForm(url, data)
+	LogHttpResponse(res, err)
 	if err != nil {
 		return err
 	}
 	defer res.Body.Close()
-	log.Tracef("PostUrlForJson response: len=%d", res.ContentLength)
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return err
@@ -132,9 +123,6 @@ func PostUrlForJson(url string, data url.Values, v any, client *http.Client) err
 		return fmt.Errorf("PostUrlForJson response error: status=%d", res.StatusCode)
 	}
 	err = json.Unmarshal(body, v)
-	if err != nil {
-		log.Tracef("PostUrlForJson error encountered when unmarshaling: %v", err)
-	}
 	return err
 }
 
@@ -205,6 +193,7 @@ func AsNetworkError(err error) bool {
 }
 
 // Upload file to server, then extract the "file url" from server response.
+// fileFieldname default to "file". responseUrlField default to "url".
 func PostUploadFileForUrl(client *azuretls.Session, url string, filename string, file io.Reader, fileFieldname string,
 	additionalFields url.Values, headers [][]string, responseUrlField string) (fileUrl string, err error) {
 	if responseUrlField == "" {
@@ -235,6 +224,7 @@ func PostUploadFileForUrl(client *azuretls.Session, url string, filename string,
 }
 
 // Common func for uploading image or other file to public server using post + multipart/form-data request.
+// fileFieldname is the field name of file binary in post data, default to "file".
 // If file is nil, open and read from filename instead.
 // If file is not nil, filename is only used to derive mime and can be a dummy name.
 func PostUploadFile(client *azuretls.Session, url string, filename string, file io.Reader, fileFieldname string,
@@ -277,8 +267,9 @@ func PostUploadFile(client *azuretls.Session, url string, filename string, file 
 		NoCookie: true,
 	}
 	req.OrderedHeaders = append(req.OrderedHeaders, headers...)
-	log.Tracef("Upload file %q to %s", filename, url)
+	LogAzureHttpRequest(req)
 	res, err = client.Do(req)
+	LogAzureHttpResponse(res, err)
 	if err != nil {
 		return nil, err
 	}

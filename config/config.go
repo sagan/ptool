@@ -181,8 +181,13 @@ type SiteConfigStruct struct {
 	SelectorUserInfoUploaded       string     `yaml:"selectorUserInfoUploaded"`
 	SelectorUserInfoDownloaded     string     `yaml:"selectorUserInfoDownloaded"`
 	ImageUploadUrl                 string     `yaml:"imageUploadUrl"`
-	ImageUploadFileField           string     `yaml:"imageUploadFileField"`
-	ImageUploadResponseUrlField    string     `yaml:"mageUploadResponseUrlField"`
+	// Additional post payload when uploading image, query string format.
+	// E.g. "foo=a&bar=b".
+	ImageUploadPayload   string `yaml:"imageUploadPayload"`
+	ImageUploadFileField string `yaml:"imageUploadFileField"` // Default: "file"
+	// Default: "url". May contain dots, e.g. "data.url" will resolve to "res.data.url",
+	// where res is the response json object .
+	ImageUploadResponseUrlField string `yaml:"mageUploadResponseUrlField"`
 	// Payload that will be sent to site when uploading torrent.
 	// Key => value. Values are using jinja2 syntax. E.g. "{{title}}".
 	// Jinja context variables:

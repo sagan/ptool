@@ -3,6 +3,7 @@
 package constants
 
 import (
+	"fmt"
 	"regexp"
 )
 
@@ -97,3 +98,6 @@ var DefaultIgnorePatterns = []string{
 	"desktop.ini",
 	"Thumbs.db",
 }
+
+// Returned if the action is not processed due to in dry run mode
+var ErrDryRun = fmt.Errorf("dry run")

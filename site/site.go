@@ -1,6 +1,7 @@
 package site
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"mime"
@@ -18,6 +19,7 @@ import (
 
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/constants"
+	"github.com/sagan/ptool/jinja"
 	"github.com/sagan/ptool/util"
 	"github.com/sagan/ptool/util/crypto"
 	"github.com/sagan/ptool/util/impersonateutil"
@@ -73,6 +75,7 @@ type Site interface {
 	// can use "%s" as keyword placeholder in baseUrl
 	SearchTorrents(keyword string, baseUrl string) ([]*Torrent, error)
 	// Publish (upload) new torrent to site, return uploaded torrent id
+	// Specially. if metadata contains "_dryrun", use dry run mode.
 	PublishTorrent(contents []byte, metadata url.Values) (id string, err error)
 	GetStatus() (*Status, error)
 	PurgeCache()
@@ -510,6 +513,127 @@ func DownloadTorrentByUrl(siteInstance Site, httpClient *azuretls.Session, torre
 		filename = fmt.Sprintf("%s.torrent", filenamePrefix)
 	}
 	return res.Body, filename, err
+}
+
+// Do a multipart/form type post request to upload torrent to site, return site response.
+// metadata is used as context when rendering payloadTemplate, the rendered payload be posted to site.
+// All values in payload will be TrimSpaced.
+// Some metadata names are specially handled:
+//
+//	_cover : cover image file path, got uploaded to site image server then replaced with uploaded img url.
+//	_images (array) : images other than cover, processed similar with _cover but rendered as slice.
+//	_raw_* : direct raw data that will be rendered and added to payload.
+//	tags, narrator: Treated as slice. If has only one value, splitted it to slice as csv before rendering.
+func UploadTorrent(siteInstance Site, httpClient *azuretls.Session, uploadUrl string, contents []byte,
+	metadata url.Values, fallbackPayloadTemplate map[string]string) (res *azuretls.Response, err error) {
+	metadataRaw := map[string]any{}
+	for key := range metadata {
+		switch key {
+		case "tags", "narrator":
+			if len(metadata[key]) == 1 {
+				metadataRaw[key] = util.SplitCsv(metadata.Get(key))
+			}
+		default:
+			metadataRaw[key] = metadata.Get(key)
+		}
+	}
+
+	payload := url.Values{}
+	payloadTemplate := siteInstance.GetSiteConfig().UploadTorrentPayload
+	if payloadTemplate == nil {
+		payloadTemplate = fallbackPayloadTemplate
+	}
+	if siteInstance.GetSiteConfig().UploadTorrentAdditionalPayload != nil {
+		payloadTemplate = util.AssignMap(nil, payloadTemplate,
+			siteInstance.GetSiteConfig().UploadTorrentAdditionalPayload)
+	}
+
+	coverFile := metadata.Get("_cover")
+	imgPlaceholderPrefix := "$$PTOOL_PUBLISH_IMG_"
+	// rendering occurs before images got uploaded, so use placeholders for now,
+	// then replace them with uploaded image url in the later.
+	// The con is image urls must be rendered literally inside payload templates.
+	if coverFile != "" {
+		metadataRaw["_cover"] = imgPlaceholderPrefix + coverFile
+	}
+	if metadata.Has("_images") {
+		var images []string
+		for _, imageFile := range metadata["_images"] {
+			if imageFile == coverFile {
+				continue
+			}
+			images = append(images, imgPlaceholderPrefix+imageFile)
+		}
+		metadataRaw["_images"] = images
+	}
+	for key := range payloadTemplate {
+		value, err := jinja.Render(payloadTemplate[key], metadataRaw)
+		if err != nil {
+			return nil, fmt.Errorf("failed to render %s: %w", key, err)
+		}
+		payload.Set(key, value)
+	}
+	// raw payload directly set from metadata. e.g. "_raw_foo".
+	for key := range metadata {
+		if !strings.HasPrefix(key, "_raw_") {
+			continue
+		}
+		template := metadata.Get(key)
+		key = key[len("_raw_"):]
+		if key == "" {
+			continue
+		}
+		value, err := jinja.Render(template, metadataRaw)
+		if err != nil {
+			return nil, fmt.Errorf("invalid metadata raw param %q: %w", key, err)
+		}
+		payload.Set(key, value)
+	}
+
+	log.Debugf("Publish torrent payload: %v", payload)
+	// upload images.
+	if coverFile != "" || metadata.Has("_images") {
+		if siteInstance.GetSiteConfig().ImageUploadUrl == "" {
+			return nil, fmt.Errorf("imageUploadUrl is not configured, can not upload image")
+		}
+		var imageUploadPayload url.Values
+		if siteInstance.GetSiteConfig().ImageUploadPayload != "" {
+			imageUploadPayload, err = url.ParseQuery(siteInstance.GetSiteConfig().ImageUploadPayload)
+			if err != nil {
+				return nil, fmt.Errorf("invalid imageUploadPayload: %w", err)
+			}
+		}
+		var images []string
+		if coverFile != "" {
+			images = append(images, coverFile)
+		}
+		images = append(images, metadata["_images"]...)
+		for _, image := range images {
+			if metadata.Has("_dryrun") {
+				return nil, constants.ErrDryRun
+			}
+			imageUrl, err := util.PostUploadFileForUrl(httpClient, siteInstance.GetSiteConfig().ImageUploadUrl, image,
+				nil, siteInstance.GetSiteConfig().ImageUploadFileField, imageUploadPayload, nil,
+				siteInstance.GetSiteConfig().ImageUploadResponseUrlField)
+			if err != nil {
+				return nil, fmt.Errorf("failed to upload image %q: %w", image, err)
+			}
+			log.Debugf("uploaded image %q: url=%s", image, imageUrl)
+			for key := range payload {
+				value := payload.Get(key)
+				newvalue := strings.ReplaceAll(value, imgPlaceholderPrefix+image, imageUrl)
+				if newvalue != value {
+					payload.Set(key, newvalue)
+				}
+			}
+		}
+	}
+	if metadata.Has("_dryrun") {
+		return nil, constants.ErrDryRun
+	}
+	headers := util.GetHttpReqHeaders(siteInstance.GetDefaultHttpHeaders(), siteInstance.GetSiteConfig().Cookie, "")
+	return util.PostUploadFile(httpClient, uploadUrl, "a.torrent", bytes.NewReader(contents), "file",
+		payload, headers)
 }
 
 func init() {

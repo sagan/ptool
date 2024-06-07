@@ -1,7 +1,6 @@
 package nexusphp
 
 import (
-	"bytes"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -14,7 +13,6 @@ import (
 
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/constants"
-	"github.com/sagan/ptool/jinja"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/util"
 )
@@ -49,82 +47,37 @@ type Site struct {
 // Note: some fields that required by np sites are NOT defined here, including but not limited to "type" field.
 // The required fields must be provided in config file UploadTorrentAdditionalPayload item.
 var defaultUploadTorrentPayload = map[string]string{
-	"name": `{% if number %}[{{number}}]{% endif %}{% if author %}[{{author}}]{% endif %}[{{title}}]`,
-	"descr": `{% if _cover %}[img]{{_cover}}[/img]
-
-{% endif %}{{_text}}{% if comment %}
+	"name": `{% if number %}[{{number}}]{% endif %}{% if author %}[{{author}}]{% endif %}{{title}}`,
+	"descr": `
+{% if _cover %}
+[img]{{_cover}}[/img]
+{% endif %}
+{% if _images %}
+{% for image in _images %}
+[img]{{image}}[/img]
+{% endfor %}
+{% endif %}
+{% if _meta %}
+{{_meta}}
+{% endif %}
+{{_text}}{% if comment %}
 
 ---
 
 {{comment}}{% endif %}`,
-	"small_descr": `{% if narrator %}{{narrator | join(" ")}} {% endif %}{% if tags %}{{tags | join(" ")}}{% endif %}`,
-	"uplver":      "yes", // anonymous
+	"small_descr": `{% if narrator %}{{narrator | join(" ")}} {% endif %}` +
+		`{% if series_name %}{{series_name}} {% endif %}{% if tags %}{{tags | join(" ")}}{% endif %}`,
+	"uplver": "yes", // anonymous
 }
 
 // Upload torrent to nexusphp site.
 // See: https://github.com/xiaomlove/nexusphp/blob/php8/public/takeupload.php .
 // Upload: POST /takeupload.php with multipart/form-data
 func (npclient *Site) PublishTorrent(contents []byte, metadata url.Values) (id string, err error) {
-	metadataRaw := map[string]any{}
-	for key := range metadata {
-		switch key {
-		case "tags", "narrator":
-			metadataRaw[key] = util.SplitCsv(metadata.Get(key))
-		default:
-			metadataRaw[key] = metadata.Get(key)
-		}
-	}
-
-	payload := url.Values{}
-	payloadTemplate := npclient.SiteConfig.UploadTorrentPayload
-	if payloadTemplate == nil {
-		payloadTemplate = defaultUploadTorrentPayload
-	}
-	if npclient.SiteConfig.UploadTorrentAdditionalPayload != nil {
-		payloadTemplate = util.AssignMap(nil, payloadTemplate, npclient.SiteConfig.UploadTorrentAdditionalPayload)
-	}
-
-	// first, render type, before uploading cover.
-	if value, err := jinja.Render(payloadTemplate["type"], metadataRaw); err != nil || value == "" {
-		return "", fmt.Errorf("failed to get type: %w", err)
-	} else {
-		payload.Set("type", value)
-	}
-
-	// upload cover.
-	if coverFile := metadata.Get("_cover"); coverFile != "" {
-		if npclient.SiteConfig.ImageUploadUrl != "" {
-			coverUrl, err := util.PostUploadFileForUrl(npclient.HttpClient, npclient.SiteConfig.ImageUploadUrl, coverFile,
-				nil, npclient.SiteConfig.ImageUploadFileField, nil, nil, npclient.SiteConfig.ImageUploadResponseUrlField)
-			if err != nil {
-				return "", fmt.Errorf("failed to upload cover: %w", err)
-			}
-			log.Debugf("uploaded cover: url=%s", coverUrl)
-			metadataRaw["_cover"] = coverUrl
-		}
-	}
-
-	// render other payload
-	for key := range payloadTemplate {
-		if key == "type" {
-			continue
-		}
-		value, err := jinja.Render(payloadTemplate[key], metadataRaw)
-		if err != nil {
-			return "", fmt.Errorf("failed to render %s: %w", key, err)
-		}
-		payload.Set(key, value)
-	}
-
 	uploadUrl := npclient.SiteConfig.ParseSiteUrl("takeupload.php", false)
-	headers := util.GetHttpReqHeaders(npclient.HttpHeaders, npclient.SiteConfig.Cookie, "")
-	res, err := util.PostUploadFile(npclient.HttpClient, uploadUrl, "a.torrent", bytes.NewReader(contents), "file",
-		payload, headers)
+	res, err := site.UploadTorrent(npclient, npclient.HttpClient, uploadUrl,
+		contents, metadata, defaultUploadTorrentPayload)
 	if err != nil {
-		log.Tracef("Payload: %s", payload)
-		if res != nil {
-			log.Tracef("site response: %s", res.Body)
-		}
 		return "", err
 	}
 	newUrl := res.Request.Url
@@ -141,8 +94,6 @@ func (npclient *Site) PublishTorrent(contents []byte, metadata url.Values) (id s
 	// On success upload, should got redirected to "/details.php?id=12345&uploaded=1".
 	id = parseTorrentIdFromUrl(newUrl, npclient.torrentsParserOption.idRegexp)
 	if id == "" {
-		log.Tracef("Payload: %s", payload)
-		log.Tracef("site response: %s", res.Body)
 		return "", fmt.Errorf("got no id from uploaded page, url=%s (%s)", newUrl, res.Request.Url)
 	}
 	return id, nil

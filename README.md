@@ -17,6 +17,7 @@
   - 不依赖 RSS。直接抓取站点页面上最新的种子。
   - 无需配置选种规则。自动跳过非免费的和有 HR 的种子；自动筛选适合刷流的种子。
   - 无需配置删种规则。自动删除已无刷流价值的种子；自动删除免费时间到期并且尚未下载完成的种子；硬盘空间不足时也会自动删种。
+- 其它 PT 站点功能：搜索种子、批量下载种子、发布种子。
 - BitTorrent 客户端控制功能：提供完整的管理、控制 BitTorrent 客户端的功能。
 - Torrent 文件 / BitTorrent 协议相关的各种辅助功能。部分命令为[松鼠党][]特别优化，支持与 [rclone][] 整合（例如：`verifytorrent`命令能够直接检测 .torrent 种子的内容文件在 rclone 云存储上是否存在）。
 - 自动模仿浏览器访问 PT 站点，能够绕过大多数站点的 CF 盾 (impersonate 特性)。
@@ -108,6 +109,7 @@ ptool <command> args... [flags]
 - search : 在某个站点搜索指定关键词的种子。
 - add : 将种子添加到 BT 客户端。
 - dltorrent : 下载站点的种子(.torrent 文件)。
+- publish : 发布(上传)种子到站点。
 - BT 客户端控制命令集: clientctl / show / pause / resume / delete / reannounce / recheck / getcategories / createcategory / deletecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / renametag / edittracker / addtrackers / removetrackers / setsavepath / setsharelimits / checktag / export 。
 - parsetorrent : 显示种子(.torrent)文件信息。
 - verifytorrent : 测试种子(.torrent)文件与硬盘上的文件内容一致。
@@ -535,6 +537,29 @@ ptool batchdl kamept --tag "外语音声,同人志" --sort none --start-page 0 -
 ```
 
 获取 kamept 首页最新的 "外语音声"或"同人志"分类里的免费种子并添加到 local 客户端。使用 crontab 定时运行即可，可以实现比 RSS 更细致的筛选，并且不依赖站点。
+
+### 发布(上传)种子 (publish)
+
+示例：
+
+```
+ptool publish --site kamept --client local --check-existing --save-path /downloads/i
+```
+
+publish 命令能够自动发布种子到 PT 站点。以上面示例为例，对于 --save-path 目录里的每一个内容文件夹，将执行以下步骤：
+
+1. 检测文件夹里是否存在 `metadata.nfo` 文件。如果有，认为该文件夹是合法的种子内容文件夹(content-path)。
+2. 读取 metadata.nfo 里的内容生成上传种子的元信息（标题、副标题、标签、番号等）。
+3. 根据种子的元信息，检测站点里是否已经存在相同内容种子，如存在则停止发布种子。
+4. 对该内容文件夹制种。生成的种子位于文件夹里的 `.torrent` 文件。
+5. 如果内容文件夹里存在 `cover.*` (任意图片格式扩展名，例如 .webp / .png / .jpg)，将该图片作为种子的描述，上传到站点的图床里。
+6. 自动通过站点上传种子接口发布种子，将站点生成的发布后种子下载到内容文件夹里的 `.<sitename>.torrent` 文件里。
+7. 将下载的 `.<sitename>.torrent` 种子添加到 local 客户端并开始做种。
+
+待补充：
+
+- metadata.nfo 文件格式
+- 当前支持的站点
 
 ### 显示种子文件信息 (parsetorrent)
 

@@ -372,10 +372,19 @@ var (
 			UploadTorrentAdditionalPayload: map[string]string{
 				"descr": `
 {% if _cover %}
-	[img]{{_cover}}[/img]
+[img]{{_cover}}[/img]
+{% endif %}
+{% if _images %}
+{% for image in _images %}
+[img]{{image}}[/img]
+{% endfor %}
 {% endif %}
 {% if number | regex_search("\\bRJ\\d{5,12}\\b") %}
 [dlsite]{{number | regex_search("\\bRJ\\d{5,12}\\b")}}[/dlsite]
+https://www.dlsite.com/maniax/work/=/product_id/{{number | regex_search("\\bRJ\\d{5,12}\\b")}}.html
+{% endif %}
+{% if _meta %}
+{{_meta}}
 {% endif %}
 {{_text}}{% if comment %}
 

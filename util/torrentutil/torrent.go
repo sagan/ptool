@@ -443,13 +443,14 @@ func (meta *TorrentMeta) VerifyAgaintSavePathFs(savePathFs fs.FS) error {
 }
 
 // checkHash: 0 - none; 1 - quick; 2+ - full.
-func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash int64) (err error) {
+// ts: timestamp of newest file in torrent contents.
+func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash int64) (ts int64, err error) {
 	var filenames []string
 	prefixPath := ""
 	if contentPath != "" {
 		contentPath, err = filepath.Abs(contentPath)
 		if err != nil {
-			return fmt.Errorf("invalid content-path: %w", err)
+			return 0, fmt.Errorf("invalid content-path: %w", err)
 		}
 		prefixPath = contentPath + "/"
 	} else {
@@ -467,10 +468,11 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash i
 		}
 		stat, err := os.Stat(filename)
 		if err != nil {
-			return fmt.Errorf("failed to get file %q stat: %w", file.Path, err)
+			return ts, fmt.Errorf("failed to get file %q stat: %w", file.Path, err)
 		}
+		ts = max(stat.ModTime().Unix(), ts)
 		if stat.Size() != file.Size {
-			return fmt.Errorf("file %q has wrong length: expect=%d, actual=%d", file.Path, file.Size, stat.Size())
+			return ts, fmt.Errorf("file %q has wrong length: expect=%d, actual=%d", file.Path, file.Size, stat.Size())
 		}
 		if checkHash > 0 {
 			filenames = append(filenames, filename)
@@ -501,7 +503,7 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash i
 			for len > 0 {
 				if currentFile == nil {
 					if currentFile, err = os.Open(filenames[currentFileIndex]); err != nil {
-						return fmt.Errorf("piece %d/%d: failed to open file %s: %w",
+						return ts, fmt.Errorf("piece %d/%d: failed to open file %s: %w",
 							i, piecesCnt-1, filenames[currentFileIndex], err)
 					}
 					log.Tracef("piece %d/%d: open file %s", i, piecesCnt-1, filenames[currentFileIndex])
@@ -512,7 +514,7 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash i
 				_, err := io.Copy(hash, io.NewSectionReader(currentFile, currentFileOffset, readlen))
 				if err != nil {
 					currentFile.Close()
-					return err
+					return ts, err
 				}
 				currentFileOffset += readlen
 				currentFileRemain -= readlen
@@ -525,7 +527,7 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash i
 			}
 			good := bytes.Equal(hash.Sum(nil), p.Hash().Bytes())
 			if !good {
-				return fmt.Errorf("piece %d/%d: hash mismatch", i, piecesCnt-1)
+				return ts, fmt.Errorf("piece %d/%d: hash mismatch", i, piecesCnt-1)
 			}
 			log.Tracef("piece %d/%d verify-hash %x: %v", i, piecesCnt-1, p.Hash(), good)
 			i++
@@ -549,7 +551,7 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash i
 			}
 		}
 	}
-	return nil
+	return ts, nil
 }
 
 // Rename torrent (downloaded filename or name of torrent added to client) according to rename template.
@@ -724,7 +726,7 @@ func infoBuildFromFilePath(info *metainfo.Info, root string, excludes []string) 
 		if len(excludes) > 0 {
 			if relativePath, err := filepath.Rel(root, path); err == nil && relativePath != "." {
 				if ignore, _ := pathspec.GitIgnore(excludes, relativePath); ignore {
-					log.Warnf("Ignore %s", relativePath)
+					log.Tracef("Ignore %s", relativePath)
 					if fi.IsDir() {
 						return filepath.SkipDir
 					} else {
