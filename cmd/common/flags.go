@@ -67,6 +67,7 @@ var pureFlags = []string{
 	"add-public-trackers",
 	"add-respect-noadd",
 	"all",
+	"allow-filename-restricted-characters",
 	"append",
 	"backup",
 	"bindable",

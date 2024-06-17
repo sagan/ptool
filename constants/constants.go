@@ -5,6 +5,7 @@ package constants
 import (
 	"fmt"
 	"regexp"
+	"strings"
 )
 
 // 如果 ptool.toml 配置文件里字符串类型配置项值为空，使用系统默认值；使用 NONE 值显式设置该配置项为空值。
@@ -14,7 +15,11 @@ const NONE = "none"
 // a special proxy value to indicate force use proxy from HTTP(S)_PROXY env.
 const ENV_PROXY = "env"
 
+// Invalid characters of file name / file path in Windows + NTFS.
+// Most of theses chars (except '/') are valid in Linux.
 const FILENAME_INVALID_CHARS_REGEX = `[<>:"/\|\?\*]+`
+const FILEPATH_INVALID_CHARS_REGEX = `[<>:"|\?\*]+`
+
 const PERM = 0600 // 程序创建的所有文件的 PERM
 
 const FILENAME_SUFFIX_ADDED = ".added"
@@ -39,6 +44,32 @@ const METADATA_FILE = "metadata.nfo"
 const STATUS_FMT = "%-6s  %-15s  %-27s  %-27s  %-s\n"
 
 var FilenameInvalidCharsRegex = regexp.MustCompile(FILENAME_INVALID_CHARS_REGEX)
+
+var FilepathInvalidCharsRegex = regexp.MustCompile(FILEPATH_INVALID_CHARS_REGEX)
+
+// It's a subset of https://rclone.org/overview/#restricted-filenames-caveats .
+// Only include invalid filename characters in Windows (NTFS).
+var FilepathRestrictedCharacterReplacement = map[rune]rune{
+	'*': '＊',
+	':': '：',
+	'<': '＜',
+	'>': '＞',
+	'|': '｜',
+	'?': '？',
+	'"': '＂',
+}
+
+var FilenameRestrictedCharacterReplacement = map[rune]rune{
+	'/':  '／',
+	'\\': '＼',
+}
+
+// Replace invalid Windows filename chars to alternatives. E.g. '/' => '／', 	'?' => '？'
+var FilenameRestrictedCharacterReplacer *strings.Replacer
+
+// Replace invalid Windows file path chars to alternatives.
+// Similar to FilenameRestrictedCharacterReplacer, but do not replace '/' or '\'.
+var FilepathRestrictedCharacterReplacer *strings.Replacer
 
 // .torrent file magic number.
 // See: https://en.wikipedia.org/wiki/Torrent_file , https://en.wikipedia.org/wiki/Bencode .
@@ -101,3 +132,15 @@ var DefaultIgnorePatterns = []string{
 
 // Returned if the action is not processed due to in dry run mode
 var ErrDryRun = fmt.Errorf("dry run")
+
+func init() {
+	args := []string{}
+	for old, new := range FilepathRestrictedCharacterReplacement {
+		args = append(args, string(old), string(new))
+	}
+	FilepathRestrictedCharacterReplacer = strings.NewReplacer(args...)
+	for old, new := range FilenameRestrictedCharacterReplacement {
+		args = append(args, string(old), string(new))
+	}
+	FilenameRestrictedCharacterReplacer = strings.NewReplacer(args...)
+}

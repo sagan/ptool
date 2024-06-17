@@ -51,21 +51,22 @@ type TorrentMeta struct {
 }
 
 type TorrentMakeOptions struct {
-	ContentPath    string
-	Output         string
-	Public         bool
-	Private        bool
-	All            bool
-	Force          bool
-	Comment        string
-	InfoName       string
-	UrlList        metainfo.UrlList
-	Trackers       []string
-	CreatedBy      string
-	CreationDate   string
-	PieceLengthStr string
-	MinSize        int64
-	Excludes       []string
+	ContentPath                   string
+	Output                        string
+	Public                        bool
+	Private                       bool
+	All                           bool
+	Force                         bool
+	Comment                       string
+	InfoName                      string
+	UrlList                       metainfo.UrlList
+	Trackers                      []string
+	CreatedBy                     string
+	CreationDate                  string
+	PieceLengthStr                string
+	MinSize                       int64
+	Excludes                      []string
+	AllowRestrictedCharInFilename bool
 }
 
 var (
@@ -570,16 +571,14 @@ func RenameTorrent(rename string, sitename string, id string, filename string, t
 		id = id[i+1:]
 	}
 
-	newname = strings.ReplaceAll(newname, "[id]", id)
-	newname = strings.ReplaceAll(newname, "[site]", sitename)
-	newname = strings.ReplaceAll(newname, "[filename]", basename)
-	newname = strings.ReplaceAll(newname, "[filename128]", util.StringPrefixInBytes(basename, 128))
+	replacerArgs := []string{"[id]", id, "[site]", sitename, "[filename]", basename,
+		"[filename128]", util.StringPrefixInBytes(basename, 128)}
 	if tinfo != nil {
-		newname = strings.ReplaceAll(newname, "[size]", util.BytesSize(float64(tinfo.Size)))
-		newname = strings.ReplaceAll(newname, "[name]", tinfo.Info.Name)
-		newname = strings.ReplaceAll(newname, "[name128]", util.StringPrefixInBytes(tinfo.Info.Name, 128))
+		replacerArgs = append(replacerArgs, "[size]", util.BytesSize(float64(tinfo.Size)),
+			"[name]", tinfo.Info.Name, "[name128]", util.StringPrefixInBytes(tinfo.Info.Name, 128))
 	}
-	newname = constants.FilenameInvalidCharsRegex.ReplaceAllString(newname, "")
+	newname = strings.NewReplacer(replacerArgs...).Replace(newname)
+	newname = constants.FilenameRestrictedCharacterReplacer.Replace(newname)
 	return newname
 }
 
@@ -587,14 +586,10 @@ func RenameTorrent(rename string, sitename string, id string, filename string, t
 // available variable placeholders: [client], [size], [infohash], [infohash16], [category], [name], [name128]
 func RenameExportedTorrent(client string, torrent *client.Torrent, rename string) string {
 	filename := rename
-	filename = strings.ReplaceAll(filename, "[client]", client)
-	filename = strings.ReplaceAll(filename, "[size]", util.BytesSize(float64(torrent.Size)))
-	filename = strings.ReplaceAll(filename, "[infohash]", torrent.InfoHash)
-	filename = strings.ReplaceAll(filename, "[infohash16]", torrent.InfoHash[:16])
-	filename = strings.ReplaceAll(filename, "[category]", torrent.Category)
-	filename = strings.ReplaceAll(filename, "[name]", torrent.Name)
-	filename = strings.ReplaceAll(filename, "[name128]", util.StringPrefixInBytes(torrent.Name, 128))
-	filename = constants.FilenameInvalidCharsRegex.ReplaceAllString(filename, "")
+	filename = strings.NewReplacer("[client]", client, "[size]", util.BytesSize(float64(torrent.Size)),
+		"[infohash]", torrent.InfoHash, "[infohash16]", torrent.InfoHash[:16], "[category]", torrent.Category,
+		"[name]", torrent.Name, "[name128]", util.StringPrefixInBytes(torrent.Name, 128)).Replace(filename)
+	filename = constants.FilenameRestrictedCharacterReplacer.Replace(filename)
 	return filename
 }
 
@@ -649,7 +644,8 @@ func MakeTorrent(options *TorrentMakeOptions) (tinfo *TorrentMeta, err error) {
 		options.Excludes = append(options.Excludes, constants.DefaultIgnorePatterns...)
 	}
 	log.Infof("Creating torrent for %q", options.ContentPath)
-	if err := infoBuildFromFilePath(info, options.ContentPath, options.Excludes); err != nil {
+	if err := infoBuildFromFilePath(info, options.ContentPath, options.Excludes,
+		options.AllowRestrictedCharInFilename); err != nil {
 		return nil, fmt.Errorf("failed to build info from content-path: %w", err)
 	}
 	if len(info.Files) == 0 {
@@ -708,7 +704,7 @@ func MakeTorrent(options *TorrentMakeOptions) (tinfo *TorrentMeta, err error) {
 
 // Adapted from metainfo.BuildFromFilePath.
 // excludes: gitignore style exclude-file-patterns.
-func infoBuildFromFilePath(info *metainfo.Info, root string, excludes []string) (err error) {
+func infoBuildFromFilePath(info *metainfo.Info, root string, excludes []string, allowAnyCharInName bool) (err error) {
 	info.Name = func() string {
 		b := filepath.Base(root)
 		switch b {
@@ -746,6 +742,9 @@ func infoBuildFromFilePath(info *metainfo.Info, root string, excludes []string) 
 		relPath, err := filepath.Rel(root, path)
 		if err != nil {
 			return fmt.Errorf("error getting relative path: %s", err)
+		}
+		if !allowAnyCharInName && constants.FilepathInvalidCharsRegex.MatchString(relPath) {
+			return fmt.Errorf("invalid content file path %q: contains restrictive chars", relPath)
 		}
 		info.Files = append(info.Files, metainfo.FileInfo{
 			Path:   strings.Split(relPath, string(filepath.Separator)),

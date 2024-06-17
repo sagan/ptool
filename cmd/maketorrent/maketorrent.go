@@ -46,22 +46,25 @@ To create a private torrent (for uploading to Private Trackers site), set "--pri
 }
 
 var (
-	all            = false
-	private        = false
-	public         = false
-	force          = false
-	pieceLengthStr = ""
-	infoName       = ""
-	comment        = ""
-	output         = ""
-	createdBy      = ""
-	creationDate   = ""
-	trackers       []string
-	urlList        []string
-	excludes       []string
+	all                               = false
+	private                           = false
+	public                            = false
+	force                             = false
+	allowFilenameRestrictedCharacters = false
+	pieceLengthStr                    = ""
+	infoName                          = ""
+	comment                           = ""
+	output                            = ""
+	createdBy                         = ""
+	creationDate                      = ""
+	trackers                          []string
+	urlList                           []string
+	excludes                          []string
 )
 
 func init() {
+	command.Flags().BoolVarP(&allowFilenameRestrictedCharacters, "allow-filename-restricted-characters", "", false,
+		`Allow making torrent which content filenames contain invalid char in Windows, e.g. '?' char`)
 	command.Flags().BoolVarP(&all, "all", "a", false, `Index all files of content folder to created torrent. `+
 		`If not set, ptool will ignore files with certain patterns names inside content folder: `+
 		strings.Join(constants.DefaultIgnorePatterns, " ; "))
@@ -97,20 +100,21 @@ func maketorrent(cmd *cobra.Command, args []string) (err error) {
 	}
 	contentPath := args[0]
 	optoins := &torrentutil.TorrentMakeOptions{
-		ContentPath:    contentPath,
-		Output:         output,
-		Public:         public,
-		Private:        private,
-		All:            all,
-		Force:          force,
-		PieceLengthStr: pieceLengthStr,
-		Comment:        comment,
-		InfoName:       infoName,
-		UrlList:        urlList,
-		Trackers:       trackers,
-		Excludes:       excludes,
-		CreatedBy:      createdBy,
-		CreationDate:   creationDate,
+		ContentPath:                   contentPath,
+		Output:                        output,
+		Public:                        public,
+		Private:                       private,
+		All:                           all,
+		Force:                         force,
+		PieceLengthStr:                pieceLengthStr,
+		Comment:                       comment,
+		InfoName:                      infoName,
+		UrlList:                       urlList,
+		Trackers:                      trackers,
+		Excludes:                      excludes,
+		CreatedBy:                     createdBy,
+		CreationDate:                  creationDate,
+		AllowRestrictedCharInFilename: allowFilenameRestrictedCharacters,
 	}
 	if len(optoins.Trackers) == 0 && !optoins.Public {
 		log.Warnf(`Warning: the created .torrent file will NOT have any trackers. ` +
