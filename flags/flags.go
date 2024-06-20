@@ -3,4 +3,5 @@ package flags
 
 var (
 	DumpHeaders = false
+	DumpBodies  = false
 )

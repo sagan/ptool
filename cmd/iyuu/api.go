@@ -3,6 +3,7 @@ package iyuu
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"slices"
 	"sort"
@@ -21,20 +22,20 @@ type IyuuApiSite struct {
 	Base_url      string `json:"base_url"`
 	Nickname      string `json:"nickname"`      // "朋友" / "馒头"
 	Download_page string `json:"download_page"` // torrent download url. params: {passkey}, {authkey}, {} (id)
-	Is_https      int64  `json:"is_https"`      // 1 / 0
-	Reseed_check  string `json:"reseed_check"`  // "passkey"
+	Is_https      int64  `json:"is_https"`      // 2 / 1 / 0
 }
 
 type IyuuApiRecommendSite struct {
 	Id         int64  `json:"id"`
 	Site       string `json:"site"`
+	Nickname   string `json:"nickname"`
 	Bind_check string `json:"bind_check"`
 }
 
 type IyuuApiResponse struct {
-	Ret  int64          `json:"ret"`
-	Msg  string         `json:"msg"`
-	Data map[string]any `json:"data"`
+	Code int64  `json:"code"`
+	Msg  string `json:"msg"`
+	Data any    `json:"data"`
 }
 
 type IyuuApiGetUserResponse struct {
@@ -46,7 +47,7 @@ type IyuuApiGetUserResponse struct {
 }
 
 type IyuuApiSitesResponse struct {
-	Ret  int64  `json:"ret"`
+	Code int64  `json:"code"`
 	Msg  string `json:"msg"`
 	Data struct {
 		Sites []IyuuApiSite `json:"sites"`
@@ -54,18 +55,17 @@ type IyuuApiSitesResponse struct {
 }
 
 type IyuuGetRecommendSitesResponse struct {
-	Ret  int64  `json:"ret"`
+	Code int64  `json:"code"`
 	Msg  string `json:"msg"`
 	Data struct {
-		Recommend []IyuuApiRecommendSite `json:"recommend"`
+		List []IyuuApiRecommendSite `json:"list"`
 	} `json:"data"`
 }
 
 type IyuuApiHashResponse struct {
-	Ret  int64  `json:"ret"`
+	Code int64  `json:"code"`
 	Msg  string `json:"msg"`
-	Data []struct {
-		Hash    string                `json:"hash"`
+	Data map[string]*struct {
 		Torrent []IyuuTorrentInfoHash `json:"torrent"`
 	} `json:"data"`
 }
@@ -76,7 +76,7 @@ type IyuuTorrentInfoHash struct {
 	Info_hash  string `json:"info_hash"`
 }
 
-const IYUU_VERSION = "2.0.0"
+const IYUU_VERSION = "8.2.0"
 
 // https://api.iyuu.cn/docs.php?service=App.Api.Infohash&detail=1&type=fold
 func IyuuApiHash(token string, infoHashes []string) (map[string][]IyuuTorrentInfoHash, error) {
@@ -88,27 +88,31 @@ func IyuuApiHash(token string, infoHashes []string) (map[string][]IyuuTorrentInf
 		return infoHashes[i] < infoHashes[j]
 	})
 	hash, _ := json.Marshal(&infoHashes)
-	apiUrl := util.ParseRelativeUrl("index.php?s=App.Api.Hash", config.Get().GetIyuuDomain())
+	apiUrl := util.ParseRelativeUrl("/reseed/index/index", config.Get().GetIyuuDomain())
+	header := http.Header{}
+	header.Set("Token", token)
 	data := url.Values{
-		"sign":      {token},
+		// @working.
+		// https://doc.iyuu.cn/reference/site_report_existing
+		//"sid_sha1":      {""},
 		"timestamp": {fmt.Sprint(util.Now())},
 		"version":   {IYUU_VERSION},
 		"hash":      {string(hash)},
 		"sha1":      {util.Sha1(hash)},
 	}
 	resData := &IyuuApiHashResponse{}
-	err := util.PostUrlForJson(apiUrl, data, &resData, nil)
+	err := util.PostUrlForJson(apiUrl, data, &resData, header, nil)
 	log.Tracef("ApiInfoHash response err=%v", err)
 	if err != nil {
 		return nil, err
 	}
-	if resData.Ret != 200 {
-		return nil, fmt.Errorf("iyuu api error: ret=%d, msg=%s", resData.Ret, resData.Msg)
+	if resData.Code != 0 {
+		return nil, fmt.Errorf("iyuu api error: code=%d, msg=%s", resData.Code, resData.Msg)
 	}
 
 	result := map[string][]IyuuTorrentInfoHash{}
-	for _, data := range resData.Data {
-		result[data.Hash] = data.Torrent
+	for infoHash, data := range resData.Data {
+		result[infoHash] = data.Torrent
 	}
 	return result, nil
 }
@@ -119,46 +123,56 @@ func IyuuApiGetUser(token string) (data map[string]any, err error) {
 	return
 }
 
+// https://doc.iyuu.cn/reference/site_list
 func IyuuApiSites(token string) ([]IyuuApiSite, error) {
 	var resData *IyuuApiSitesResponse
-	err := util.FetchJson(util.ParseRelativeUrl("index.php?s=App.Api.Sites&version="+
-		IYUU_VERSION+"&sign="+token, config.Get().GetIyuuDomain()), &resData, nil, nil)
+	header := http.Header{}
+	header.Set("Token", token)
+	err := util.FetchJson(util.ParseRelativeUrl("/reseed/sites/index",
+		config.Get().GetIyuuDomain()), &resData, nil, header)
 	if err != nil {
 		return nil, err
 	}
-	if resData.Ret != 200 {
-		return nil, fmt.Errorf("iyuu api error: ret=%d, msg=%s", resData.Ret, resData.Msg)
+	if resData.Code != 0 {
+		return nil, fmt.Errorf("iyuu api error: code=%d, msg=%s", resData.Code, resData.Msg)
 	}
 	return resData.Data.Sites, nil
 }
 
-func IyuuApiBind(token string, site string, uid int64, passkey string) (map[string]any, error) {
-	apiUrl := util.ParseRelativeUrl("index.php?s=App.Api.Bind&token="+token+
-		"&site="+site+"&id="+fmt.Sprint(uid)+"&passkey="+util.Sha1String(passkey), config.Get().GetIyuuDomain())
-
+func IyuuApiBind(token string, site string, uid int64, passkey string) (any, error) {
+	apiUrl := util.ParseRelativeUrl("/reseed/users/bind", config.Get().GetIyuuDomain())
+	header := http.Header{}
+	header.Set("Token", token)
+	data := url.Values{
+		"token": {token},
+		"site":  {site},
+		// "sid" is optional
+		"id":      {fmt.Sprint(uid)},
+		"passkey": {passkey},
+	}
 	var resData *IyuuApiResponse
-	err := util.FetchJson(apiUrl, &resData, nil, nil)
+	err := util.PostUrlForJson(apiUrl, data, &resData, header, nil)
 	if err != nil {
 		return nil, err
 	}
-	if resData.Ret != 200 {
-		return nil, fmt.Errorf("iyuu api error: ret=%d, msg=%s", resData.Ret, resData.Msg)
+	if resData.Code != 0 {
+		return nil, fmt.Errorf("iyuu api error: code=%d, msg=%s", resData.Code, resData.Msg)
 	}
-	return resData.Data, nil
+	return resData, nil
 }
 
 func IyuuApiGetRecommendSites() ([]IyuuApiRecommendSite, error) {
-	apiUrl := util.ParseRelativeUrl("index.php?s=App.Api.GetRecommendSites", config.Get().GetIyuuDomain())
+	apiUrl := util.ParseRelativeUrl("/reseed/sites/recommend", config.Get().GetIyuuDomain())
 
 	var resData *IyuuGetRecommendSitesResponse
 	err := util.FetchJson(apiUrl, &resData, nil, nil)
 	if err != nil {
 		return nil, err
 	}
-	if resData.Ret != 200 {
-		return nil, fmt.Errorf("iyuu api error: ret=%d, msg=%s", resData.Ret, resData.Msg)
+	if resData.Code != 0 {
+		return nil, fmt.Errorf("iyuu api error: code=%d, msg=%s", resData.Code, resData.Msg)
 	}
-	return resData.Data.Recommend, nil
+	return resData.Data.List, nil
 }
 
 func (site *IyuuApiSite) GetUrl() string {

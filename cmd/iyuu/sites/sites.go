@@ -38,12 +38,12 @@ func sites(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to get iyuu bindable sites: %w", err)
 		}
-		fmt.Printf("%-20s  %7s  %20s\n", "SiteName", "SiteId", "BindParams")
+		fmt.Printf("%-20s  %7s  %20s  %-s\n", "SiteName", "SiteId", "BindParams", "Comment")
 		for _, site := range bindableSites {
 			if filter != "" && (!util.ContainsI(site.Site, filter) && fmt.Sprint(site.Id) != filter) {
 				continue
 			}
-			fmt.Printf("%-20s  %7d  %20s\n", site.Site, site.Id, site.Bind_check)
+			fmt.Printf("%-20s  %7d  %20s  %-s\n", site.Site, site.Id, site.Bind_check, site.Nickname)
 		}
 		return nil
 	}

@@ -24,6 +24,16 @@ const (
 	HTTP_HEADER_PLACEHOLDER = "\n"
 )
 
+func HttpRequest(req *http.Request, client *http.Client) (res *http.Response, err error) {
+	if client == nil {
+		client = http.DefaultClient
+	}
+	LogHttpRequest(req)
+	res, err = client.Do(req)
+	LogHttpResponse(res, err)
+	return res, err
+}
+
 func FetchJson(url string, v any, client *http.Client, header http.Header) error {
 	res, _, err := FetchUrl(url, client, header)
 	if err != nil {
@@ -34,6 +44,7 @@ func FetchJson(url string, v any, client *http.Client, header http.Header) error
 	if err != nil {
 		return err
 	}
+	LogHttpResponseBody(res, body)
 	return json.Unmarshal(body, v)
 }
 
@@ -104,12 +115,20 @@ func ParseUrlHostname(urlStr string) string {
 	return hostname
 }
 
-func PostUrlForJson(url string, data url.Values, v any, client *http.Client) error {
+func PostUrlForJson(url string, data url.Values, v any, header http.Header, client *http.Client) error {
 	if client == nil {
 		client = http.DefaultClient
 	}
 	LogHttpPostFormRequest(url, data)
-	res, err := client.PostForm(url, data)
+	req, err := http.NewRequest("POST", url, strings.NewReader(data.Encode()))
+	if err != nil {
+		return err
+	}
+	for key := range header {
+		req.Header[key] = header[key]
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	res, err := client.Do(req)
 	LogHttpResponse(res, err)
 	if err != nil {
 		return err
@@ -119,6 +138,7 @@ func PostUrlForJson(url string, data url.Values, v any, client *http.Client) err
 	if err != nil {
 		return err
 	}
+	LogHttpResponseBody(res, body)
 	if res.StatusCode != 200 {
 		return fmt.Errorf("PostUrlForJson response error: status=%d", res.StatusCode)
 	}

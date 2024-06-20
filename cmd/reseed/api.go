@@ -288,7 +288,7 @@ func Login(username string, password string) (token string, err error) {
 		"password": []string{password},
 	}
 	var result *ReseedLoginResult
-	if err = util.PostUrlForJson(RESEED_API+"login", data, &result, nil); err != nil {
+	if err = util.PostUrlForJson(RESEED_API+"login", data, &result, nil, nil); err != nil {
 		return "", fmt.Errorf("failed to login: %w", err)
 	}
 	if !result.Success {

@@ -43,10 +43,10 @@ const (
 	EXAMPLE_CONFIG_FILE        = "ptool.example" // .toml , .yaml
 
 	DEFAULT_EXPORT_TORRENT_RENAME = "[name128].[infohash16].torrent"
-	// Changed in Feb, 2024.
-	// See: https://github.com/ledccn/IYUUPlus/commit/04aef85b667bcc2f22975dd4c5c0e09e5bb2015d .
-	// Older values: "api.iyuu.cn", "hk.iyuu.cn".
-	DEFAULT_IYUU_DOMAIN                             = "http://api.bolahg.cn"
+	// New iyuu API.
+	// iyuuplus-dev: https://github.com/ledccn/iyuuplus-dev .
+	// Docs: https://doc.iyuu.cn/reference/config .
+	DEFAULT_IYUU_DOMAIN                             = "dev.iyuu.cn"
 	DEFAULT_TIMEOUT                                 = int64(5)
 	DEFAULT_SHELL_MAX_SUGGESTIONS                   = int64(5)
 	DEFAULT_SHELL_MAX_HISTORY                       = int64(500)

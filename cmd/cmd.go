@@ -154,6 +154,8 @@ func init() {
 	// global flags
 	RootCmd.PersistentFlags().BoolVarP(&flags.DumpHeaders, "dump-headers", "", false,
 		`Dump HTTP headers to log (error level) - may contain sensitive info`)
+	RootCmd.PersistentFlags().BoolVarP(&flags.DumpBodies, "dump-bodies", "", false,
+		`Dump HTTP headers and bodies to log (error level) - may contain sensitive info`)
 	RootCmd.PersistentFlags().BoolVarP(&config.Insecure, "insecure", "", false,
 		`Temporarily disable all TLS / https cert verifications during this session. `+
 			`To permanently disable TLS cert verifications, `+
