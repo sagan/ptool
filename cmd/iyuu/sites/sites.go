@@ -57,7 +57,7 @@ func sites(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get iyuu sites: %w", err)
 	}
-	iyuuSites := util.Map(iyuuApiSites, func(site iyuu.IyuuApiSite) iyuu.Site {
+	iyuuSites := util.Map(iyuuApiSites, func(site *iyuu.IyuuApiSite) iyuu.Site {
 		return site.ToSite()
 	})
 	log.Printf("Iyuu sites: len(sites)=%v\n", len(iyuuSites))

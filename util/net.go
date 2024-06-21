@@ -116,19 +116,17 @@ func ParseUrlHostname(urlStr string) string {
 }
 
 func PostUrlForJson(url string, data url.Values, v any, header http.Header, client *http.Client) error {
-	if client == nil {
-		client = http.DefaultClient
-	}
-	LogHttpPostFormRequest(url, data)
-	req, err := http.NewRequest("POST", url, strings.NewReader(data.Encode()))
+	reqBody := data.Encode()
+	req, err := http.NewRequest("POST", url, strings.NewReader(reqBody))
 	if err != nil {
 		return err
 	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	for key := range header {
 		req.Header[key] = header[key]
 	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	res, err := client.Do(req)
+	LogHttpRequesyBody(req, []byte(reqBody))
+	res, err := HttpRequest(req, client)
 	LogHttpResponse(res, err)
 	if err != nil {
 		return err
@@ -143,6 +141,37 @@ func PostUrlForJson(url string, data url.Values, v any, header http.Header, clie
 		return fmt.Errorf("PostUrlForJson response error: status=%d", res.StatusCode)
 	}
 	err = json.Unmarshal(body, v)
+	return err
+}
+
+func PostAndFetchJson(url string, reqBody any, resBody any, header http.Header, client *http.Client) (err error) {
+	reqData, err := json.Marshal(reqBody)
+	if err != nil {
+		return fmt.Errorf("failed to marshal json: %w", err)
+	}
+	req, err := http.NewRequest("POST", url, bytes.NewReader(reqData))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	for key := range header {
+		req.Header[key] = header[key]
+	}
+	LogHttpRequesyBody(req, reqData)
+	res, err := HttpRequest(req, client)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		return fmt.Errorf("PostAndFetchJson response error: status=%d", res.StatusCode)
+	}
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+	LogHttpResponseBody(res, body)
+	err = json.Unmarshal(body, resBody)
 	return err
 }
 

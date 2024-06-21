@@ -556,10 +556,63 @@ publish 命令能够自动发布种子到 PT 站点。以上面示例为例，�
 6. 自动通过站点上传种子接口发布种子，将站点生成的发布后种子下载到内容文件夹里的 `.<sitename>.torrent` 文件里。
 7. 将下载的 `.<sitename>.torrent` 种子添加到 local 客户端并开始做种。
 
-待补充：
+#### metadata.nfo 元文件
 
-- metadata.nfo 文件格式
-- 当前支持的站点
+ptool 目前只支持读取 plain text 格式的 metadata.nfo 作为元信息文件，格式示例如下：
+
+```
+---
+title: どの娘に耳かきしてもらう?
+author: Butterfly Dream
+narrator: 浅見ゆい
+tags: ASMR, WAV, ほのぼの, バイノーラル/ダミヘ, ボイス・ASMR, ラブラブ/あまあま, 健全, 日常/生活, 癒し, 耳かき
+number: RJ01205338
+source: dlsite
+---
+
+作品コンセプト
+
+合計6キャラクターの耳かきボイスを収録したオムニバス形式の作品です。
+様々なシチュエーションで、思う存分耳かきを楽しむことができます。
+※すべてのトラックで、耳かき、梵天、耳ふーの流れとなっております。
+```
+
+文件的开头是 Jekyll 的 [YAML Front Matter](https://jekyllrb.com/docs/front-matter/) 风格的元信息字段。其中的 "number" (番号) 字段被用于检测同样内容种子在站点上是否存在。
+
+#### 支持的站点
+
+ptool 会根据元文件信息生成站点发布种子接口需要提交的 Form 字段内容。字段内容使用 Jinja 模板渲染生成。默认 NP 站点的发布种子字段包括：
+
+- `name`: 种子标题。默认为 `{% if number %}[{{number}}]{% endif %}{% if author %}[{{author}}]{% endif %}{{title}}`。示例：`[RJ01205338][Butterfly Dream]どの娘に耳かきしてもらう?`。
+- `desc`: 种子描述。
+
+大部分 NP 站点发布种子时除标题外还存在其它必填字段，例如 "type" (种子分类)。目前 ptool 仅支持对部分站点自动生成这些必填字段值；对于其它站点，需要在 ptool.toml 配置文件里手动指定生成这些字段值的模板，例如：
+
+```
+[uploadTorrentAdditionalPayload]
+type = """
+{% if "ボイス・ASMR" in tags %}420
+{% elif "ゲーム" in tags %}415
+{% else %}999
+{% endif %}
+"""
+```
+
+模板渲染结果开头和末尾的空白字段会被自动去除。
+
+如果需要上传 cover.jpg 等种子描述图片，大部分站点还需要在 ptool.toml 里配置站点的图床接口，示例配置（注释掉的配置项为默认值）
+
+```
+
+imageUploadUrl = 'https://pic.example.com/'
+#imageUploadFileField = 'file'
+#imageUploadResponseUrlField = 'url'
+#imageUploadPayload = '' # e.g. 'foo=1&bar=2'
+```
+
+默认配置下，将对站点的图床接口发起 `multipart/form-data` 类型的 POST 请求，将图片文件放到 form data 的 `file` 字段。然后从 response 的 json object 的 `url` 字段获取上传的图片的 URL。
+
+目前程序仅内置支持 kamept 的图床和上传种子必填字段生成。
 
 ### 显示种子文件信息 (parsetorrent)
 
@@ -579,11 +632,11 @@ ptool verifytorrent <torrentFileNameOrIdOrUrl>...
 
 必选参数（必须且只能提供以下几个参数中的其中 1 个参数）：
 
-- `--save-path` : 种子内容保存路径(下载文件夹)。可以用于校验多个 torrent 文件。
-- `--content-path` : 种子内容路径(root folder 或单文件种子的文件路径)。只能用于校验 1 个 torrent 文件。
+- `--save-path <path>` : 种子内容保存路径(下载文件夹)。可以用于校验多个 torrent 文件。
+- `--content-path <path>` : 种子内容路径(root folder 或单文件种子的文件路径)。只能用于校验 1 个 torrent 文件。
 - `--use-comment-meta` : 读取并使用种子 .torrent 文件的 comment 字段里存储的 save_path 信息。设计用于配合其它命令(例如 `ptool export`)使用。
-- `--rclone-lsjson-file` : 元信息索引文件名，其内容为 [rclone][] 的 `rclone lsjson --recursive <path>` 命令输出。rclone 的 `<path>` 被认为是种子内容的保存路径。参考 [rclone lsjson][] 命令的文档。
-- `--rclone-save-path` : 类似 `--rclone-lsjson-file`，但直接指定 `<path>` 路径。ptool 将运行 `rclone lsjson --recursive <path>` 并读取其输出。E.g. "remote:Downloads"。
+- `--rclone-lsjson-file <file>` : 元信息索引文件名，其内容为 [rclone][] 的 `rclone lsjson --recursive <path>` 命令输出。rclone 的 `<path>` 被认为是种子内容的保存路径。参考 [rclone lsjson][] 命令的文档。
+- `--rclone-save-path <path>` : 类似 `--rclone-lsjson-file`，但直接指定 `<path>` 路径。ptool 将运行 `rclone lsjson --recursive <path>` 并读取其输出。E.g. "remote:Downloads"。
 
 `--rclone-lsjson-file` 和 `--rclone-save-path` 参数的设计目的是用于检测种子的内容文件在云存储上是否存在。
 

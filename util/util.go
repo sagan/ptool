@@ -24,7 +24,8 @@ import (
 
 var commaSeperatorRegexp = regexp.MustCompile(`,\s*`)
 
-// split a csv like line to values. "a, b, c" => [a,b,c]
+// split a csv like line to values. "a, b, c" => [a,b,c].
+// If str is empty string, return nil.
 func SplitCsv(str string) []string {
 	if str == "" {
 		return nil

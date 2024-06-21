@@ -363,7 +363,7 @@ func UpdateSites(updatesites []*SiteConfigStruct) {
 // Due to technical limitations, all existing comments will be LOST.
 // For now, new config data will NOT take effect for current ptool process.
 func Set() error {
-	if err := os.MkdirAll(ConfigDir, constants.PERM); err != nil {
+	if err := os.MkdirAll(ConfigDir, constants.PERM_DIR); err != nil {
 		return fmt.Errorf("config dir does NOT exists and can not be created: %w", err)
 	}
 	lock, err := LockConfigDirFile(GLOBAL_INTERNAL_LOCK_FILE)
@@ -725,7 +725,7 @@ func (configData *ConfigStruct) GetIyuuDomain() string {
 }
 
 func CreateDefaultConfig() (err error) {
-	if err := os.MkdirAll(ConfigDir, constants.PERM); err != nil {
+	if err := os.MkdirAll(ConfigDir, constants.PERM_DIR); err != nil {
 		return fmt.Errorf("failed to create config dir: %w", err)
 	}
 	lock, err := LockConfigDirFile(GLOBAL_INTERNAL_LOCK_FILE)

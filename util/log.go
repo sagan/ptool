@@ -3,7 +3,6 @@ package util
 import (
 	"mime"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/Noooste/azuretls-client"
@@ -13,7 +12,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var textualMimes = []string{"application/json", "application/xml"}
+var textualMimes = []string{
+	"application/json",
+	"application/xml",
+	"application/x-www-form-urlencoded",
+	// "multipart/form-data",
+}
 
 func getContentType(header http.Header) (contentType string, isText bool) {
 	contentType, _, _ = mime.ParseMediaType(header.Get("Content-Type"))
@@ -46,16 +50,6 @@ func LogHttpResponse(res *http.Response, err error) {
 				"error": err,
 			}).Errorf("http response")
 		}
-	}
-}
-
-// Log if dump-headers flag is set.
-func LogHttpPostFormRequest(url string, data url.Values) {
-	if flags.DumpHeaders || flags.DumpBodies {
-		log.WithFields(log.Fields{
-			"url":    url,
-			"method": "POST",
-		}).Errorf("http request")
 	}
 }
 
@@ -101,19 +95,36 @@ func LogAzureHttpResponse(res *azuretls.Response, err error) {
 	}
 }
 
+func logBody(title string, header http.Header, body []byte) {
+	maxBinaryBody := 1024
+	contentType, isText := getContentType(header)
+	if isText {
+		log.WithFields(log.Fields{
+			"body":        string(body),
+			"contentType": contentType,
+		}).Errorf(title)
+	} else if len(body) <= maxBinaryBody {
+		log.WithFields(log.Fields{
+			"body":        body,
+			"contentType": contentType,
+		}).Errorf(title)
+	} else {
+		log.WithFields(log.Fields{
+			"body_start":  body[:1024],
+			"length":      len(body),
+			"contentType": contentType,
+		}).Errorf(title)
+	}
+}
+
+func LogHttpRequesyBody(req *http.Request, body []byte) {
+	if flags.DumpBodies {
+		logBody("http request body", req.Header, body)
+	}
+}
+
 func LogHttpResponseBody(res *http.Response, body []byte) {
 	if flags.DumpBodies {
-		contentType, isText := getContentType(res.Header)
-		if isText {
-			log.WithFields(log.Fields{
-				"body":        string(body),
-				"contentType": contentType,
-			}).Errorf("http response body")
-		} else {
-			log.WithFields(log.Fields{
-				"body":        body,
-				"contentType": contentType,
-			}).Errorf("http response body")
-		}
+		logBody("http response body", res.Header, body)
 	}
 }

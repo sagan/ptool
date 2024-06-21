@@ -75,7 +75,8 @@ type Site interface {
 	// can use "%s" as keyword placeholder in baseUrl
 	SearchTorrents(keyword string, baseUrl string) ([]*Torrent, error)
 	// Publish (upload) new torrent to site, return uploaded torrent id
-	// Specially. if metadata contains "_dryrun", use dry run mode.
+	// Some keys in metadata should be handled specially:
+	// If metadata contains "_dryrun", use dry run mode;
 	PublishTorrent(contents []byte, metadata url.Values) (id string, err error)
 	GetStatus() (*Status, error)
 	PurgeCache()
@@ -523,17 +524,13 @@ func DownloadTorrentByUrl(siteInstance Site, httpClient *azuretls.Session, torre
 //	_cover : cover image file path, got uploaded to site image server then replaced with uploaded img url.
 //	_images (array) : images other than cover, processed similar with _cover but rendered as slice.
 //	_raw_* : direct raw data that will be rendered and added to payload.
-//	tags, narrator: Treated as slice. If has only one value, splitted it to slice as csv before rendering.
 func UploadTorrent(siteInstance Site, httpClient *azuretls.Session, uploadUrl string, contents []byte,
 	metadata url.Values, fallbackPayloadTemplate map[string]string) (res *azuretls.Response, err error) {
 	metadataRaw := map[string]any{}
 	for key := range metadata {
-		switch key {
-		case "tags", "narrator":
-			if len(metadata[key]) == 1 {
-				metadataRaw[key] = util.SplitCsv(metadata.Get(key))
-			}
-		default:
+		if slices.Contains(constants.MetadataArrayKeys, key) {
+			metadataRaw[key] = metadata[key]
+		} else {
 			metadataRaw[key] = metadata.Get(key)
 		}
 	}

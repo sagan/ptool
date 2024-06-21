@@ -92,7 +92,7 @@ func match(cmd *cobra.Command, args []string) error {
 		downloadDir = filepath.Join(config.ConfigDir, "reseed")
 	}
 	if doDownload {
-		if err := os.MkdirAll(downloadDir, constants.PERM); err != nil {
+		if err := os.MkdirAll(downloadDir, constants.PERM_DIR); err != nil {
 			return fmt.Errorf("failed to create download-dir %s: %w", downloadDir, err)
 		}
 	}

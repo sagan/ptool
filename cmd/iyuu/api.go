@@ -38,19 +38,23 @@ type IyuuApiResponse struct {
 	Data any    `json:"data"`
 }
 
-type IyuuApiGetUserResponse struct {
-	Ret  int64  `json:"ret"`
+type IyuuApiReportExistingResponse struct {
+	Code int64  `json:"code"`
 	Msg  string `json:"msg"`
 	Data struct {
-		User map[string]any `json:"user"`
+		SidSha1 string `json:"sid_sha1"`
 	} `json:"data"`
+}
+
+type IyuuApiReportExistingRequest struct {
+	SidList []int64 `json:"sid_list"`
 }
 
 type IyuuApiSitesResponse struct {
 	Code int64  `json:"code"`
 	Msg  string `json:"msg"`
 	Data struct {
-		Sites []IyuuApiSite `json:"sites"`
+		Sites []*IyuuApiSite `json:"sites"`
 	} `json:"data"`
 }
 
@@ -80,6 +84,22 @@ const IYUU_VERSION = "8.2.0"
 
 // https://api.iyuu.cn/docs.php?service=App.Api.Infohash&detail=1&type=fold
 func IyuuApiHash(token string, infoHashes []string) (map[string][]IyuuTorrentInfoHash, error) {
+	sites, err := IyuuApiSites(token)
+	if err != nil {
+		return nil, err
+	}
+	header := http.Header{}
+	header.Set("Token", token)
+	reportExistingRequest := &IyuuApiReportExistingRequest{
+		SidList: util.Map(sites, func(site *IyuuApiSite) int64 { return site.Id }),
+	}
+	var reportExistingResponse *IyuuApiReportExistingResponse
+	err = util.PostAndFetchJson(util.ParseRelativeUrl("/reseed/sites/reportExisting",
+		config.Get().GetIyuuDomain()), reportExistingRequest, &reportExistingResponse, header, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	infoHashes = util.CopySlice(infoHashes)
 	for i, infoHash := range infoHashes {
 		infoHashes[i] = strings.ToLower(infoHash)
@@ -89,19 +109,16 @@ func IyuuApiHash(token string, infoHashes []string) (map[string][]IyuuTorrentInf
 	})
 	hash, _ := json.Marshal(&infoHashes)
 	apiUrl := util.ParseRelativeUrl("/reseed/index/index", config.Get().GetIyuuDomain())
-	header := http.Header{}
-	header.Set("Token", token)
+
 	data := url.Values{
-		// @working.
-		// https://doc.iyuu.cn/reference/site_report_existing
-		//"sid_sha1":      {""},
+		"sid_sha1":  {reportExistingResponse.Data.SidSha1},
 		"timestamp": {fmt.Sprint(util.Now())},
 		"version":   {IYUU_VERSION},
 		"hash":      {string(hash)},
 		"sha1":      {util.Sha1(hash)},
 	}
 	resData := &IyuuApiHashResponse{}
-	err := util.PostUrlForJson(apiUrl, data, &resData, header, nil)
+	err = util.PostUrlForJson(apiUrl, data, &resData, header, nil)
 	log.Tracef("ApiInfoHash response err=%v", err)
 	if err != nil {
 		return nil, err
@@ -124,7 +141,7 @@ func IyuuApiGetUser(token string) (data map[string]any, err error) {
 }
 
 // https://doc.iyuu.cn/reference/site_list
-func IyuuApiSites(token string) ([]IyuuApiSite, error) {
+func IyuuApiSites(token string) ([]*IyuuApiSite, error) {
 	var resData *IyuuApiSitesResponse
 	header := http.Header{}
 	header.Set("Token", token)
@@ -155,9 +172,10 @@ func IyuuApiBind(token string, site string, uid int64, passkey string) (any, err
 	if err != nil {
 		return nil, err
 	}
-	if resData.Code != 0 {
-		return nil, fmt.Errorf("iyuu api error: code=%d, msg=%s", resData.Code, resData.Msg)
-	}
+	// 400: 站点：hdhome 用户ID：114053，已被绑定过！绑定的UUID为：78
+	// if resData.Code != 0 {
+	// 	return nil, fmt.Errorf("iyuu api error: code=%d, msg=%s", resData.Code, resData.Msg)
+	// }
 	return resData, nil
 }
 

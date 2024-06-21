@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/natefinch/atomic"
@@ -59,6 +60,8 @@ var (
 	savePath          = ""
 	comment           = ""
 	commentFile       = ""
+	moveOkTo          = ""
+	mustTag           = ""
 	imageFiles        []string
 	fields            []string
 	mapSavePaths      []string
@@ -71,6 +74,8 @@ func init() {
 	command.Flags().BoolVarP(&showJson, "json", "", false, "Show output in json format")
 	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "", -1,
 		"Number limit of publishing torrents. -1 == no limit")
+	command.Flags().StringVarP(&mustTag, "must-tag", "", "", "Comma-separated tag list. "+
+		`If set, only content folders which tags contains any one in the list will be published`)
 	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "100MiB",
 		"Do not publish torrent which contents size is smaller than (<) this value. -1 == no limit")
 	command.Flags().StringVarP(&sitename, "site", "", "", "Publish site")
@@ -80,16 +85,18 @@ func init() {
 	command.Flags().StringVarP(&savePath, "save-path", "", "", "Save path of contents to publish")
 	command.Flags().StringVarP(&comment, "comment", "", "", `Publish comment. Equivalent to '--meta "comment=..."'`)
 	command.Flags().StringVarP(&commentFile, "comment-file", "", "", `Read comment from file`)
+	command.Flags().StringVarP(&moveOkTo, "move-ok-to", "", "",
+		"Move successfully processed content folders to this new save path. Note it applies even in dry run mode")
 	command.Flags().StringArrayVarP(&imageFiles, "image", "", nil,
 		`Extra image (in addition to "cover.*") file names that will also be used in meta of uploaded torrent. `+
 			`Filename or filename pattern relative to content path of torrent. E.g. "screenshot-*.png". `+
 			`Non-existent file names or names without a valid image extension are ignored`)
 	command.Flags().StringArrayVarP(&fields, "meta", "", nil,
 		`Manually set meta values of torrent(s) to publish. Url query string format. E.g. "title=foo&author=bar"`)
-	command.MarkFlagRequired("site")
 	command.Flags().StringArrayVarP(&mapSavePaths, "map-save-path", "", nil,
 		`Used with "--use-comment-meta". Map save path from local file system to the file system of BitTorrent client. `+
 			`Format: "local_path|client_path". `+constants.HELP_ARG_PATH_MAPPERS)
+	command.MarkFlagRequired("site")
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -122,6 +129,10 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 	if comment != "" {
 		metaValues.Set("comment", comment)
 	}
+	var mustTags []string
+	if mustTag != "" {
+		mustTags = util.SplitCsv(mustTag)
+	}
 
 	var savePathMapper *common.PathMapper
 	if len(mapSavePaths) > 0 {
@@ -147,31 +158,32 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 			return fmt.Errorf("client status is not ok: %w", err)
 		}
 	}
-
-	if contentPath != "" {
-		id, err := publicTorrent(siteInstance, clientInstance,
-			contentPath, metaValues, false, checkExisting, savePathMapper, minTorrentSize, imageFiles, dryRun)
-		ok, _ := printResult(contentPath, id, err, sitename, clientname)
-		if !ok {
-			return err
-		} else {
-			return nil
+	contentPathes := []string{}
+	if savePath != "" {
+		entries, err := os.ReadDir(savePath)
+		if err != nil {
+			return fmt.Errorf("failed to read save path: %w", err)
+		}
+		for _, entry := range entries {
+			if !entry.IsDir() || strings.HasPrefix(entry.Name(), ".") {
+				continue
+			}
+			contentPathes = append(contentPathes, filepath.Join(savePath, entry.Name()))
+		}
+	} else {
+		contentPathes = append(contentPathes, contentPath)
+	}
+	if moveOkTo != "" {
+		if err = os.MkdirAll(moveOkTo, constants.PERM_DIR); err != nil {
+			return fmt.Errorf("move-ok-to dir %q does not exist and cann't be created: %w", moveOkTo, err)
 		}
 	}
 
 	errorCnt := int64(0)
 	cntHandled := int64(0)
-	entries, err := os.ReadDir(savePath)
-	if err != nil {
-		return fmt.Errorf("failed to read dir: %w", err)
-	}
-	for _, entry := range entries {
-		if !entry.IsDir() || strings.HasPrefix(entry.Name(), ".") {
-			continue
-		}
-		contentPath := filepath.Join(savePath, entry.Name())
-		id, err := publicTorrent(siteInstance, clientInstance,
-			contentPath, metaValues, true, checkExisting, savePathMapper, minTorrentSize, imageFiles, dryRun)
+	for _, contentPath := range contentPathes {
+		id, err := publicTorrent(siteInstance, clientInstance, contentPath, metaValues, true,
+			checkExisting, savePathMapper, minTorrentSize, imageFiles, moveOkTo, dryRun, mustTags)
 		ok, published := printResult(contentPath, id, err, sitename, clientname)
 		if !ok {
 			errorCnt++
@@ -199,6 +211,8 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 // any text...
 //
 // Spaces inside meta key are converted to "_".
+// Some keys are treated as slice: tags, narrator;
+// If the value of these keys is string, splitted it to slice as csv.
 func parseMetadataFile(metadataFile string) (metadata url.Values, err error) {
 	contents, err := os.ReadFile(metadataFile)
 	if err != nil {
@@ -228,7 +242,11 @@ func parseMetadataFile(metadataFile string) (metadata url.Values, err error) {
 		}
 		switch v := value.(type) {
 		case string:
-			metadata.Set(key, v)
+			if slices.Contains(constants.MetadataArrayKeys, key) {
+				metadata[key] = util.SplitCsv(v)
+			} else {
+				metadata.Set(key, v)
+			}
 		case []string:
 			metadata[key] = v
 		case []any:
@@ -246,7 +264,14 @@ func parseMetadataFile(metadataFile string) (metadata url.Values, err error) {
 
 func publicTorrent(siteInstance site.Site, clientInstance client.Client, contentPath string, otherFields url.Values,
 	mustMetadataFile bool, checkExisting bool, savePathMapper *common.PathMapper,
-	minTorrentSize int64, imageFiles []string, dryRun bool) (id string, err error) {
+	minTorrentSize int64, imageFiles []string, moveOk string, dryRun bool, mustTags []string) (id string, err error) {
+	targetpath := ""
+	if moveOk != "" {
+		targetpath = filepath.Join(moveOk, filepath.Base(contentPath))
+		if util.FileExists(targetpath) {
+			return "", fmt.Errorf("target path in move-ok-to dir %q already exists", targetpath)
+		}
+	}
 	sitename := siteInstance.GetName()
 	var metadata url.Values
 	if metadataFile := filepath.Join(contentPath, constants.METADATA_FILE); util.FileExists(metadataFile) {
@@ -265,6 +290,11 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 	}
 	if metadata.Get("title") == "" {
 		return "", fmt.Errorf("no title meta data found")
+	}
+	if mustTags != nil && !slices.ContainsFunc(mustTags, func(t string) bool {
+		return slices.Contains(metadata["tags"], t)
+	}) {
+		return "", fmt.Errorf("torrent metadata does not has any tag of %v", mustTags)
 	}
 	if len(imageFiles) > 0 {
 		var images []string
@@ -368,12 +398,21 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 	}
 	id, err = siteInstance.PublishTorrent(torrentContents, metadata)
 	if err != nil {
+		if err == constants.ErrDryRun && targetpath != "" {
+			atomic.ReplaceFile(contentPath, targetpath)
+		}
 		return "", err
 	}
 	if id != "" {
 		atomic.WriteFile(publishedFlagFile, strings.NewReader(id))
 	} else {
 		util.TouchFile(existingFlagFile)
+	}
+	if targetpath != "" {
+		if err = atomic.ReplaceFile(contentPath, targetpath); err != nil {
+			return id, fmt.Errorf("torrent published (id: %s) but failed to move content folder: %w", id, err)
+		}
+		contentPath = targetpath
 	}
 	err = downloadPublishedTorrent(siteInstance, clientInstance, contentPath, savePathMapper)
 	if err != nil {
@@ -461,7 +500,7 @@ func printResult(contentPath string, id string, err error,
 		fmt.Printf("! %q: %v\n", contentPath, err)
 		ok = true
 	default:
-		fmt.Printf("X %q: failed to publish: %v\n", contentPath, err)
+		fmt.Printf("X %q: %v\n", contentPath, err)
 	}
 	return
 }

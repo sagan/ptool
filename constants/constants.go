@@ -20,7 +20,8 @@ const ENV_PROXY = "env"
 const FILENAME_INVALID_CHARS_REGEX = `[<>:"/\|\?\*]+`
 const FILEPATH_INVALID_CHARS_REGEX = `[<>:"|\?\*]+`
 
-const PERM = 0600 // 程序创建的所有文件的 PERM
+const PERM = 0600     // 程序创建的所有文件的 PERM
+const PERM_DIR = 0700 // 程序创建的所有文件夹的 PERM
 
 const FILENAME_SUFFIX_ADDED = ".added"
 const FILENAME_SUFFIX_OK = ".ok"
@@ -144,3 +145,7 @@ func init() {
 	}
 	FilenameRestrictedCharacterReplacer = strings.NewReplacer(args...)
 }
+
+// When parsing metadata.nfo, these keys are treated as array values.
+// Values: ["tags", "narrator"].
+var MetadataArrayKeys = []string{"tags", "narrator"}

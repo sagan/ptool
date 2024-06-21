@@ -81,7 +81,7 @@ func Execute() {
 			if config.LockFile != "" {
 				log.Fatalf("--lock and --global-lock flags are NOT compatible")
 			}
-			os.MkdirAll(config.ConfigDir, constants.PERM)
+			os.MkdirAll(config.ConfigDir, constants.PERM_DIR)
 			config.LockFile = filepath.Join(config.ConfigDir, config.GLOBAL_LOCK_FILE)
 		}
 		if config.LockFile != "" {

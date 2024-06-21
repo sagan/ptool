@@ -422,7 +422,7 @@ func updateIyuuDatabase(token string, infoHashes []string) error {
 	} else {
 		iyuu.Db().Transaction(func(tx *gorm.DB) error {
 			tx.Where("1 = 1").Delete(&iyuu.Site{})
-			iyuuSiteRecords := util.Map(iyuuSites, func(iyuuSite iyuu.IyuuApiSite) iyuu.Site {
+			iyuuSiteRecords := util.Map(iyuuSites, func(iyuuSite *iyuu.IyuuApiSite) iyuu.Site {
 				return iyuu.Site{
 					Sid:          iyuuSite.Id,
 					Name:         iyuuSite.Site,
