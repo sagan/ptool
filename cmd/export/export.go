@@ -2,13 +2,13 @@ package export
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
+	"github.com/sagan/ptool/cmd/common"
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/util"
@@ -101,40 +101,13 @@ func export(cmd *cobra.Command, args []string) error {
 				fmt.Printf("- %s : skip local existing torrent (%d/%d)\n", torrent.InfoHash, i+1, cntAll)
 				continue
 			}
-		}
-		content, err := clientInstance.ExportTorrentFile(torrent.InfoHash)
-		if err != nil {
-			fmt.Printf("✕ %s : failed to export %s: %v (%d/%d)\n", torrent.InfoHash, torrent.Name, err, i+1, cntAll)
-			errorCnt++
-			continue
-		}
-		if useCommentMeta {
-			var useCommentErr error
-			if tinfo, err := torrentutil.ParseTorrent(content); err != nil {
-				useCommentErr = fmt.Errorf("failed to parse: %w", err)
-			} else if err := tinfo.EncodeComment(&torrentutil.TorrentCommentMeta{
-				Category: torrent.Category,
-				Tags:     torrent.Tags,
-				SavePath: torrent.SavePath,
-			}); err != nil {
-				useCommentErr = fmt.Errorf("failed to encode: %w", err)
-			} else if data, err := tinfo.ToBytes(); err != nil {
-				useCommentErr = fmt.Errorf("failed to re-generate torrent: %w", err)
-			} else {
-				content = data
-			}
-			if useCommentErr != nil {
-				fmt.Printf("✕ %s : %v (%d/%d)\n", torrent.InfoHash, useCommentErr, i+1, cntAll)
-				errorCnt++
-				continue
-			}
-		}
-		if filename == "" {
+		} else {
 			filename = torrentutil.RenameExportedTorrent(clientName, torrent, rename)
 		}
 		filepath := filepath.Join(downloadDir, filename)
-		if err := os.WriteFile(filepath, content, constants.PERM); err != nil {
-			fmt.Printf("✕ %s : failed to save to %s: %v (%d/%d)\n", torrent.InfoHash, filepath, err, i+1, cntAll)
+		err := common.ExportClientTorrent(clientInstance, torrent, filepath, useCommentMeta)
+		if err != nil {
+			fmt.Printf("✕ %s : %v (%d/%d)\n", torrent.InfoHash, err, i+1, cntAll)
 			errorCnt++
 		} else {
 			fmt.Printf("✓ %s : saved to %s (%d/%d)\n", torrent.InfoHash, filepath, i+1, cntAll)

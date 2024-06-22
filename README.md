@@ -118,6 +118,7 @@ ptool <command> args... [flags]
 - partialdownload : 拆包下载。
 - xseedadd : 手动添加辅种种子到客户端。
 - findalone : 查找下载目录里的未做种文件。
+- movesavepath : 修改本地 BT 客户端里的种子内容文件保存路径。
 - cookiecloud : 使用 [CookieCloud][] 同步站点的 Cookies 或导入站点。
 - sites : 显示本程序内置支持的所有 PT 站点列表。
 - config : 显示当前 ptool.toml 配置文件信息。
@@ -732,6 +733,42 @@ findalone 命令可以扫描并列出下载目录(save path)里所有当前未�
 ptool findalone local D:\Downloads E:\Downloads F:\Downloads
 
 ptool findalone local --map-save-path "/root/Downloads:/Downloads" /root/Downloads
+```
+
+### 修改本地 BT 客户端里的种子内容文件保存路径 (movesavepath)
+
+假设 BT 客户端里有一个种子的内容文件夹(content-path)路径是 `/root/Downloads/[BDRip]Clannad`，并且这个文件夹下存在不属于这个种子的其他文件（例如媒体库管理软件刮削生成的元文件 metainfo.nfo）：
+
+```
+/root/Downloads/[BDRip]Clannad
+----- 01.mkv
+----- 02.mkv
+----- metainfo.nfo
+```
+
+如果在 qBittorrent 里直接用 "Set location" 功能将种子的保存路径(save-path)由 `/root/Downloads` 修改为 `/var/Downloads`，则只有属于该种子的文件会被移动，而其他文件（包括种子的原内容文件夹本身）仍然会存在于原路径：
+
+```
+/root/Downloads/[BDRip]Clannad
+----- metainfo.nfo
+
+/var/Downloads/[BDRip]Clannad
+----- 01.mkv
+----- 02.mkv
+```
+
+为了解决这个问题，ptool 提供一个 `movesavepath` 命令，能够将“整个内容文件夹”整体移动到其他路径，例如：
+
+```
+ptool movesavepath --client local /root/Downloads /var/Downloads
+```
+
+以上命令将 /root/Downloads 路径(old-save-path)里的所有内容移动到 /var/Downloads 路径(new-save-path)里，并且相应修改 local 客户端里相关种子的保存路径。该命令的内部工作方式是先导出并删除客户端里的原始种子（不删除硬盘文件）、移动 old-save-path 里内容到 new-save-path 里，然后再将之前导出的种子重新添加回客户端。
+
+该命令只支持本地的 BT 客户端。如果 ptool 工作在宿主机而 BT 客户端位于 Docker 容器里，需要使用 `--map-save-path local_path:client_path` 参数指定宿主机与 Docker 容器里路径之间的映射关系，例如：
+
+```
+ptool movesavepath --client local /root/Downloads/Uncategoried /root/Downloads/Others --map-save-path "/root/Downloads:/Downloads"
 ```
 
 ### 同步 Cookies & 导入站点 (cookiecloud)

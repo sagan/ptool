@@ -1,11 +1,13 @@
 package match
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/natefinch/atomic"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -191,7 +193,7 @@ func match(cmd *cobra.Command, args []string) error {
 				continue
 			}
 		}
-		err = os.WriteFile(filepath.Join(downloadDir, filename), content, constants.PERM)
+		err = atomic.WriteFile(filepath.Join(downloadDir, filename), bytes.NewReader(content))
 		if err != nil {
 			fmt.Printf("✕ %s (%d/%d): failed to save to %s : %v\n", torrent, i+1, cntAll, downloadDir, err)
 			errorCnt++

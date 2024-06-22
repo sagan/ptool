@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"embed"
 	"fmt"
 	"io"
@@ -14,6 +15,7 @@ import (
 	"sync"
 
 	"github.com/gofrs/flock"
+	"github.com/natefinch/atomic"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
@@ -748,7 +750,7 @@ func CreateDefaultConfig() (err error) {
 	if err != nil {
 		panic(err)
 	}
-	return os.WriteFile(configFile, contents, constants.PERM)
+	return atomic.WriteFile(configFile, bytes.NewReader(contents))
 }
 
 // Assert name is neither empty nor contains invalid characters. If failed, exit the process

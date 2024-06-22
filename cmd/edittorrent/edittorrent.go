@@ -1,10 +1,12 @@
 package edittorrent
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"strings"
 
+	"github.com/natefinch/atomic"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -297,7 +299,7 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 		if data, err := tinfo.ToBytes(); err != nil {
 			fmt.Printf("✕ %s : failed to generate new contents: %v\n", torrent, err)
 			errorCnt++
-		} else if err := os.WriteFile(torrent, data, constants.PERM); err != nil {
+		} else if err := atomic.WriteFile(torrent, bytes.NewReader(data)); err != nil {
 			fmt.Printf("✕ %s : failed to write new contents: %v\n", torrent, err)
 			errorCnt++
 		} else {

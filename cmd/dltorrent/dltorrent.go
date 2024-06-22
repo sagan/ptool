@@ -1,12 +1,14 @@
 package dltorrent
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/natefinch/atomic"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -142,7 +144,7 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 		} else {
 			filename = torrentutil.RenameTorrent(rename, sitename, id, _filename, tinfo)
 		}
-		err = os.WriteFile(filepath.Join(downloadDir, filename), content, constants.PERM)
+		err = atomic.WriteFile(filepath.Join(downloadDir, filename), bytes.NewReader(content))
 		if err != nil {
 			fmt.Printf("✕ %s (site=%s): failed to save to %s/: %v\n", filename, sitename, downloadDir, err)
 			errorCnt++

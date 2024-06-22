@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/gofrs/flock"
+	"github.com/natefinch/atomic"
 	"github.com/sagan/ptool/constants"
 	log "github.com/sirupsen/logrus"
 )
@@ -121,7 +122,7 @@ func (sh *ShellHistoryStruct) Truncate(max int) {
 		sh.reset()
 		history = history[len(history)-max:]
 		historyData := strings.Join(history, "\n")
-		os.WriteFile(sh.filename, []byte(historyData), constants.PERM)
+		atomic.WriteFile(sh.filename, strings.NewReader(historyData))
 		sh.cnt = len(history)
 	}
 }

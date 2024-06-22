@@ -3,6 +3,7 @@ package batchdl
 // 批量下载站点的种子
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"path/filepath"
 	"syscall"
 
+	"github.com/natefinch/atomic"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -564,7 +566,7 @@ mainloop:
 								filename = torrentutil.RenameTorrent(rename, sitename, torrent.Id, _filename, tinfo)
 							}
 						}
-						err = os.WriteFile(filepath.Join(downloadDir, filename), torrentContent, constants.PERM)
+						err = atomic.WriteFile(filepath.Join(downloadDir, filename), bytes.NewReader(torrentContent))
 						if err != nil {
 							fmt.Fprintf(os.Stderr, "torrent %s: failed to write to %s/file %s: %v\n",
 								torrent.Id, downloadDir, _filename, err)

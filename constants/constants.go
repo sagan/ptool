@@ -20,6 +20,9 @@ const ENV_PROXY = "env"
 const FILENAME_INVALID_CHARS_REGEX = `[<>:"/\|\?\*]+`
 const FILEPATH_INVALID_CHARS_REGEX = `[<>:"|\?\*]+`
 
+// file created for testing dir permissions & accessibility
+const TEST_FILE = ".ptool-test"
+
 const PERM = 0600     // 程序创建的所有文件的 PERM
 const PERM_DIR = 0700 // 程序创建的所有文件夹的 PERM
 

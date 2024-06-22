@@ -148,7 +148,10 @@ func (meta *TorrentMeta) EncodeComment(commentMeta *TorrentCommentMeta) error {
 // Decode torrent meta from 'comment' field
 func (meta *TorrentMeta) DecodeComment() *TorrentCommentMeta {
 	var commentMeta *TorrentCommentMeta
-	json.Unmarshal([]byte(meta.MetaInfo.Comment), &commentMeta)
+	err := json.Unmarshal([]byte(meta.MetaInfo.Comment), &commentMeta)
+	if err != nil {
+		return nil
+	}
 	return commentMeta
 }
 

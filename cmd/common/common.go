@@ -1,12 +1,14 @@
 package common
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"path"
 	"slices"
 	"strings"
 
+	"github.com/natefinch/atomic"
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/util"
 	"github.com/sagan/ptool/util/torrentutil"
@@ -143,4 +145,35 @@ func NewPathMapper(rules []string) (*PathMapper, error) {
 	}
 	slices.SortFunc(pm.befores, func(a, b string) int { return len(b) - len(a) }) // longest first
 	return pm, nil
+}
+
+func ExportClientTorrent(clientInstance client.Client, torrent *client.Torrent,
+	filepath string, useCommentMeta bool) error {
+	content, err := clientInstance.ExportTorrentFile(torrent.InfoHash)
+	if err != nil {
+		return err
+	}
+	if useCommentMeta {
+		var useCommentErr error
+		if tinfo, err := torrentutil.ParseTorrent(content); err != nil {
+			useCommentErr = fmt.Errorf("failed to parse comment-meta: %w", err)
+		} else if err := tinfo.EncodeComment(&torrentutil.TorrentCommentMeta{
+			Category: torrent.Category,
+			Tags:     torrent.Tags,
+			SavePath: torrent.SavePath,
+		}); err != nil {
+			useCommentErr = fmt.Errorf("failed to encode comment-meta: %w", err)
+		} else if data, err := tinfo.ToBytes(); err != nil {
+			useCommentErr = fmt.Errorf("failed to re-generate torrent with comment-meta: %w", err)
+		} else {
+			content = data
+		}
+		if useCommentErr != nil {
+			return useCommentErr
+		}
+	}
+	if err := atomic.WriteFile(filepath, bytes.NewReader(content)); err != nil {
+		return fmt.Errorf("failed to write file: %w", err)
+	}
+	return nil
 }
