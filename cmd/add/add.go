@@ -129,10 +129,7 @@ func add(cmd *cobra.Command, args []string) error {
 		RatioLimit:         ratioLimit,
 		SeedingTimeLimit:   seedingTimeLimit,
 	}
-	var fixedTags []string
-	if addTags != "" {
-		fixedTags = util.SplitCsv(addTags)
-	}
+	fixedTags := util.SplitCsv(addTags)
 	var savePathMapper *common.PathMapper
 	if len(mapSavePaths) > 0 {
 		savePathMapper, err = common.NewPathMapper(mapSavePaths)

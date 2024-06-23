@@ -43,6 +43,8 @@ const CLIENT_DEFAULT_DOWNLOADING_SPEED_LIMIT = 300 * 1024 * 1024 / 8 // BT客户
 const TORRENT_DEFAULT_PIECE_LENGTH = "16MiB"
 const META_TORRENT_FILE = ".torrent"
 const METADATA_FILE = "metadata.nfo"
+const METADATA_KEY_ARRAY_KEYS = "_array_keys"
+const METADATA_KEY_DRY_RUN = "_dryrun"
 
 // type, name, ↑info, ↓info, others
 const STATUS_FMT = "%-6s  %-15s  %-27s  %-27s  %-s\n"
@@ -148,7 +150,3 @@ func init() {
 	}
 	FilenameRestrictedCharacterReplacer = strings.NewReplacer(args...)
 }
-
-// When parsing metadata.nfo, these keys are treated as array values.
-// Values: ["tags", "narrator"].
-var MetadataArrayKeys = []string{"tags", "narrator"}

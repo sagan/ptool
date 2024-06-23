@@ -524,11 +524,12 @@ func DownloadTorrentByUrl(siteInstance Site, httpClient *azuretls.Session, torre
 //	_cover : cover image file path, got uploaded to site image server then replaced with uploaded img url.
 //	_images (array) : images other than cover, processed similar with _cover but rendered as slice.
 //	_raw_* : direct raw data that will be rendered and added to payload.
+//	_array_keys : variable of these keys are rendered as array.
 func UploadTorrent(siteInstance Site, httpClient *azuretls.Session, uploadUrl string, contents []byte,
 	metadata url.Values, fallbackPayloadTemplate map[string]string) (res *azuretls.Response, err error) {
 	metadataRaw := map[string]any{}
 	for key := range metadata {
-		if slices.Contains(constants.MetadataArrayKeys, key) {
+		if slices.Contains(metadata[constants.METADATA_KEY_ARRAY_KEYS], key) {
 			metadataRaw[key] = metadata[key]
 		} else {
 			metadataRaw[key] = metadata.Get(key)
@@ -606,7 +607,7 @@ func UploadTorrent(siteInstance Site, httpClient *azuretls.Session, uploadUrl st
 		}
 		images = append(images, metadata["_images"]...)
 		for _, image := range images {
-			if metadata.Has("_dryrun") {
+			if metadata.Has(constants.METADATA_KEY_DRY_RUN) {
 				return nil, constants.ErrDryRun
 			}
 			imageUrl, err := util.PostUploadFileForUrl(httpClient, siteInstance.GetSiteConfig().ImageUploadUrl, image,
@@ -625,7 +626,7 @@ func UploadTorrent(siteInstance Site, httpClient *azuretls.Session, uploadUrl st
 			}
 		}
 	}
-	if metadata.Has("_dryrun") {
+	if metadata.Has(constants.METADATA_KEY_DRY_RUN) {
 		return nil, constants.ErrDryRun
 	}
 	headers := util.GetHttpReqHeaders(siteInstance.GetDefaultHttpHeaders(), siteInstance.GetSiteConfig().Cookie, "")

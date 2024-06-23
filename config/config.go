@@ -24,6 +24,7 @@ import (
 )
 
 const (
+	METADATA_ARRAY_KEYS        = "tags,narrator"
 	BRUSH_CAT                  = "_brush"
 	SEEDING_CAT                = "_seeding"
 	FALLBACK_CAT               = "Others" // --add-category-auto fallback category if does NOT match with any site

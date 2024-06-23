@@ -102,13 +102,10 @@ func search(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("--json and --show-id-only flags are NOT compatible")
 	}
 	var includesList [][]string
-	var excludesList []string
 	for _, include := range includes {
 		includesList = append(includesList, util.SplitCsv(include))
 	}
-	if excludes != "" {
-		excludesList = util.SplitCsv(excludes)
-	}
+	excludesList := util.SplitCsv(excludes)
 	minTorrentSize, _ := util.RAMInBytes(minTorrentSizeStr)
 	maxTorrentSize, _ := util.RAMInBytes(maxTorrentSizeStr)
 	publishedIn, _ := util.ParseTimeDuration(publishedInStr)

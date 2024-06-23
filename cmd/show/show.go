@@ -204,10 +204,7 @@ func show(cmd *cobra.Command, args []string) error {
 	if activeSince > 0 && notActiveSince > 0 && activeSince >= notActiveSince {
 		return fmt.Errorf("--active-since must be before --not-active-since flag")
 	}
-	var excludesList []string
-	if excludes != "" {
-		excludesList = util.SplitCsv(excludes)
-	}
+	excludesList := util.SplitCsv(excludes)
 
 	hasFilterCondition := savePath != "" || savePathPrefix != "" || contentPath != "" ||
 		tracker != "" || minTorrentSize >= 0 || maxTorrentSize >= 0 || addedAfter > 0 || completedBefore > 0 ||

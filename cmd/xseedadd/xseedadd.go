@@ -87,10 +87,7 @@ func xseedadd(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get client torrents: %w", err)
 	}
-	var fixedTags []string
-	if addTags != "" {
-		fixedTags = util.SplitCsv(addTags)
-	}
+	fixedTags := util.SplitCsv(addTags)
 	clientTorrents = util.Filter(clientTorrents, func(t *client.Torrent) bool {
 		return t.IsFullComplete() && !t.HasTag(config.NOXSEED_TAG) && (tag == "" || t.HasAnyTag(tag))
 	})
