@@ -49,6 +49,8 @@ var (
 )
 
 var (
+	doCheck           = false
+	skipCheck         = false
 	dryRun            = false
 	checkExisting     = false
 	showJson          = false
@@ -63,18 +65,25 @@ var (
 	moveOkTo          = ""
 	mustTag           = ""
 	metaArrayKeysStr  = ""
+	maxTotalSizeStr   = ""
 	imageFiles        []string
 	fields            []string
 	mapSavePaths      []string
 )
 
 func init() {
+	command.Flags().BoolVarP(&doCheck, "check", "", false,
+		"Do full torrent hashing check with disk contents if .torrent already exists")
+	command.Flags().BoolVarP(&skipCheck, "skip-check", "", false,
+		"Skip checking torrent hash with disk contents if .torrent already exists")
 	command.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Dry run. Do NOT actually upload torrent to site")
 	command.Flags().BoolVarP(&checkExisting, "check-existing", "", false,
 		"Check whether same contents torrent already exists in site before publishing")
 	command.Flags().BoolVarP(&showJson, "json", "", false, "Show output in json format")
 	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "", -1,
 		"Number limit of publishing torrents. -1 == no limit")
+	command.Flags().StringVarP(&maxTotalSizeStr, "max-total-size", "", "-1",
+		"Will at most publish torrents with total contents size of this value. -1 == no limit")
 	command.Flags().StringVarP(&mustTag, "must-tag", "", "", "Comma-separated tag list. "+
 		`If set, only content folders which tags contains any one in the list will be published`)
 	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "100MiB",
@@ -109,6 +118,10 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 	if util.CountNonZeroVariables(contentPath, savePath) != 1 {
 		return fmt.Errorf("exact one of the --content-path and --save-path flsgs must be set")
 	}
+	if doCheck && skipCheck {
+		return fmt.Errorf("--check and --skip-check flags are NOT compatible")
+	}
+	maxTotalSize, _ := util.RAMInBytes(maxTotalSizeStr)
 	if comment != "" && commentFile != "" {
 		return fmt.Errorf("--comment and --comment-file flags are NOT compatible")
 	}
@@ -184,8 +197,9 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 
 	errorCnt := int64(0)
 	cntHandled := int64(0)
+	sizePublished := int64(0)
 	for _, contentPath := range contentPathes {
-		id, err := publicTorrent(siteInstance, clientInstance, contentPath, metaValues, true,
+		id, tinfo, err := publicTorrent(siteInstance, clientInstance, contentPath, metaValues, true,
 			checkExisting, savePathMapper, minTorrentSize, imageFiles, moveOkTo, dryRun, mustTags, metaArrayKeys)
 		ok, published := printResult(contentPath, id, err, sitename, clientname)
 		if !ok {
@@ -194,7 +208,10 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 		if !ok || published {
 			cntHandled++
 		}
-		if maxTorrents > 0 && cntHandled >= maxTorrents {
+		if err == nil {
+			sizePublished += tinfo.Size
+		}
+		if maxTorrents > 0 && cntHandled >= maxTorrents || maxTotalSize > 0 && sizePublished >= maxTotalSize {
 			break
 		}
 	}
@@ -269,12 +286,13 @@ func parseMetadataFile(metadataFile string, arrayKeys []string) (metadata url.Va
 
 func publicTorrent(siteInstance site.Site, clientInstance client.Client, contentPath string, otherFields url.Values,
 	mustMetadataFile bool, checkExisting bool, savePathMapper *common.PathMapper, minTorrentSize int64,
-	imageFiles []string, moveOk string, dryRun bool, mustTags []string, metaArrayKeys []string) (id string, err error) {
+	imageFiles []string, moveOk string, dryRun bool, mustTags []string, metaArrayKeys []string) (
+	id string, tinfo *torrentutil.TorrentMeta, err error) {
 	targetContentPath := contentPath
 	if moveOk != "" {
 		targetContentPath = filepath.Join(moveOk, filepath.Base(contentPath))
 		if util.FileExists(targetContentPath) {
-			return "", fmt.Errorf("target path in move-ok-to dir %q already exists", targetContentPath)
+			return "", nil, fmt.Errorf("target path in move-ok-to dir %q already exists", targetContentPath)
 		}
 	}
 	if savePathMapper != nil {
@@ -282,7 +300,7 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 		savePath := filepath.Dir(targetContentPath)
 		_, match := savePathMapper.Before2After(savePath)
 		if !match {
-			return "", fmt.Errorf("local path %q can not be mapped to client path", savePath)
+			return "", nil, fmt.Errorf("local path %q can not be mapped to client path", savePath)
 		}
 	}
 	sitename := siteInstance.GetName()
@@ -291,10 +309,10 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 		log.Debugf("Parse medadata file %s", metadataFile)
 		metadata, err = parseMetadataFile(metadataFile, metaArrayKeys)
 		if err != nil {
-			return "", ErrInvalidMetadataFile
+			return "", nil, ErrInvalidMetadataFile
 		}
 	} else if mustMetadataFile {
-		return "", ErrNoMetadataFile
+		return "", nil, ErrNoMetadataFile
 	} else {
 		metadata = url.Values{}
 	}
@@ -303,12 +321,12 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 	}
 	metadata[constants.METADATA_KEY_ARRAY_KEYS] = metaArrayKeys
 	if metadata.Get("title") == "" {
-		return "", fmt.Errorf("no title meta data found")
+		return "", nil, fmt.Errorf("no title meta data found")
 	}
 	if mustTags != nil && !slices.ContainsFunc(mustTags, func(t string) bool {
 		return slices.Contains(metadata["tags"], t)
 	}) {
-		return "", fmt.Errorf("torrent metadata does not has any tag of %v", mustTags)
+		return "", nil, fmt.Errorf("torrent metadata does not has any tag of %v", mustTags)
 	}
 	if len(imageFiles) > 0 {
 		var images []string
@@ -343,23 +361,23 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 	if util.FileExists(publishedFlagFile) {
 		if targetContentPath != contentPath {
 			if err = atomic.ReplaceFile(contentPath, targetContentPath); err != nil {
-				return "", fmt.Errorf("torrent already published but failed to move content folder: %w", err)
+				return "", nil, fmt.Errorf("torrent already published but failed to move content folder: %w", err)
 			}
 		}
 		if err := downloadPublishedTorrent(siteInstance, clientInstance, targetContentPath, savePathMapper); err != nil {
-			return "", fmt.Errorf("failed to download published torrent: %w", err)
+			return "", nil, fmt.Errorf("failed to download published torrent: %w", err)
 		}
-		return "", ErrAlreadyPublished
+		return "", nil, ErrAlreadyPublished
 	}
 	existingFlagFile := filepath.Join(contentPath, fmt.Sprintf(EXISTING_FLAG_FILE, sitename))
 	if util.FileExists(existingFlagFile) {
-		return "", ErrExisting
+		return "", nil, ErrExisting
 	}
 	if number := metadata.Get("number"); number != "" && checkExisting {
 		existingTorrentId := ""
 		torrents, err := siteInstance.SearchTorrents(number, "")
 		if err != nil {
-			return "", fmt.Errorf("failed to search site torrents to check existing: %w", err)
+			return "", nil, fmt.Errorf("failed to search site torrents to check existing: %w", err)
 		}
 		regexp := regexp.MustCompile(`\b` + regexp.QuoteMeta(number) + `\b`)
 		for _, torrent := range torrents {
@@ -370,7 +388,7 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 		}
 		if existingTorrentId != "" {
 			atomic.WriteFile(existingFlagFile, strings.NewReader(existingTorrentId))
-			return "", ErrExisting
+			return "", nil, ErrExisting
 		}
 	}
 
@@ -388,39 +406,44 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 		log.Debugf("torrent file %q does not exists, make it", torrent)
 		if _, err := torrentutil.MakeTorrent(makeTorrentOptions); err != nil {
 			if err == torrentutil.ErrSmall {
-				return "", ErrSmall
+				return "", nil, ErrSmall
 			}
-			return "", fmt.Errorf("failed to make torrent: %w", err)
+			return "", nil, fmt.Errorf("failed to make torrent: %w", err)
 		}
 	} else {
 		log.Debugf("torrent file %q exists, try to use it", torrent)
 	}
 	torrentStat, err := os.Stat(torrent)
 	if err != nil {
-		return "", fmt.Errorf("failed to read torrent stat: %w", err)
+		return "", nil, fmt.Errorf("failed to read torrent stat: %w", err)
 	}
 	torrentContents, err := os.ReadFile(torrent)
 	if err != nil {
-		return "", fmt.Errorf("failed to read torrent: %w", err)
+		return "", nil, fmt.Errorf("failed to read torrent: %w", err)
 	}
-	tinfo, err := torrentutil.ParseTorrent(torrentContents)
+	tinfo, err = torrentutil.ParseTorrent(torrentContents)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse torrent: %w", err)
+		return "", nil, fmt.Errorf("failed to parse torrent: %w", err)
 	}
 	var ts int64
-	if ts, err = tinfo.Verify("", contentPath, 1); err != nil || ts > torrentStat.ModTime().Unix() {
+	checkHashMode := int64(1)
+	if skipCheck {
+		checkHashMode = 0
+	} else if doCheck {
+		checkHashMode = 2
+	}
+	if ts, err = tinfo.Verify("", contentPath, checkHashMode); err != nil || ts > torrentStat.ModTime().Unix() {
 		log.Debugf(".torrent file is obsolete (verify err=%v, content_ts=%d, torrent_ts=%d), re-make torrent",
 			err, ts, torrentStat.ModTime().Unix())
 		if tinfo, err = torrentutil.MakeTorrent(makeTorrentOptions); err != nil {
 			if err == torrentutil.ErrSmall {
-				return "", ErrSmall
+				return "", nil, ErrSmall
 			}
-			return "", fmt.Errorf("failed to make torrent: %w", err)
+			return "", nil, fmt.Errorf("failed to make torrent: %w", err)
 		}
-		_ = tinfo // tinfo is no longer used, but we want to keep it updated.
 		torrentContents, err = os.ReadFile(torrent)
 		if err != nil {
-			return "", fmt.Errorf("failed to read torrent: %w", err)
+			return "", nil, fmt.Errorf("failed to read torrent: %w", err)
 		}
 	}
 	coverImage := util.ExistsFileWithAnySuffix(filepath.Join(contentPath, COVER), constants.ImgExts)
@@ -432,7 +455,7 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 		if err == constants.ErrDryRun && targetContentPath != contentPath {
 			atomic.ReplaceFile(contentPath, targetContentPath)
 		}
-		return "", err
+		return "", nil, err
 	}
 	if id != "" {
 		atomic.WriteFile(publishedFlagFile, strings.NewReader(id))
@@ -441,14 +464,14 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 	}
 	if targetContentPath != contentPath {
 		if err = atomic.ReplaceFile(contentPath, targetContentPath); err != nil {
-			return id, fmt.Errorf("torrent published (id: %s) but failed to move content folder: %w", id, err)
+			return id, nil, fmt.Errorf("torrent published (id: %s) but failed to move content folder: %w", id, err)
 		}
 	}
 	err = downloadPublishedTorrent(siteInstance, clientInstance, targetContentPath, savePathMapper)
 	if err != nil {
-		return id, err
+		return id, tinfo, err
 	}
-	return id, nil
+	return id, tinfo, nil
 }
 
 // Download published torrent to local, optionaly add it to local client to start seeding.

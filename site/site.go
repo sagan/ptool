@@ -594,8 +594,12 @@ func UploadTorrent(siteInstance Site, httpClient *azuretls.Session, uploadUrl st
 		if siteInstance.GetSiteConfig().ImageUploadUrl == "" {
 			return nil, fmt.Errorf("imageUploadUrl is not configured, can not upload image")
 		}
-		headers := util.GetHttpReqHeaders(siteInstance.GetDefaultHttpHeaders(), "", "")
-		headers = append(headers, []string{"Referer", siteInstance.GetSiteConfig().ImageUploadUrl})
+		var headers = [][]string{
+			{"Referer", siteInstance.GetSiteConfig().ImageUploadUrl},
+		}
+		headers = append(headers, siteInstance.GetDefaultHttpHeaders()...)
+		headers = append(headers, siteInstance.GetSiteConfig().ImageUploadHeaders...)
+		headers = util.GetHttpReqHeaders(headers, "", "")
 		var imageUploadPayload url.Values
 		if siteInstance.GetSiteConfig().ImageUploadPayload != "" {
 			imageUploadPayload, err = url.ParseQuery(siteInstance.GetSiteConfig().ImageUploadPayload)
@@ -632,7 +636,9 @@ func UploadTorrent(siteInstance Site, httpClient *azuretls.Session, uploadUrl st
 		return nil, constants.ErrDryRun
 	}
 	headers := util.GetHttpReqHeaders(siteInstance.GetDefaultHttpHeaders(), siteInstance.GetSiteConfig().Cookie, "")
-	headers = append(headers, []string{"Referer", uploadUrl})
+	if siteInstance.GetSiteConfig().Type == "nexusphp" {
+		headers = append(headers, []string{"Referer", siteInstance.GetSiteConfig().ParseSiteUrl("upload.php", false)})
+	}
 	return util.PostUploadFile(httpClient, uploadUrl, "a.torrent", bytes.NewReader(contents), "file",
 		payload, headers)
 }

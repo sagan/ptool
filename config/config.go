@@ -186,8 +186,9 @@ type SiteConfigStruct struct {
 	ImageUploadUrl                 string     `yaml:"imageUploadUrl"`
 	// Additional post payload when uploading image, query string format.
 	// E.g. "foo=a&bar=b".
-	ImageUploadPayload   string `yaml:"imageUploadPayload"`
-	ImageUploadFileField string `yaml:"imageUploadFileField"` // Default: "file"
+	ImageUploadPayload   string     `yaml:"imageUploadPayload"`
+	ImageUploadHeaders   [][]string `yaml:"imageUploadHeaders"`
+	ImageUploadFileField string     `yaml:"imageUploadFileField"` // Default: "file"
 	// Default: "url". May contain dots, e.g. "data.url" will resolve to "res.data.url",
 	// where res is the response json object .
 	ImageUploadResponseUrlField string `yaml:"mageUploadResponseUrlField"`

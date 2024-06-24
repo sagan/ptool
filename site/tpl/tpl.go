@@ -369,6 +369,9 @@ var (
 			ImageUploadUrl:              "https://pic.kamept.com/upload/k",
 			ImageUploadFileField:        "file",
 			ImageUploadResponseUrlField: "url",
+			ImageUploadHeaders: [][]string{
+				{"Cookie", "c_secure_uid=dummy; c_secure_pass=dummy; c_secure_ssl=dummy; c_secure_tracker_ssl=dummy; c_secure_login=dummy; search_box=minus"},
+			},
 			UploadTorrentAdditionalPayload: map[string]string{
 				"descr": `
 {% if _cover %}
@@ -391,7 +394,7 @@ https://www.dlsite.com/maniax/work/=/product_id/{{number | regex_search("\\bRJ\\
 ---
 
 {{comment}}{% endif %}`,
-				// 420: 外语音声; 415: 游戏; 435: 同人志.
+				// 420: 外语音声; 415: 游戏; 435: 同人志; 411: 2D动画.
 				// dlsite work_type genres: https://www.dlsite.com/maniax/worktype/list .
 				"type": `
 {% if "ボイス・ASMR" in tags %}420
@@ -408,6 +411,7 @@ https://www.dlsite.com/maniax/work/=/product_id/{{number | regex_search("\\bRJ\\
 	"パズル" in tags or
 	"その他ゲーム" in tags
 %}415
+{% elif "動画" in tags %}411
 {% elif "マンガ" in tags %}435
 {% endif %}
 `,
