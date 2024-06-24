@@ -763,7 +763,9 @@ ptool findalone local --map-save-path "/root/Downloads:/Downloads" /root/Downloa
 ptool movesavepath --client local /root/Downloads /var/Downloads
 ```
 
-以上命令将 /root/Downloads 路径(old-save-path)里的所有内容移动到 /var/Downloads 路径(new-save-path)里，并且相应修改 local 客户端里相关种子的保存路径。该命令的内部工作方式是先导出并删除客户端里的原始种子（不删除硬盘文件）、移动 old-save-path 里内容到 new-save-path 里，然后再将之前导出的种子重新添加回客户端。
+以上命令将 /root/Downloads 路径(old-save-path)里的种子内容移动到 /var/Downloads 路径(new-save-path)里，并且相应修改 local 客户端里相关种子的保存路径。该命令的内部工作方式是先导出并删除客户端里的原始种子（不删除硬盘文件）、移动 old-save-path 里内容到 new-save-path 里，然后再将之前导出的种子重新添加回客户端。
+
+默认只会移动 old-save-path 里在 BT 客户端里存在相应种子的文件。如果指定 `--all` 参数，则 old-save-path 里所有文件都会被移动。
 
 该命令只支持本地的 BT 客户端。如果 ptool 工作在宿主机而 BT 客户端位于 Docker 容器里，需要使用 `--map-save-path local_path:client_path` 参数指定宿主机与 Docker 容器里路径之间的映射关系，例如：
 

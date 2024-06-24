@@ -27,10 +27,15 @@ var command = &cobra.Command{
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "movesavepath"},
 	Short:       "Move save path of client.",
 	Long: `Move save path of client.
-It moves all contents of old-save-path folder to new-save-path folder. For all torrents in client with a save-path
+It moves contents of old-save-path folder to new-save-path folder. For all torrents in client with a save-path
 inside old-save-path, it change the save path of torrent in client to corresponding new path inside new-save-path.
 The {old-save-path} and {new-save-path} must be pathes of local file system of the the same disk and / or partition.
 The {client} must be a client in local, or you will have to set the "--map-save-path local_path:client_path" flags.
+
+If "--all" flag is not set, it will only move files that have any corresponding torrent in client
+from old-save-path to new-save-path.
+If "--all" flag is set, all contents of old-save-path will be moved to new-save-path,
+after the action the old-save-path will become an empty dir.
 
 It work in the following procedure:
 
@@ -47,12 +52,15 @@ If any error happens, you can safely re-run the same command to re-try and resum
 }
 
 var (
+	all          = false
 	force        = false
 	clientname   = ""
 	mapSavePaths []string
 )
 
 func init() {
+	command.Flags().BoolVarP(&all, "all", "a", false, "Move all files of old-save-path to new-save-path. "+
+		"If this flag is not set, only files that have corresponding torrents in client will be moved")
 	command.Flags().BoolVarP(&force, "force", "", false, "Force action. Do NOT prompt for confirm")
 	command.Flags().StringVarP(&clientname, "client", "", "", `Client name`)
 	command.Flags().StringArrayVarP(&mapSavePaths, "map-save-path", "", nil,
@@ -159,7 +167,13 @@ func movesavepath(cmd *cobra.Command, args []string) (err error) {
 			oldPathStr = fmt.Sprintf("%s (client: %s)", oldSavePath, util.First(savePathMapper.Before2After(oldSavePath)))
 			newPathStr = fmt.Sprintf("%s (client: %s)", newSavePath, util.First(savePathMapper.Before2After(newSavePath)))
 		}
-		fmt.Fprintf(os.Stderr, `Move all contents of the old-save-path to new-save-path:
+		var tip string
+		if all {
+			tip = "All contents of the old-save-path will be moved."
+		} else {
+			tip = "Only contents of the old-save-path that have corresponding torrents in client will be moved."
+		}
+		fmt.Fprintf(os.Stderr, `Move contents of the old-save-path to new-save-path:
 ---
 old-save-path: %s
 new-save-path: %s
@@ -169,10 +183,12 @@ tmppath: %s
 Above %d torrents in client have save path inside old-save-path now, they will be exported to tmppath/*.torrent,
 temporarily deleted from client, and then added back later with save path inside new-save-path.
 
+%s
+
 If you have previously runned this command and failed in the middle,
 the previous exported torrents in tmppath will also be added back to client.
 If any error happens, you can safely re-run the same command to re-try and resume from last time.
-`, oldPathStr, newPathStr, tmppath, len(clientTorrents))
+`, oldPathStr, newPathStr, tmppath, len(clientTorrents), tip)
 		if !helper.AskYesNoConfirm("") {
 			return fmt.Errorf("abort")
 		}
@@ -188,6 +204,66 @@ If any error happens, you can safely re-run the same command to re-try and resum
 	}
 	log.Warnf("Exported %d torrents from client to %q", len(clientTorrentInfoHashes), tmppath)
 
+	tmppathEntries, err := os.ReadDir(tmppath)
+	if err != nil {
+		return fmt.Errorf("failed to read tmppath: %w", err)
+	}
+	var existFlags map[string]struct{}
+
+	if !all {
+		// In default mode, only move torrent files. So we must check once prior moving.
+		existFlags = map[string]struct{}{}
+		for _, entry := range tmppathEntries {
+			if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".torrent") || strings.HasPrefix(entry.Name(), ".") {
+				continue
+			}
+			entrypath := filepath.Join(tmppath, entry.Name())
+			contents, err := os.ReadFile(entrypath)
+			if err != nil {
+				return fmt.Errorf("failed to read %s in tmppath: %w", entry.Name(), err)
+			}
+			tinfo, err := torrentutil.ParseTorrent(contents)
+			if err != nil {
+				return fmt.Errorf("failed to parse %s in tmppath: %w", entry.Name(), err)
+			}
+			commentMeta := tinfo.DecodeComment()
+			if commentMeta == nil {
+				return fmt.Errorf("failed to parse %s in tmppath: invalid comment-meta", entry.Name())
+			}
+			torrentSavePath := commentMeta.SavePath
+			if savePathMapper != nil {
+				clientSavePath, match := savePathMapper.After2Before(commentMeta.SavePath)
+				if !match {
+					return fmt.Errorf("tmppath/%s comment-meta save path %q can not be mapped to local path",
+						entry.Name(), commentMeta.SavePath)
+				}
+				torrentSavePath = filepath.Clean(clientSavePath)
+			}
+			if torrentSavePath != oldSavePath && !strings.HasPrefix(torrentSavePath, oldSavePath+string(filepath.Separator)) {
+				return fmt.Errorf("tmppath/%s comment meta local save path %q is not inside old-save-path",
+					entry.Name(), torrentSavePath)
+			}
+			newTorrentSavePath := newSavePath + torrentSavePath[len(oldSavePath):]
+			if savePathMapper != nil {
+				_, match := savePathMapper.Before2After(newTorrentSavePath)
+				if !match {
+					return fmt.Errorf("tmppath/%s new save path %q can not be mapped to client path",
+						entry.Name(), newTorrentSavePath)
+				}
+			}
+			// E.g.: oldSavePath: /root/Downloads; newSavePath: /var/Downloads; torrentSavePath: /root/Downloads/Others .
+			// In such case, the top folder "Others" should be moved.
+			if strings.HasPrefix(torrentSavePath, oldSavePath+string(filepath.Separator)) {
+				topname, _, _ := strings.Cut(torrentSavePath[len(oldSavePath)+1:], string(filepath.Separator))
+				existFlags[topname] = struct{}{}
+			} else {
+				for _, rootFile := range tinfo.RootFiles() {
+					existFlags[rootFile] = struct{}{}
+				}
+			}
+		}
+	}
+
 	if len(clientTorrentInfoHashes) > 0 {
 		if err = clientInstance.DeleteTorrents(clientTorrentInfoHashes, false); err != nil {
 			return fmt.Errorf("failed to delete client torrents: %w", err)
@@ -196,7 +272,13 @@ If any error happens, you can safely re-run the same command to re-try and resum
 	}
 
 	log.Warnf("Beginning moving files from old-save-path to new-save-path")
+	movedEntriesCnt := int64(0)
 	for _, entry := range oldSavePathEntries {
+		if !all {
+			if _, ok := existFlags[entry.Name()]; !ok {
+				continue
+			}
+		}
 		frompath := filepath.Join(oldSavePath, entry.Name())
 		topath := filepath.Join(newSavePath, entry.Name())
 		if util.FileExists(topath) {
@@ -205,13 +287,10 @@ If any error happens, you can safely re-run the same command to re-try and resum
 		if err = atomic.ReplaceFile(frompath, topath); err != nil {
 			return fmt.Errorf("failed to move file %q fom oldpath to newpath: %v", entry.Name(), err)
 		}
+		movedEntriesCnt++
 	}
-	log.Warnf("Moved %d entries from old-save-path to new-save-path", len(oldSavePathEntries))
+	log.Warnf("Moved %d entries from old-save-path to new-save-path", movedEntriesCnt)
 
-	tmppathEntries, err := os.ReadDir(tmppath)
-	if err != nil {
-		return fmt.Errorf("failed to read tmppath: %w", err)
-	}
 	for _, entry := range tmppathEntries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".torrent") || strings.HasPrefix(entry.Name(), ".") {
 			continue
@@ -244,13 +323,13 @@ If any error happens, you can safely re-run the same command to re-try and resum
 		}
 
 		// new save path
-		torrentSavePath = newSavePath + torrentSavePath[len(oldSavePath):]
-		clientTorrentSavePath := torrentSavePath
+		newTorrentSavePath := newSavePath + torrentSavePath[len(oldSavePath):]
+		clientTorrentSavePath := newTorrentSavePath
 		if savePathMapper != nil {
-			clientSavePath, match := savePathMapper.Before2After(torrentSavePath)
+			clientSavePath, match := savePathMapper.Before2After(newTorrentSavePath)
 			if !match {
 				return fmt.Errorf("tmppath/%s new save path %q can not be mapped to client path",
-					entry.Name(), torrentSavePath)
+					entry.Name(), newTorrentSavePath)
 			}
 			clientTorrentSavePath = clientSavePath
 		}
