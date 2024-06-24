@@ -117,6 +117,18 @@ func logBody(title string, header http.Header, body []byte) {
 	}
 }
 
+func LogAzureHttpRequesyBody(req *azuretls.Request, body []byte) {
+	if flags.DumpBodies {
+		header := http.Header{}
+		for _, oh := range req.OrderedHeaders {
+			if len(oh) >= 2 {
+				header.Set(oh[0], oh[1])
+			}
+		}
+		logBody("http request body", header, body)
+	}
+}
+
 func LogHttpRequesyBody(req *http.Request, body []byte) {
 	if flags.DumpBodies {
 		logBody("http request body", req.Header, body)

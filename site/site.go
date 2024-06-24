@@ -594,6 +594,8 @@ func UploadTorrent(siteInstance Site, httpClient *azuretls.Session, uploadUrl st
 		if siteInstance.GetSiteConfig().ImageUploadUrl == "" {
 			return nil, fmt.Errorf("imageUploadUrl is not configured, can not upload image")
 		}
+		headers := util.GetHttpReqHeaders(siteInstance.GetDefaultHttpHeaders(), "", "")
+		headers = append(headers, []string{"Referer", siteInstance.GetSiteConfig().ImageUploadUrl})
 		var imageUploadPayload url.Values
 		if siteInstance.GetSiteConfig().ImageUploadPayload != "" {
 			imageUploadPayload, err = url.ParseQuery(siteInstance.GetSiteConfig().ImageUploadPayload)
@@ -611,7 +613,7 @@ func UploadTorrent(siteInstance Site, httpClient *azuretls.Session, uploadUrl st
 				return nil, constants.ErrDryRun
 			}
 			imageUrl, err := util.PostUploadFileForUrl(httpClient, siteInstance.GetSiteConfig().ImageUploadUrl, image,
-				nil, siteInstance.GetSiteConfig().ImageUploadFileField, imageUploadPayload, nil,
+				nil, siteInstance.GetSiteConfig().ImageUploadFileField, imageUploadPayload, headers,
 				siteInstance.GetSiteConfig().ImageUploadResponseUrlField)
 			if err != nil {
 				return nil, fmt.Errorf("failed to upload image %q: %w", image, err)
@@ -630,6 +632,7 @@ func UploadTorrent(siteInstance Site, httpClient *azuretls.Session, uploadUrl st
 		return nil, constants.ErrDryRun
 	}
 	headers := util.GetHttpReqHeaders(siteInstance.GetDefaultHttpHeaders(), siteInstance.GetSiteConfig().Cookie, "")
+	headers = append(headers, []string{"Referer", uploadUrl})
 	return util.PostUploadFile(httpClient, uploadUrl, "a.torrent", bytes.NewReader(contents), "file",
 		payload, headers)
 }

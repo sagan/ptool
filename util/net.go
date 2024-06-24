@@ -306,10 +306,11 @@ func PostUploadFile(client *azuretls.Session, url string, filename string, file 
 		mp.WriteField(field, additionalFields.Get(field))
 	}
 	mp.Close()
+	bodyData := body.Bytes()
 	req := &azuretls.Request{
 		Url:    url,
 		Method: http.MethodPost,
-		Body:   body.Bytes(),
+		Body:   bodyData,
 		OrderedHeaders: [][]string{
 			{"Content-Type", mp.FormDataContentType()},
 		},
@@ -317,6 +318,7 @@ func PostUploadFile(client *azuretls.Session, url string, filename string, file 
 	}
 	req.OrderedHeaders = append(req.OrderedHeaders, headers...)
 	LogAzureHttpRequest(req)
+	LogAzureHttpRequesyBody(req, bodyData)
 	res, err = client.Do(req)
 	LogAzureHttpResponse(res, err)
 	if err != nil {

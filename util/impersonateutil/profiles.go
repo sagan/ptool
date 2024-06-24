@@ -8,7 +8,7 @@ import (
 
 const (
 	// 默认对站点的 http 请求模仿最新版 Chrome on Windows 11 x64 en-US 环境
-	DEFAULT_IMPERSONATE = "chrome124"
+	DEFAULT_IMPERSONATE = "chrome126"
 )
 
 // 对站点的 http 请求模仿真实浏览器环境。包括：
@@ -86,6 +86,30 @@ var profiles = []*Profile{
 			{"Sec-Ch-Ua-Platform", `"Windows"`},
 			{"Upgrade-Insecure-Requests", "1"},
 			{"User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"},
+			{"Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"},
+			{"Sec-Fetch-Site", `none`},
+			{"Sec-Fetch-Mode", `navigate`},
+			{"Sec-Fetch-User", `?1`},
+			{"Sec-Fetch-Dest", `document`},
+			{"Accept-Encoding", "gzip, deflate, br, zstd"},
+			{"Accept-Language", "en-US,en;q=0.9"},
+			{"priority", "u=0, i"}, // all_lowercase
+			{"Cookie", util.HTTP_HEADER_PLACEHOLDER},
+		},
+	},
+	{
+		Name:          "chrome126",
+		Navigator:     "chrome",
+		Comment:       "Chrome 126 on Windows 11 x64 en-US",
+		Ja3:           "771,4865-4866-4867-49195-49199-49196-49200-52393-52392-49171-49172-156-157-47-53,23-10-65037-13-43-51-17513-0-35-5-27-11-65281-16-45-18,25497-29-23-24,0",
+		H2fingerprint: "1:65536,2:0,4:6291456,6:262144|15663105|0|m,a,s,p",
+		Headers: [][]string{
+			{"Cache-Control", "max-age=0"},
+			{"Sec-Ch-Ua", `"Not/A)Brand";v="8", "Chromium";v="126", "Google Chrome";v="126"`},
+			{"Sec-Ch-Ua-Mobile", `?0`},
+			{"Sec-Ch-Ua-Platform", `"Windows"`},
+			{"Upgrade-Insecure-Requests", "1"},
+			{"User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"},
 			{"Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"},
 			{"Sec-Fetch-Site", `none`},
 			{"Sec-Fetch-Mode", `navigate`},
