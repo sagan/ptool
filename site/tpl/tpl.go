@@ -413,9 +413,11 @@ https://www.dlsite.com/maniax/work/=/product_id/{{number | regex_search("\\bRJ\\
 	"その他ゲーム" in tags
 -%}415
 {%- elif "動画" in tags -%}
-  {%- if "3D作品" in tags -%}423{%- endif -%}
-  {%- else -%}411{%- endif -%}
+  {%- if "3D作品" in tags -%}423
+  {%- else -%}411
+	{%- endif -%}
 {%- elif "マンガ" in tags -%}435
+{%- elif "音声" in tags or "音声あり" in tags -%}420
 {%- endif -%}
 `,
 			},

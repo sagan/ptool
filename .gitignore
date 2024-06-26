@@ -25,6 +25,7 @@ ptool_stats.txt
 iyuu.db
 
 # local
+/.local/
 devtest/
 
 # Linux ELF
