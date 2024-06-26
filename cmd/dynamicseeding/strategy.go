@@ -197,18 +197,24 @@ func doDynamicSeeding(clientInstance client.Client, siteInstance site.Site, igno
 			statistics.UpdateClientTorrent(common.TORRENT_SUCCESS, torrent)
 		}
 	}
-	result.Log += fmt.Sprintf("Client torrents: others %d / invalid %d / stalled %d / downloading %d / safe %d "+
-		"/ normal %d / protected %d / unknown %d\n", len(otherTorrents), len(invalidTorrents), len(stalledTorrents),
-		len(downloadingTorrents), len(safeTorrents), len(normalTorrents), len(protectedTorrents), len(unknownTorrents))
-	if len(downloadingTorrents) >= MAX_PARALLEL_DOWNLOAD {
-		result.Msg = "Already currently downloading enough torrents. Exit"
-		return
-	}
-
 	availableSlots := MAX_PARALLEL_DOWNLOAD - len(downloadingTorrents)
 	availableSpace := siteInstance.GetSiteConfig().DynamicSeedingSizeValue - statistics.SuccessSize
 	if !clientStatus.NoDel {
 		availableSpace += statistics.FailureSize
+	}
+
+	result.Log += fmt.Sprintf("Client torrents: others %d / invalid %d / stalled %d / downloading %d / safe %d "+
+		"/ normal %d / protected %d / unknown %d\n", len(otherTorrents), len(invalidTorrents), len(stalledTorrents),
+		len(downloadingTorrents), len(safeTorrents), len(normalTorrents), len(protectedTorrents), len(unknownTorrents))
+	result.Log += fmt.Sprintf("CapSpace/SuccessSize/FailureSize/AvailableSpace: %s / %s / %s /%s",
+		util.BytesSizeAround(float64(siteInstance.GetSiteConfig().DynamicSeedingSizeValue)),
+		util.BytesSizeAround(float64(statistics.SuccessSize)),
+		util.BytesSizeAround(float64(statistics.FailureSize)),
+		util.BytesSizeAround(float64(availableSpace)))
+
+	if len(downloadingTorrents) >= MAX_PARALLEL_DOWNLOAD {
+		result.Msg = "Already currently downloading enough torrents. Exit"
+		return
 	}
 	if availableSpace < min(siteInstance.GetSiteConfig().DynamicSeedingSizeValue/10, MIN_SIZE) {
 		result.Msg = "Insufficient dynamic seeding storage space in client. Exit"
@@ -284,7 +290,8 @@ site_outer:
 	fmt.Fprintf(os.Stderr, "site candidate torrents:\n")
 	site.PrintTorrents(os.Stderr, siteTorrents, "", timestamp, false, false, nil)
 
-	availableSpace = siteInstance.GetSiteConfig().DynamicSeedingSizeValue - statistics.SuccessSize
+	availableSpace = siteInstance.GetSiteConfig().DynamicSeedingSizeValue -
+		statistics.SuccessSize - statistics.FailureSize
 	for _, torrent := range siteTorrents {
 		var deleteTorrents []string
 		var log string

@@ -206,10 +206,12 @@ type SiteConfigStruct struct {
 	// which is not available in Go. All these methods must be replaced by filters instead.
 	UploadTorrentPayload           map[string]string `yaml:"uploadTorrentPayload"`
 	UploadTorrentAdditionalPayload map[string]string `yaml:"uploadTorrentAdditionalPayload"`
-	TorrentDownloadUrl             string            `yaml:"torrentDownloadUrl"` // use {id} placeholders in url
-	TorrentDownloadUrlPrefix       string            `yaml:"torrentDownloadUrlPrefix"`
-	Passkey                        string            `yaml:"passkey"`
-	UseCuhash                      bool              `yaml:"useCuhash"` // hdcity 使用机制。种子下载地址里必须有cuhash参数
+	// csv, eg: "type". It will check existence of these keys in metadata prior publishing.
+	UploadTorrentPayloadRequiredKeys string `yaml:"uploadTorrentPayloadRequiredKeys"`
+	TorrentDownloadUrl               string `yaml:"torrentDownloadUrl"` // use {id} placeholders in url
+	TorrentDownloadUrlPrefix         string `yaml:"torrentDownloadUrlPrefix"`
+	Passkey                          string `yaml:"passkey"`
+	UseCuhash                        bool   `yaml:"useCuhash"` // hdcity 使用机制。种子下载地址里必须有cuhash参数
 	// ttg 使用机制。种子下载地址末段必须有4位数字校验码或Passkey参数(即使有 Cookie)
 	UseDigitHash                      bool   `yaml:"useDigitHash"`
 	TorrentUrlIdRegexp                string `yaml:"torrentUrlIdRegexp"`

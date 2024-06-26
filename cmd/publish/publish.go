@@ -86,7 +86,7 @@ func init() {
 		"Will at most publish torrents with total contents size of this value. -1 == no limit")
 	command.Flags().StringVarP(&mustTag, "must-tag", "", "", "Comma-separated tag list. "+
 		`If set, only content folders which tags contains any one in the list will be published`)
-	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "100MiB",
+	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "10MiB",
 		"Do not publish torrent which contents size is smaller than (<) this value. -1 == no limit")
 	command.Flags().StringVarP(&sitename, "site", "", "", "Publish site")
 	command.Flags().StringVarP(&clientname, "client", "", "",
@@ -518,6 +518,7 @@ func downloadPublishedTorrent(siteInstance site.Site, clientInstance client.Clie
 		SkipChecking: true,
 		SavePath:     savePath,
 		Category:     config.SEEDING_CAT,
+		Tags:         []string{client.GenerateTorrentTagFromSite(sitename), config.PRIVATE_TAG},
 	}, nil)
 	if err != nil {
 		return fmt.Errorf("failed to add torrent to client: %w", err)

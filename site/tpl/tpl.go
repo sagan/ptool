@@ -372,6 +372,7 @@ var (
 			ImageUploadHeaders: [][]string{
 				{"Cookie", "c_secure_uid=dummy; c_secure_pass=dummy; c_secure_ssl=dummy; c_secure_tracker_ssl=dummy; c_secure_login=dummy; search_box=minus"},
 			},
+			UploadTorrentPayloadRequiredKeys: "type",
 			UploadTorrentAdditionalPayload: map[string]string{
 				"descr": `
 {% if _cover %}
@@ -394,11 +395,11 @@ https://www.dlsite.com/maniax/work/=/product_id/{{number | regex_search("\\bRJ\\
 ---
 
 {{comment}}{% endif %}`,
-				// 420: 外语音声; 415: 游戏; 435: 同人志; 411: 2D动画.
+				// 420: 外语音声; 415: 游戏; 435: 同人志; 411: 2D动画; 423: 3D动画.
 				// dlsite work_type genres: https://www.dlsite.com/maniax/worktype/list .
 				"type": `
-{% if "ボイス・ASMR" in tags %}420
-{% elif
+{%- if "ボイス・ASMR" in tags -%}420
+{%- elif
 	"アクション" in tags or
 	"クイズ" in tags or
 	"アドベンチャー" in tags or
@@ -410,10 +411,12 @@ https://www.dlsite.com/maniax/work/=/product_id/{{number | regex_search("\\bRJ\\
 	"シューティング" in tags or
 	"パズル" in tags or
 	"その他ゲーム" in tags
-%}415
-{% elif "動画" in tags %}411
-{% elif "マンガ" in tags %}435
-{% endif %}
+-%}415
+{%- elif "動画" in tags -%}
+  {%- if "3D作品" in tags -%}423{%- endif -%}
+  {%- else -%}411{%- endif -%}
+{%- elif "マンガ" in tags -%}435
+{%- endif -%}
 `,
 			},
 			Comment: "KamePT",

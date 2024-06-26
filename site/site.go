@@ -589,6 +589,14 @@ func UploadTorrent(siteInstance Site, httpClient *azuretls.Session, uploadUrl st
 	}
 
 	log.Debugf("Publish torrent payload: %v", payload)
+	if keys := siteInstance.GetSiteConfig().UploadTorrentPayloadRequiredKeys; keys != "" && keys != constants.NONE {
+		for _, key := range util.SplitCsv(keys) {
+			if payload.Get(key) == "" {
+				return nil, fmt.Errorf("required payload %s is not found or is empty", key)
+			}
+		}
+	}
+
 	// upload images.
 	if coverFile != "" || metadata.Has("_images") {
 		if siteInstance.GetSiteConfig().ImageUploadUrl == "" {
