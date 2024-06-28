@@ -134,7 +134,7 @@ func dynamicseeding(cmd *cobra.Command, args []string) (err error) {
 	var deleteIds []string
 	log.Infof("Delete torrents:")
 	for len(result.DeleteTorrents) > 0 {
-		if deleteSize >= addedSize {
+		if deleteSize >= addedSize+result.OverflowSpace {
 			break
 		}
 		deleteSize += result.DeleteTorrents[0].Size

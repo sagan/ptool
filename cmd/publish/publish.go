@@ -49,26 +49,27 @@ var (
 )
 
 var (
-	doCheck           = false
-	skipCheck         = false
-	dryRun            = false
-	checkExisting     = false
-	showJson          = false
-	maxTorrents       = int64(0)
-	minTorrentSizeStr = ""
-	sitename          = ""
-	clientname        = ""
-	contentPath       = ""
-	savePath          = ""
-	comment           = ""
-	commentFile       = ""
-	moveOkTo          = ""
-	mustTag           = ""
-	metaArrayKeysStr  = ""
-	maxTotalSizeStr   = ""
-	imageFiles        []string
-	fields            []string
-	mapSavePaths      []string
+	doCheck               = false
+	skipCheck             = false
+	dryRun                = false
+	checkExisting         = false
+	showJson              = false
+	maxTorrents           = int64(0)
+	maxPublishingTorrents = int64(0)
+	minTorrentSizeStr     = ""
+	sitename              = ""
+	clientname            = ""
+	contentPath           = ""
+	savePath              = ""
+	comment               = ""
+	commentFile           = ""
+	moveOkTo              = ""
+	mustTag               = ""
+	metaArrayKeysStr      = ""
+	maxTotalSizeStr       = ""
+	imageFiles            []string
+	fields                []string
+	mapSavePaths          []string
 )
 
 func init() {
@@ -81,6 +82,8 @@ func init() {
 		"Check whether same contents torrent already exists in site before publishing")
 	command.Flags().BoolVarP(&showJson, "json", "", false, "Show output in json format")
 	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "", -1,
+		"Number limit of (successfully) published torrents. -1 == no limit")
+	command.Flags().Int64VarP(&maxPublishingTorrents, "max-publishing-torrents", "", -1,
 		"Number limit of publishing torrents. -1 == no limit")
 	command.Flags().StringVarP(&maxTotalSizeStr, "max-total-size", "", "-1",
 		"Will at most publish torrents with total contents size of this value. -1 == no limit")
@@ -197,6 +200,7 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 
 	errorCnt := int64(0)
 	cntHandled := int64(0)
+	cntPublished := int64(0)
 	sizePublished := int64(0)
 	for _, contentPath := range contentPathes {
 		id, tinfo, err := publicTorrent(siteInstance, clientInstance, contentPath, metaValues, true,
@@ -210,8 +214,11 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 		}
 		if err == nil {
 			sizePublished += tinfo.Size
+			cntPublished++
 		}
-		if maxTorrents > 0 && cntHandled >= maxTorrents || maxTotalSize > 0 && sizePublished >= maxTotalSize {
+		if maxTorrents > 0 && cntPublished >= maxTorrents ||
+			maxPublishingTorrents > 0 && cntHandled >= maxPublishingTorrents ||
+			maxTotalSize > 0 && sizePublished >= maxTotalSize {
 			break
 		}
 	}

@@ -107,6 +107,7 @@ ptool <command> args... [flags]
 - status : 显示 BT 客户端或 PT 站点当前状态信息。
 - stats : 显示刷流任务流量统计。
 - search : 在某个站点搜索指定关键词的种子。
+- dynamicseeding : 全站动态保种。
 - add : 将种子添加到 BT 客户端。
 - dltorrent : 下载站点的种子(.torrent 文件)。
 - publish : 发布(上传)种子到站点。
@@ -538,6 +539,38 @@ ptool batchdl kamept --tag "外语音声,同人志" --sort none --start-page 0 -
 ```
 
 获取 kamept 首页最新的 "外语音声"或"同人志"分类里的免费种子并添加到 local 客户端。使用 crontab 定时运行即可，可以实现比 RSS 更细致的筛选，并且不依赖站点。
+
+### 全站动态保种 (dynamicseeding) (试验性功能)
+
+```
+ptool dynamicseeding {client} {site}
+```
+
+dynamicseeding 命令自动从指定站点下载亟需保种的种子并做种。
+
+首先在 ptoo.toml 配置文件里设置对于指定站点允许使用多少硬盘空间进行动态保种：
+
+```
+[[sites]]
+type = 'kamept'
+cookie = '...'
+dynamicSeedingSize = '500GiB' # 动态保种使用硬盘空间
+dynamicSeedingTorrentMaxSize = '20GiB' # 动态保种单个种子大小上限
+```
+
+然后定期运行以下命令即可，参数分别为动态保种使用的 BT 客户端、站点名：
+
+```
+ptool dynamicseeding local kamept
+```
+
+“动态保种”功能详细说明：
+
+- 如果“可用空间”（可用空间为 dynamicSeedingSize 减去 BT 客户端里当前该站点所有动态保种种子大小之和）足够，程序会从站点下载当前亟需保种（有断种风险）的种子并做种。
+- 默认仅会下载免费并且没有 HR 的种子。
+- 动态保种的种子会放到 qBittorrent 的 `dynamic-seeding-<sitename>` 分类里。
+- 如果“可用空间”不足并且有新的亟需保种的种子，程序会删除 BT 客户端里该站点的动态保种种子里已经不再有断种风险的种子，以腾出空间下载新的种子。对于站点已经删除的种子，程序也会从 BT 客户端里删除。
+- 对于 BT 客户端里正在做种的动态保种种子，如果其当前做种人数 < 4，程序在任何情况下都不会自动删除该种子（即使“可用空间”不足）。
 
 ### 发布(上传)种子 (publish)
 

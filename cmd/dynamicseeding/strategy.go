@@ -49,6 +49,7 @@ const MIN_FREE_REMAINING_TIME = 3600 * 3
 const MAX_SCANNED_TORRENTS = 1000
 
 type Result struct {
+	OverflowSpace     int64 // If torrents current total size is over limit, the overflow size.
 	Timestamp         int64
 	Sitename          string
 	Size              int64
@@ -64,11 +65,11 @@ func (result *Result) Print(output io.Writer) {
 	fmt.Fprintf(output, "Use at most %s of disk to dynamic-seeding\n", util.BytesSize(float64(result.Size)))
 	fmt.Fprintf(output, "Message: %s\n", result.Msg)
 	if len(result.DeleteTorrents) > 0 {
-		fmt.Fprintf(output, "\nDelete torents from client:\n")
+		fmt.Fprintf(output, "\nDelete %d torents from client:\n", len(result.DeleteTorrents))
 		client.PrintTorrents(os.Stdout, result.DeleteTorrents, "", 1, false)
 	}
 	if len(result.AddTorrents) > 0 {
-		fmt.Fprintf(output, "\nAdd torents to client:\n")
+		fmt.Fprintf(output, "\nAdd %d torents to client:\n", len(result.AddTorrents))
 		site.PrintTorrents(os.Stdout, result.AddTorrents, "", result.Timestamp, false, false, nil)
 	}
 	fmt.Fprintf(output, "\nLog:\n%s\n", result.Log)
@@ -202,7 +203,10 @@ func doDynamicSeeding(clientInstance client.Client, siteInstance site.Site, igno
 	if !clientStatus.NoDel {
 		availableSpace += statistics.FailureSize
 	}
-
+	if statistics.SuccessSize+statistics.FailureSize > siteInstance.GetSiteConfig().DynamicSeedingSizeValue {
+		result.OverflowSpace = statistics.SuccessSize + statistics.FailureSize -
+			siteInstance.GetSiteConfig().DynamicSeedingSizeValue
+	}
 	result.Log += fmt.Sprintf("Client torrents: others %d / invalid %d / stalled %d / downloading %d / safe %d "+
 		"/ normal %d / protected %d / unknown %d\n", len(otherTorrents), len(invalidTorrents), len(stalledTorrents),
 		len(downloadingTorrents), len(safeTorrents), len(normalTorrents), len(protectedTorrents), len(unknownTorrents))
