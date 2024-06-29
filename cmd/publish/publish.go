@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/natefinch/atomic"
 	log "github.com/sirupsen/logrus"
@@ -163,6 +164,12 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 	siteInstance, err := site.CreateSite(sitename)
 	if err != nil {
 		return fmt.Errorf("failed to create site: %w", err)
+	}
+	if httpClient, _, err := site.CreateSiteHttpClient(siteInstance.GetSiteConfig(), config.Get()); err == nil {
+		// workaround: force increase site http client timeout.
+		if httpClient.TimeOut < time.Second*45 {
+			httpClient.SetTimeout(time.Second * 45)
+		}
 	}
 	if _, err := siteInstance.GetStatus(); err != nil {
 		return fmt.Errorf("failed to get site status: %w", err)
@@ -462,7 +469,7 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 		if err == constants.ErrDryRun && targetContentPath != contentPath {
 			atomic.ReplaceFile(contentPath, targetContentPath)
 		}
-		return "", nil, err
+		return "", nil, fmt.Errorf("failed to publish torrent: %w", err)
 	}
 	if id != "" {
 		atomic.WriteFile(publishedFlagFile, strings.NewReader(id))
@@ -476,7 +483,7 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 	}
 	err = downloadPublishedTorrent(siteInstance, clientInstance, targetContentPath, savePathMapper)
 	if err != nil {
-		return id, tinfo, err
+		return id, tinfo, fmt.Errorf("failed to download published torrent: %w", err)
 	}
 	return id, tinfo, nil
 }
@@ -502,7 +509,7 @@ func downloadPublishedTorrent(siteInstance site.Site, clientInstance client.Clie
 		}
 		torrentContents, _, err = siteInstance.DownloadTorrentById(id)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to download prerviously published torrent: %w", err)
 		}
 		if err := atomic.WriteFile(torrentFilename, bytes.NewReader(torrentContents)); err != nil {
 			return fmt.Errorf("failed to write downloaded torrent file: %w", err)

@@ -40,6 +40,9 @@ const INFINITE_SIZE = 1024 * 1024 * 1024 * 1024 * 1024 * 1024 // 1EiB
 
 const CLIENT_DEFAULT_DOWNLOADING_SPEED_LIMIT = 300 * 1024 * 1024 / 8 // BT客户端默认下载速度上限：300Mbps
 
+// Longer names in torrent will be truncated by libtorrent / qBottorrent, which could cause problems.
+// See: https://github.com/qbittorrent/qBittorrent/issues/7038 .
+const TORRENT_CONTENT_FILENAME_LENGTH_LIMIT = 240
 const TORRENT_DEFAULT_PIECE_LENGTH = "16MiB"
 const META_TORRENT_FILE = ".torrent"
 const METADATA_FILE = "metadata.nfo"

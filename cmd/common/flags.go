@@ -68,6 +68,7 @@ var pureFlags = []string{
 	"add-respect-noadd",
 	"all",
 	"allow-filename-restricted-characters",
+	"allow-long-name",
 	"append",
 	"backup",
 	"bindable",

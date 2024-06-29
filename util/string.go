@@ -81,6 +81,9 @@ func ParseInt(str string) int64 {
 
 // Return prefix of str that is at most max bytes encoded in UTF-8
 func StringPrefixInBytes(str string, max int64) string {
+	if int64(len(str)) <= max {
+		return str
+	}
 	length := 0
 	sb := &strings.Builder{}
 	for _, char := range str {

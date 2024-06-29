@@ -4,6 +4,7 @@ package maketorrent
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -50,6 +51,7 @@ var (
 	private                           = false
 	public                            = false
 	force                             = false
+	allowLongName                     = false
 	allowFilenameRestrictedCharacters = false
 	pieceLengthStr                    = ""
 	infoName                          = ""
@@ -63,6 +65,11 @@ var (
 )
 
 func init() {
+	command.Flags().BoolVarP(&allowLongName, "allow-long-name", "", false,
+		fmt.Sprintf("By default, ptool refuses to make torrent which contents contain any file which name's length "+
+			"(UTF-8 bytes) is longer than (>) %d bytes. Those long name files could cause problems when downloading / "+
+			"seeding the torrent. Set this flag to lift this restriction",
+			constants.TORRENT_CONTENT_FILENAME_LENGTH_LIMIT))
 	command.Flags().BoolVarP(&allowFilenameRestrictedCharacters, "allow-filename-restricted-characters", "", false,
 		`Allow making torrent which content filenames contain invalid char in Windows, e.g. '?' char`)
 	command.Flags().BoolVarP(&all, "all", "a", false, `Index all files of content folder to created torrent. `+
@@ -98,7 +105,10 @@ func maketorrent(cmd *cobra.Command, args []string) (err error) {
 	if private && public {
 		return fmt.Errorf("--private and --public flags are NOT compatible")
 	}
-	contentPath := args[0]
+	contentPath, err := filepath.Abs(args[0])
+	if err != nil {
+		return fmt.Errorf("failed to get abs path of %q: %w", args[0], err)
+	}
 	optoins := &torrentutil.TorrentMakeOptions{
 		ContentPath:                   contentPath,
 		Output:                        output,
@@ -115,6 +125,7 @@ func maketorrent(cmd *cobra.Command, args []string) (err error) {
 		CreatedBy:                     createdBy,
 		CreationDate:                  creationDate,
 		AllowRestrictedCharInFilename: allowFilenameRestrictedCharacters,
+		AllowLongName:                 allowLongName,
 	}
 	if len(optoins.Trackers) == 0 && !optoins.Public {
 		log.Warnf(`Warning: the created .torrent file will NOT have any trackers. ` +

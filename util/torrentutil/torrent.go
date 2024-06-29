@@ -67,11 +67,20 @@ type TorrentMakeOptions struct {
 	MinSize                       int64
 	Excludes                      []string
 	AllowRestrictedCharInFilename bool
+	// By default, limit filename length to at most 240 bytes (UTF-8).
+	// It's the limit imposed by libtorrent on Linux.
+	AllowLongName bool
 }
 
 var (
-	ErrNoChange = errors.New("no change made")
-	ErrSmall    = errors.New("torrent contents is too small")
+	ErrNoChange      = errors.New("no change made")
+	ErrSmall         = errors.New("torrent contents is too small")
+	ErrDifferentName = errors.New("this is single-file torrent. the torrent content file on disk " +
+		"has same content with torrent meta, but they have DIFFERENT file name, " +
+		"so it can not be directly added to client as xseed torrent")
+	ErrDifferentRootName = errors.New("this is multiple-file torrent. the torrent content files on disk " +
+		"has same contents with torrent meta, but they have DIFFERENT root folder name, " +
+		"so it can not be directly added to client as xseed torrent")
 )
 
 func ParseTorrent(torrentdata []byte) (*TorrentMeta, error) {
@@ -558,15 +567,11 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash i
 		if err == nil {
 			if meta.SingleFileTorrent {
 				if fileStats.Name() != meta.Files[0].Path {
-					log.Warnf(`This is single-file torrent. The torrent content file on disk "%s" `+
-						"has same content with torrent meta, but they have DIFFERENT file name. "+
-						"Be careful if you would add this torrent to client to xseed.", contentPath)
+					return ts, ErrDifferentName
 				}
 			} else {
 				if fileStats.Name() != meta.RootDir {
-					log.Warnf(`This is multiple-file torrent. The torrent content folder on disk "%s" `+
-						"has same contents with torrent meta, but they have DIFFERENT root folder name. "+
-						"Be careful if you would add this torrent to client to xseed.", contentPath)
+					return ts, ErrDifferentRootName
 				}
 			}
 		}
@@ -664,7 +669,7 @@ func MakeTorrent(options *TorrentMakeOptions) (tinfo *TorrentMeta, err error) {
 	}
 	log.Infof("Creating torrent for %q", options.ContentPath)
 	if err := infoBuildFromFilePath(info, options.ContentPath, options.Excludes,
-		options.AllowRestrictedCharInFilename); err != nil {
+		options.AllowRestrictedCharInFilename, options.AllowLongName); err != nil {
 		return nil, fmt.Errorf("failed to build info from content-path: %w", err)
 	}
 	if len(info.Files) == 0 {
@@ -723,7 +728,8 @@ func MakeTorrent(options *TorrentMakeOptions) (tinfo *TorrentMeta, err error) {
 
 // Adapted from metainfo.BuildFromFilePath.
 // excludes: gitignore style exclude-file-patterns.
-func infoBuildFromFilePath(info *metainfo.Info, root string, excludes []string, allowAnyCharInName bool) (err error) {
+func infoBuildFromFilePath(info *metainfo.Info, root string, excludes []string,
+	allowAnyCharInName bool, allowLongName bool) (err error) {
 	info.Name = func() string {
 		b := filepath.Base(root)
 		switch b {
@@ -749,6 +755,10 @@ func infoBuildFromFilePath(info *metainfo.Info, root string, excludes []string, 
 					}
 				}
 			}
+		}
+		if !allowLongName && len(fi.Name()) > constants.TORRENT_CONTENT_FILENAME_LENGTH_LIMIT {
+			return fmt.Errorf("filename %q is too long (%d bytes in UTF-8). Consider truncate it to %q", fi.Name(),
+				len(fi.Name()), util.StringPrefixInBytes(fi.Name(), constants.TORRENT_CONTENT_FILENAME_LENGTH_LIMIT))
 		}
 		if fi.IsDir() {
 			// Directories are implicit in torrent files.
