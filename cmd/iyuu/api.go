@@ -81,6 +81,7 @@ type IyuuTorrentInfoHash struct {
 }
 
 const IYUU_VERSION = "8.2.0"
+const MAX_INTOHASH_NUMBER = 500 // 单次提交种子info_hash最多500个
 
 // https://api.iyuu.cn/docs.php?service=App.Api.Infohash&detail=1&type=fold
 func IyuuApiHash(token string, infoHashes []string) (map[string][]IyuuTorrentInfoHash, error) {

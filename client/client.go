@@ -190,7 +190,7 @@ func (trackers TorrentTrackers) SeemsInvalidTorrent() bool {
 			break
 		}
 		if tracker.SeemsInvalidTorrent() {
-			hasInvalid = false
+			hasInvalid = true
 		}
 	}
 	return !hasOk && hasInvalid
@@ -199,11 +199,11 @@ func (trackers TorrentTrackers) SeemsInvalidTorrent() bool {
 // Return true if the tracker is (seems) working but reports that the torrent does not exist in the tracker
 // or current torrent passkey is invalid.
 func (tracker *TorrentTracker) SeemsInvalidTorrent() bool {
-	if tracker.Status == "working" && tracker.Msg != "" && slices.ContainsFunc(tracker_invalid_torrent_msgs,
+	if tracker.Msg != "" && slices.ContainsFunc(tracker_invalid_torrent_msgs,
 		func(msg string) bool {
-			return util.ContainsI(msg, tracker.Msg)
+			return util.ContainsI(tracker.Msg, msg)
 		}) {
-		return false
+		return true
 	}
 	return false
 }

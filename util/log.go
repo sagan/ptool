@@ -79,19 +79,8 @@ func LogAzureHttpResponse(res *azuretls.Response, err error) {
 			}).Errorf("http response")
 		}
 	}
-	if flags.DumpBodies {
-		contentType, isText := getContentType(http.Header(res.Header))
-		if isText {
-			log.WithFields(log.Fields{
-				"body":        string(res.Body),
-				"contentType": contentType,
-			}).Errorf("http response body")
-		} else {
-			log.WithFields(log.Fields{
-				"body":        res.Body,
-				"contentType": contentType,
-			}).Errorf("http response body")
-		}
+	if flags.DumpBodies && res != nil {
+		logBody("http response body", http.Header(res.Header), res.Body)
 	}
 }
 

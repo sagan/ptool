@@ -127,7 +127,6 @@ func PostUrlForJson(url string, data url.Values, v any, header http.Header, clie
 	}
 	LogHttpRequesyBody(req, []byte(reqBody))
 	res, err := HttpRequest(req, client)
-	LogHttpResponse(res, err)
 	if err != nil {
 		return err
 	}

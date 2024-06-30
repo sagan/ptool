@@ -32,6 +32,9 @@ const (
 	XSEED_TAG                  = "_xseed"
 	NOADD_TAG                  = "_noadd"
 	NODEL_TAG                  = "_nodel"
+	TORRENT_NODEL_TAG          = "nodel"
+	INVALID_TRACKER_TAG        = "_invalid_tracker"
+	MOVED_TAG                  = "_moved"  // moved to another client
 	NOXSEED_TAG                = "noxseed" // BT 客户端里含有此 tag 的种子不会被辅种
 	HR_TAG                     = "_hr"
 	PRIVATE_TAG                = "_private"

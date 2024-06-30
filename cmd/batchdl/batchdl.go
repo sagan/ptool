@@ -131,7 +131,7 @@ func init() {
 	command.Flags().BoolVarP(&onePage, "one-page", "", false, "Only fetch one page torrents")
 	command.Flags().BoolVarP(&addPaused, "add-paused", "", false, "Add torrents to client in paused state")
 	command.Flags().BoolVarP(&dense, "dense", "d", false, "Dense mode: show full torrent title & subtitle")
-	command.Flags().BoolVarP(&freeOnly, "free", "", false, "Skip none-free torrent")
+	command.Flags().BoolVarP(&freeOnly, "free", "", false, "Skip non-free torrent")
 	command.Flags().BoolVarP(&noPaid, "no-paid", "", false, "Skip paid (cost bonus points) torrent")
 	command.Flags().BoolVarP(&noNeutral, "no-neutral", "", false,
 		"Skip neutral (do not count uploading & downloading & seeding bonus) torrent")
@@ -467,7 +467,7 @@ mainloop:
 			}
 			if freeOnly {
 				if torrent.DownloadMultiplier != 0 {
-					log.Debugf("Skip none-free torrent %s", torrent.Name)
+					log.Debugf("Skip non-free torrent %s", torrent.Name)
 					continue
 				}
 				if freeTimeAtLeast > 0 && torrent.DiscountEndTime > 0 && torrent.DiscountEndTime < now+freeTimeAtLeast {

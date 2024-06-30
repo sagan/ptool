@@ -131,7 +131,7 @@ func delete(cmd *cobra.Command, args []string) error {
 		}
 		if len(torrentsWithXseed) > 0 {
 			client.PrintTorrents(os.Stdout, torrentsWithXseed, "", 1, false)
-			fmt.Printf("Above %d torrents will be deleted, they have none-delete xseed torrents exists,\n"+
+			fmt.Printf("Above %d torrents will be deleted, they have non-delete xseed torrents exists,\n"+
 				"so their disk files will NOT be deleted.\n", len(torrentsWithXseed))
 			fmt.Printf("\n")
 		}

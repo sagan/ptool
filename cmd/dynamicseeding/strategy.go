@@ -165,7 +165,10 @@ func doDynamicSeeding(clientInstance client.Client, siteInstance site.Site, igno
 				trackerStatus = TRACKER_OK
 			}
 		}
-		if !torrent.IsComplete() {
+		if torrent.HasTag(config.TORRENT_NODEL_TAG) {
+			protectedTorrents = append(protectedTorrents, torrent.InfoHash)
+			statistics.UpdateClientTorrent(common.TORRENT_SUCCESS, torrent)
+		} else if !torrent.IsComplete() {
 			if trackerStatus == TRACKER_INVALID && timestamp-torrent.Atime > NEW_TORRENT_TIMESPAN {
 				invalidTorrents = append(invalidTorrents, torrent.InfoHash)
 				statistics.UpdateClientTorrent(common.TORRENT_INVALID, torrent)
@@ -210,7 +213,7 @@ func doDynamicSeeding(clientInstance client.Client, siteInstance site.Site, igno
 	result.Log += fmt.Sprintf("Client torrents: others %d / invalid %d / stalled %d / downloading %d / safe %d "+
 		"/ normal %d / protected %d / unknown %d\n", len(otherTorrents), len(invalidTorrents), len(stalledTorrents),
 		len(downloadingTorrents), len(safeTorrents), len(normalTorrents), len(protectedTorrents), len(unknownTorrents))
-	result.Log += fmt.Sprintf("CapSpace/SuccessSize/FailureSize/AvailableSpace: %s / %s / %s /%s",
+	result.Log += fmt.Sprintf("CapSpace/ProtectedSize/NormalSize/AvailableSpace: %s / %s / %s /%s",
 		util.BytesSizeAround(float64(siteInstance.GetSiteConfig().DynamicSeedingSizeValue)),
 		util.BytesSizeAround(float64(statistics.SuccessSize)),
 		util.BytesSizeAround(float64(statistics.FailureSize)),

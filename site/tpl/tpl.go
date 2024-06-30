@@ -398,26 +398,28 @@ https://www.dlsite.com/maniax/work/=/product_id/{{number | regex_search("\\bRJ\\
 				// 420: 外语音声; 415: 游戏; 435: 同人志; 411: 2D动画; 423: 3D动画.
 				// dlsite work_type genres: https://www.dlsite.com/maniax/worktype/list .
 				"type": `
-{%- if "ボイス・ASMR" in tags -%}420
-{%- elif
-	"アクション" in tags or
-	"クイズ" in tags or
-	"アドベンチャー" in tags or
-	"ロールプレイング" in tags or
-	"テーブル" in tags or
-	"デジタルノベル" in tags or
-	"シミュレーション" in tags or
-	"タイピング" in tags or
-	"シューティング" in tags or
-	"パズル" in tags or
-	"その他ゲーム" in tags
--%}415
-{%- elif "動画" in tags -%}
-  {%- if "3D作品" in tags -%}423
-  {%- else -%}411
+{%- if tags -%}
+	{%- if "ボイス・ASMR" in tags -%}420
+	{%- elif
+		"アクション" in tags or
+		"クイズ" in tags or
+		"アドベンチャー" in tags or
+		"ロールプレイング" in tags or
+		"テーブル" in tags or
+		"デジタルノベル" in tags or
+		"シミュレーション" in tags or
+		"タイピング" in tags or
+		"シューティング" in tags or
+		"パズル" in tags or
+		"その他ゲーム" in tags
+	-%}415
+	{%- elif "動画" in tags -%}
+		{%- if "3D作品" in tags -%}423
+		{%- else -%}411
+		{%- endif -%}
+	{%- elif "マンガ" in tags -%}435
+	{%- elif "音声" in tags or "音声あり" in tags -%}420
 	{%- endif -%}
-{%- elif "マンガ" in tags -%}435
-{%- elif "音声" in tags or "音声あり" in tags -%}420
 {%- endif -%}
 `,
 			},
@@ -523,6 +525,12 @@ https://www.dlsite.com/maniax/work/=/product_id/{{number | regex_search("\\bRJ\\
 			Url:     "https://ptchina.org/",
 			Comment: "铂金学院",
 		},
+		"pterclub": {
+			Type:    "nexusphp",
+			Aliases: []string{"pter"},
+			Url:     "https://pterclub.com/",
+			Comment: "猫站",
+		},
 		"ptsbao": {
 			Type:    "nexusphp",
 			Url:     "https://ptsbao.club/",
@@ -606,6 +614,11 @@ https://www.dlsite.com/maniax/work/=/product_id/{{number | regex_search("\\bRJ\\
 			Url:               "https://pt.eastgame.org/",
 			TorrentsExtraUrls: []string{"trls.php"},
 			Comment:           "吐鲁番",
+		},
+		"tosky": {
+			Type:    "nexusphp",
+			Url:     "https://t.tosky.club/",
+			Comment: "ToSky",
 		},
 		"totheglory": {
 			Type:              "nexusphp",

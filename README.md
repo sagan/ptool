@@ -119,6 +119,7 @@ ptool <command> args... [flags]
 - partialdownload : 拆包下载。
 - xseedadd : 手动添加辅种种子到客户端。
 - findalone : 查找下载目录里的未做种文件。
+- markinvalidtracker : 标记 BT 客户端里 Tracker 状态异常的种子。
 - movesavepath : 修改本地 BT 客户端里的种子内容文件保存路径。
 - cookiecloud : 使用 [CookieCloud][] 同步站点的 Cookies 或导入站点。
 - sites : 显示本程序内置支持的所有 PT 站点列表。
@@ -566,11 +567,13 @@ ptool dynamicseeding local kamept
 
 “动态保种”功能详细说明：
 
-- 如果“可用空间”（可用空间为 dynamicSeedingSize 减去 BT 客户端里当前该站点所有动态保种种子大小之和）足够，程序会从站点下载当前亟需保种（有断种风险）的种子并做种。
+- 如果“可用空间”（可用空间为 dynamicSeedingSize 减去 BT 客户端里当前该站点所有动态保种种子大小之和）有空余，程序会从站点下载当前亟需保种（有断种风险）的种子并做种。
 - 默认仅会下载免费并且没有 HR 的种子。
-- 动态保种的种子会放到 qBittorrent 的 `dynamic-seeding-<sitename>` 分类里。
+- 动态保种的种子会放到 qBittorrent 的 `dynamic-seeding-<sitename>` 分类里，并且打上 `site:<sitename>` 标签。
 - 如果“可用空间”不足并且有新的亟需保种的种子，程序会删除 BT 客户端里该站点的动态保种种子里已经不再有断种风险的种子，以腾出空间下载新的种子。对于站点已经删除的种子，程序也会从 BT 客户端里删除。
 - 对于 BT 客户端里正在做种的动态保种种子，如果其当前做种人数 < 4，程序在任何情况下都不会自动删除该种子（即使“可用空间”不足）。
+- 程序也不会自动删除含有 `nodel` 标签的动态保种种子。
+- 用户自行下载的种子，也可以将其放到 `dynamic-seeding-<sitename>` 分类并打上 `site:<sitename>` 标签，以允许动态保种功能对其进行管理并在需要时删除其以腾出空间下载新的种子（注意分类和标签两者都必须设置）。
 
 ### 发布(上传)种子 (publish)
 
@@ -768,6 +771,24 @@ ptool findalone local D:\Downloads E:\Downloads F:\Downloads
 ptool findalone local --map-save-path "/root/Downloads:/Downloads" /root/Downloads
 ```
 
+### 标记 BT 客户端里 Tracker 状态异常的种子 (markinvalidtracker)
+
+示例：
+
+```
+ptool markinvalidtracker <client> _all
+```
+
+markinvalidtracker 命令将在客户端里查找当前 Tracker 状态异常的种子，然后为这些种子打上 `_invalid_tracker` 标签。
+
+markinvalidtracker 命令将以下几种情形认为是 Tracker 状态异常：
+
+- 种子在 Tracker 未注册或已经被删除。
+- 种子的 Tracker url 的 Passkey 或 Authkey 不正确。
+- 种子超过了站点的同时下载/做种客户端数量上限。
+
+markinvalidtracker 不会标记因为网络或站点服务器问题而当前无法连通 Tracker 的种子。
+
 ### 修改本地 BT 客户端里的种子内容文件保存路径 (movesavepath)
 
 假设 BT 客户端里有一个种子的内容文件夹(content-path)路径是 `/root/Downloads/[BDRip]Clannad`，并且这个文件夹下存在不属于这个种子的其他文件（例如媒体库管理软件刮削生成的元文件 metainfo.nfo）：
@@ -896,7 +917,7 @@ You Sheng Xiao Shuo He Ji Mp3 M4a 265.3GiB ✓ 2022-10-31 06:08:14 14 1 61 redle
   - `!` : HR 种子。
   - `$` : 付费(paid)种子。第一次下载或汇报种子时会扣除积分。
   - `✓` : 免费(free)种子（不计算下载量）。
-  - `✕` : 非免费(none-free)种子（下载量倍率 > 0）。
+  - `✕` : 非免费(non-free)种子（下载量倍率 > 0）。
   - `(1d12h)` : 种子优惠(下载量免费或折扣、上传量倍率等)剩余时间。
   - `N` : 中性(Neutral)种子。不计算上传量、下载量、做种魔力。
   - `Z` : 零流量种子。不计算上传量、下载量。

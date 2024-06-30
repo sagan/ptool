@@ -89,7 +89,7 @@ func SetStructFieldValue(obj any, field string, value any) {
 }
 
 // https://stackoverflow.com/questions/23350173
-// copy none-empty field values from src to dst. dst and src must be pointors of same type of plain struct
+// copy non-empty field values from src to dst. dst and src must be pointors of same type of plain struct
 func Assign(dst any, src any, excludeFieldIndexes []int) {
 	dstValue := reflect.ValueOf(dst).Elem()
 	srcValue := reflect.ValueOf(src).Elem()
@@ -154,7 +154,7 @@ func Sleep(seconds int64) {
 	time.Sleep(time.Duration(seconds) * time.Second)
 }
 
-// return a none-existing filename
+// return a non-existing filename
 func GetNewFilename(filename string) string {
 	if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
 		return filename
