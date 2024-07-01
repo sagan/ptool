@@ -1,4 +1,4 @@
-package moveclient
+package transfertorrent
 
 import (
 	"github.com/c-bata/go-prompt"
@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	cmd.AddShellCompletion("moveclient", func(document *prompt.Document) []prompt.Suggest {
+	cmd.AddShellCompletion("transfertorrent", func(document *prompt.Document) []prompt.Suggest {
 		info := suggest.Parse(document)
 		if info.LastArgIndex < 1 {
 			return nil

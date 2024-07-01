@@ -28,6 +28,7 @@ It will ask for confirmation of deletion, unless --force flag is set.`, constant
 }
 
 var (
+	showSum           = false
 	preserve          = false
 	preserveXseed     = false
 	force             = false
@@ -40,6 +41,7 @@ var (
 )
 
 func init() {
+	command.Flags().BoolVarP(&showSum, "sum", "", false, "Show torrents summary only")
 	command.Flags().BoolVarP(&preserve, "preserve", "p", false,
 		"Preserve (don't delete) torrent content files on the disk")
 	command.Flags().BoolVarP(&preserveXseed, "preserve-if-xseed-exist", "P", false,
@@ -125,7 +127,11 @@ func delete(cmd *cobra.Command, args []string) error {
 	}
 	if !force {
 		if len(torrents) > 0 {
-			client.PrintTorrents(os.Stdout, torrents, "", 1, false)
+			sum := int64(1)
+			if showSum {
+				sum = 2
+			}
+			client.PrintTorrents(os.Stdout, torrents, "", sum, false)
 			fmt.Printf("Above %d torrents will be deteled (Delete disk files = %t)\n", len(torrents), !preserve)
 			fmt.Printf("\n")
 		}

@@ -78,7 +78,7 @@ func (npclient *Site) PublishTorrent(contents []byte, metadata url.Values) (id s
 	res, err := site.UploadTorrent(npclient, npclient.HttpClient, uploadUrl,
 		contents, metadata, defaultUploadTorrentPayload)
 	if res == nil { // workaround for cookie not preserved in redirect bug.
-		return "", err
+		return "", fmt.Errorf("failed to upload torrent: %w", err)
 	}
 	newUrl := res.Request.Url
 	newUrlObj, err := url.Parse(newUrl)

@@ -2,7 +2,63 @@
 
 自用的 PT ([Private trackers][]) 网站和 [BitTorrent][] 客户端辅助工具([Github](https://github.com/sagan/ptool))。提供全自动刷流(brush)、自动辅种(使用 IYUU 或 Reseed 等接口)、BT 客户端控制等功能。
 
-主要特性：
+TOC
+
+- [ptool](#ptool)
+  - [主要特性](#主要特性)
+  - [下载](#下载)
+  - [快速开始（刷流）](#快速开始刷流)
+  - [配置文件](#配置文件)
+- [程序功能](#程序功能)
+  - [刷流 (brush)](#刷流-brush)
+  - [自动辅种 (iyuu)](#自动辅种-iyuu)
+    - [IYUU 配置](#iyuu-配置)
+    - [使用 IYUU 辅种](#使用-iyuu-辅种)
+  - [自动辅种 (reseed)](#自动辅种-reseed)
+    - [Reseed 配置](#reseed-配置)
+    - [使用 Reseed 辅种](#使用-reseed-辅种)
+      - [方式 1](#方式-1)
+      - [方式 2](#方式-2)
+    - [其它功能](#其它功能)
+  - [BT 客户端控制命令集](#bt-客户端控制命令集)
+    - [读取/修改 BT 客户端配置 (clientctl)](#读取修改-bt-客户端配置-clientctl)
+    - [显示信息 / 暂停 / 恢复 / 删除 / 强制汇报 / 强制检测 Hash 客户端里种子 (show / pause / resume / delete / reannounce / recheck)](#显示信息--暂停--恢复--删除--强制汇报--强制检测-hash-客户端里种子-show--pause--resume--delete--reannounce--recheck)
+    - [管理 BT 客户端里的的种子分类 / 标签 / Trackers 等(getcategories / createcategory / deletecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / renametag / edittracker / addtrackers / removetrackers / setsavepath / setsharelimits / checktag)](#管理-bt-客户端里的的种子分类--标签--trackers-等getcategories--createcategory--deletecategories--setcategory--gettags--createtags--deletetags--addtags--removetags--renametag--edittracker--addtrackers--removetrackers--setsavepath--setsharelimits--checktag)
+    - [导出客户端种子 (export)](#导出客户端种子-export)
+    - [显示 BT 客户端或 PT 站点状态 (status)](#显示-bt-客户端或-pt-站点状态-status)
+  - [显示刷流任务流量统计 (stats)](#显示刷流任务流量统计-stats)
+  - [添加种子到 BT 客户端 (add)](#添加种子到-bt-客户端-add)
+  - [下载站点的种子](#下载站点的种子)
+  - [搜索 PT 站点种子 (search)](#搜索-pt-站点种子-search)
+  - [批量下载种子 (batchdl)](#批量下载种子-batchdl)
+  - [全站动态保种 (dynamicseeding) (试验性功能)](#全站动态保种-dynamicseeding-试验性功能)
+  - [发布(上传)种子 (publish)](#发布上传种子-publish)
+    - [metadata.nfo 元文件](#metadatanfo-元文件)
+    - [支持的站点](#支持的站点)
+  - [显示种子文件信息 (parsetorrent)](#显示种子文件信息-parsetorrent)
+  - [校验种子文件与硬盘内容是否一致 (verifytorrent)](#校验种子文件与硬盘内容是否一致-verifytorrent)
+  - [制作种子 (maketorrent)](#制作种子-maketorrent)
+  - [编辑种子文件 (edittorrent)](#编辑种子文件-edittorrent)
+  - [拆包下载 (partialdownload)](#拆包下载-partialdownload)
+  - [手动添加辅种种子到客户端 (xseedadd)](#手动添加辅种种子到客户端-xseedadd)
+  - [查找下载目录里的未做种文件 (findalone)](#查找下载目录里的未做种文件-findalone)
+  - [标记 BT 客户端里 Tracker 状态异常的种子 (markinvalidtracker)](#标记-bt-客户端里-tracker-状态异常的种子-markinvalidtracker)
+  - [修改本地 BT 客户端里的种子内容文件保存路径 (movesavepath)](#修改本地-bt-客户端里的种子内容文件保存路径-movesavepath)
+  - [转移种子做种客户端 (transfertorrent)](#转移种子做种客户端-transfertorrent)
+  - [同步 Cookies \& 导入站点 (cookiecloud)](#同步-cookies--导入站点-cookiecloud)
+    - [测试 CookieCloud 服务 (status)](#测试-cookiecloud-服务-status)
+    - [同步站点 Cookies (sync)](#同步站点-cookies-sync)
+    - [导入站点 (import)](#导入站点-import)
+    - [查看 CookieCloud 里的网站 Cookie (get)](#查看-cookiecloud-里的网站-cookie-get)
+  - [查看内置支持站点信息 (sites)](#查看内置支持站点信息-sites)
+- [其它说明](#其它说明)
+  - [交互式终端 (shell)](#交互式终端-shell)
+  - [站点种子信息显示](#站点种子信息显示)
+  - [站点分组 (group) 功能](#站点分组-group-功能)
+  - [命令别名 (Alias) 功能](#命令别名-alias-功能)
+  - [模仿浏览器 (impersonate)](#模仿浏览器-impersonate)
+
+## 主要特性
 
 - 使用 Go 开发的纯 CLI 程序。单文件可执行程序，没有外部依赖。支持 Windows / Linux、x64 / arm64 等多种环境、架构。
 - 无状态(stateless)：程序自身不保存任何状态、不在后台持续运行。“刷流”等任务需要使用 cron job 等方式定时运行本程序。
@@ -90,7 +146,7 @@ cookie = "cookie_here" # 浏览器 F12 获取的网站 cookie
 
 查看程序代码 [config/config.go](https://github.com/sagan/ptool/blob/master/config/config.go) 文件里的 type ConfigStruct struct 获取全部可配置项信息。
 
-## 程序功能
+# 程序功能
 
 所有功能通过启动程序时传入的第一个”命令“参数区分：
 
@@ -121,6 +177,7 @@ ptool <command> args... [flags]
 - findalone : 查找下载目录里的未做种文件。
 - markinvalidtracker : 标记 BT 客户端里 Tracker 状态异常的种子。
 - movesavepath : 修改本地 BT 客户端里的种子内容文件保存路径。
+- transfertorrent : 转移种子做种客户端。
 - cookiecloud : 使用 [CookieCloud][] 同步站点的 Cookies 或导入站点。
 - sites : 显示本程序内置支持的所有 PT 站点列表。
 - config : 显示当前 ptool.toml 配置文件信息。
@@ -134,7 +191,7 @@ ptool <command> args... [flags]
 - --config string : 手动指定使用的 ptool.toml 配置文件路径。
 - -v, -vv, -vvv : verbose。输出更多的日志信息（v 出现的次数越多，输出的日志越详细）。
 
-### 刷流 (brush)
+## 刷流 (brush)
 
 ```
 ptool brush <client> <site>... [flags]
@@ -175,11 +232,11 @@ ptool brush local mteam
 
 - No-Add 模式：如果 BT 客户端里当前存在 `_noadd` 这个标签(tag)，刷流任务不会添加任何新种子到客户端。
 
-### 自动辅种 (iyuu)
+## 自动辅种 (iyuu)
 
 iyuu 命令通过 [IYUU 接口][] 提供自动辅种(cross seed)功能。本功能直接访问 IYUU 的服务器，本机上不需要安装 / 运行 IYUU 客户端。
 
-#### IYUU 配置
+### IYUU 配置
 
 如果是第一次使用 "IYUU"，首先需要在 [IYUU 网站][] 上微信扫码申请 IYUU 令牌（token）。在 ptool.toml 配置文件里配置 IYUU token：
 
@@ -204,7 +261,7 @@ ptool iyuu bind --site zhuque --uid 123456 --passkey 0123456789abcdef
 - 使用 `ptool iyuu sites` 查看 IYUU 支持的所有可辅种站点列表。
 - 使用 `ptool iyuu status` 查询当前 IYUU token 的激活和绑定状态。
 
-#### 使用 IYUU 自动辅种
+### 使用 IYUU 辅种
 
 ```
 ptool iyuu xseed <client>...
@@ -220,7 +277,7 @@ iyuu xseed 子命令支持很多可选参数。运行 `ptool iyuu xseed -h` 查�
 
 reseed 命令使用 [Reseed][] 提供的接口自动辅种。
 
-### reseed 配置
+### Reseed 配置
 
 首先在 [Reseed 官网][] 注册（需要使用指定 PT 站点验证），然后在 ptool.toml 配置文件里配置 Reseed 的用户信息：
 
@@ -272,11 +329,11 @@ ptool reseed status
 ptool reseed sites
 ```
 
-### BT 客户端控制命令集
+## BT 客户端控制命令集
 
 提供了一系列管理、控制 BT 客户端的命令。
 
-#### 读取/修改 BT 客户端配置 (clientctl)
+### 读取/修改 BT 客户端配置 (clientctl)
 
 ```
 ptool clientctl <client> [<option>[=value] ...]
@@ -305,7 +362,7 @@ ptool clientctl local
 ptool clientctl local global_upload_speed_limit=10M
 ```
 
-#### 显示信息 / 暂停 / 恢复 / 删除 / 强制汇报 / 强制检测 Hash 客户端里种子 (show / pause / resume / delete / reannounce / recheck)
+### 显示信息 / 暂停 / 恢复 / 删除 / 强制汇报 / 强制检测 Hash 客户端里种子 (show / pause / resume / delete / reannounce / recheck)
 
 命令格式均为：
 
@@ -354,7 +411,7 @@ ptool show local 31a615d5984cb63c6f999f72bb3961dce49c194a
 ptool show local --category rss --completed-before 5d --show-info-hash-only | ptool delete local --force -
 ```
 
-#### 管理 BT 客户端里的的种子分类 / 标签 / Trackers 等(getcategories / createcategory / deletecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / renametag / edittracker / addtrackers / removetrackers / setsavepath / setsharelimits / checktag)
+### 管理 BT 客户端里的的种子分类 / 标签 / Trackers 等(getcategories / createcategory / deletecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / renametag / edittracker / addtrackers / removetrackers / setsavepath / setsharelimits / checktag)
 
 ```
 # 获取所有分类
@@ -413,7 +470,7 @@ ptool setsharelimits <client> [<infoHash>...] --ratio-limit 2 --seeding-time-lim
 ptool checktag <client> <tag>
 ```
 
-#### 导出客户端种子 (export)
+### 导出客户端种子 (export)
 
 ```
 ptool export <client> <infoHash>...
@@ -441,7 +498,7 @@ ptool status <clientOrSite>...
 - -t : 显示 BT 客户端或站点的种子列表（BT 客户端：当前活动的种子；PT 站点：最新种子）。
 - -f : 显示完整的种子列表信息。
 
-### 显示刷流任务流量统计 (stats)
+## 显示刷流任务流量统计 (stats)
 
 ```
 ptool stats [client...]
@@ -451,7 +508,7 @@ ptool stats [client...]
 
 只有刷流任务添加和管理的 BT 客户端的种子（即 `_brush` 分类的种子）的流量信息会被记录和统计。目前设计只有在刷流任务从 BT 客户端删除某个种子时才会记录和统计该种子产生的流量信息。
 
-### 添加种子到 BT 客户端 (add)
+## 添加种子到 BT 客户端 (add)
 
 ```
 ptool add <client> <torrentFileNameOrIdOrUrl>...
@@ -478,7 +535,7 @@ ptool add local "https://kp.m-team.cc/download.php?id=488424"
 
 特别的，如果参数只有 1 个 "-"，视为从 stdin 读取种子列表；也支持直接从 stdin 传入 .torrent 文件内容。
 
-### 下载站点的种子
+## 下载站点的种子
 
 ```
 ptool dltorrent <torrentIdOrUrl>...
@@ -490,7 +547,7 @@ ptool dltorrent <torrentIdOrUrl>...
 
 - --download-dir : 下载的种子文件保存路径。默认为当前目录(.)。
 
-### 搜索 PT 站点种子 (search)
+## 搜索 PT 站点种子 (search)
 
 ```
 ptool search <sites> <keyword>
@@ -500,7 +557,7 @@ ptool search <sites> <keyword>
 
 使用 `ptool add` 命令将搜索结果列表中的种子添加到 BT 客户端。
 
-### 批量下载种子 (batchdl)
+## 批量下载种子 (batchdl)
 
 提供一个 batchdl 命令用于批量下载 PT 网站的种子（别名：ebookgod）。默认按种子体积大小升序排序、跳过死种和已经下载过的种子。
 
@@ -541,7 +598,7 @@ ptool batchdl kamept --tag "外语音声,同人志" --sort none --start-page 0 -
 
 获取 kamept 首页最新的 "外语音声"或"同人志"分类里的免费种子并添加到 local 客户端。使用 crontab 定时运行即可，可以实现比 RSS 更细致的筛选，并且不依赖站点。
 
-### 全站动态保种 (dynamicseeding) (试验性功能)
+## 全站动态保种 (dynamicseeding) (试验性功能)
 
 ```
 ptool dynamicseeding {client} {site}
@@ -575,7 +632,7 @@ ptool dynamicseeding local kamept
 - 程序也不会自动删除含有 `nodel` 标签的动态保种种子。
 - 用户自行下载的种子，也可以将其放到 `dynamic-seeding-<sitename>` 分类并打上 `site:<sitename>` 标签，以允许动态保种功能对其进行管理并在需要时删除其以腾出空间下载新的种子（注意分类和标签两者都必须设置）。
 
-### 发布(上传)种子 (publish)
+## 发布(上传)种子 (publish)
 
 示例：
 
@@ -593,7 +650,7 @@ publish 命令能够自动发布种子到 PT 站点。以上面示例为例，�
 6. 自动通过站点上传种子接口发布种子，将站点生成的发布后种子下载到内容文件夹里的 `.<sitename>.torrent` 文件里。
 7. 将下载的 `.<sitename>.torrent` 种子添加到 local 客户端并开始做种。
 
-#### metadata.nfo 元文件
+### metadata.nfo 元文件
 
 ptool 目前只支持读取 plain text 格式的 metadata.nfo 作为元信息文件，格式示例如下：
 
@@ -616,7 +673,7 @@ source: dlsite
 
 文件的开头是 Jekyll 的 [YAML Front Matter](https://jekyllrb.com/docs/front-matter/) 风格的元信息字段。其中的 "number" (番号) 字段被用于检测同样内容种子在站点上是否存在。
 
-#### 支持的站点
+### 支持的站点
 
 ptool 会根据元文件信息生成站点发布种子接口需要提交的 Form 字段内容。字段内容使用 Jinja 模板渲染生成。默认 NP 站点的发布种子字段包括：
 
@@ -651,7 +708,7 @@ imageUploadUrl = 'https://pic.example.com/'
 
 目前程序仅内置支持 kamept 的图床和上传种子必填字段生成。
 
-### 显示种子文件信息 (parsetorrent)
+## 显示种子文件信息 (parsetorrent)
 
 ```
 ptool parsetorrent <torrentFileNameOrIdOrUrl>...
@@ -659,7 +716,7 @@ ptool parsetorrent <torrentFileNameOrIdOrUrl>...
 
 显示种子文件的元信息。参数是本地硬盘里的种子文件名，或站点的种子 id 或 url（参考 "add" 命令说明）。
 
-### 校验种子文件与硬盘内容是否一致 (verifytorrent)
+## 校验种子文件与硬盘内容是否一致 (verifytorrent)
 
 ```
 ptool verifytorrent <torrentFileNameOrIdOrUrl>...
@@ -692,7 +749,7 @@ ptool verifytorrent MyTorrent.torrent --content-path D:\Downloads\MyTorrent --ch
 ptool verifytorrent *.torrent --rclone-save-path remote:Downloads
 ```
 
-### 制作种子 (maketorrent)
+## 制作种子 (maketorrent)
 
 maketorrent 命令根据提供的“内容文件(夹)”生成种子(.torrent)文件：
 
@@ -711,7 +768,7 @@ ptool maketorrent ./MyVideos
 
 “内容文件夹”里的一些临时或隐藏类型文件（例如 `.*`, `*.tmp`, `Thumbs.db` 等）默认会被自动忽略，不会被添加到种子里。
 
-### 编辑种子文件 (edittorrent)
+## 编辑种子文件 (edittorrent)
 
 edittorrent 命令可以编辑（修改）.torrent 文件里的信息。
 
@@ -725,7 +782,7 @@ ptool edittorrent --update-tracker "https://..." *.torrent
 ptool edittorrent -h
 ```
 
-### 拆包下载 (partialdownload)
+## 拆包下载 (partialdownload)
 
 该命令的设计目的不是用于刷流。而是用于使用 VPS 等硬盘空间有限的云服务器(分多次)下载体积非常大的单个种子，然后配合 [rclone][] 将下载的文件直接上传到云存储。
 
@@ -743,7 +800,7 @@ ptool partialdownload <client> <infoHash> --chunk-size 1TiB --chunk-index 0
 ptool partialdownload <client> <infohash> --exclude "*.txt"
 ```
 
-### 手动添加辅种种子到客户端 (xseedadd)
+## 手动添加辅种种子到客户端 (xseedadd)
 
 ```
 ptool xseedadd <client> <torrentFileNameOrIdOrUrl>...
@@ -751,7 +808,7 @@ ptool xseedadd <client> <torrentFileNameOrIdOrUrl>...
 
 xseedadd 命令将提供的种子作为辅种种子添加到客户端。程序将在客户端里寻找与提供的种子元信息（文件名、文件大小）完全一致的目标种子，然后将提供的种子作为目标种子的辅种添加到客户端。如果客户端里没有找到匹配的目标种子，程序不会添加提供的种子到客户端。"xseedadd" 命令添加的辅种种子会打上 `_xseed` 标签。
 
-### 查找下载目录里的未做种文件 (findalone)
+## 查找下载目录里的未做种文件 (findalone)
 
 ```
 ptool findalone <client> <save-path>...
@@ -771,7 +828,7 @@ ptool findalone local D:\Downloads E:\Downloads F:\Downloads
 ptool findalone local --map-save-path "/root/Downloads:/Downloads" /root/Downloads
 ```
 
-### 标记 BT 客户端里 Tracker 状态异常的种子 (markinvalidtracker)
+## 标记 BT 客户端里 Tracker 状态异常的种子 (markinvalidtracker)
 
 示例：
 
@@ -789,7 +846,7 @@ markinvalidtracker 命令将以下几种情形认为是 Tracker 状态异常：
 
 markinvalidtracker 不会标记因为网络或站点服务器问题而当前无法连通 Tracker 的种子。
 
-### 修改本地 BT 客户端里的种子内容文件保存路径 (movesavepath)
+## 修改本地 BT 客户端里的种子内容文件保存路径 (movesavepath)
 
 假设 BT 客户端里有一个种子的内容文件夹(content-path)路径是 `/root/Downloads/[BDRip]Clannad`，并且这个文件夹下存在不属于这个种子的其他文件（例如媒体库管理软件刮削生成的元文件 metainfo.nfo）：
 
@@ -827,7 +884,26 @@ ptool movesavepath --client local /root/Downloads /var/Downloads
 ptool movesavepath --client local /root/Downloads/Uncategoried /root/Downloads/Others --map-save-path "/root/Downloads:/Downloads"
 ```
 
-### 同步 Cookies & 导入站点 (cookiecloud)
+## 转移种子做种客户端 (transfertorrent)
+
+示例：
+
+```
+ptool transfer {src-client} --dst-client {dst-client} _all
+```
+
+以上命令将 {src-client} 里的所有正在做种的种子转移到 {dst-client} 里做种。成功转移的种子会在 {src-client} 里打上 `_transferred` 标签，但不会被自动删除。如果需要在转移后从 {src-client} 里删除源种子，可以运行：
+
+```
+ptool delete {src-client} --tag _transferred --preserve
+```
+
+其它说明：
+
+- {src-client} 和 {dst-client} 需要位于同一个机器。如果两者的文件系统不同（例如位于不同的 Docker 容器里），使用 `--map-save-path src_path:dst_path` 指定两者之间的下载路径映射关系。
+- 由于技术限制，{src-client} 目前只支持 qBittorrent。
+
+## 同步 Cookies & 导入站点 (cookiecloud)
 
 程序支持通过 [CookieCloud][] 服务器同步站点 Cookies 或导入站点。
 
@@ -843,7 +919,7 @@ password = "password"
 
 可以添加任意个 CookieCloud 连接信息。如果想要让某个 CookieCloud 连接信息仅用于同步特定站点 cookies，加上 `sites = ["sitename"]` 这行配置。
 
-#### 测试 CookieCloud 服务 (status)
+### 测试 CookieCloud 服务 (status)
 
 ```
 ptool cookiecloud status
@@ -851,7 +927,7 @@ ptool cookiecloud status
 
 使用配置的 CookieCloud 连接信息连接服务器，测试配置正确性和当前服务器状态。
 
-#### 同步站点 Cookies (sync)
+### 同步站点 Cookies (sync)
 
 ```
 ptool cookiecloud sync
@@ -859,7 +935,7 @@ ptool cookiecloud sync
 
 程序会从 CookieCloud 服务器获取最新的 Cookies，并更新 ptool.toml 里已配置的站点的 Cookies。程序会对 ptool.toml 文件里的站点的当前 Cookie 和其从 CookieCloud 服务器获取的新版 Cookie 分别进行测试，只有在当前 Cookie 失效并且新版 Cookie 有效的情形才会更新 ptool.toml 里的站点 Cookie 字段值。
 
-#### 导入站点 (import)
+### 导入站点 (import)
 
 ```
 ptool cookiecloud import
@@ -869,7 +945,7 @@ ptool cookiecloud import
 
 import 命令不会检测或更新 ptool.toml 里当前已存在相应配置的站点的 Cookies。
 
-#### 查看 CookieCloud 里的网站 Cookie (get)
+### 查看 CookieCloud 里的网站 Cookie (get)
 
 ```
 ptool cookiecloud get <site>...
@@ -879,7 +955,7 @@ ptool cookiecloud get <site>...
 
 默认以 Http 请求 "Cookie" 头格式显示 Cookies。如果指定 `--format js` 参数，则会以 JavaScript 的 "document.cookie='';" 代码段格式显示 Cookies，可以直接将输出结果复制到浏览器 F12 开发者工具 Console 里执行以导入 Cookies。
 
-### 查看内置支持站点信息 (sites)
+## 查看内置支持站点信息 (sites)
 
 ```
 # 显示所有内置支持的站点列表。ptool.toml 配置文件里将 [[sites]] 配置块的 type 设为站点的 Type 或 Alias。
@@ -889,13 +965,15 @@ ptool sites
 ptool sites show mteam
 ```
 
-### 交互式终端 (shell)
+# 其它说明
+
+## 交互式终端 (shell)
 
 `ptool shell` 可以启动一个交互式的 shell 终端环境。终端里可以运行所有 ptool 支持的命令。命令和命令参数输入支持完整的自动补全。
 
 ptool 也支持 bash、powershell 等操作系统 shell 环境下的命令自动补全，需要在系统 shell 里安装程序生成的自动补全脚本。运行 `ptool completion` 了解详细信息。但由于技术限制，系统 shell 里仅支持基本的自动补全（不支持 BT 客户端名称、站点名称等动态内容参数的自动补全）。
 
-### 站点种子信息显示
+## 站点种子信息显示
 
 `status -t`, `batchdl`, `search` 等命令会将找到的站点种子以列表形式显示，示例：
 
@@ -933,7 +1011,7 @@ You Sheng Xiao Shuo He Ji Mp3 M4a 265.3GiB ✓ 2022-10-31 06:08:14 14 1 61 redle
 
 如果指定 `--dense` (`-d`) 参数，列表的 Name 列会输出完整名称，以及种子在站点里的“类别”和其它标签。
 
-### 站点分组 (group) 功能
+## 站点分组 (group) 功能
 
 在 ptool.toml 配置文件里可以定义站点分组，例如：
 
@@ -952,7 +1030,7 @@ ptool search acg clannad
 
 预置的 `_all` 分组可以用来指代所有站点。
 
-### 命令别名 (Alias) 功能
+## 命令别名 (Alias) 功能
 
 ptool.toml 里可以使用 `[[aliases]]` 区块自定义命令别名，例如：
 
@@ -984,7 +1062,7 @@ minArgs 是执行别名时必须传入的额外参数数量， defaultArgs 是�
 - 定义的别名无法覆盖内置命令。
 - 别名无法直接在 shell 里使用，可以使用 `ptool alias <name>` 在 shell 里执行别名。
 
-### 模仿浏览器 (impersonate)
+## 模仿浏览器 (impersonate)
 
 ptool 会在访问站点时自动模拟浏览器环境（类似 [curl-impersonate](https://github.com/lwthiker/curl-impersonate)），会设置 TLS ja3 指纹、HTTP2 akamai_fingerprint 指纹、访问请求的 http headers 等。测试能够绕过大多数站点的 CF 盾。
 
