@@ -269,6 +269,8 @@ func TouchFile(name string) error {
 	if err != nil {
 		return err
 	}
+	now := time.Now()
+	os.Chtimes(name, now, now)
 	return file.Close()
 }
 

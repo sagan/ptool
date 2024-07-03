@@ -30,10 +30,11 @@ import (
 const EXISTING_FLAG_FILE = ".existing-%s" // %s: sitename
 const PUBLISHED_FLAG_FILE = ".published-%s"
 const PUBLISHED_TORRENT_FILENAME = ".%s.torrent"
+const UPLOAD_TIMEOUT_FLAG = ".upload-timeout"
 const COVER = "cover"
 
 var command = &cobra.Command{
-	Use:   "publish --site {site} {--content-path {content-path} | --save-path {save-path} } --client {client}",
+	Use:   "publish --site {site} { --content-path {content-path} | --save-path {save-path} } --client {client}",
 	Short: "Publish (upload) torrent to site.",
 	Long:  `Publish (upload) torrent to site.`,
 	Args:  cobra.MatchAll(cobra.ExactArgs(0), cobra.OnlyValidArgs),
@@ -90,7 +91,7 @@ func init() {
 		"Will at most publish torrents with total contents size of this value. -1 == no limit")
 	command.Flags().StringVarP(&mustTag, "must-tag", "", "", "Comma-separated tag list. "+
 		`If set, only content folders which tags contains any one in the list will be published`)
-	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "10MiB",
+	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "1MiB",
 		"Do not publish torrent which contents size is smaller than (<) this value. -1 == no limit")
 	command.Flags().StringVarP(&sitename, "site", "", "", "Publish site")
 	command.Flags().StringVarP(&clientname, "client", "", "",
@@ -388,20 +389,52 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 		return "", nil, ErrExisting
 	}
 	if number := metadata.Get("number"); number != "" && checkExisting {
-		existingTorrentId := ""
 		torrents, err := siteInstance.SearchTorrents(number, "")
 		if err != nil {
 			return "", nil, fmt.Errorf("failed to search site torrents to check existing: %w", err)
 		}
 		regexp := regexp.MustCompile(`\b` + regexp.QuoteMeta(number) + `\b`)
+		slices.SortFunc(torrents, func(a, b *site.Torrent) int { return int(b.Time - a.Time) })
+		var existingTorrent *site.Torrent
 		for _, torrent := range torrents {
 			if regexp.MatchString(torrent.Name) || regexp.MatchString(torrent.Description) {
-				existingTorrentId = torrent.Id
+				existingTorrent = torrent
 				break
 			}
 		}
-		if existingTorrentId != "" {
-			atomic.WriteFile(existingFlagFile, strings.NewReader(existingTorrentId))
+		if existingTorrent != nil {
+			// workaround for https://github.com/xiaomlove/nexusphp/issues/264 .
+			beforePublished := false
+			(func() {
+				if existingTorrent.Seeders > 0 || !util.FileExists(filepath.Join(contentPath, UPLOAD_TIMEOUT_FLAG)) {
+					return
+				}
+				torrentContents, _, err := siteInstance.DownloadTorrentById(existingTorrent.Id)
+				if err != nil {
+					return
+				}
+				tinfo, err := torrentutil.ParseTorrent(torrentContents)
+				if err != nil {
+					return
+				}
+				if _, err = tinfo.Verify("", contentPath, 1); err != nil {
+					return
+				}
+				if err = atomic.WriteFile(publishedFlagFile, strings.NewReader(existingTorrent.Id)); err != nil {
+					return
+				}
+				torrentFilename := filepath.Join(contentPath, fmt.Sprintf(PUBLISHED_TORRENT_FILENAME, sitename))
+				atomic.WriteFile(torrentFilename, bytes.NewReader(torrentContents))
+				beforePublished = true
+			})()
+			if beforePublished {
+				if err := downloadPublishedTorrent(siteInstance, clientInstance,
+					targetContentPath, savePathMapper); err != nil {
+					return "", nil, fmt.Errorf("failed to download published torrent: %w", err)
+				}
+				return "", nil, ErrAlreadyPublished
+			}
+			atomic.WriteFile(existingFlagFile, strings.NewReader(existingTorrent.Id))
 			return "", nil, ErrExisting
 		}
 	}
@@ -465,9 +498,15 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 		metadata.Set("_cover", coverImage)
 	}
 	id, err = siteInstance.PublishTorrent(torrentContents, metadata)
+	os.Remove(filepath.Join(contentPath, UPLOAD_TIMEOUT_FLAG))
 	if err != nil {
-		if err == constants.ErrDryRun && targetContentPath != contentPath {
-			atomic.ReplaceFile(contentPath, targetContentPath)
+		if err == constants.ErrDryRun {
+			if targetContentPath != contentPath {
+				atomic.ReplaceFile(contentPath, targetContentPath)
+			}
+		} else if util.AsNetworkError(err) && strings.Contains(err.Error(), "failed to upload torrent:") {
+			// upload torrent to site timeout (means it may actually uploaded)
+			util.TouchFile(filepath.Join(contentPath, UPLOAD_TIMEOUT_FLAG))
 		}
 		return "", nil, fmt.Errorf("failed to publish torrent: %w", err)
 	}

@@ -140,6 +140,7 @@ var DefaultIgnorePatterns = []string{
 }
 
 // Returned if the action is not processed due to in dry run mode
+// It must be returned as is (Do not wrap it).
 var ErrDryRun = fmt.Errorf("dry run")
 
 func init() {
