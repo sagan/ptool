@@ -387,6 +387,9 @@ var (
 [dlsite]{{number | regex_search("\\bRJ\\d{5,12}\\b")}}[/dlsite]
 https://www.dlsite.com/maniax/work/=/product_id/{{number | regex_search("\\bRJ\\d{5,12}\\b")}}.html
 {% endif %}
+{% if number | regex_search("\\bd_\\d{5,12}\\b") %}
+https://www.dmm.co.jp/dc/doujin/-/detail/=/cid={{number | regex_search("\\bd_\\d{5,12}\\b")}}/
+{% endif %}
 {% if _meta %}
 {{_meta}}
 {% endif %}
