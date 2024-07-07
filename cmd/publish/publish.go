@@ -504,7 +504,9 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 			if targetContentPath != contentPath {
 				atomic.ReplaceFile(contentPath, targetContentPath)
 			}
-		} else if util.AsNetworkError(err) && strings.Contains(err.Error(), "failed to upload torrent:") {
+			return "", nil, err
+		}
+		if util.AsNetworkError(err) && strings.Contains(err.Error(), "failed to upload torrent:") {
 			// upload torrent to site timeout (means it may actually uploaded)
 			util.TouchFile(filepath.Join(contentPath, UPLOAD_TIMEOUT_FLAG))
 		}
