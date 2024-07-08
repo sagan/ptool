@@ -134,6 +134,7 @@ var DefaultIgnorePatterns = []string{
 	"*.torrent",
 	"node_modules/",
 	"lost+found/",
+	"__MACOSX/", // https://superuser.com/questions/104500/
 	"System Volume Information",
 	"desktop.ini",
 	"Thumbs.db",
