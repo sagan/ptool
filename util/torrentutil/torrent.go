@@ -137,6 +137,23 @@ func FromMetaInfo(metaInfo *metainfo.MetaInfo, info *metainfo.Info) (*TorrentMet
 	return torrentMeta, nil
 }
 
+// Matches if torrent any tracker's url or domain == tracker.
+// Specially, if tracker is "none", matches if torrent does NOT have any tracker.
+func (meta *TorrentMeta) MatchTracker(tracker string) bool {
+	if tracker == constants.NONE {
+		return len(meta.Trackers) == 0
+	}
+	if util.IsUrl(tracker) {
+		return slices.Contains(meta.Trackers, tracker)
+	}
+	for _, t := range meta.Trackers {
+		if util.ParseUrlHostname(t) == tracker {
+			return true
+		}
+	}
+	return false
+}
+
 // Encode torrent meta to 'comment' field
 func (meta *TorrentMeta) EncodeComment(commentMeta *TorrentCommentMeta) error {
 	comment := ""

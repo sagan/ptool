@@ -111,7 +111,8 @@ Add torrents to target client in paused state: %t`+"\n", len(torrents), srcClien
 
 	errorCnt := int64(0)
 	var movedInfoHashes []string
-	for _, torrent := range torrents {
+	for i, torrent := range torrents {
+		fmt.Printf("(%d/%d) ", i+1, len(torrents))
 		if !torrent.IsFullComplete() {
 			fmt.Printf("! %s (%s): do not transfer due is not fully downloaded completed\n", torrent.InfoHash, torrent.Name)
 			continue

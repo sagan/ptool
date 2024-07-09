@@ -80,10 +80,11 @@ func (ts *TorrentsStatistics) Print(output io.Writer) {
 	if ts.SuccessCnt > 0 {
 		averageSize = ts.SuccessSize / ts.SuccessCnt
 	}
-	fmt.Fprintf(output, "Success torrents: %d\n", ts.TorrentsCnt)
-	fmt.Fprintf(output, "Total contents size: %s (%d Byte)\n", util.BytesSize(float64(ts.SuccessSize)), ts.SuccessSize)
-	fmt.Fprintf(output, "Total number of content files: %d\n", ts.SuccessContentFiles)
-	fmt.Fprintf(output, "Smallest / Average / Largest torrent contents size: %s / %s / %s\n",
+	fmt.Fprintf(output, "Total (valid) torrents: %d\n", ts.TorrentsCnt)
+	fmt.Fprintf(output, "Success torrents contents size: %s (%d Byte)\n",
+		util.BytesSize(float64(ts.SuccessSize)), ts.SuccessSize)
+	fmt.Fprintf(output, "Success torrents contents files number: %d\n", ts.SuccessContentFiles)
+	fmt.Fprintf(output, "Success torrents Smallest / Average / Largest contents size: %s / %s / %s\n",
 		util.BytesSize(float64(ts.SmallestSize)), util.BytesSize(float64(averageSize)),
 		util.BytesSize(float64(ts.LargestSize)))
 	fmt.Fprintf(output, "Failure torrents: %d (%s)\n", ts.FailureCnt, util.BytesSize(float64(ts.FailureSize)))

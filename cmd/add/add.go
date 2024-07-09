@@ -140,9 +140,9 @@ func add(cmd *cobra.Command, args []string) error {
 	errorCnt := int64(0)
 	cntAdded := int64(0)
 	sizeAdded := int64(0)
-	cntAll := len(torrents)
 
 	for i, torrent := range torrents {
+		fmt.Printf("(%d/%d) ", i+1, len(torrents))
 		option.Category = ""
 		option.Tags = nil
 		option.SavePath = ""
@@ -152,10 +152,10 @@ func add(cmd *cobra.Command, args []string) error {
 			option.Tags = fixedTags
 			option.SavePath = savePath
 			if err = clientInstance.AddTorrent([]byte(torrent), option, nil); err != nil {
-				fmt.Printf("✕ %s (%d/%d): failed to add to client: %v\n", torrent, i+1, cntAll, err)
+				fmt.Printf("✕ %s: failed to add to client: %v\n", torrent, err)
 				errorCnt++
 			} else {
-				fmt.Printf("✓ %s (%d/%d)\n", torrent, i+1, cntAll)
+				fmt.Printf("✓ %s\n", torrent)
 			}
 			continue
 		}
@@ -166,7 +166,7 @@ func add(cmd *cobra.Command, args []string) error {
 		content, tinfo, siteInstance, sitename, filename, id, isLocal, err :=
 			helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, stdinTorrentContents, true, nil)
 		if err != nil {
-			fmt.Printf("✕ %s (%d/%d): %v\n", torrent, i+1, cntAll, err)
+			fmt.Printf("✕ %s: %v\n", torrent, err)
 			errorCnt++
 			continue
 		}
@@ -184,11 +184,11 @@ func add(cmd *cobra.Command, args []string) error {
 		}
 		if useCommentMeta {
 			if tinfo == nil {
-				fmt.Printf("✕ %s (%d/%d): can NOT parse comment meta (invalid torrent)\n", torrent, i+1, cntAll)
+				fmt.Printf("✕ %s: can NOT parse comment meta (invalid torrent)\n", torrent)
 				errorCnt++
 				continue
 			} else if commentMeta := tinfo.DecodeComment(); commentMeta == nil {
-				fmt.Printf("✕ %s (%d/%d): failed to parse comment meta\n", torrent, i+1, cntAll)
+				fmt.Printf("✕ %s: failed to parse comment meta\n", torrent)
 				errorCnt++
 				continue
 			} else {
@@ -198,8 +198,7 @@ func add(cmd *cobra.Command, args []string) error {
 				option.SavePath = commentMeta.SavePath
 				if option.SavePath != "" && savePathMapper != nil {
 					if _savePath, match := savePathMapper.Before2After(option.SavePath); !match {
-						fmt.Printf("✕ %s (%d/%d): failed to map comment meta save path %q\n",
-							torrent, i+1, cntAll, option.SavePath)
+						fmt.Printf("✕ %s: failed to map comment meta save path %q\n", torrent, option.SavePath)
 						errorCnt++
 						continue
 					} else {
@@ -257,8 +256,8 @@ func add(cmd *cobra.Command, args []string) error {
 		}
 		err = clientInstance.AddTorrent(content, option, nil)
 		if err != nil {
-			fmt.Printf("✕ %s (%d/%d) (site=%s): failed to add torrent to client: %v // %s (%s)\n",
-				torrent, i+1, cntAll, sitename, err, contentPath, util.BytesSize(float64(size)))
+			fmt.Printf("✕ %s (site=%s): failed to add torrent to client: %v // %s (%s)\n",
+				torrent, sitename, err, contentPath, util.BytesSize(float64(size)))
 			errorCnt++
 			continue
 		}
@@ -276,8 +275,8 @@ func add(cmd *cobra.Command, args []string) error {
 		}
 		cntAdded++
 		sizeAdded += size
-		fmt.Printf("✓ %s (%d/%d) (site=%s). infoHash=%s // %s (%s)\n",
-			torrent, i+1, cntAll, sitename, infoHash, contentPath, util.BytesSize(float64(size)))
+		fmt.Printf("✓ %s (site=%s). infoHash=%s // %s (%s)\n",
+			torrent, sitename, infoHash, contentPath, util.BytesSize(float64(size)))
 	}
 	fmt.Fprintf(os.Stderr, "\n// Done. Added torrent (Size/Cnt): %s / %d; ErrorCnt: %d\n",
 		util.BytesSize(float64(sizeAdded)), cntAdded, errorCnt)

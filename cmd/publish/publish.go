@@ -91,7 +91,7 @@ func init() {
 		"Will at most publish torrents with total contents size of this value. -1 == no limit")
 	command.Flags().StringVarP(&mustTag, "must-tag", "", "", "Comma-separated tag list. "+
 		`If set, only content folders which tags contains any one in the list will be published`)
-	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "1MiB",
+	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "100KiB",
 		"Do not publish torrent which contents size is smaller than (<) this value. -1 == no limit")
 	command.Flags().StringVarP(&sitename, "site", "", "", "Publish site")
 	command.Flags().StringVarP(&clientname, "client", "", "",
@@ -210,7 +210,8 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 	cntHandled := int64(0)
 	cntPublished := int64(0)
 	sizePublished := int64(0)
-	for _, contentPath := range contentPathes {
+	for i, contentPath := range contentPathes {
+		fmt.Printf("(%d/%d) ", i+1, len(contentPathes))
 		id, tinfo, err := publicTorrent(siteInstance, clientInstance, contentPath, metaValues, true,
 			checkExisting, savePathMapper, minTorrentSize, imageFiles, moveOkTo, dryRun, mustTags, metaArrayKeys)
 		ok, published := printResult(contentPath, id, err, sitename, clientname)

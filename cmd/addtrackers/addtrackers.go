@@ -107,7 +107,8 @@ func addtrackers(cmd *cobra.Command, args []string) error {
 		}
 	}
 	errorCnt := int64(0)
-	for _, torrent := range torrents {
+	for i, torrent := range torrents {
+		fmt.Printf("(%d/%d) ", i+1, len(torrents))
 		fmt.Printf("Add trackers to torrent %s (%s)\n", torrent.InfoHash, torrent.Name)
 		err := clientInstance.AddTorrentTrackers(torrent.InfoHash, trackers, oldTracker, removeExisting)
 		if err != nil {

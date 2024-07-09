@@ -103,7 +103,8 @@ If a torrent does NOT has the old tracker, it will NOT be updated`,
 		}
 	}
 	errorCnt := int64(0)
-	for _, torrent := range torrents {
+	for i, torrent := range torrents {
+		fmt.Printf("(%d/%d) ", i+1, len(torrents))
 		fmt.Printf("Edit torrent %s (%s) tracker\n", torrent.InfoHash, torrent.Name)
 		err := clientInstance.EditTorrentTracker(torrent.InfoHash, oldTracker, newTracker, replaceHost)
 		if err != nil {

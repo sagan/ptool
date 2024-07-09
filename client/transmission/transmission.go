@@ -896,6 +896,10 @@ func NewClient(name string, clientConfig *config.ClientConfigStruct, config *con
 	portStr := urlObj.Port()
 	port := int64(80)
 	isHttps := schema == "https"
+	rpcUri := "" // Leave empty to use default "/transmission/rpc"
+	if urlObj.Path != "" && urlObj.Path != "/" {
+		rpcUri = urlObj.Path
+	}
 	if portStr != "" {
 		port = util.ParseInt(portStr)
 	} else {
@@ -910,8 +914,9 @@ func NewClient(name string, clientConfig *config.ClientConfigStruct, config *con
 	}
 	client, err := transmissionrpc.New(hostname, clientConfig.Username, clientConfig.Password,
 		&transmissionrpc.AdvancedConfig{
-			HTTPS: isHttps,
-			Port:  uint16(port),
+			HTTPS:  isHttps,
+			Port:   uint16(port),
+			RPCURI: rpcUri,
 		})
 	if err != nil {
 		return nil, err

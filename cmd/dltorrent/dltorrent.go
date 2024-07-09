@@ -108,6 +108,7 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 		}
 	}
 	for i, torrent := range torrents {
+		fmt.Printf("(%d/%d) ", i+1, len(torrents))
 		if i > 0 && slowMode {
 			util.Sleep(3)
 		}

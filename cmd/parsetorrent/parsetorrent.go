@@ -48,6 +48,7 @@ var (
 	defaultSite       = ""
 	minTorrentSizeStr = ""
 	maxTorrentSizeStr = ""
+	matchTracker      = ""
 )
 
 func init() {
@@ -70,6 +71,9 @@ func init() {
 		"Treat torrent which contents size is smaller than (<) this value as fail (error). -1 == no limit")
 	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1",
 		"Treat torrent which contents size is larger than (>) this value as fail (error). -1 == no limit")
+	command.Flags().StringVarP(&matchTracker, "match-tracker", "", "",
+		"Treat torrent which trackers does not contain this tracker (domain or url) as fail (error). "+
+			`If set to "`+constants.NONE+`", it matches if torrent does NOT have any tracker`)
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -112,6 +116,8 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 				err = fmt.Errorf("torrent is too large: %s (%d)", util.BytesSize(float64(tinfo.Size)), tinfo.Size)
 			} else if dedupe && exists {
 				err = fmt.Errorf("torrent is duplicate: info-hash = %s", tinfo.InfoHash)
+			} else if matchTracker != "" && !tinfo.MatchTracker(matchTracker) {
+				err = fmt.Errorf("torrent tracker(s) does not match: %v", tinfo.Trackers)
 			}
 			if err != nil {
 				statistics.UpdateTinfo(common.TORRENT_FAILURE, tinfo)

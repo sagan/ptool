@@ -181,7 +181,8 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	for _, torrent := range torrents {
+	for i, torrent := range torrents {
+		fmt.Printf("(%d/%d) ", i+1, len(torrents))
 		_, tinfo, _, _, _, _, _, err := helper.GetTorrentContent(torrent, "", true, false, nil, false, nil)
 		if err != nil {
 			log.Errorf("Failed to parse %s: %v", torrent, err)

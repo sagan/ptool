@@ -111,7 +111,8 @@ func xseedadd(cmd *cobra.Command, args []string) error {
 		return clientTorrents[i].InfoHash < clientTorrents[j].InfoHash
 	})
 	errorCnt := int64(0)
-	for _, torrent := range torrents {
+	for i, torrent := range torrents {
+		fmt.Printf("(%d/%d) ", i+1, len(torrents))
 		content, tinfo, _, sitename, _, _, isLocal, err :=
 			helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, stdinTorrentContents, false, nil)
 		if err != nil {
