@@ -47,7 +47,6 @@ var (
 	ErrExisting            = fmt.Errorf("same contents torrent exists in site")
 	ErrAlreadyPublished    = fmt.Errorf("already published")
 	ErrSmall               = fmt.Errorf("torrent contents is too small")
-	ErrFs                  = fmt.Errorf("file system read error")
 )
 
 var (
@@ -66,6 +65,7 @@ var (
 	comment               = ""
 	commentFile           = ""
 	moveOkTo              = ""
+	moveFailTo            = ""
 	mustTag               = ""
 	metaArrayKeysStr      = ""
 	maxTotalSizeStr       = ""
@@ -102,6 +102,9 @@ func init() {
 	command.Flags().StringVarP(&commentFile, "comment-file", "", "", `Read comment from file`)
 	command.Flags().StringVarP(&moveOkTo, "move-ok-to", "", "",
 		"Move successfully processed content folders to this new save path. Note it applies even in dry run mode")
+	command.Flags().StringVarP(&moveFailTo, "move-fail-to", "", "",
+		"Move content folders that failed to publish to this path. It doesn't count content folders that "+
+			"do not have a metainfo.nfo file or fail to publish due to network or other temporary problems")
 	command.Flags().StringVarP(&metaArrayKeysStr, "meta-array-keys", "", config.METADATA_ARRAY_KEYS,
 		"Array type meta data keys. Comma-separated list. "+
 			"Variables of theses names in meta data will be treated and rendered as array. If a such variable in "+
@@ -185,7 +188,7 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 			return fmt.Errorf("client status is not ok: %w", err)
 		}
 	}
-	contentPathes := []string{}
+	contentPathes := []string{} // abs pathes
 	if savePath != "" {
 		entries, err := os.ReadDir(savePath)
 		if err != nil {
@@ -205,6 +208,11 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 			return fmt.Errorf("move-ok-to dir %q does not exist and cann't be created: %w", moveOkTo, err)
 		}
 	}
+	if moveFailTo != "" {
+		if err = os.MkdirAll(moveFailTo, constants.PERM_DIR); err != nil {
+			return fmt.Errorf("move-fail-to dir %q does not exist and cann't be created: %w", moveFailTo, err)
+		}
+	}
 
 	errorCnt := int64(0)
 	cntHandled := int64(0)
@@ -216,6 +224,14 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 			checkExisting, savePathMapper, minTorrentSize, imageFiles, moveOkTo, dryRun, mustTags, metaArrayKeys)
 		ok, published := printResult(contentPath, id, err, sitename, clientname)
 		if !ok {
+			if moveFailTo != "" && (err == ErrExisting || err == ErrSmall || err == ErrInvalidMetadataFile) {
+				targetpath := filepath.Join(moveFailTo, filepath.Base(contentPath))
+				if util.FileExists(targetpath) {
+					log.Errorf("move-fail-to target %q already exists", targetpath)
+				} else if err := atomic.ReplaceFile(contentPath, targetpath); err != nil {
+					log.Errorf("failed to move to move-fail-to target %q: %v", targetpath, err)
+				}
+			}
 			errorCnt++
 		}
 		if !ok || published {
@@ -493,6 +509,9 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 		if err != nil {
 			return "", nil, fmt.Errorf("failed to read torrent: %w", err)
 		}
+	}
+	if minTorrentSize > 0 && tinfo.Size < minTorrentSize {
+		return "", nil, ErrSmall
 	}
 	coverImage := util.ExistsFileWithAnySuffix(filepath.Join(contentPath, COVER), constants.ImgExts)
 	if coverImage != "" {

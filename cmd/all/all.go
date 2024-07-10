@@ -49,6 +49,7 @@ import (
 	_ "github.com/sagan/ptool/cmd/shell"
 	_ "github.com/sagan/ptool/cmd/show"
 	_ "github.com/sagan/ptool/cmd/sites/all"
+	_ "github.com/sagan/ptool/cmd/skipchecking"
 	_ "github.com/sagan/ptool/cmd/statscmd"
 	_ "github.com/sagan/ptool/cmd/status"
 	_ "github.com/sagan/ptool/cmd/tidyup"

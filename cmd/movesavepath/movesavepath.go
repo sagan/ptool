@@ -37,7 +37,7 @@ from old-save-path to new-save-path.
 If "--all" flag is set, all contents of old-save-path will be moved to new-save-path,
 after the action the old-save-path will become an empty dir.
 
-It work in the following procedure:
+It works in the following procedures:
 
 1. Export all torrents in client which has a save-path inside old-save-path to "<config-dir>/msp-<client>/*.torrent",
 with the old-save-path info encoded into the "comment" field of exported metainfo file.
@@ -197,7 +197,7 @@ If any error happens, you can safely re-run the same command to re-try and resum
 	var clientTorrentInfoHashes []string
 	for _, torrent := range clientTorrents {
 		exportFilename := filepath.Join(tmppath, torrent.InfoHash+".torrent")
-		if err = common.ExportClientTorrent(clientInstance, torrent, exportFilename, true); err != nil {
+		if _, _, err = common.ExportClientTorrent(clientInstance, torrent, exportFilename, true); err != nil {
 			return fmt.Errorf("failed to export client torrent %s: %w", torrent.Name, err)
 		}
 		clientTorrentInfoHashes = append(clientTorrentInfoHashes, torrent.InfoHash)

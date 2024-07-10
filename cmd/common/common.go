@@ -149,16 +149,17 @@ func NewPathMapper(rules []string) (*PathMapper, error) {
 }
 
 func ExportClientTorrent(clientInstance client.Client, torrent *client.Torrent,
-	filepath string, useCommentMeta bool) error {
-	content, err := clientInstance.ExportTorrentFile(torrent.InfoHash)
+	filepath string, useCommentMeta bool) (contents []byte, tinfo *torrentutil.TorrentMeta, err error) {
+	contents, err = clientInstance.ExportTorrentFile(torrent.InfoHash)
 	if err != nil {
-		return err
+		return nil, nil, err
+	}
+	if tinfo, err = torrentutil.ParseTorrent(contents); err != nil {
+		return contents, nil, fmt.Errorf("failed to parse torrent: %w", err)
 	}
 	if useCommentMeta {
 		var useCommentErr error
-		if tinfo, err := torrentutil.ParseTorrent(content); err != nil {
-			useCommentErr = fmt.Errorf("failed to parse comment-meta: %w", err)
-		} else if err := tinfo.EncodeComment(&torrentutil.TorrentCommentMeta{
+		if err := tinfo.EncodeComment(&torrentutil.TorrentCommentMeta{
 			Category: torrent.Category,
 			Tags:     torrent.Tags,
 			SavePath: torrent.SavePath,
@@ -167,14 +168,14 @@ func ExportClientTorrent(clientInstance client.Client, torrent *client.Torrent,
 		} else if data, err := tinfo.ToBytes(); err != nil {
 			useCommentErr = fmt.Errorf("failed to re-generate torrent with comment-meta: %w", err)
 		} else {
-			content = data
+			contents = data
 		}
 		if useCommentErr != nil {
-			return useCommentErr
+			return contents, tinfo, useCommentErr
 		}
 	}
-	if err := atomic.WriteFile(filepath, bytes.NewReader(content)); err != nil {
-		return fmt.Errorf("failed to write file: %w", err)
+	if err := atomic.WriteFile(filepath, bytes.NewReader(contents)); err != nil {
+		return contents, tinfo, fmt.Errorf("failed to write file: %w", err)
 	}
-	return nil
+	return contents, tinfo, nil
 }

@@ -105,7 +105,7 @@ func export(cmd *cobra.Command, args []string) error {
 			filename = torrentutil.RenameExportedTorrent(clientName, torrent, rename)
 		}
 		filepath := filepath.Join(downloadDir, filename)
-		err := common.ExportClientTorrent(clientInstance, torrent, filepath, useCommentMeta)
+		_, _, err := common.ExportClientTorrent(clientInstance, torrent, filepath, useCommentMeta)
 		if err != nil {
 			fmt.Printf("✕ %s : %v (%d/%d)\n", torrent.InfoHash, err, i+1, cntAll)
 			errorCnt++
