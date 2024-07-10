@@ -274,13 +274,13 @@ func parseMetadataFile(metadataFile string, arrayKeys []string) (metadata url.Va
 	}
 	deli := []byte("---\n")
 	if len(contents) < 10 || !bytes.Equal(contents[:len(deli)], deli) {
-		return nil, ErrInvalidMetadataFile
+		return nil, fmt.Errorf("no yaml front matter")
 	}
 	contents = contents[len(deli):]
 	deli = []byte("\n---\n")
 	index := bytes.Index(contents, deli)
 	if index < 3 {
-		return nil, ErrInvalidMetadataFile
+		return nil, fmt.Errorf("no yaml front matter")
 	}
 	text := strings.TrimSpace(string(contents[index+len(deli):]))
 	contents = contents[:index]
@@ -622,12 +622,12 @@ func printResult(contentPath string, id string, err error,
 	case ErrAlreadyPublished:
 		fmt.Printf("* %q: %v\n", contentPath, err)
 		ok = true
-	case ErrNoMetadataFile, ErrExisting:
+	case ErrNoMetadataFile:
 		fmt.Printf("- %q: %v\n", contentPath, err)
 		ok = true
-	case ErrSmall:
+	case ErrSmall, ErrExisting:
 		fmt.Printf("! %q: %v\n", contentPath, err)
-		ok = true
+		ok = false
 	default:
 		fmt.Printf("X %q: %v\n", contentPath, err)
 	}
