@@ -20,6 +20,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
+	"github.com/sagan/ptool/client/transmission"
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/constants"
@@ -78,7 +79,10 @@ func dynamicseeding(cmd *cobra.Command, args []string) (err error) {
 	} else {
 		ignores = strings.Split(string(contents), "\n")
 	}
-
+	// A workaround for transmission performance boost. tr can get all infos in batch
+	if trClient, ok := clientInstance.(*transmission.Client); ok {
+		trClient.Sync(true)
+	}
 	result, err := doDynamicSeeding(clientInstance, siteInstance, ignores)
 	if err != nil {
 		return err

@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/client"
+	"github.com/sagan/ptool/client/transmission"
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/constants"
@@ -39,6 +40,7 @@ Note it will first reset %q tag, removing all torrents from it, before adding to
 }
 
 var (
+	noClean  = false
 	category = ""
 	tag      = ""
 	filter   = ""
@@ -47,6 +49,8 @@ var (
 func init() {
 	command.Flags().StringVarP(&filter, "filter", "", "", constants.HELP_ARG_FILTER_TORRENT)
 	command.Flags().StringVarP(&category, "category", "", "", constants.HELP_ARG_CATEGORY)
+	command.Flags().BoolVarP(&noClean, "no-clean", "", false, `Do not clean existing torrents of "`+
+		config.INVALID_TRACKER_TAG+`" tag`)
 	command.Flags().StringVarP(&tag, "tag", "", "", constants.HELP_ARG_TAG)
 	cmd.RootCmd.AddCommand(command)
 }
@@ -66,6 +70,10 @@ func markinvalidtracker(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to create client: %w", err)
 	}
 
+	// A workaround for transmission performance boost. tr can get all infos in batch
+	if trClient, ok := clientInstance.(*transmission.Client); ok {
+		trClient.Sync(true)
+	}
 	torrents, err := client.QueryTorrents(clientInstance, category, tag, filter, infoHashes...)
 	if err != nil {
 		return fmt.Errorf("failed to query client torrents: %w", err)
@@ -83,11 +91,14 @@ func markinvalidtracker(cmd *cobra.Command, args []string) error {
 		if !trackers.SeemsInvalidTorrent() {
 			continue
 		}
-		log.Infof("torrent %s (%s)'s trackers seems invalid: %v\n", torrent.InfoHash, torrent.Name, trackers)
+		log.Warnf("torrent %s (%s)'s trackers seems invalid: %v\n", torrent.InfoHash, torrent.Name, trackers)
 		infoHashes = append(infoHashes, torrent.InfoHash)
 	}
-	if err = clientInstance.DeleteTags(config.INVALID_TRACKER_TAG); err != nil {
-		return fmt.Errorf("failed to reset mark tag: %w", err)
+	log.Warnf("Marking %d torrents as invalid tracker", len(infoHashes))
+	if !noClean {
+		if err = clientInstance.DeleteTags(config.INVALID_TRACKER_TAG); err != nil {
+			return fmt.Errorf("failed to clean mark tag: %w", err)
+		}
 	}
 	if len(infoHashes) > 0 {
 		if err = clientInstance.AddTagsToTorrents(infoHashes, []string{config.INVALID_TRACKER_TAG}); err != nil {

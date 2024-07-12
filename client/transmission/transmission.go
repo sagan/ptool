@@ -28,6 +28,7 @@ type Client struct {
 	Config                    *config.ConfigStruct
 	client                    *transmissionrpc.Client
 	datatime                  int64
+	datafull                  bool
 	datatimeMeta              int64
 	torrents                  map[string]*transmissionrpc.Torrent
 	sessionStats              *transmissionrpc.SessionStats
@@ -40,7 +41,7 @@ type Client struct {
 }
 
 func (trclient *Client) GetTorrentsByContentPath(contentPath string) ([]*client.Torrent, error) {
-	if err := trclient.sync(); err != nil {
+	if err := trclient.Sync(false); err != nil {
 		return nil, err
 	}
 	torrents := []*client.Torrent{}
@@ -66,7 +67,8 @@ func (trclient *Client) SetTorrentsShareLimits(infoHashes []string, ratioLimit f
 
 // get a torrent info from rpc. return error if torrent not found
 func (trclient *Client) getTorrent(infoHash string, full bool) (*transmissionrpc.Torrent, error) {
-	if !full && trclient.torrents[infoHash] != nil {
+	// If TrackerStats is present, it's a full info.
+	if trclient.torrents[infoHash] != nil && (!full || trclient.torrents[infoHash].TrackerStats != nil) {
 		return trclient.torrents[infoHash], nil
 	}
 	if trclient.lastTorrent != nil && *trclient.lastTorrent.HashString == infoHash {
@@ -112,17 +114,23 @@ func (trclient *Client) Cached() bool {
 	return trclient.datatime > 0
 }
 
-func (trclient *Client) sync() error {
-	if trclient.datatime > 0 {
+func (trclient *Client) Sync(full bool) (err error) {
+	if trclient.datatime > 0 && (!full || trclient.datafull) {
 		return nil
 	}
 	transmissionbt := trclient.client
 	now := util.Now()
-	torrents, err := transmissionbt.TorrentGet(context.TODO(), []string{
-		"activityDate", "addedDate", "doneDate", "downloadDir", "downloadedEver", "downloadLimit", "downloadLimited",
-		"hashString", "id", "labels", "name", "peersGettingFromUs", "peersSendingToUs", "percentDone", "rateDownload",
-		"rateUpload", "sizeWhenDone", "status", "trackers", "totalSize", "uploadedEver", "uploadLimit", "uploadLimited",
-	}, nil)
+	var torrents []transmissionrpc.Torrent
+	if full {
+		torrents, err = transmissionbt.TorrentGetAll(context.TODO())
+	} else {
+		torrents, err = transmissionbt.TorrentGet(context.TODO(), []string{
+			"activityDate", "addedDate", "doneDate", "downloadDir", "downloadedEver", "downloadLimit", "downloadLimited",
+			"hashString", "id", "labels", "name", "peersGettingFromUs", "peersSendingToUs", "percentDone", "rateDownload",
+			"rateUpload", "sizeWhenDone", "status", "trackers", "totalSize", "uploadedEver", "uploadLimit", "uploadLimited",
+		}, nil)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -131,6 +139,7 @@ func (trclient *Client) sync() error {
 		torrentsMap[*torrents[i].HashString] = &torrents[i]
 	}
 	trclient.datatime = now
+	trclient.datafull = full
 	trclient.torrents = torrentsMap
 	trclient.buildDerivative()
 	return nil
@@ -184,7 +193,7 @@ func (trclient *Client) ExportTorrentFile(infoHash string) ([]byte, error) {
 }
 
 func (trclient *Client) GetTorrent(infoHash string) (*client.Torrent, error) {
-	if err := trclient.sync(); err != nil {
+	if err := trclient.Sync(false); err != nil {
 		return nil, err
 	}
 	trtorrent := trclient.torrents[infoHash]
@@ -195,7 +204,7 @@ func (trclient *Client) GetTorrent(infoHash string) (*client.Torrent, error) {
 }
 
 func (trclient *Client) GetTorrents(stateFilter string, category string, showAll bool) ([]*client.Torrent, error) {
-	if err := trclient.sync(); err != nil {
+	if err := trclient.Sync(false); err != nil {
 		return nil, err
 	}
 	torrents := []*client.Torrent{}
@@ -390,7 +399,7 @@ func (trclient *Client) ModifyTorrent(infoHash string, option *client.TorrentOpt
 // suboptimal due to limit of transmissionrpc library
 func (trclient *Client) DeleteTorrents(infoHashes []string, deleteFiles bool) (err error) {
 	transmissionbt := trclient.client
-	if err := trclient.sync(); err != nil {
+	if err := trclient.Sync(false); err != nil {
 		return err
 	}
 	err = transmissionbt.TorrentRemove(context.TODO(), transmissionrpc.TorrentRemovePayload{
@@ -423,7 +432,13 @@ func (trclient *Client) ReannounceTorrents(infoHashes []string) error {
 }
 
 func (trclient *Client) AddTagsToTorrents(infoHashes []string, tags []string) error {
-	for _, infoHash := range infoHashes {
+	for i, infoHash := range infoHashes {
+		log.Tracef("(%d/%d) transmission.AddTagsToTorrents: %s", i+1, len(infoHashes), infoHash)
+		if trclient.torrents[infoHash] != nil && !slices.ContainsFunc(tags, func(tag string) bool {
+			return !slices.Contains(trclient.torrents[infoHash].Labels, tag)
+		}) {
+			continue
+		}
 		err := trclient.ModifyTorrent(infoHash, &client.TorrentOption{
 			Tags: tags,
 		}, nil)
@@ -435,7 +450,13 @@ func (trclient *Client) AddTagsToTorrents(infoHashes []string, tags []string) er
 }
 
 func (trclient *Client) RemoveTagsFromTorrents(infoHashes []string, tags []string) error {
-	for _, infoHash := range infoHashes {
+	for i, infoHash := range infoHashes {
+		log.Tracef("(%d/%d) transmission.RemoveTagsFromTorrents: %s", i+1, len(infoHashes), infoHash)
+		if trclient.torrents[infoHash] != nil && !slices.ContainsFunc(tags, func(tag string) bool {
+			return slices.Contains(trclient.torrents[infoHash].Labels, tag)
+		}) {
+			continue
+		}
 		err := trclient.ModifyTorrent(infoHash, &client.TorrentOption{
 			RemoveTags: tags,
 		}, nil)
@@ -474,28 +495,28 @@ func (trclient *Client) ReannounceAllTorrents() error {
 }
 
 func (trclient *Client) AddTagsToAllTorrents(tags []string) error {
-	if err := trclient.sync(); err != nil {
+	if err := trclient.Sync(false); err != nil {
 		return err
 	}
 	return trclient.AddTagsToTorrents(trclient.getAllInfoHashes(), tags)
 }
 
 func (trclient *Client) RemoveTagsFromAllTorrents(tags []string) error {
-	if err := trclient.sync(); err != nil {
+	if err := trclient.Sync(false); err != nil {
 		return err
 	}
 	return trclient.RemoveTagsFromTorrents(trclient.getAllInfoHashes(), tags)
 }
 
 func (trclient *Client) SetAllTorrentsSavePath(savePath string) error {
-	if err := trclient.sync(); err != nil {
+	if err := trclient.Sync(false); err != nil {
 		return err
 	}
 	return trclient.SetTorrentsSavePath(trclient.getAllInfoHashes(), savePath)
 }
 
 func (trclient *Client) GetTags() ([]string, error) {
-	if err := trclient.sync(); err != nil {
+	if err := trclient.Sync(false); err != nil {
 		return nil, err
 	}
 	tags := []string{}
@@ -528,7 +549,7 @@ func (trclient *Client) DeleteCategories(categories []string) error {
 }
 
 func (trclient *Client) GetCategories() ([]*client.TorrentCategory, error) {
-	if err := trclient.sync(); err != nil {
+	if err := trclient.Sync(false); err != nil {
 		return nil, err
 	}
 	cats := []*client.TorrentCategory{}
@@ -556,7 +577,7 @@ func (trclient *Client) SetTorrentsCatetory(infoHashes []string, category string
 }
 
 func (trclient *Client) SetAllTorrentsCatetory(category string) error {
-	if err := trclient.sync(); err != nil {
+	if err := trclient.Sync(false); err != nil {
 		return err
 	}
 	for infoHash := range trclient.torrents {
@@ -571,7 +592,7 @@ func (trclient *Client) TorrentRootPathExists(rootFolder string) bool {
 	if rootFolder == "" {
 		return false
 	}
-	if err := trclient.sync(); err != nil {
+	if err := trclient.Sync(false); err != nil {
 		return false
 	}
 	for _, torrent := range trclient.torrents {
@@ -602,6 +623,7 @@ func (trclient *Client) GetTorrentContents(infoHash string) ([]*client.TorrentCo
 
 func (trclient *Client) PurgeCache() {
 	trclient.datatime = 0
+	trclient.datafull = false
 	trclient.datatimeMeta = 0
 	trclient.unfinishedSize = 0
 	trclient.unfinishedDownloadingSize = 0

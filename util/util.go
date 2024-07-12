@@ -256,9 +256,18 @@ func LinkDir(source string, dest string, limit int64) error {
 	})
 }
 
-// Check whether a file (or dir) with name exists in file system
+// Check whether a file (or dir) with name exists in file system.
+// It treat a file system error as file exits.
 func FileExists(name string) bool {
 	if _, err := os.Stat(name); err == nil || !os.IsNotExist(err) {
+		return true
+	}
+	return false
+}
+
+// Return true if name is a accessible dir.
+func DirExists(name string) bool {
+	if stat, err := os.Stat(name); err == nil && stat.IsDir() {
 		return true
 	}
 	return false

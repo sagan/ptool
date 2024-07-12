@@ -828,6 +828,11 @@ ptool findalone local D:\Downloads E:\Downloads F:\Downloads
 ptool findalone local --map-save-path "/root/Downloads:/Downloads" /root/Downloads
 ```
 
+可选参数：
+
+- `--delete-alone` : 删除所有未做种的文件。
+- `--move-alone-to dir` : 将所有未做种的文件移动到这个目录里。
+
 ## 标记 BT 客户端里 Tracker 状态异常的种子 (markinvalidtracker)
 
 示例：
