@@ -342,6 +342,7 @@ func (qbtorrent *apiTorrentInfo) ToTorrent() *client.Torrent {
 		SizeTotal:          qbtorrent.Total_size,
 		Leechers:           qbtorrent.Num_incomplete,
 		Meta:               map[string]int64{},
+		Ratio:              qbtorrent.Ratio,
 	}
 	torrent.Name, torrent.Meta = client.ParseMetaFromName(torrent.Name)
 	return torrent

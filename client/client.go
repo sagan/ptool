@@ -45,6 +45,7 @@ type Torrent struct {
 	SizeCompleted      int64
 	Seeders            int64 // Cnt of seeders (including self client, if it's seeding), returned by tracker
 	Leechers           int64
+	Ratio              float64
 	Meta               map[string]int64
 }
 
