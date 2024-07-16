@@ -30,7 +30,6 @@ import (
 const EXISTING_FLAG_FILE = ".existing-%s" // %s: sitename
 const PUBLISHED_FLAG_FILE = ".published-%s"
 const PUBLISHED_TORRENT_FILENAME = ".%s.torrent"
-const UPLOAD_TIMEOUT_FLAG = ".upload-timeout"
 const COVER = "cover"
 
 var command = &cobra.Command{
@@ -45,6 +44,7 @@ var (
 	ErrInvalidMetadataFile = fmt.Errorf("invalid metadata file")
 	ErrNoMetadataFile      = fmt.Errorf("no metadata file")
 	ErrExisting            = fmt.Errorf("same contents torrent exists in site")
+	ErrMayExisting         = fmt.Errorf("same contents torrent may exists in site")
 	ErrAlreadyPublished    = fmt.Errorf("already published")
 	ErrSmall               = fmt.Errorf("torrent contents is too small")
 )
@@ -171,8 +171,8 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 	}
 	if httpClient, _, err := site.CreateSiteHttpClient(siteInstance.GetSiteConfig(), config.Get()); err == nil {
 		// workaround: force increase site http client timeout.
-		if httpClient.TimeOut < time.Second*45 {
-			httpClient.SetTimeout(time.Second * 45)
+		if httpClient.TimeOut < time.Second*30 {
+			httpClient.SetTimeout(time.Second * 30)
 		}
 	}
 	if _, err := siteInstance.GetStatus(); err != nil {
@@ -418,14 +418,17 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 			}
 		}
 		if existingTorrent != nil {
+			errorCheckExistingTorrent := false
 			// workaround for https://github.com/xiaomlove/nexusphp/issues/264 .
 			beforePublished := false
 			(func() {
-				if existingTorrent.Seeders > 0 || !util.FileExists(filepath.Join(contentPath, UPLOAD_TIMEOUT_FLAG)) {
+				if existingTorrent.Seeders > 0 {
 					return
 				}
-				torrentContents, _, err := siteInstance.DownloadTorrentById(existingTorrent.Id)
+				torrentContents, _, err := siteInstance.DownloadTorrentById(existingTorrent.ID())
 				if err != nil {
+					log.Debugf("failed to download site existing torrent %s: %v", existingTorrent.ID(), err)
+					errorCheckExistingTorrent = true
 					return
 				}
 				tinfo, err := torrentutil.ParseTorrent(torrentContents)
@@ -435,7 +438,7 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 				if _, err = tinfo.Verify("", contentPath, 1); err != nil {
 					return
 				}
-				if err = atomic.WriteFile(publishedFlagFile, strings.NewReader(existingTorrent.Id)); err != nil {
+				if err = atomic.WriteFile(publishedFlagFile, strings.NewReader(existingTorrent.ID())); err != nil {
 					return
 				}
 				torrentFilename := filepath.Join(contentPath, fmt.Sprintf(PUBLISHED_TORRENT_FILENAME, sitename))
@@ -449,7 +452,12 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 				}
 				return "", nil, ErrAlreadyPublished
 			}
-			atomic.WriteFile(existingFlagFile, strings.NewReader(existingTorrent.Id))
+			if errorCheckExistingTorrent {
+				// 站点种子存在，但做种人数为0，并且由于下载种子失败，无法确定该种子与本地文件夹是否是相同种子。
+				// 所以仅本次返回错误，但不写入 existing flag 标记文件。下次运行时，会再次尝试下载种子检查。
+				return "", nil, ErrMayExisting
+			}
+			atomic.WriteFile(existingFlagFile, strings.NewReader(existingTorrent.ID()))
 			return "", nil, ErrExisting
 		}
 	}
@@ -516,17 +524,12 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 		metadata.Set("_cover", coverImage)
 	}
 	id, err = siteInstance.PublishTorrent(torrentContents, metadata)
-	os.Remove(filepath.Join(contentPath, UPLOAD_TIMEOUT_FLAG))
 	if err != nil {
 		if err == constants.ErrDryRun {
 			if targetContentPath != contentPath {
 				atomic.ReplaceFile(contentPath, targetContentPath)
 			}
 			return "", nil, err
-		}
-		if util.AsNetworkError(err) && strings.Contains(err.Error(), "failed to upload torrent:") {
-			// upload torrent to site timeout (means it may actually uploaded)
-			util.TouchFile(filepath.Join(contentPath, UPLOAD_TIMEOUT_FLAG))
 		}
 		return "", nil, fmt.Errorf("failed to publish torrent: %w", err)
 	}
@@ -625,6 +628,9 @@ func printResult(contentPath string, id string, err error,
 		ok = true
 	case ErrSmall, ErrExisting:
 		fmt.Printf("! %q: %v\n", contentPath, err)
+		ok = false
+	case ErrMayExisting:
+		fmt.Printf("? %q: %v\n", contentPath, err)
 		ok = false
 	default:
 		fmt.Printf("X %q: %v\n", contentPath, err)
