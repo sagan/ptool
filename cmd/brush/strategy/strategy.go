@@ -147,6 +147,9 @@ func Decide(clientStatus *client.Status, clientTorrents []*client.Torrent, siteT
 	cntTorrents := int64(len(clientTorrents))
 	cntDownloadingTorrents := int64(0)
 	freespace := clientStatus.FreeSpaceOnDisk
+	if (clientOption.BrushMinDiskDelUnfinished) {
+		freespace := freespace - clientStatus.UnfinishedDownloadingSize
+	}
 	freespaceChange := int64(0)
 	freespaceTarget := min(clientOption.MinDiskSpace*2, clientOption.MinDiskSpace+DELETE_TORRENTS_FREE_DISK_SPACE_TIER)
 	estimateUploadSpeed := clientStatus.UploadSpeed
