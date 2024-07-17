@@ -114,7 +114,7 @@ type ClientConfigStruct struct {
 	BrushMinRatio                     float64 `yaml:"brushMinRatio"`
 	BrushDefaultUploadSpeedLimit      string  `yaml:"brushDefaultUploadSpeedLimit"`
 	BrushMinDiskSpaceValue            int64
-	BrushMinDiskDelUnfinished			bool `yaml:"brushMinDiskDelUnfinished"`
+	BrushMinDiskDelUnfinished	bool `yaml:"brushMinDiskDelUnfinished"`
 	BrushSlowUploadSpeedTierValue     int64
 	BrushDefaultUploadSpeedLimitValue int64
 	QbittorrentNoLogin                bool `yaml:"qbittorrentNoLogin"`  // if set, will NOT send login request
