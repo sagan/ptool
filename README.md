@@ -847,9 +847,12 @@ markinvalidtracker 命令将以下几种情形认为是 Tracker 状态异常：
 
 - 种子在 Tracker 未注册或已经被删除。
 - 种子的 Tracker url 的 Passkey 或 Authkey 不正确。
+
+如果指定 "--all" 参数，以下情形的种子也会被标记：
+
 - 种子超过了站点的同时下载/做种客户端数量上限。
 
-markinvalidtracker 不会标记因为网络或站点服务器问题而当前无法连通 Tracker 的种子。
+markinvalidtracker 命令不会标记因为网络或站点服务器问题而当前无法连通 Tracker 的种子。
 
 ## 修改本地 BT 客户端里的种子内容文件保存路径 (movesavepath)
 

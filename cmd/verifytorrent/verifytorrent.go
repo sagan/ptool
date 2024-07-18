@@ -183,7 +183,9 @@ func verifytorrent(cmd *cobra.Command, args []string) error {
 
 	statistics := common.NewTorrentsStatistics()
 	for i, torrent := range torrents {
-		fmt.Printf("(%d/%d) ", i+1, len(torrents))
+		if !showSum {
+			fmt.Printf("(%d/%d) ", i+1, len(torrents))
+		}
 		_, tinfo, _, _, _, _, isLocal, err :=
 			helper.GetTorrentContent(torrent, defaultSite, forceLocal, false, stdinTorrentContents, false, nil)
 		if err != nil {

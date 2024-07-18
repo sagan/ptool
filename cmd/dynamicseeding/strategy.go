@@ -159,7 +159,7 @@ func doDynamicSeeding(clientInstance client.Client, siteInstance site.Site, igno
 		if torrent.Seeders == 0 && torrent.Leechers == 0 {
 			if trackers, err := clientInstance.GetTorrentTrackers(torrent.InfoHash); err != nil {
 				trackerStatus = TRACKER_UNKNOWN
-			} else if trackers.SeemsInvalidTorrent() {
+			} else if trackers.SeemsInvalidTorrent(true) {
 				trackerStatus = TRACKER_INVALID
 			} else {
 				trackerStatus = TRACKER_OK

@@ -28,6 +28,8 @@ trackers status is invalid with %q tag.
 A torrent's trackers status is treated as invalid if any of the following condition is true:
 - Torrent is not registered in the tracker(s).
 - Passkey or authkey is required or invalid.
+
+If "--all" flag is set, it also treats any of following conditions as invalid tracker:
 - It's exceeding the simultaneous downloading / seeding clients number limit.
 
 A torrent's trackers status is NOT treated as invalid if the tracker(s)
@@ -41,12 +43,15 @@ Note it will first reset %q tag, removing all torrents from it, before adding to
 
 var (
 	noClean  = false
+	all      = false
 	category = ""
 	tag      = ""
 	filter   = ""
 )
 
 func init() {
+	command.Flags().BoolVarP(&all, "all", "a", false,
+		"Include torrents which are exceeding the simultaneous downloading / seeding clients number limit")
 	command.Flags().StringVarP(&filter, "filter", "", "", constants.HELP_ARG_FILTER_TORRENT)
 	command.Flags().StringVarP(&category, "category", "", "", constants.HELP_ARG_CATEGORY)
 	command.Flags().BoolVarP(&noClean, "no-clean", "", false, `Do not clean existing torrents of "`+
@@ -88,7 +93,7 @@ func markinvalidtracker(cmd *cobra.Command, args []string) error {
 			errorCnt++
 			continue
 		}
-		if !trackers.SeemsInvalidTorrent() {
+		if !trackers.SeemsInvalidTorrent(all) {
 			continue
 		}
 		log.Warnf("torrent %s (%s)'s trackers seems invalid: %v\n", torrent.InfoHash, torrent.Name, trackers)

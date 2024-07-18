@@ -174,14 +174,18 @@ var tracker_invalid_torrent_msgs = []string{
 	"unauthorized",
 	"require passkey",
 	"require authkey",
-	"already are downloading", // "You already are downloading the same torrent"
 	"种子不存在",
 	"该种子没有", // monikadesign 的 msg: "该种子没有在我们的 Tracker 上注册."
+
+}
+
+var tracker_exceed_limit_torrent_msgs = []string{
+	"already are downloading", // "You already are downloading the same torrent"
 	"下载相同种子",
 	"下載相同種子",
 }
 
-func (trackers TorrentTrackers) SeemsInvalidTorrent() bool {
+func (trackers TorrentTrackers) SeemsInvalidTorrent(all bool) bool {
 	hasOk := false
 	hasInvalid := false
 	for _, tracker := range trackers {
@@ -189,7 +193,7 @@ func (trackers TorrentTrackers) SeemsInvalidTorrent() bool {
 			hasOk = true
 			break
 		}
-		if tracker.SeemsInvalidTorrent() {
+		if tracker.SeemsInvalidTorrent(all) {
 			hasInvalid = true
 		}
 	}
@@ -198,12 +202,19 @@ func (trackers TorrentTrackers) SeemsInvalidTorrent() bool {
 
 // Return true if the tracker is (seems) working but reports that the torrent does not exist in the tracker
 // or current torrent passkey is invalid.
-func (tracker *TorrentTracker) SeemsInvalidTorrent() bool {
-	if tracker.Msg != "" && slices.ContainsFunc(tracker_invalid_torrent_msgs,
-		func(msg string) bool {
+// If all is true, also include torrents that exceed the seeding / downloading clients number limit.
+func (tracker *TorrentTracker) SeemsInvalidTorrent(all bool) bool {
+	if tracker.Msg != "" {
+		if slices.ContainsFunc(tracker_invalid_torrent_msgs, func(msg string) bool {
 			return util.ContainsI(tracker.Msg, msg)
 		}) {
-		return true
+			return true
+		}
+		if all && slices.ContainsFunc(tracker_exceed_limit_torrent_msgs, func(msg string) bool {
+			return util.ContainsI(tracker.Msg, msg)
+		}) {
+			return true
+		}
 	}
 	return false
 }

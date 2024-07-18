@@ -184,7 +184,7 @@ func (trclient *Client) syncMeta() error {
 	trclient.datatimeMeta = now
 	trclient.sessionStats = &sessionStats
 	trclient.sessionArgs = &sessionArgs
-	trclient.freeSpace = int64(freeSpace)
+	trclient.freeSpace = int64(freeSpace / 8) // tr freespace is in bits.
 	return nil
 }
 
