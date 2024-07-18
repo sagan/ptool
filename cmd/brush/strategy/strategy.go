@@ -147,7 +147,7 @@ func Decide(clientStatus *client.Status, clientTorrents []*client.Torrent, siteT
 	cntTorrents := int64(len(clientTorrents))
 	cntDownloadingTorrents := int64(0)
 	freespace := clientStatus.FreeSpaceOnDisk
-	if (clientOption.BrushMinDiskDelUnfinished) {
+	if ((clientOption.BrushMinDiskDelUnfinished) && (freespace != -1)) {
 		freespace = freespace - clientStatus.UnfinishedDownloadingSize
 	}
 	freespaceChange := int64(0)
