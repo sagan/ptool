@@ -48,6 +48,9 @@ const META_TORRENT_FILE = ".torrent"
 const METADATA_FILE = "metadata.nfo"
 const METADATA_KEY_ARRAY_KEYS = "_array_keys"
 const METADATA_KEY_DRY_RUN = "_dryrun"
+const METADATA_KEY_NO_COVER = "_no_cover" // If set to "1", do not upload cover.* image.
+const METADATA_KEY_COVER = "_cover"
+const METADATA_KEY_IMAGES = "_images"
 
 // type, name, ↑info, ↓info, others
 const STATUS_FMT = "%-6s  %-15s  %-27s  %-27s  %-s\n"
@@ -130,12 +133,15 @@ var DefaultIgnorePatterns = []string{
 	"*.swp", // vim temp files
 	"*.tmp",
 	"*.temp",
+	"*.!qB",         // qBittorrent incomplete file
+	"*.xltd",        // 迅雷临时数据文件 (XunLei Temporary Data File)
+	"*.downloading", // 百度网盘下载临时文件，例如 *.baiduyun.p.downloading
 	"*.dropbox",
 	"*.torrent",
 	"node_modules/",
 	"lost+found/",
 	"__MACOSX/", // https://superuser.com/questions/104500/
-	"System Volume Information",
+	"System Volume Information/",
 	"desktop.ini",
 	"Thumbs.db",
 }

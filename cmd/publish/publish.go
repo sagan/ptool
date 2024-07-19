@@ -50,6 +50,7 @@ var (
 )
 
 var (
+	noCover               = false
 	doCheck               = false
 	skipCheck             = false
 	dryRun                = false
@@ -75,6 +76,8 @@ var (
 )
 
 func init() {
+	command.Flags().BoolVarP(&noCover, "no-cover", "", false,
+		`Do not use and upload "cover.<webp/png/jpg>" file to site images server`)
 	command.Flags().BoolVarP(&doCheck, "check", "", false,
 		"Do full torrent hashing check with disk contents if .torrent already exists")
 	command.Flags().BoolVarP(&skipCheck, "skip-check", "", false,
@@ -154,6 +157,9 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 	}
 	if comment != "" {
 		metaValues.Set("comment", comment)
+	}
+	if noCover {
+		metaValues.Set(constants.METADATA_KEY_NO_COVER, "1")
 	}
 	mustTags := util.SplitCsv(mustTag)
 	metaArrayKeys := util.SplitCsv(metaArrayKeysStr)
@@ -380,7 +386,7 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 			images = util.UniqueSlice(images)
 		}
 		if len(images) > 0 {
-			metadata["_images"] = images
+			metadata[constants.METADATA_KEY_IMAGES] = images
 		}
 	}
 	if dryRun {
@@ -519,9 +525,11 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 	if minTorrentSize > 0 && tinfo.Size < minTorrentSize {
 		return "", nil, ErrSmall
 	}
-	coverImage := util.ExistsFileWithAnySuffix(filepath.Join(contentPath, COVER), constants.ImgExts)
-	if coverImage != "" {
-		metadata.Set("_cover", coverImage)
+	if metadata.Get(constants.METADATA_KEY_NO_COVER) != "1" {
+		coverImage := util.ExistsFileWithAnySuffix(filepath.Join(contentPath, COVER), constants.ImgExts)
+		if coverImage != "" {
+			metadata.Set(constants.METADATA_KEY_COVER, coverImage)
+		}
 	}
 	id, err = siteInstance.PublishTorrent(torrentContents, metadata)
 	if err != nil {

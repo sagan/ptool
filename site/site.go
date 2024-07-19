@@ -524,6 +524,7 @@ func DownloadTorrentByUrl(siteInstance Site, httpClient *azuretls.Session, torre
 //	_cover : cover image file path, got uploaded to site image server then replaced with uploaded img url.
 //	_images (array) : images other than cover, processed similar with _cover but rendered as slice.
 //	_raw_* : direct raw data that will be rendered and added to payload.
+//	_site_<sitename>_* : site specific raw data.
 //	_array_keys : variable of these keys are rendered as array.
 func UploadTorrent(siteInstance Site, httpClient *azuretls.Session, uploadUrl string, contents []byte,
 	metadata url.Values, fallbackPayloadTemplate map[string]string) (res *azuretls.Response, err error) {
@@ -546,23 +547,23 @@ func UploadTorrent(siteInstance Site, httpClient *azuretls.Session, uploadUrl st
 			siteInstance.GetSiteConfig().UploadTorrentAdditionalPayload)
 	}
 
-	coverFile := metadata.Get("_cover")
+	coverFile := metadata.Get(constants.METADATA_KEY_COVER)
 	imgPlaceholderPrefix := "$$PTOOL_PUBLISH_IMG_"
 	// rendering occurs before images got uploaded, so use placeholders for now,
 	// then replace them with uploaded image url in the later.
 	// The con is image urls must be rendered literally inside payload templates.
 	if coverFile != "" {
-		metadataRaw["_cover"] = imgPlaceholderPrefix + coverFile
+		metadataRaw[constants.METADATA_KEY_COVER] = imgPlaceholderPrefix + coverFile
 	}
-	if metadata.Has("_images") {
+	if metadata.Has(constants.METADATA_KEY_IMAGES) {
 		var images []string
-		for _, imageFile := range metadata["_images"] {
+		for _, imageFile := range metadata[constants.METADATA_KEY_IMAGES] {
 			if imageFile == coverFile {
 				continue
 			}
 			images = append(images, imgPlaceholderPrefix+imageFile)
 		}
-		metadataRaw["_images"] = images
+		metadataRaw[constants.METADATA_KEY_IMAGES] = images
 	}
 	for key := range payloadTemplate {
 		value, err := jinja.Render(payloadTemplate[key], metadataRaw)
@@ -587,6 +588,23 @@ func UploadTorrent(siteInstance Site, httpClient *azuretls.Session, uploadUrl st
 		}
 		payload.Set(key, value)
 	}
+	// site specific raw payload directly set from metadata. e.g. "_site_kamept_foo".
+	for key := range metadata {
+		prefix := "_site_" + siteInstance.GetName() + "_"
+		if !strings.HasPrefix(key, prefix) {
+			continue
+		}
+		template := metadata.Get(key)
+		key = key[len(prefix):]
+		if key == "" {
+			continue
+		}
+		value, err := jinja.Render(template, metadataRaw)
+		if err != nil {
+			return nil, fmt.Errorf("invalid metadata site raw param %q: %w", key, err)
+		}
+		payload.Set(key, value)
+	}
 
 	log.Debugf("Publish torrent payload: %v", payload)
 	if keys := siteInstance.GetSiteConfig().UploadTorrentPayloadRequiredKeys; keys != "" && keys != constants.NONE {
@@ -598,7 +616,7 @@ func UploadTorrent(siteInstance Site, httpClient *azuretls.Session, uploadUrl st
 	}
 
 	// upload images.
-	if coverFile != "" || metadata.Has("_images") {
+	if coverFile != "" || metadata.Has(constants.METADATA_KEY_IMAGES) {
 		if siteInstance.GetSiteConfig().ImageUploadUrl == "" {
 			return nil, fmt.Errorf("imageUploadUrl is not configured, can not upload image")
 		}
@@ -619,7 +637,7 @@ func UploadTorrent(siteInstance Site, httpClient *azuretls.Session, uploadUrl st
 		if coverFile != "" {
 			images = append(images, coverFile)
 		}
-		images = append(images, metadata["_images"]...)
+		images = append(images, metadata[constants.METADATA_KEY_IMAGES]...)
 		for _, image := range images {
 			if metadata.Has(constants.METADATA_KEY_DRY_RUN) {
 				return nil, constants.ErrDryRun

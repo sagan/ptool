@@ -96,6 +96,7 @@ var pureFlags = []string{
 	"lock-or-exit",
 	"newest",
 	"no-clean",
+	"no-cover",
 	"no-hr",
 	"no-neutral",
 	"no-paid",
