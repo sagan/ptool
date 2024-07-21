@@ -212,10 +212,8 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 	if moveOkTo != "" && !util.DirExists(moveOkTo) {
 		return fmt.Errorf("move-ok-to dir %q does not exist or is not dir", moveOkTo)
 	}
-	if moveFailTo != "" {
-		if err = os.MkdirAll(moveFailTo, constants.PERM_DIR); err != nil {
-			return fmt.Errorf("move-fail-to dir %q does not exist and cann't be created: %w", moveFailTo, err)
-		}
+	if moveFailTo != "" && !util.DirExists(moveFailTo) {
+		return fmt.Errorf("move-fail-to dir %q does not exist or is not dir", moveFailTo)
 	}
 
 	errorCnt := int64(0)

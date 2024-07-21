@@ -648,7 +648,7 @@ func (qbclient *Client) buildDerivative() {
 		if torrent.State != "pausedDL" {
 			unfinishedDownloadingSize += usize
 		}
-		contentPathTorrents[torrent.Content_path] = append(contentPathTorrents[torrent.Content_path], torrent)
+		contentPathTorrents[torrent.ContentPath()] = append(contentPathTorrents[torrent.ContentPath()], torrent)
 	}
 	qbclient.unfinishedSize = unfinishedSize
 	qbclient.unfinishedDownloadingSize = unfinishedDownloadingSize
@@ -664,7 +664,7 @@ func (qbclient *Client) TorrentRootPathExists(rootFolder string) bool {
 		return false
 	}
 	for _, torrent := range qbclient.data.Torrents {
-		if strings.HasSuffix(torrent.Content_path, "/"+rootFolder) {
+		if strings.HasSuffix(torrent.ContentPath(), torrent.Sep()+rootFolder) {
 			return true
 		}
 	}

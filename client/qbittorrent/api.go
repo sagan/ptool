@@ -1,6 +1,8 @@
 package qbittorrent
 
 import (
+	"strings"
+
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/util"
 )
@@ -334,7 +336,7 @@ func (qbtorrent *apiTorrentInfo) ToTorrent() *client.Torrent {
 		UploadedSpeedLimit: qbtorrent.Up_limit,
 		Category:           qbtorrent.Category,
 		SavePath:           qbtorrent.Save_path,
-		ContentPath:        qbtorrent.Content_path,
+		ContentPath:        qbtorrent.ContentPath(),
 		Tags:               util.SplitCsv(qbtorrent.Tags),
 		Seeders:            qbtorrent.Num_complete,
 		Size:               qbtorrent.Size,
@@ -345,4 +347,31 @@ func (qbtorrent *apiTorrentInfo) ToTorrent() *client.Torrent {
 	}
 	torrent.Name, torrent.Meta = client.ParseMetaFromName(torrent.Name)
 	return torrent
+}
+
+// Return the real content path (root folder) of torrent. It differs with qBittorrent Content_path in a special case:
+// For a single file torrent. qb put abs path of that single file as Content_path, even if it has a wrap folder.
+// E.g. if a torrent has a name "foo" and only one file "bar.txt" with a save path "/downloads",
+// Content_path will be "/downloads/foo/bar.txt".
+// This function returns "/downloads/foo" in this case.
+func (qbtorrent *apiTorrentInfo) ContentPath() string {
+	sep := qbtorrent.Sep()
+	cp := qbtorrent.Content_path
+	if !strings.HasPrefix(cp, qbtorrent.Save_path+sep) {
+		return cp
+	}
+	relativepath := cp[len(qbtorrent.Save_path)+1:]
+	i := strings.Index(relativepath, sep)
+	if i == -1 {
+		return cp
+	}
+	return qbtorrent.Save_path + sep + relativepath[:i]
+}
+
+// Return path sep (either '/' or '\') of this torrent.
+func (qbtorrent *apiTorrentInfo) Sep() string {
+	if !strings.Contains(qbtorrent.Save_path, `/`) && !strings.Contains(qbtorrent.Content_path, `/`) {
+		return `\`
+	}
+	return `/`
 }

@@ -79,7 +79,7 @@ func findalone(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("--sum and --all flags are NOT compatible")
 	}
 	if util.CountNonZeroVariables(deleteAlone, moveAloneTo) > 1 {
-		return fmt.Errorf("--all, --delete-alone and --move-alone-to flags are NOT compatible")
+		return fmt.Errorf("--delete-alone and --move-alone-to flags are NOT compatible")
 	}
 	if moveAloneTo != "" && !util.DirExists(moveAloneTo) {
 		return fmt.Errorf("move-to does NOT exist or is not dir")
@@ -201,6 +201,7 @@ func findalone(cmd *cobra.Command, args []string) error {
 					fmt.Printf("X %q: %v\n", file.Path, err)
 				} else {
 					fmt.Printf("✓ %q\n", file.Path)
+					cntHandled++
 				}
 			}
 		}
