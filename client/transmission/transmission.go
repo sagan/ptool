@@ -9,6 +9,8 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"os"
+	"path/filepath"
 	"reflect"
 	"slices"
 	"strings"
@@ -189,6 +191,9 @@ func (trclient *Client) syncMeta() error {
 }
 
 func (trclient *Client) ExportTorrentFile(infoHash string) ([]byte, error) {
+	if trclient.ClientConfig.LocalTorrentsPath != "" {
+		return os.ReadFile(filepath.Join(trclient.ClientConfig.LocalTorrentsPath, infoHash+".torrent"))
+	}
 	return nil, fmt.Errorf("unsupported")
 }
 

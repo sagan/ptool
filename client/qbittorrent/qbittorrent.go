@@ -12,6 +12,8 @@ import (
 	"net/http/cookiejar"
 	"net/textproto"
 	"net/url"
+	"os"
+	"path/filepath"
 	"reflect"
 	"slices"
 	"sort"
@@ -832,6 +834,9 @@ func (qbclient *Client) SetConfig(variable string, value string) error {
 // https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-4.1) .
 // See https://github.com/qbittorrent/qBittorrent/issues/18746 for more info.
 func (qbclient *Client) ExportTorrentFile(infoHash string) ([]byte, error) {
+	if qbclient.ClientConfig.LocalTorrentsPath != "" {
+		return os.ReadFile(filepath.Join(qbclient.ClientConfig.LocalTorrentsPath, infoHash+".torrent"))
+	}
 	apiUrl := qbclient.ClientConfig.Url + "api/v2/torrents/export?hash=" + infoHash
 	res, _, err := util.FetchUrl(apiUrl, qbclient.HttpClient, nil)
 	if err != nil {

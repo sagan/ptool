@@ -66,7 +66,7 @@ func init() {
 	command.Flags().BoolVarP(&showJson, "json", "", false, "Show full info in json format for found torrents")
 	command.Flags().BoolVarP(&showRaw, "raw", "", false, "Show raw Reseed torrent id for found torrents")
 	command.Flags().BoolVarP(&useCommentMeta, "use-comment-meta", "", false,
-		`Use with --download. Use "comment" field to export save path location to downloaded .torrent files`)
+		`Used with "--download". Use "comment" field to export save path location to downloaded .torrent files`)
 	command.Flags().BoolVarP(&doDownload, "download", "", false, "Download found xseed torrents to local")
 	command.Flags().BoolVarP(&all, "all", "a", false,
 		"Display or download all found xseed torrents (include partial-match results)")

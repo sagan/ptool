@@ -165,7 +165,7 @@ func init() {
 			"The current stdout / stderr will still be used so you may want to redirect them to files using pipe. "+
 			"It only works on Linux platform")
 	RootCmd.PersistentFlags().BoolVarP(&config.LockOrExit, "lock-or-exit", "", false,
-		"Used with --lock flag. If failed to acquire lock, exit 1 immediately instead of waiting")
+		`Used with "--lock". If failed to acquire lock, exit 1 immediately instead of waiting`)
 	RootCmd.PersistentFlags().BoolVarP(&config.GlobalLock, "global-lock", "", false,
 		"Similar to --lock but does NOT require a filename. "+
 			"All ptool instances which use the same config dir share the lock")

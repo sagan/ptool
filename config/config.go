@@ -100,13 +100,19 @@ type AliasConfigStruct struct {
 }
 
 type ClientConfigStruct struct {
-	Type                              string  `yaml:"type"`
-	Name                              string  `yaml:"name"`
-	Comment                           string  `yaml:"comment"`
-	Disabled                          bool    `yaml:"disabled"`
-	Url                               string  `yaml:"url"`
-	Username                          string  `yaml:"username"`
-	Password                          string  `yaml:"password"`
+	Type     string `yaml:"type"`
+	Name     string `yaml:"name"`
+	Comment  string `yaml:"comment"`
+	Disabled bool   `yaml:"disabled"`
+	Url      string `yaml:"url"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+	// 适用于本机上的 BT 客户端。当前客户端存放种子 (<info-hash>.torrent)的路径。各个客户端默认值：
+	// Transmission on Windows: %SystemRoot%\ServiceProfiles\LocalService\AppData\Local\transmission-daemon\Torrents .
+	// qBittorrent on Windows: %USERPROFILE%\AppData\Local\qBittorrent\BT_backup .
+	// 对于 TR 需要配置此选项才能使用部分命令（例如“导出种子”）。
+	// 对于 QB 此配置是可选的(因为 QB web API 提供导出种子接口)，但配置后会提高相关命令的性能。
+	LocalTorrentsPath                 string  `yaml:"localTorrentsPath"`
 	BrushMinDiskSpace                 string  `yaml:"brushMinDiskSpace"`
 	BrushSlowUploadSpeedTier          string  `yaml:"brushSlowUploadSpeedTier"`
 	BrushMaxDownloadingTorrents       int64   `yaml:"brushMaxDownloadingTorrents"`
@@ -115,9 +121,9 @@ type ClientConfigStruct struct {
 	BrushDefaultUploadSpeedLimit      string  `yaml:"brushDefaultUploadSpeedLimit"`
 	BrushMinDiskSpaceValue            int64
 	BrushSlowUploadSpeedTierValue     int64
-	BrushDefaultUploadSpeedLimitValue int64
-	QbittorrentNoLogin                bool `yaml:"qbittorrentNoLogin"`  // if set, will NOT send login request
-	QbittorrentNoLogout               bool `yaml:"qbittorrentNoLogout"` // if set, will NOT send logout request
+	BrushDefaultUploadSpeedLimitValue int64 ``
+	QbittorrentNoLogin                bool  `yaml:"qbittorrentNoLogin"`  // if set, will NOT send login request
+	QbittorrentNoLogout               bool  `yaml:"qbittorrentNoLogout"` // if set, will NOT send logout request
 }
 
 type SiteConfigStruct struct {

@@ -172,7 +172,7 @@ func init() {
 	command.Flags().Int64VarP(&maxConsecutiveFail, "max-consecutive-fail", "", 3,
 		"Stop after consecutive fails to download torrent from site of this times. -1 == no limit (never stop)")
 	command.Flags().StringVarP(&freeTimeAtLeastStr, "free-time", "", "",
-		"Used with --free. Set the allowed minimal remaining torrent free time. e.g. 12h, 1d")
+		`Used with "--free". Set the allowed minimal remaining torrent free time. e.g. 12h, 1d`)
 	command.Flags().StringVarP(&publishedAfterStr, "published-after", "", "",
 		`If set, only display or download torrent that was published after (>=) this. `+constants.HELP_ARG_TIMES)
 	command.Flags().StringVarP(&filter, "filter", "", "",

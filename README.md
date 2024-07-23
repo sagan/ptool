@@ -909,7 +909,7 @@ ptool delete {src-client} --tag _transferred --preserve
 其它说明：
 
 - {src-client} 和 {dst-client} 需要位于同一个机器。如果两者的文件系统不同（例如位于不同的 Docker 容器里），使用 `--map-save-path src_path:dst_path` 指定两者之间的下载路径映射关系。
-- 由于技术限制，{src-client} 目前只支持 qBittorrent。
+- 由于技术限制，{src-client} 目前对于 Transmission 支持有限：仅支持本机上的的 TR，并且需要在 ptool.toml 里配置 `localTorrentsPath` 指向 TR 的种子文件夹。
 
 ## 同步 Cookies & 导入站点 (cookiecloud)
 

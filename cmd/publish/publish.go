@@ -70,6 +70,8 @@ var (
 	mustTag               = ""
 	metaArrayKeysStr      = ""
 	maxTotalSizeStr       = ""
+	addCategory           = ""
+	addTagsStr            = ""
 	imageFiles            []string
 	fields                []string
 	mapSavePaths          []string
@@ -90,11 +92,15 @@ func init() {
 		"Number limit of (successfully) published torrents. -1 == no limit")
 	command.Flags().Int64VarP(&maxPublishingTorrents, "max-publishing-torrents", "", -1,
 		"Number limit of publishing torrents. -1 == no limit")
+	command.Flags().StringVarP(&addCategory, "add-category", "", config.SEEDING_CAT,
+		`Used with "--client {client}". Set category of published torrents in BitTorrent client`)
+	command.Flags().StringVarP(&addTagsStr, "add-tags", "", "",
+		`Used with "--client {client}". Add tags to published torrent in BitTorrent client (comma-separated)`)
 	command.Flags().StringVarP(&maxTotalSizeStr, "max-total-size", "", "-1",
 		"Will at most publish torrents with total contents size of this value. -1 == no limit")
 	command.Flags().StringVarP(&mustTag, "must-tag", "", "", "Comma-separated tag list. "+
 		`If set, only content folders which tags contains any one in the list will be published`)
-	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "100KiB",
+	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "1MiB",
 		"Do not publish torrent which contents size is smaller than (<) this value. -1 == no limit")
 	command.Flags().StringVarP(&sitename, "site", "", "", "Publish site")
 	command.Flags().StringVarP(&clientname, "client", "", "",
@@ -143,6 +149,7 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 		}
 		comment = string(contents)
 	}
+	addTags := util.SplitCsv(addTagsStr)
 	comment = strings.TrimSpace(comment)
 	minTorrentSize, _ := util.RAMInBytes(minTorrentSizeStr)
 	metaValues := url.Values{}
@@ -222,8 +229,8 @@ func publish(cmd *cobra.Command, args []string) (err error) {
 	sizePublished := int64(0)
 	for i, contentPath := range contentPathes {
 		fmt.Printf("(%d/%d) ", i+1, len(contentPathes))
-		id, tinfo, err := publicTorrent(siteInstance, clientInstance, contentPath, metaValues, true,
-			checkExisting, savePathMapper, minTorrentSize, imageFiles, moveOkTo, dryRun, mustTags, metaArrayKeys)
+		id, tinfo, err := publicTorrent(siteInstance, clientInstance, contentPath, metaValues, true, checkExisting,
+			savePathMapper, minTorrentSize, imageFiles, moveOkTo, dryRun, mustTags, metaArrayKeys, addCategory, addTags)
 		ok, published := printResult(contentPath, id, err, sitename, clientname)
 		if !ok {
 			if moveFailTo != "" && (err == ErrExisting || err == ErrSmall || err == ErrInvalidMetadataFile) {
@@ -320,7 +327,8 @@ func parseMetadataFile(metadataFile string, arrayKeys []string) (metadata url.Va
 
 func publicTorrent(siteInstance site.Site, clientInstance client.Client, contentPath string, otherFields url.Values,
 	mustMetadataFile bool, checkExisting bool, savePathMapper *common.PathMapper, minTorrentSize int64,
-	imageFiles []string, moveOk string, dryRun bool, mustTags []string, metaArrayKeys []string) (
+	imageFiles []string, moveOk string, dryRun bool, mustTags []string, metaArrayKeys []string,
+	addCategory string, addTags []string) (
 	id string, tinfo *torrentutil.TorrentMeta, err error) {
 	targetContentPath := contentPath
 	if moveOk != "" {
@@ -398,7 +406,8 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 				return "", nil, fmt.Errorf("torrent already published but failed to move content folder: %w", err)
 			}
 		}
-		if err := downloadPublishedTorrent(siteInstance, clientInstance, targetContentPath, savePathMapper); err != nil {
+		if err := downloadPublishedTorrent(siteInstance, clientInstance, targetContentPath,
+			savePathMapper, addCategory, addTags); err != nil {
 			return "", nil, fmt.Errorf("failed to download published torrent: %w", err)
 		}
 		return "", nil, ErrAlreadyPublished
@@ -425,13 +434,14 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 			errorCheckExistingTorrent := false
 			// workaround for https://github.com/xiaomlove/nexusphp/issues/264 .
 			beforePublished := false
+			id := existingTorrent.ID()
 			(func() {
 				if existingTorrent.Seeders > 0 {
 					return
 				}
-				torrentContents, _, err := siteInstance.DownloadTorrentById(existingTorrent.ID())
+				torrentContents, _, err := siteInstance.DownloadTorrentById(id)
 				if err != nil {
-					log.Debugf("failed to download site existing torrent %s: %v", existingTorrent.ID(), err)
+					log.Debugf("failed to download site existing torrent %s: %v", id, err)
 					errorCheckExistingTorrent = true
 					return
 				}
@@ -442,7 +452,7 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 				if _, err = tinfo.Verify("", contentPath, 1); err != nil {
 					return
 				}
-				if err = atomic.WriteFile(publishedFlagFile, strings.NewReader(existingTorrent.ID())); err != nil {
+				if err = atomic.WriteFile(publishedFlagFile, strings.NewReader(id)); err != nil {
 					return
 				}
 				torrentFilename := filepath.Join(contentPath, fmt.Sprintf(PUBLISHED_TORRENT_FILENAME, sitename))
@@ -450,8 +460,13 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 				beforePublished = true
 			})()
 			if beforePublished {
+				if targetContentPath != contentPath {
+					if err = atomic.ReplaceFile(contentPath, targetContentPath); err != nil {
+						return id, nil, fmt.Errorf("torrent published (id: %s) but failed to move content folder: %w", id, err)
+					}
+				}
 				if err := downloadPublishedTorrent(siteInstance, clientInstance,
-					targetContentPath, savePathMapper); err != nil {
+					targetContentPath, savePathMapper, addCategory, addTags); err != nil {
 					return "", nil, fmt.Errorf("failed to download published torrent: %w", err)
 				}
 				return "", nil, ErrAlreadyPublished
@@ -461,7 +476,7 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 				// 所以仅本次返回错误，但不写入 existing flag 标记文件。下次运行时，会再次尝试下载种子检查。
 				return "", nil, ErrMayExisting
 			}
-			atomic.WriteFile(existingFlagFile, strings.NewReader(existingTorrent.ID()))
+			atomic.WriteFile(existingFlagFile, strings.NewReader(id))
 			return "", nil, ErrExisting
 		}
 	}
@@ -549,7 +564,7 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 			return id, nil, fmt.Errorf("torrent published (id: %s) but failed to move content folder: %w", id, err)
 		}
 	}
-	err = downloadPublishedTorrent(siteInstance, clientInstance, targetContentPath, savePathMapper)
+	err = downloadPublishedTorrent(siteInstance, clientInstance, targetContentPath, savePathMapper, addCategory, addTags)
 	if err != nil {
 		return id, tinfo, fmt.Errorf("failed to download published torrent: %w", err)
 	}
@@ -558,7 +573,7 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 
 // Download published torrent to local, optionaly add it to local client to start seeding.
 func downloadPublishedTorrent(siteInstance site.Site, clientInstance client.Client,
-	contentPath string, savePathMapper *common.PathMapper) (err error) {
+	contentPath string, savePathMapper *common.PathMapper, addCategory string, addTags []string) (err error) {
 	sitename := siteInstance.GetName()
 	torrentFilename := filepath.Join(contentPath, fmt.Sprintf(PUBLISHED_TORRENT_FILENAME, sitename))
 	var torrentContents []byte
@@ -596,11 +611,13 @@ func downloadPublishedTorrent(siteInstance site.Site, clientInstance client.Clie
 		}
 		savePath = newSavePath
 	}
+	tags := []string{client.GenerateTorrentTagFromSite(sitename), config.PRIVATE_TAG}
+	tags = append(tags, addTags...)
 	err = clientInstance.AddTorrent(torrentContents, &client.TorrentOption{
 		SkipChecking: true,
 		SavePath:     savePath,
-		Category:     config.SEEDING_CAT,
-		Tags:         []string{client.GenerateTorrentTagFromSite(sitename), config.PRIVATE_TAG},
+		Category:     addCategory,
+		Tags:         tags,
 	}, nil)
 	if err != nil {
 		return fmt.Errorf("failed to add torrent to client: %w", err)
