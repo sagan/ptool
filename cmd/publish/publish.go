@@ -50,6 +50,7 @@ var (
 )
 
 var (
+	addPaused             = false
 	noCover               = false
 	doCheck               = false
 	skipCheck             = false
@@ -78,6 +79,8 @@ var (
 )
 
 func init() {
+	command.Flags().BoolVarP(&addPaused, "add-paused", "", false,
+		`Used with "--client {client}". Add published torrents to client in paused state`)
 	command.Flags().BoolVarP(&noCover, "no-cover", "", false,
 		`Do not use and upload "cover.<webp/png/jpg>" file to site images server`)
 	command.Flags().BoolVarP(&doCheck, "check", "", false,
@@ -614,6 +617,7 @@ func downloadPublishedTorrent(siteInstance site.Site, clientInstance client.Clie
 	tags := []string{client.GenerateTorrentTagFromSite(sitename), config.PRIVATE_TAG}
 	tags = append(tags, addTags...)
 	err = clientInstance.AddTorrent(torrentContents, &client.TorrentOption{
+		Pause:        addPaused,
 		SkipChecking: true,
 		SavePath:     savePath,
 		Category:     addCategory,
