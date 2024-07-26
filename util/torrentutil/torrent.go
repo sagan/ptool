@@ -571,11 +571,11 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash i
 					currentFileIndex++
 				}
 			}
-			good := bytes.Equal(hash.Sum(nil), p.Hash().Bytes())
+			good := bytes.Equal(hash.Sum(nil), p.V1Hash().Value.Bytes())
 			if !good {
 				return ts, fmt.Errorf("piece %d/%d: hash mismatch", i, piecesCnt-1)
 			}
-			log.Tracef("piece %d/%d verify-hash %x: %v", i, piecesCnt-1, p.Hash(), good)
+			log.Tracef("piece %d/%d verify-hash %x: %v", i, piecesCnt-1, p.V1Hash().Value, good)
 			i++
 		}
 	}
