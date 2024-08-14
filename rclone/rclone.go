@@ -54,15 +54,17 @@ func (l *LsjsonItem) Stat() (fs.FileInfo, error) {
 
 var (
 	ErrNotImplemented = errors.New("not implemented")
+	timeFormats       = []string{"2006-01-02T15:04:05Z", "2006-01-02T15:04:05-07:00"}
 )
 
 // ModTime implements fs.FileInfo.
 func (l *LsjsonItem) ModTime() time.Time {
-	if t, err := time.Parse("2006-01-02T15:04:05+07:00", l.ItemModTime); err != nil {
-		return time.Unix(0, 0)
-	} else {
-		return t
+	for _, format := range timeFormats {
+		if t, err := time.Parse(format, l.ItemModTime); err == nil {
+			return t
+		}
 	}
+	return time.Unix(0, 0)
 }
 
 // Mode implements fs.FileInfo.

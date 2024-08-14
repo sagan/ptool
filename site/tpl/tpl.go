@@ -578,6 +578,12 @@ https://www.dmm.co.jp/dc/doujin/-/detail/=/cid={{number | regex_search("\\bd_\\d
 			Timezone:                   "UTC",
 			Comment:                    "Pro Wrestling Torrents",
 		},
+		"qingwapt": {
+			Type:    "nexusphp",
+			Aliases: []string{"qingwa"},
+			Url:     "https://www.qingwapt.com/",
+			Comment: "青蛙",
+		},
 		"rousi": {
 			Type:              "nexusphp",
 			Url:               "https://rousi.zip/",
