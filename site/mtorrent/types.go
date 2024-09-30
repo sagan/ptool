@@ -125,10 +125,10 @@ type Profile struct {
 	LastModifiedDate Time   `json:"lastModifiedDate"`
 	UserName         string `json:"username"`
 	MemberCount      struct {
-		Bonus      float64 `json:"bonus"`
-		Uploaded   Int64   `json:"uploaded"`
-		Downloaded Int64   `json:"downloaded"`
-		ShareRate  float64 `json:"shareRate"`
+		Bonus      Int64String   `json:"bonus"`
+		Uploaded   Int64String   `json:"uploaded"`
+		Downloaded Int64String   `json:"downloaded"`
+		ShareRate  Float64String `json:"shareRate"`
 	} `json:"memberCount"`
 }
 

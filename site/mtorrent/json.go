@@ -67,3 +67,19 @@ func (ci *Int64) MarshalJSON() ([]byte, error) {
 func (ci *Int64) Value() int64 {
 	return int64(*ci)
 }
+
+type Float64String string
+
+type Int64String string
+
+func (ci Float64String) Value() float64 {
+	v, e := strconv.ParseFloat(string(ci), 64)
+	if e != nil {
+		return 0
+	}
+	return v
+}
+
+func (ci Int64String) Value() int64 {
+	return int64(Float64String(ci).Value())
+}
