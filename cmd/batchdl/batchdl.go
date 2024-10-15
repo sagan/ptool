@@ -259,13 +259,11 @@ func batchdl(command *cobra.Command, args []string) error {
 		orderFlag = "desc"
 		onePage = true
 	}
+	var tagList = util.SplitCsv(tag)
+	var excludesList = util.SplitCsv(excludes)
 	var includesList [][]string
-	var excludesList []string
 	for _, include := range includes {
 		includesList = append(includesList, util.SplitCsv(include))
-	}
-	if excludes != "" {
-		excludesList = util.SplitCsv(excludes)
 	}
 	minTorrentSize, _ := util.RAMInBytes(minTorrentSizeStr)
 	maxTorrentSize, _ := util.RAMInBytes(maxTorrentSizeStr)
@@ -453,8 +451,8 @@ mainloop:
 				log.Debugf("Skip torrent %s due to filter %s does NOT match", torrent.Name, filter)
 				continue
 			}
-			if tag != "" && !torrent.HasAnyTag(tag) {
-				log.Debugf("Skip torrent %s due to it does not contain any tag of %v", torrent.Name, tag)
+			if len(tagList) > 0 && !torrent.HasAnyTag(tagList) {
+				log.Debugf("Skip torrent %s due to it does not contain any tag of %v", torrent.Name, tagList)
 				continue
 			}
 			if torrent.MatchFiltersOr(excludesList) {

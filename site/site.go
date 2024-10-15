@@ -132,13 +132,9 @@ func (torrent *Torrent) HasTag(tag string) bool {
 	})
 }
 
-// Return true if torrent has any tag in the tags.
-// tags: comma-separated tag list.
-func (torrent *Torrent) HasAnyTag(tags string) bool {
-	if tags == "" {
-		return false
-	}
-	return slices.ContainsFunc(util.SplitCsv(tags), func(tag string) bool {
+// Return true if torrent has any tag of the tags list.
+func (torrent *Torrent) HasAnyTag(tags []string) bool {
+	return slices.ContainsFunc(tags, func(tag string) bool {
 		return torrent.HasTag(tag)
 	})
 }

@@ -40,6 +40,7 @@ type BrushSiteOptionStruct struct {
 	TorrentMaxSizeLimit     int64
 	Now                     int64
 	Excludes                []string
+	ExcludeTags             []string
 	AllowAddTorrents        int64
 }
 
@@ -526,7 +527,12 @@ func RateSiteTorrent(siteTorrent *site.Torrent, siteOption *BrushSiteOptionStruc
 	}
 	if siteTorrent.MatchFiltersOr(siteOption.Excludes) {
 		score = 0
-		note = "brush excludes matches"
+		note = "brush excludes match"
+		return
+	}
+	if siteTorrent.HasAnyTag(siteOption.ExcludeTags) {
+		score = 0
+		note = "brush exclude tags match"
 		return
 	}
 	// 部分站点定期将旧种重新置顶免费。这类种子仍然可以获得很好的上传速度。
@@ -596,6 +602,7 @@ func GetBrushSiteOptions(siteInstance site.Site, ts int64) *BrushSiteOptionStruc
 		AllowHr:                 siteInstance.GetSiteConfig().BrushAllowHr,
 		AllowZeroSeeders:        siteInstance.GetSiteConfig().BrushAllowZeroSeeders,
 		Excludes:                siteInstance.GetSiteConfig().BrushExcludes,
+		ExcludeTags:             siteInstance.GetSiteConfig().BrushExcludeTags,
 		Now:                     ts,
 	}
 }
