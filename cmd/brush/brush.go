@@ -246,6 +246,7 @@ func brush(cmd *cobra.Command, args []string) (err error) {
 
 		// add
 		cndAddTorrents := 0
+		addedRootDirs := map[string]bool{}
 		for _, torrent := range result.AddTorrents {
 			log.Printf("Add site %s torrent to client %s: %s / %s / %v",
 				siteInstance.GetName(), clientInstance.GetName(), torrent.Name, torrent.Msg, torrent.Meta)
@@ -266,7 +267,7 @@ func brush(cmd *cobra.Command, args []string) (err error) {
 				log.Printf("Already existing in client. skip\n")
 				continue
 			}
-			if clientInstance.TorrentRootPathExists(tinfo.RootDir) {
+			if addedRootDirs[tinfo.RootDir] || clientInstance.TorrentRootPathExists(tinfo.RootDir) {
 				log.Printf("torrent rootpath %s existing in client. skip\n", tinfo.RootDir)
 				continue
 			}
@@ -289,6 +290,9 @@ func brush(cmd *cobra.Command, args []string) (err error) {
 				err = clientInstance.AddTorrent(torrentdata, torrentOption, torrent.Meta)
 				log.Printf("Add torrent result: error=%v", err)
 				if err == nil {
+					// Ideally, we should update local client cache to reflect the latest state,
+					// including the new added torrent. It requires a major re-work of client codes.
+					addedRootDirs[tinfo.RootDir] = true
 					cntAddTorrents++
 				}
 			}
