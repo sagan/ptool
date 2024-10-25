@@ -204,7 +204,7 @@ type apiPreferences struct {
 	Lsd                                    bool           `json:"lsd"`                                    // True if LSD is enabled
 	Encryption                             int64          `json:"encryption"`                             // See list of possible values here below
 	Anonymous_mode                         bool           `json:"anonymous_mode"`                         // If true anonymous mode will be enabled; read more here; this option is only available in qBittorent built against libtorrent version 0.16.X and higher
-	Proxy_type                             int64          `json:"proxy_type"`                             // See list of possible values here below
+	Proxy_type                             any            `json:"proxy_type"`                             // In qb 4.x API proxy_type is a (enum) integer (-1 - 5). However, qb 5.0 changed it to string (e.g. "None"). For compatibility, set it to any.
 	Proxy_ip                               string         `json:"proxy_ip"`                               // Proxy IP address or domain name
 	Proxy_port                             int64          `json:"proxy_port"`                             // Proxy port
 	Proxy_peer_connections                 bool           `json:"proxy_peer_connections"`                 // True if peer and web seed connections should be proxified; this option will have any effect only in qBittorent built against libtorrent version 0.16.X and higher
