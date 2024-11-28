@@ -34,7 +34,9 @@ func xseed(cmd *cobra.Command, args []string) error {
 	}
 
 	if infoHash != "" {
-		iyuu.IyuuApiHash(config.Get().IyuuToken, []string{infoHash})
+		iyuuSites, _ := iyuu.IyuuApiSites(config.Get().IyuuToken)
+		sid_sha1, _ := iyuu.IyuuApiReportExisting(config.Get().IyuuToken, iyuuSites)
+		iyuu.IyuuApiHash(config.Get().IyuuToken, []string{infoHash}, sid_sha1)
 	}
 	return nil
 }
