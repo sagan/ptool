@@ -47,7 +47,22 @@ func bind(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("you must config iyuuToken in ptool.toml to use iyuu functions")
 	}
 
-	data, err := iyuu.IyuuApiBind(config.Get().IyuuToken, site, uid, passkey)
+	var sid int64
+	bindableSites, err := iyuu.IyuuApiGetRecommendSites()
+	if err != nil {
+		return fmt.Errorf("failed to get iyuu bindable sites: %w", err)
+	}
+	for _, bindableSite := range bindableSites {
+		if bindableSite.Site == site {
+			sid = bindableSite.Id
+			break
+		}
+	}
+	if sid == 0 {
+		return fmt.Errorf("site %s is unbindable on iyuu", site)
+	}
+
+	data, err := iyuu.IyuuApiBind(config.Get().IyuuToken, site, sid, uid, passkey)
 	fmt.Printf("Iyuu api status: error=%v, user=%v", err, data)
 	return err
 }

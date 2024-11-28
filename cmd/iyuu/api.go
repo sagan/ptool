@@ -163,16 +163,17 @@ func IyuuApiReportExisting(token string, sites []*IyuuApiSite) (string, error) {
 	return reportExistingResponse.Data.SidSha1, nil
 }
 
-func IyuuApiBind(token string, site string, uid int64, passkey string) (any, error) {
+// https://doc.iyuu.cn/reference/users_bind
+func IyuuApiBind(token string, site string, sid int64, uid int64, passkey string) (any, error) {
 	apiUrl := util.ParseRelativeUrl("/reseed/users/bind", config.Get().GetIyuuDomain())
 	header := http.Header{}
 	header.Set("Token", token)
 	data := url.Values{
-		"token": {token},
-		"site":  {site},
-		// "sid" is optional
+		"token":   {token},
+		"site":    {site},
+		"sid":     {fmt.Sprint(sid)}, // 新版验证依赖的sid字段 2024年4月24日
 		"id":      {fmt.Sprint(uid)},
-		"passkey": {passkey},
+		"passkey": {util.Sha1String(passkey)},
 	}
 	var resData *IyuuApiResponse
 	err := util.PostUrlForJson(apiUrl, data, &resData, header, nil)
