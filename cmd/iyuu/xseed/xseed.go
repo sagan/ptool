@@ -428,13 +428,19 @@ func updateIyuuDatabase(token string, allInfoHashes []string) error {
 		})
 	}
 
+	// report existing sites
+	sid_sha1, err := iyuu.IyuuApiReportExisting(token, iyuuSites)
+	if err != nil {
+		log.Errorf("failed to report existing sites: %v", err)
+	}
+
 	for len(allInfoHashes) > 0 {
 		number := min(len(allInfoHashes), iyuu.MAX_INTOHASH_NUMBER)
 		infoHashes := allInfoHashes[:number]
 		allInfoHashes = allInfoHashes[number:]
 
 		// update xseed torrents data
-		data, err := iyuu.IyuuApiHash(token, infoHashes)
+		data, err := iyuu.IyuuApiHash(token, infoHashes, sid_sha1)
 		if err != nil {
 			log.Errorf("iyuu apiHash error: %v", err)
 		} else {

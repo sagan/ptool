@@ -52,7 +52,7 @@ const (
 	// New iyuu API.
 	// iyuuplus-dev: https://github.com/ledccn/iyuuplus-dev .
 	// Docs: https://doc.iyuu.cn/reference/config .
-	DEFAULT_IYUU_DOMAIN                             = "dev.iyuu.cn"
+	DEFAULT_IYUU_DOMAIN                             = "2025.iyuu.cn"
 	DEFAULT_TIMEOUT                                 = int64(5)
 	DEFAULT_SHELL_MAX_SUGGESTIONS                   = int64(5)
 	DEFAULT_SHELL_MAX_HISTORY                       = int64(500)
@@ -247,7 +247,7 @@ type ConfigStruct struct {
 	IyuuToken           string                     `yaml:"iyuuToken"`
 	ReseedUsername      string                     `yaml:"reseedUsername"`
 	ReseedPassword      string                     `yaml:"reseedPassword"`
-	IyuuDomain          string                     `yaml:"iyuuDomain"` // iyuu API 域名。默认使用 api.iyuu.cn
+	IyuuDomain          string                     `yaml:"iyuuDomain"` // iyuu API 域名。默认使用 2025.iyuu.cn
 	SiteProxy           string                     `yaml:"siteProxy"`
 	SiteUserAgent       string                     `yaml:"siteUserAgent"`
 	SiteImpersonate     string                     `yaml:"siteImpersonate"`

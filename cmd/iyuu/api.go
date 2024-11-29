@@ -81,25 +81,12 @@ type IyuuTorrentInfoHash struct {
 }
 
 const IYUU_VERSION = "8.2.0"
-const MAX_INTOHASH_NUMBER = 500 // 单次提交种子info_hash最多500个
+const MAX_INTOHASH_NUMBER = 300 // 单次提交种子info_hash最多300个
 
-// https://api.iyuu.cn/docs.php?service=App.Api.Infohash&detail=1&type=fold
-func IyuuApiHash(token string, infoHashes []string) (map[string][]IyuuTorrentInfoHash, error) {
-	sites, err := IyuuApiSites(token)
-	if err != nil {
-		return nil, err
-	}
+// https://doc.iyuu.cn/reference/reseed_index
+func IyuuApiHash(token string, infoHashes []string, sid_sha1 string) (map[string][]IyuuTorrentInfoHash, error) {
 	header := http.Header{}
 	header.Set("Token", token)
-	reportExistingRequest := &IyuuApiReportExistingRequest{
-		SidList: util.Map(sites, func(site *IyuuApiSite) int64 { return site.Id }),
-	}
-	var reportExistingResponse *IyuuApiReportExistingResponse
-	err = util.PostAndFetchJson(util.ParseRelativeUrl("/reseed/sites/reportExisting",
-		config.Get().GetIyuuDomain()), reportExistingRequest, &reportExistingResponse, header, nil)
-	if err != nil {
-		return nil, err
-	}
 
 	infoHashes = util.CopySlice(infoHashes)
 	for i, infoHash := range infoHashes {
@@ -112,14 +99,14 @@ func IyuuApiHash(token string, infoHashes []string) (map[string][]IyuuTorrentInf
 	apiUrl := util.ParseRelativeUrl("/reseed/index/index", config.Get().GetIyuuDomain())
 
 	data := url.Values{
-		"sid_sha1":  {reportExistingResponse.Data.SidSha1},
+		"sid_sha1":  {sid_sha1},
 		"timestamp": {fmt.Sprint(util.Now())},
 		"version":   {IYUU_VERSION},
 		"hash":      {string(hash)},
 		"sha1":      {util.Sha1(hash)},
 	}
 	resData := &IyuuApiHashResponse{}
-	err = util.PostUrlForJson(apiUrl, data, &resData, header, nil)
+	err := util.PostUrlForJson(apiUrl, data, &resData, header, nil)
 	log.Tracef("ApiInfoHash response err=%v", err)
 	if err != nil {
 		return nil, err
@@ -157,16 +144,36 @@ func IyuuApiSites(token string) ([]*IyuuApiSite, error) {
 	return resData.Data.Sites, nil
 }
 
-func IyuuApiBind(token string, site string, uid int64, passkey string) (any, error) {
+// https://doc.iyuu.cn/reference/site_report_existing
+func IyuuApiReportExisting(token string, sites []*IyuuApiSite) (string, error) {
+	header := http.Header{}
+	header.Set("Token", token)
+	reportExistingRequest := &IyuuApiReportExistingRequest{
+		SidList: util.Map(sites, func(site *IyuuApiSite) int64 { return site.Id }),
+	}
+	var reportExistingResponse *IyuuApiReportExistingResponse
+	err := util.PostAndFetchJson(util.ParseRelativeUrl("/reseed/sites/reportExisting",
+		config.Get().GetIyuuDomain()), reportExistingRequest, &reportExistingResponse, header, nil)
+	if err != nil {
+		return "", err
+	}
+	if reportExistingResponse.Code != 0 {
+		return "", fmt.Errorf("iyuu api error: code=%d, msg=%s", reportExistingResponse.Code, reportExistingResponse.Msg)
+	}
+	return reportExistingResponse.Data.SidSha1, nil
+}
+
+// https://doc.iyuu.cn/reference/users_bind
+func IyuuApiBind(token string, site string, sid int64, uid int64, passkey string) (any, error) {
 	apiUrl := util.ParseRelativeUrl("/reseed/users/bind", config.Get().GetIyuuDomain())
 	header := http.Header{}
 	header.Set("Token", token)
 	data := url.Values{
-		"token": {token},
-		"site":  {site},
-		// "sid" is optional
+		"token":   {token},
+		"site":    {site},
+		"sid":     {fmt.Sprint(sid)}, // 新版验证依赖的sid字段 2024年4月24日
 		"id":      {fmt.Sprint(uid)},
-		"passkey": {passkey},
+		"passkey": {util.Sha1String(passkey)},
 	}
 	var resData *IyuuApiResponse
 	err := util.PostUrlForJson(apiUrl, data, &resData, header, nil)
