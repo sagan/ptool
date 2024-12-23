@@ -5,11 +5,16 @@ package osutil
 
 import (
 	"os"
+	"runtime"
 
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/windows"
 )
 
-func init() {
+// Windows platform setup / initialization.
+func Init() {
+	// https://github.com/golang/go/issues/43947
+	os.Setenv("NoDefaultCurrentDirectoryInExePath", "1")
 	SetupConsole()
 }
 
@@ -28,4 +33,10 @@ func SetupConsole() {
 	// Enable this mode
 	mode |= windows.ENABLE_EXTENDED_FLAGS
 	windows.SetConsoleMode(winConsole, mode)
+}
+
+// Dummy (placeholder).
+// The real implentation (on Linux) will fork the child process and exit.
+func Fork(removeArg string) {
+	log.Fatalf("Fork mode is NOT supported on current platform %s", runtime.GOOS)
 }

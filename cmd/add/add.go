@@ -43,7 +43,7 @@ which supports the following variable placeholders:
 * [name128] : The prefix of torrent name which is at max 128 bytes
 
 Flags:
-* --ratio-limit & --seeding-time-limit : See help of "ptool setsharelimits" cmd for more info
+* --ratio-limit & --seeding-time-limit : See help of "modifytorrent" cmd for more info
 
 If --use-comment-meta flag is set, ptool will extract torrent's category & tags & savePath meta info
 from the 'comment' field of .torrent file (parsed in json '{tags, category, save_path, comment}' format).

@@ -12,6 +12,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Linux (non arm64) platform setup / initialization.
+func Init() {
+}
+
 // Run ptool in the background (detached mode).
 // Basicly it just forks a new ptool process with same args.
 // from https://github.com/golang/go/issues/227 .

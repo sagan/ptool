@@ -75,6 +75,9 @@ func (qbclient *Client) SetTorrentsShareLimits(infoHashes []string, ratioLimit f
 		seedingTimeLimitValue = seedingTimeLimitValue/60 + 1
 	}
 	data.Add("seedingTimeLimit", fmt.Sprint(seedingTimeLimitValue))
+	// The maximum amount of time (minutes) the torrent is allowed to seed while being inactive.
+	// -2 means the global limit should be used, -1 means no limit.
+	data.Add("inactiveSeedingTimeLimit", fmt.Sprint(-2))
 	return qbclient.apiPost("api/v2/torrents/setShareLimits", data)
 }
 

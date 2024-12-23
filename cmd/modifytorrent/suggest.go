@@ -1,4 +1,4 @@
-package setsharelimits
+package modifytorrent
 
 import (
 	"github.com/c-bata/go-prompt"
@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	cmd.AddShellCompletion("setsharelimits", func(document *prompt.Document) []prompt.Suggest {
+	cmd.AddShellCompletion("modifytorrent", func(document *prompt.Document) []prompt.Suggest {
 		info := suggest.Parse(document)
 		if info.LastArgIndex < 1 {
 			return nil

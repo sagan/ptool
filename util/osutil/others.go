@@ -1,5 +1,5 @@
-//go:build !linux
-// +build !linux
+//go:build !linux && !windows
+// +build !linux,!windows
 
 package osutil
 
@@ -8,6 +8,10 @@ import (
 
 	log "github.com/sirupsen/logrus"
 )
+
+// Non Linux/Window platforms setup / initialization.
+func Init() {
+}
 
 // Dummy (placeholder).
 // The real implentation (on Linux) will fork the child process and exit.

@@ -15,8 +15,8 @@ It's possible to use the following state filters in the list to select multiple 
 
 If none of the filter flags (--category & --tag & --filter) is set, a single "-" can
 be used as args list to read the list from stdin, delimited by blanks.
-Also, at least one (1) info-hash arg must be provided, or it will throw an error; This also applies
-when the args is "-", in which case the info-hash list read from stdin must NOT be empty.
+Also in this case, at least one (1) info-hash arg must be provided, or it will throw an error;
+This also applies when the args is "-", in which case the info-hash list read from stdin must NOT be empty.
 
 If any filter flag is set, the args list can be empty. If the args list is not empty,
 only torrents that match both the filter flags AND the args list will be selected.`

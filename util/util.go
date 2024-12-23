@@ -22,7 +22,7 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
-var commaSeperatorRegexp = regexp.MustCompile(`,\s*`)
+var commaSeperatorRegexp = regexp.MustCompile(`\s*,\s*`)
 
 // split a csv like line to values. "a, b, c" => [a,b,c].
 // If str is empty string, return nil.

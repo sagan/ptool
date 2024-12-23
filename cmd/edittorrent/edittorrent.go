@@ -27,6 +27,9 @@ It will update local disk .torrent files in place.
 It only supports editing / updating of fields that does NOT affect the info-hash of the torrent.
 Args is the torrent filename list. Use a single "-" as args to read the list from stdin, delimited by blanks.
 
+Note: this command is NOT about modifying torrents in BitTorrent client.
+To do that, use "modifytorrent" command instead.
+
 It will ask for confirm before updateing torrent files, unless --force flag is set.
 
 Available "editing" flags (at least one of them must be set):

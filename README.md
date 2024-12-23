@@ -23,7 +23,7 @@ TOC
   - [BT 客户端控制命令集](#bt-客户端控制命令集)
     - [读取/修改 BT 客户端配置 (clientctl)](#读取修改-bt-客户端配置-clientctl)
     - [显示信息 / 暂停 / 恢复 / 删除 / 强制汇报 / 强制检测 Hash 客户端里种子 (show / pause / resume / delete / reannounce / recheck)](#显示信息--暂停--恢复--删除--强制汇报--强制检测-hash-客户端里种子-show--pause--resume--delete--reannounce--recheck)
-    - [管理 BT 客户端里的的种子分类 / 标签 / Trackers 等(getcategories / createcategory / deletecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / renametag / edittracker / addtrackers / removetrackers / setsavepath / setsharelimits / checktag)](#管理-bt-客户端里的的种子分类--标签--trackers-等getcategories--createcategory--deletecategories--setcategory--gettags--createtags--deletetags--addtags--removetags--renametag--edittracker--addtrackers--removetrackers--setsavepath--setsharelimits--checktag)
+    - [管理 BT 客户端里的的种子分类 / 标签 / Trackers 等(getcategories / createcategory / deletecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / renametag / edittracker / addtrackers / removetrackers / setsavepath / modifytorrent / checktag)](#管理-bt-客户端里的的种子分类--标签--trackers-等getcategories--createcategory--deletecategories--setcategory--gettags--createtags--deletetags--addtags--removetags--renametag--edittracker--addtrackers--removetrackers--setsavepath--modifytorrent--checktag)
     - [导出客户端种子 (export)](#导出客户端种子-export)
     - [显示 BT 客户端或 PT 站点状态 (status)](#显示-bt-客户端或-pt-站点状态-status)
   - [显示刷流任务流量统计 (stats)](#显示刷流任务流量统计-stats)
@@ -411,7 +411,7 @@ ptool show local 31a615d5984cb63c6f999f72bb3961dce49c194a
 ptool show local --category rss --completed-before 5d --show-info-hash-only | ptool delete local --force -
 ```
 
-### 管理 BT 客户端里的的种子分类 / 标签 / Trackers 等(getcategories / createcategory / deletecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / renametag / edittracker / addtrackers / removetrackers / setsavepath / setsharelimits / checktag)
+### 管理 BT 客户端里的的种子分类 / 标签 / Trackers 等(getcategories / createcategory / deletecategories / setcategory / gettags / createtags / deletetags / addtags / removetags / renametag / edittracker / addtrackers / removetrackers / setsavepath / modifytorrent / checktag)
 
 ```
 # 获取所有分类
@@ -462,9 +462,12 @@ ptool removetrackers <client> <infoHashes...> --tracker "https://..."
 # 修改种子内容的保存路径
 ptool setsavepath <client> <savePath> [<infoHash>...]
 
+# 修改种子的分类 / 保存路径 / 标签等
+ptool modifytorrent <client> --set-category <category> --set-save-path <savePath> --add-tags <tags> --remove-tags <tags>
+
 # (qbittorrent only) 设置种子最大分享比例(Up/Dl)、最长做种时间(秒)等。
 # 使用 "ptool add" 命令添加种子时也可以设置同样参数。
-ptool setsharelimits <client> [<infoHash>...] --ratio-limit 2 --seeding-time-limit 86400
+ptool modifytorrent <client> [<infoHash>...] --ratio-limit 2 --seeding-time-limit 86400
 
 # 检测客户端里是否存在某个 tag。If exists, exit with 0。
 ptool checktag <client> <tag>
