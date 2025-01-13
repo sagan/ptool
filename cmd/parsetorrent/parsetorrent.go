@@ -168,8 +168,10 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 		if !showJson {
 			fmt.Printf("\n")
 			statistics.Print(os.Stdout)
-		} else if err := util.PrintJson(os.Stdout, statistics); err != nil {
-			return err
+		} else if showSum {
+			if err := util.PrintJson(os.Stdout, statistics); err != nil {
+				return err
+			}
 		}
 	}
 	if errorCnt > 0 {

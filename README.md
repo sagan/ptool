@@ -719,6 +719,13 @@ ptool parsetorrent <torrentFileNameOrIdOrUrl>...
 
 显示种子文件的元信息。参数是本地硬盘里的种子文件名，或站点的种子 id 或 url（参考 "add" 命令说明）。
 
+参数：
+
+- `--show-info-hash-only` : 仅显示种子的 info hash。
+- `--all` : 显示种子的更多详细信息（例如 pieces hash）。
+- `--sum` : （仅）显示所有提供的种子汇总的统计信息。
+- `--json` : 以 JSON 格式显示种子的详细信息。
+
 ## 校验种子文件与硬盘内容是否一致 (verifytorrent)
 
 ```

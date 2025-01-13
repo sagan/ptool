@@ -2,9 +2,11 @@ package export
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 
 	"github.com/sagan/ptool/client"
 	"github.com/sagan/ptool/cmd"
@@ -62,7 +64,8 @@ func init() {
 	command.Flags().StringVarP(&filter, "filter", "", "", constants.HELP_ARG_FILTER_TORRENT)
 	command.Flags().StringVarP(&category, "category", "", "", constants.HELP_ARG_CATEGORY)
 	command.Flags().StringVarP(&tag, "tag", "", "", constants.HELP_ARG_TAG)
-	command.Flags().StringVarP(&downloadDir, "download-dir", "", ".", `Set the download dir of exported torrents`)
+	command.Flags().StringVarP(&downloadDir, "download-dir", "", ".", `Set the download dir of exported torrents. `+
+		`Set to "-" to output to stdout`)
 	command.Flags().StringVarP(&rename, "rename", "", config.DEFAULT_EXPORT_TORRENT_RENAME,
 		"Set the name of downloaded torrents (supports variables)")
 	cmd.RootCmd.AddCommand(command)
@@ -90,6 +93,15 @@ func export(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	if downloadDir == "-" {
+		if len(torrents) > 1 {
+			return fmt.Errorf(`only 1 (one) torrent can be outputted to stdout`)
+		}
+		if term.IsTerminal(int(os.Stdout.Fd())) {
+			return fmt.Errorf(constants.HELP_TIP_TTY_BINARY_OUTPUT)
+		}
+	}
+
 	errorCnt := int64(0)
 	cntAll := len(torrents)
 	for i, torrent := range torrents {
@@ -104,13 +116,18 @@ func export(cmd *cobra.Command, args []string) error {
 		} else {
 			filename = torrentutil.RenameExportedTorrent(clientName, torrent, rename)
 		}
-		filepath := filepath.Join(downloadDir, filename)
-		_, _, err := common.ExportClientTorrent(clientInstance, torrent, filepath, useCommentMeta)
+		outputPath := ""
+		if downloadDir == "-" {
+			outputPath = downloadDir
+		} else {
+			outputPath = filepath.Join(downloadDir, filename)
+		}
+		_, _, err := common.ExportClientTorrent(clientInstance, torrent, outputPath, useCommentMeta)
 		if err != nil {
 			fmt.Printf("✕ %s : %v (%d/%d)\n", torrent.InfoHash, err, i+1, cntAll)
 			errorCnt++
 		} else {
-			fmt.Printf("✓ %s : saved to %s (%d/%d)\n", torrent.InfoHash, filepath, i+1, cntAll)
+			fmt.Printf("✓ %s : saved to %s (%d/%d)\n", torrent.InfoHash, outputPath, i+1, cntAll)
 		}
 	}
 	if errorCnt > 0 {

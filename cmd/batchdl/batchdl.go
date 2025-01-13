@@ -4,7 +4,6 @@ package batchdl
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/signal"
@@ -506,11 +505,8 @@ mainloop:
 				if !saveAppend && cntTorrents > 0 {
 					saveJsonFile.WriteString(",")
 				}
-				if data, err := json.Marshal(&torrent); err != nil {
-					log.Errorf("Failed to marshal json of torrent %v", torrent)
-				} else {
-					saveJsonFile.Write(data)
-					saveJsonFile.WriteString("\n")
+				if err = util.PrintJson(saveJsonFile, torrent); err != nil {
+					log.Errorf("Failed to print json of torrent %v: %v", torrent, err)
 				}
 			}
 			cntTorrents++

@@ -333,7 +333,7 @@ If any error happens, you can safely re-run the same command to re-try and resum
 			}
 			clientTorrentSavePath = clientSavePath
 		}
-		tinfo.MetaInfo.Comment = commentMeta.Comment
+		tinfo.SetComment(commentMeta.Comment)
 		if data, err := tinfo.ToBytes(); err == nil {
 			contents = data
 		}

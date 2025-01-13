@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"os"
 	"path"
 	"slices"
 	"strings"
@@ -148,8 +149,12 @@ func NewPathMapper(rules []string) (*PathMapper, error) {
 	return pm, nil
 }
 
+// Export a client torrent's metainfo (".torrent" file contents), return it's byte contents and parsed info.
+// If outputPath is not empty, it also writes the contents to that path; if it's "-", write to stdout.
+// If useCommentMeta is true, encode the client torrents' category / tag / savePath in exported
+// .torrent contents' comment field.
 func ExportClientTorrent(clientInstance client.Client, torrent *client.Torrent,
-	filepath string, useCommentMeta bool) (contents []byte, tinfo *torrentutil.TorrentMeta, err error) {
+	outputPath string, useCommentMeta bool) (contents []byte, tinfo *torrentutil.TorrentMeta, err error) {
 	contents, err = clientInstance.ExportTorrentFile(torrent.InfoHash)
 	if err != nil {
 		return nil, nil, err
@@ -174,8 +179,16 @@ func ExportClientTorrent(clientInstance client.Client, torrent *client.Torrent,
 			return contents, tinfo, useCommentErr
 		}
 	}
-	if err := atomic.WriteFile(filepath, bytes.NewReader(contents)); err != nil {
-		return contents, tinfo, fmt.Errorf("failed to write file: %w", err)
+	if outputPath != "" {
+		var err error
+		if outputPath == "-" {
+			_, err = os.Stdout.Write(contents)
+		} else {
+			err = atomic.WriteFile(outputPath, bytes.NewReader(contents))
+		}
+		if err != nil {
+			return contents, tinfo, fmt.Errorf("failed to write file: %w", err)
+		}
 	}
 	return contents, tinfo, nil
 }

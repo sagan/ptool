@@ -205,7 +205,7 @@ func add(cmd *cobra.Command, args []string) error {
 						option.SavePath = _savePath
 					}
 				}
-				tinfo.MetaInfo.Comment = commentMeta.Comment
+				tinfo.SetComment(commentMeta.Comment)
 				if data, err := tinfo.ToBytes(); err == nil {
 					content = data
 				}

@@ -359,8 +359,10 @@ func BytesHasAnyStringPrefix(data []byte, prefixes ...string) bool {
 	return false
 }
 
+// Print value json string to output.
+// It prints a trailing \n
 func PrintJson(output io.Writer, value any) error {
-	bytes, err := json.MarshalIndent(value, "", "  ")
+	bytes, err := json.Marshal(value)
 	if err != nil {
 		return fmt.Errorf("failed to marshal json: %w", err)
 	}

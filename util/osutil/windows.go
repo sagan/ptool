@@ -21,6 +21,8 @@ func Init() {
 // Setup windows console: disable quick edit mode.
 // From https://stackoverflow.com/questions/71690354/disable-quick-edit-in-golang .
 // See https://stackoverflow.com/questions/33883530/why-is-my-command-prompt-freezing-on-windows-10 .
+// Known problem: Windows PowerShell 5.1 creates UTF-16 file when piping process's stdout / stderr;
+// See: https://github.com/golang/go/issues/65157 .
 func SetupConsole() {
 	winConsole := windows.Handle(os.Stdin.Fd())
 	var mode uint32
