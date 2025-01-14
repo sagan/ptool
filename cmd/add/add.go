@@ -2,6 +2,7 @@ package add
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 
@@ -13,6 +14,8 @@ import (
 	"github.com/sagan/ptool/cmd/common"
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/constants"
+	"github.com/sagan/ptool/site/public"
+	"github.com/sagan/ptool/site/tpl"
 	"github.com/sagan/ptool/util"
 	"github.com/sagan/ptool/util/helper"
 	"github.com/sagan/ptool/util/torrentutil"
@@ -142,6 +145,9 @@ func add(cmd *cobra.Command, args []string) error {
 	sizeAdded := int64(0)
 
 	for i, torrent := range torrents {
+		if i > 0 && slowMode {
+			util.Sleep(3)
+		}
 		fmt.Printf("(%d/%d) ", i+1, len(torrents))
 		option.Category = ""
 		option.Tags = nil
@@ -151,6 +157,26 @@ func add(cmd *cobra.Command, args []string) error {
 			option.Category = addCategory
 			option.Tags = fixedTags
 			option.SavePath = savePath
+			isPublicTorrentUrl := false
+			if util.IsPureTorrentUrl(torrent) {
+				// All magnet: link should be public torrent.
+				isPublicTorrentUrl = true
+			} else if urlObj, err := url.Parse(torrent); err == nil {
+				if sitename, _ := tpl.GuessSiteByDomain(urlObj.Host, ""); sitename != "" {
+					option.Tags = append(option.Tags, client.GenerateTorrentTagFromSite(sitename))
+				} else if publicSite := public.GetSiteByDomain(urlObj.Host); publicSite != nil {
+					isPublicTorrentUrl = true
+					option.Tags = append(option.Tags, client.GenerateTorrentTagFromSite(publicSite.Name))
+				}
+			}
+			if isPublicTorrentUrl {
+				option.Tags = append(option.Tags, config.PUBLIC_TAG)
+				if ratioLimit == 0 {
+					option.RatioLimit = config.Get().PublicTorrentRatioLimit
+				}
+			} else {
+				option.Tags = append(option.Tags, config.PRIVATE_TAG)
+			}
 			if err = clientInstance.AddTorrent([]byte(torrent), option, nil); err != nil {
 				fmt.Printf("✕ %s: failed to add to client: %v\n", torrent, err)
 				errorCnt++
@@ -158,9 +184,6 @@ func add(cmd *cobra.Command, args []string) error {
 				fmt.Printf("✓ %s\n", torrent)
 			}
 			continue
-		}
-		if i > 0 && slowMode {
-			util.Sleep(3)
 		}
 		// Note: tinfo coule be nil here. It's a workaround as anacrolix/torrent failed to parse some torrents.
 		content, tinfo, siteInstance, sitename, filename, id, isLocal, err :=

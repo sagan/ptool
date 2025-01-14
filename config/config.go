@@ -715,12 +715,12 @@ func MatchSite(domain string, siteConfig *SiteConfigStruct) bool {
 	}
 	if siteConfig.Url != "" {
 		siteDomain := util.GetUrlDomain(siteConfig.Url)
-		if domain == siteDomain {
+		if domain == siteDomain || strings.HasSuffix(domain, "."+siteDomain) {
 			return true
 		}
 	}
 	for _, siteDomain := range siteConfig.Domains {
-		if siteDomain == domain {
+		if siteDomain == domain || strings.HasSuffix(domain, "."+siteDomain) {
 			return true
 		}
 	}

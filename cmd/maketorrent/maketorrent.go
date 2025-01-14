@@ -51,8 +51,8 @@ var (
 	private                           = false
 	public                            = false
 	force                             = false
-	allowLongName                     = false
 	allowFilenameRestrictedCharacters = false
+	filenameLengthLimit               = int64(0)
 	pieceLengthStr                    = ""
 	infoName                          = ""
 	comment                           = ""
@@ -65,11 +65,6 @@ var (
 )
 
 func init() {
-	command.Flags().BoolVarP(&allowLongName, "allow-long-name", "", false,
-		fmt.Sprintf("By default, ptool refuses to make torrent which contents contain any file which name's length "+
-			"(UTF-8 bytes) is longer than (>) %d bytes. Those long name files could cause problems when downloading / "+
-			"seeding the torrent. Set this flag to lift this restriction",
-			constants.TORRENT_CONTENT_FILENAME_LENGTH_LIMIT))
 	command.Flags().BoolVarP(&allowFilenameRestrictedCharacters, "allow-filename-restricted-characters", "", false,
 		`Allow making torrent which content filenames contain invalid char in Windows, e.g. '?' char`)
 	command.Flags().BoolVarP(&all, "all", "a", false, `Index all files of content folder to created torrent. `+
@@ -79,6 +74,12 @@ func init() {
 	command.Flags().BoolVarP(&public, "public", "P", false, `Mark created torrent as public (non-private), `+
 		`ptool will automatically add common pre-defined open trackers to it`)
 	command.Flags().BoolVarP(&force, "force", "", false, "Force overwrite existing output .torrent file in disk")
+	command.Flags().Int64VarP(&filenameLengthLimit, "filename-length-limit", "",
+		constants.TORRENT_CONTENT_FILENAME_LENGTH_LIMIT,
+		"By default, ptool refuses to make torrent which contents contain any file which name's length "+
+			"(or any segment of it's relative path's length) is longer than (>) these bytes (UTF-8 string). "+
+			"Too long name files could cause problems when downloading / "+
+			"seeding the torrent. Set to -1 to lift the restriction")
 	command.Flags().StringVarP(&pieceLengthStr, "piece-length", "", constants.TORRENT_DEFAULT_PIECE_LENGTH,
 		`Set the piece length ("info"."piece length" field) of created .torrent`)
 	command.Flags().StringVarP(&output, "output", "", "", `Set the output .torrent filename. `+
@@ -125,7 +126,7 @@ func maketorrent(cmd *cobra.Command, args []string) (err error) {
 		CreatedBy:                     createdBy,
 		CreationDate:                  creationDate,
 		AllowRestrictedCharInFilename: allowFilenameRestrictedCharacters,
-		AllowLongName:                 allowLongName,
+		FilenameLengthLimit:           filenameLengthLimit,
 	}
 	if len(optoins.Trackers) == 0 && !optoins.Public {
 		log.Warnf(`Warning: the created .torrent file will NOT have any trackers. ` +

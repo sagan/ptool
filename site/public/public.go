@@ -28,7 +28,7 @@ var (
 			TrackerDomains:          []string{"sukebei.tracker.wf", "nyaa.tracker.wf"},
 			TorrentUrlIdRegexp:      regexp.MustCompile(`\bview/(?P<id>\d+)\b`),
 			TorrentDownloadUrl:      `{{origin}}/download/{{id}}.torrent`,
-			TorrentDownloadInterval: 3000, // nyaa 限流。每几秒钟内只能下载1个种子
+			TorrentDownloadInterval: 5000, // nyaa 限流。每几秒钟内只能下载1个种子
 		},
 	}
 	// site name & domain (main or tracker) => site
@@ -47,12 +47,11 @@ func init() {
 	}
 }
 
-// Get a site by a website or tracker url or domain.
-func GetSiteByDomain(defaultSite string, domainOrUrls ...string) *PublicBittorrentSite {
-	if SitesMap[defaultSite] != nil {
-		return SitesMap[defaultSite]
-	}
-	for _, domain := range domainOrUrls {
+// Get a public site by a website or tracker url or domain.
+// defaultSite is a site name or domain.
+// If none of extraDomainOrUrls matches with a existing site, use defaultSite as fallback.
+func GetSiteByDomain(defaultSite string, extraDomainOrUrls ...string) *PublicBittorrentSite {
+	for _, domain := range extraDomainOrUrls {
 		if util.IsUrl(domain) {
 			if urlObj, err := url.Parse(domain); err != nil {
 				continue
@@ -63,6 +62,9 @@ func GetSiteByDomain(defaultSite string, domainOrUrls ...string) *PublicBittorre
 		if SitesMap[domain] != nil {
 			return SitesMap[domain]
 		}
+	}
+	if SitesMap[defaultSite] != nil {
+		return SitesMap[defaultSite]
 	}
 	return nil
 }

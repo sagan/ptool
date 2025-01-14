@@ -68,9 +68,8 @@ type TorrentMakeOptions struct {
 	MinSize                       int64
 	Excludes                      []string
 	AllowRestrictedCharInFilename bool
-	// By default, limit filename length to at most 240 bytes (UTF-8).
-	// It's the limit imposed by libtorrent on Linux.
-	AllowLongName bool
+	// If > 0, limit filename (not full path) length to at most these bytes (UTF-8 string).
+	FilenameLengthLimit int64
 }
 
 var (
@@ -720,7 +719,7 @@ func MakeTorrent(options *TorrentMakeOptions) (tinfo *TorrentMeta, err error) {
 	}
 	log.Infof("Creating torrent for %q", options.ContentPath)
 	if err := infoBuildFromFilePath(info, options.ContentPath, options.Excludes,
-		options.AllowRestrictedCharInFilename, options.AllowLongName); err != nil {
+		options.AllowRestrictedCharInFilename, options.FilenameLengthLimit); err != nil {
 		return nil, fmt.Errorf("failed to build info from content-path: %w", err)
 	}
 	if len(info.Files) == 0 {
@@ -780,7 +779,7 @@ func MakeTorrent(options *TorrentMakeOptions) (tinfo *TorrentMeta, err error) {
 // Adapted from metainfo.BuildFromFilePath.
 // excludes: gitignore style exclude-file-patterns.
 func infoBuildFromFilePath(info *metainfo.Info, root string, excludes []string,
-	allowAnyCharInName bool, allowLongName bool) (err error) {
+	allowAnyCharInName bool, filenameLengthLimit int64) (err error) {
 	info.Name = func() string {
 		b := filepath.Base(root)
 		switch b {
@@ -807,7 +806,7 @@ func infoBuildFromFilePath(info *metainfo.Info, root string, excludes []string,
 				}
 			}
 		}
-		if !allowLongName && len(fi.Name()) > constants.TORRENT_CONTENT_FILENAME_LENGTH_LIMIT {
+		if filenameLengthLimit > 0 && int64(len(fi.Name())) > filenameLengthLimit {
 			return fmt.Errorf("filename %q is too long (%d bytes in UTF-8). Consider truncate it to %q", fi.Name(),
 				len(fi.Name()), util.StringPrefixInBytes(fi.Name(), constants.TORRENT_CONTENT_FILENAME_LENGTH_LIMIT))
 		}
@@ -824,7 +823,8 @@ func infoBuildFromFilePath(info *metainfo.Info, root string, excludes []string,
 			return fmt.Errorf("error getting relative path: %s", err)
 		}
 		if !allowAnyCharInName && constants.FilepathInvalidCharsRegex.MatchString(relPath) {
-			return fmt.Errorf("invalid content file path %q: contains restrictive chars", relPath)
+			return fmt.Errorf("invalid content file path %q: contains restrictive chars. Consider rename it to %q",
+				relPath, constants.FilenameRestrictedCharacterReplacer.Replace(relPath))
 		}
 		info.Files = append(info.Files, metainfo.FileInfo{
 			Path:   strings.Split(relPath, string(filepath.Separator)),

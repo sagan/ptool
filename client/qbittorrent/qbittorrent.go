@@ -174,22 +174,33 @@ func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 		}
 		torrentPartWriter.Write(torrentContent)
 	}
+	// qb 5.0+ API 似乎有变化（Github 文档页面尚未更新）：
+	// 1. 将 paused 更名为 stopped 。
+	// 2. 增加了 stopCondition 字段 (Stop condition): None (default) | MetadataReceived | FilesChecked 。
+	// 3. 将 root_folder (true | false | <unset>) 替换为 contentLayout 字段: Original | Subfolder | NoSubfolder 。
+	// 为向下兼容，同时设置 4.X 和 5.X 的 API 字段。
 	mp.WriteField("rename", name)
 	mp.WriteField("root_folder", "true")
+	mp.WriteField("contentLayout", "Subfolder")
 	if option != nil {
 		if option.Category != constants.NONE {
 			mp.WriteField("category", option.Category)
 		}
 		mp.WriteField("tags", strings.Join(option.Tags, ",")) // qb 4.3.2+ new
 		mp.WriteField("paused", fmt.Sprint(option.Pause))
+		mp.WriteField("stopped", fmt.Sprint(option.Pause))
+		if option.SkipChecking {
+			if option.Pause {
+				// @todo: 这里处理方式可能有问题。
+				mp.WriteField("stopCondition", "FilesChecked")
+			}
+			mp.WriteField("skip_checking", "true")
+		}
 		mp.WriteField("upLimit", fmt.Sprint(option.UploadSpeedLimit))
 		mp.WriteField("dlLimit", fmt.Sprint(option.DownloadSpeedLimit))
 		if option.SavePath != "" {
 			mp.WriteField("savepath", option.SavePath)
 			mp.WriteField("autoTMM", "false")
-		}
-		if option.SkipChecking {
-			mp.WriteField("skip_checking", "true")
 		}
 		if option.SequentialDownload {
 			mp.WriteField("sequentialDownload", "true")
