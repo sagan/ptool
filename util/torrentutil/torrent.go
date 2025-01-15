@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"text/template"
 
 	"github.com/anacrolix/torrent/bencode"
 	"github.com/anacrolix/torrent/metainfo"
@@ -47,8 +48,8 @@ type TorrentMeta struct {
 	RootDir           string
 	ContentPath       string // root folder or single file name
 	Files             []TorrentMetaFile
-	metaInfo          *metainfo.MetaInfo // always non-nil in a parsed *TorrentMeta
-	info              *metainfo.Info     // always non-nil in a parsed *TorrentMeta
+	MetaInfo          *metainfo.MetaInfo // always non-nil in a parsed *TorrentMeta
+	Info              *metainfo.Info     // always non-nil in a parsed *TorrentMeta
 }
 
 type TorrentMakeOptions struct {
@@ -94,14 +95,14 @@ func (tm TorrentMeta) MarshalJSON() ([]byte, error) {
 		"ContentPath":        tm.ContentPath,
 		"Files":              tm.Files,
 		"IsPrivate":          tm.IsPrivate(),
-		"Comment":            tm.metaInfo.Comment,
-		"CreatedBy":          tm.metaInfo.CreatedBy,
-		"CreationDate":       tm.metaInfo.CreationDate,
-		"CreationDateString": util.FormatTime(tm.metaInfo.CreationDate),
-		"Encoding":           tm.metaInfo.Encoding,
-		"UrlList":            tm.metaInfo.UrlList,
-		"Source":             tm.info.Source,
-		"MetaVersion":        tm.info.MetaVersion,
+		"Comment":            tm.MetaInfo.Comment,
+		"CreatedBy":          tm.MetaInfo.CreatedBy,
+		"CreationDate":       tm.MetaInfo.CreationDate,
+		"CreationDateString": util.FormatTime(tm.MetaInfo.CreationDate),
+		"Encoding":           tm.MetaInfo.Encoding,
+		"UrlList":            tm.MetaInfo.UrlList,
+		"Source":             tm.Info.Source,
+		"MetaVersion":        tm.Info.MetaVersion,
 		"MagnetUrl":          tm.MagnetUrl(),
 	}
 	return json.Marshal(data)
@@ -117,8 +118,8 @@ func ParseTorrent(torrentdata []byte) (*TorrentMeta, error) {
 
 func FromMetaInfo(metaInfo *metainfo.MetaInfo, info *metainfo.Info) (*TorrentMeta, error) {
 	torrentMeta := &TorrentMeta{
-		metaInfo: metaInfo,
-		info:     info,
+		MetaInfo: metaInfo,
+		Info:     info,
 		InfoHash: metaInfo.HashInfoBytes().String(),
 	}
 	// [][]string, first index is tier: lower number has higher priority
@@ -126,15 +127,15 @@ func FromMetaInfo(metaInfo *metainfo.MetaInfo, info *metainfo.Info) (*TorrentMet
 	for _, al := range announceList {
 		torrentMeta.Trackers = append(torrentMeta.Trackers, al...)
 	}
-	if torrentMeta.info == nil {
+	if torrentMeta.Info == nil {
 		_info, err := metaInfo.UnmarshalInfo()
 		if err != nil {
 			return nil, err
 		}
-		torrentMeta.info = &_info
+		torrentMeta.Info = &_info
 	}
-	torrentMeta.PiecesHash = util.Sha1(torrentMeta.info.Pieces)
-	info = torrentMeta.info
+	torrentMeta.PiecesHash = util.Sha1(torrentMeta.Info.Pieces)
+	info = torrentMeta.Info
 	// single file torrent
 	if len(info.Files) == 0 {
 		torrentMeta.Files = append(torrentMeta.Files, TorrentMetaFile{
@@ -185,21 +186,21 @@ func (meta *TorrentMeta) EncodeComment(commentMeta *TorrentCommentMeta) error {
 	if existingCommentMeta := meta.DecodeComment(); existingCommentMeta != nil {
 		comment = existingCommentMeta.Comment
 	} else {
-		comment = meta.metaInfo.Comment
+		comment = meta.MetaInfo.Comment
 	}
 	commentMeta.Comment = comment
 	data, err := json.Marshal(commentMeta)
 	if err != nil {
 		return err
 	}
-	meta.metaInfo.Comment = string(data)
+	meta.MetaInfo.Comment = string(data)
 	return nil
 }
 
 // Decode torrent meta from 'comment' field
 func (meta *TorrentMeta) DecodeComment() *TorrentCommentMeta {
 	var commentMeta *TorrentCommentMeta
-	err := json.Unmarshal([]byte(meta.metaInfo.Comment), &commentMeta)
+	err := json.Unmarshal([]byte(meta.MetaInfo.Comment), &commentMeta)
 	if err != nil {
 		return nil
 	}
@@ -207,30 +208,30 @@ func (meta *TorrentMeta) DecodeComment() *TorrentCommentMeta {
 }
 
 func (meta *TorrentMeta) IsPrivate() bool {
-	return meta.info.Private != nil && *meta.info.Private
+	return meta.Info.Private != nil && *meta.Info.Private
 }
 
 func (meta *TorrentMeta) UpdateCreatedBy(createdBy string) error {
-	if meta.metaInfo.CreatedBy == createdBy {
+	if meta.MetaInfo.CreatedBy == createdBy {
 		return ErrNoChange
 	}
-	meta.metaInfo.CreatedBy = createdBy
+	meta.MetaInfo.CreatedBy = createdBy
 	return nil
 }
 
 func (meta *TorrentMeta) UpdateComment(comment string) error {
-	if meta.metaInfo.Comment == comment {
+	if meta.MetaInfo.Comment == comment {
 		return ErrNoChange
 	}
-	meta.metaInfo.Comment = comment
+	meta.MetaInfo.Comment = comment
 	return nil
 }
 
 func (meta *TorrentMeta) UpdateCreationDate(creationDate int64) error {
-	if meta.metaInfo.CreationDate == creationDate {
+	if meta.MetaInfo.CreationDate == creationDate {
 		return ErrNoChange
 	}
-	meta.metaInfo.CreationDate = creationDate
+	meta.MetaInfo.CreationDate = creationDate
 	return nil
 }
 
@@ -241,7 +242,7 @@ func (meta *TorrentMeta) UpdateTracker(tracker string) error {
 	}
 	hasOtherTracker := false
 outer:
-	for _, al := range meta.metaInfo.AnnounceList {
+	for _, al := range meta.MetaInfo.AnnounceList {
 		for _, a := range al {
 			if a != tracker {
 				hasOtherTracker = true
@@ -249,48 +250,48 @@ outer:
 			}
 		}
 	}
-	if meta.metaInfo.Announce == tracker && !hasOtherTracker {
+	if meta.MetaInfo.Announce == tracker && !hasOtherTracker {
 		return ErrNoChange
 	}
-	meta.metaInfo.Announce = tracker
-	meta.metaInfo.AnnounceList = nil
+	meta.MetaInfo.Announce = tracker
+	meta.MetaInfo.AnnounceList = nil
 	return nil
 }
 
 func (meta *TorrentMeta) SetComment(comment string) {
-	meta.metaInfo.Comment = comment
+	meta.MetaInfo.Comment = comment
 }
 
 // Add a tracker to AnnounceList at specified tier.
 // Do not add the tracker if it already exists somewhere in AnnounceList.
 // tier == -1: create a new tier to the end of AnnounceList and put new tracker here.
 func (meta *TorrentMeta) AddTracker(tracker string, tier int) error {
-	if tracker == "" || meta.metaInfo.Announce == tracker {
+	if tracker == "" || meta.MetaInfo.Announce == tracker {
 		return ErrNoChange
 	}
-	for _, al := range meta.metaInfo.AnnounceList {
+	for _, al := range meta.MetaInfo.AnnounceList {
 		for _, a := range al {
 			if a == tracker {
 				return ErrNoChange // tracker already exists
 			}
 		}
 	}
-	if len(meta.metaInfo.AnnounceList) == 0 && meta.metaInfo.Announce != "" {
-		meta.metaInfo.AnnounceList = append(meta.metaInfo.AnnounceList, []string{meta.metaInfo.Announce})
+	if len(meta.MetaInfo.AnnounceList) == 0 && meta.MetaInfo.Announce != "" {
+		meta.MetaInfo.AnnounceList = append(meta.MetaInfo.AnnounceList, []string{meta.MetaInfo.Announce})
 	}
-	createNewTier := tier < 0 || tier >= len(meta.metaInfo.AnnounceList)
+	createNewTier := tier < 0 || tier >= len(meta.MetaInfo.AnnounceList)
 	var trackersTier []string
 	if !createNewTier {
-		trackersTier = meta.metaInfo.AnnounceList[tier]
+		trackersTier = meta.MetaInfo.AnnounceList[tier]
 	}
 	trackersTier = append(trackersTier, tracker)
 	if createNewTier {
-		meta.metaInfo.AnnounceList = append(meta.metaInfo.AnnounceList, trackersTier)
+		meta.MetaInfo.AnnounceList = append(meta.MetaInfo.AnnounceList, trackersTier)
 	} else {
-		meta.metaInfo.AnnounceList[tier] = trackersTier
+		meta.MetaInfo.AnnounceList[tier] = trackersTier
 	}
-	if meta.metaInfo.Announce == "" {
-		meta.metaInfo.Announce = tracker
+	if meta.MetaInfo.Announce == "" {
+		meta.MetaInfo.Announce = tracker
 	}
 	return nil
 }
@@ -300,12 +301,12 @@ func (meta *TorrentMeta) RemoveTracker(tracker string) error {
 		return ErrNoChange
 	}
 	changed := false
-	if meta.metaInfo.Announce == tracker {
-		meta.metaInfo.Announce = ""
+	if meta.MetaInfo.Announce == tracker {
+		meta.MetaInfo.Announce = ""
 		changed = true
 	}
 outer:
-	for i, al := range meta.metaInfo.AnnounceList {
+	for i, al := range meta.MetaInfo.AnnounceList {
 		for j, a := range al {
 			if a == tracker {
 				// this is really ugly...
@@ -313,12 +314,12 @@ outer:
 				newTier = append(newTier, al[:j]...)
 				newTier = append(newTier, al[j+1:]...)
 				if len(newTier) > 0 {
-					meta.metaInfo.AnnounceList[i] = newTier
+					meta.MetaInfo.AnnounceList[i] = newTier
 				} else {
 					var nal [][]string
-					nal = append(nal, meta.metaInfo.AnnounceList[:i]...)
-					nal = append(nal, meta.metaInfo.AnnounceList[i+1:]...)
-					meta.metaInfo.AnnounceList = nal
+					nal = append(nal, meta.MetaInfo.AnnounceList[:i]...)
+					nal = append(nal, meta.MetaInfo.AnnounceList[i+1:]...)
+					meta.MetaInfo.AnnounceList = nal
 				}
 				changed = true
 				break outer
@@ -334,7 +335,7 @@ outer:
 // Generate .torrent file from current content
 func (meta *TorrentMeta) ToBytes() ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
-	if err := meta.metaInfo.Write(buf); err != nil {
+	if err := meta.MetaInfo.Write(buf); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil
@@ -343,7 +344,7 @@ func (meta *TorrentMeta) ToBytes() ([]byte, error) {
 // Generate magnet: url of this torrent.
 // Must be used on meta parsed from ParseTorrent with fields >= 2
 func (meta *TorrentMeta) MagnetUrl() string {
-	magnetUrl, err := meta.metaInfo.MagnetV2()
+	magnetUrl, err := meta.MetaInfo.MagnetV2()
 	if err != nil {
 		return ""
 	}
@@ -375,21 +376,21 @@ func (meta *TorrentMeta) Fprint(f io.Writer, name string, showAll bool) {
 		util.BytesSize(float64(meta.Size)), len(meta.Files), rootFile, trackerUrl, sitenameStr)
 	if showAll {
 		comments := []string{}
-		if meta.metaInfo.Comment != "" {
-			comments = append(comments, meta.metaInfo.Comment)
+		if meta.MetaInfo.Comment != "" {
+			comments = append(comments, meta.MetaInfo.Comment)
 		}
 		if meta.IsPrivate() {
 			comments = append(comments, "private")
 		}
-		if meta.info.Source != "" {
-			comments = append(comments, fmt.Sprintf("source:%q", meta.info.Source))
+		if meta.Info.Source != "" {
+			comments = append(comments, fmt.Sprintf("source:%q", meta.Info.Source))
 		}
-		if meta.metaInfo.CreatedBy != "" {
-			comments = append(comments, fmt.Sprintf("created_by:%q", meta.info.Source))
+		if meta.MetaInfo.CreatedBy != "" {
+			comments = append(comments, fmt.Sprintf("created_by:%q", meta.Info.Source))
 		}
 		creationDate := "-"
-		if meta.metaInfo.CreationDate > 0 {
-			creationDate = fmt.Sprintf("%q (%d)", util.FormatTime(meta.metaInfo.CreationDate), meta.metaInfo.CreationDate)
+		if meta.MetaInfo.CreationDate > 0 {
+			creationDate = fmt.Sprintf("%q (%d)", util.FormatTime(meta.MetaInfo.CreationDate), meta.MetaInfo.CreationDate)
 		}
 		comment := ""
 		if len(comments) > 0 {
@@ -401,7 +402,7 @@ func (meta *TorrentMeta) Fprint(f io.Writer, name string, showAll bool) {
 			fmt.Fprintf(f, "! RootDir = %q ; ", meta.RootDir)
 		}
 		fmt.Fprintf(f, "RawSize = %d ; PieceLength = %s ; PiecesHash = %s ; CreationDate = %s ; AllTrackers (%d): %s ;%s\n",
-			meta.Size, util.BytesSizeAround(float64(meta.info.PieceLength)), meta.PiecesHash,
+			meta.Size, util.BytesSizeAround(float64(meta.Info.PieceLength)), meta.PiecesHash,
 			creationDate, len(meta.Trackers), strings.Join(meta.Trackers, " | "), comment)
 		if !meta.IsPrivate() {
 			fmt.Fprintf(f, "! MagnetURI: %s\n", meta.MagnetUrl())
@@ -558,7 +559,7 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash i
 		}
 	}
 	if checkHash > 0 && len(meta.Files) > 0 {
-		piecesCnt := meta.info.NumPieces()
+		piecesCnt := meta.Info.NumPieces()
 		var currentFileIndex = int64(0)
 		var currentFileOffset = int64(0)
 		var currentFileRemain = int64(0)
@@ -569,14 +570,14 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash i
 			if i >= piecesCnt {
 				break
 			}
-			if checkHash == 1 && currentFile != nil && currentFileRemain > meta.info.PieceLength {
-				skipPieces := currentFileRemain / meta.info.PieceLength
-				skipLength := skipPieces * meta.info.PieceLength
+			if checkHash == 1 && currentFile != nil && currentFileRemain > meta.Info.PieceLength {
+				skipPieces := currentFileRemain / meta.Info.PieceLength
+				skipLength := skipPieces * meta.Info.PieceLength
 				currentFileOffset += skipLength
 				currentFileRemain -= skipLength
 				i += int(skipPieces)
 			}
-			p := meta.info.Piece(i)
+			p := meta.Info.Piece(i)
 			hash := sha1.New()
 			len := p.Length()
 			for len > 0 {
@@ -629,12 +630,15 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash i
 	return ts, nil
 }
 
-// Rename torrent (downloaded filename or name of torrent added to client) according to rename template.
+// Rename torrent (downloaded filename or name of torrent added to client) according to renameTemplate,
+// which is a Go text template ( https://pkg.go.dev/text/template ).
 // filename: original torrent filename (e.g. "abc.torrent").
-// available variable placeholders: [size], [id], [site], [filename], [filename128], [name], [name128].
-// tinfo is optional could may be nil.
-func RenameTorrent(rename string, sitename string, id string, filename string, tinfo *TorrentMeta) string {
-	newname := rename
+// Available variables: size, id, site, filename, filename128, name, name128.
+// tinfo is optional and could be nil.
+// The returned name is trim spaced and some (Windows) file system restrictive chars
+// like "?" are replaced with their full-width equivalents (like "？").
+func RenameTorrent(renameTemplate *template.Template, sitename string, id string, filename string,
+	tinfo *TorrentMeta) (string, error) {
 	basename := filename
 	if i := strings.LastIndex(basename, "."); i != -1 {
 		basename = basename[:i]
@@ -645,26 +649,46 @@ func RenameTorrent(rename string, sitename string, id string, filename string, t
 		id = id[i+1:]
 	}
 
-	replacerArgs := []string{"[id]", id, "[site]", sitename, "[filename]", basename,
-		"[filename128]", util.StringPrefixInBytes(basename, 128)}
-	if tinfo != nil {
-		replacerArgs = append(replacerArgs, "[size]", util.BytesSize(float64(tinfo.Size)),
-			"[name]", tinfo.info.Name, "[name128]", util.StringPrefixInBytes(tinfo.info.Name, 128))
+	data := map[string]any{
+		"id":          id,
+		"site":        sitename,
+		"filename":    basename,
+		"filename128": util.StringPrefixInBytes(basename, 128),
 	}
-	newname = strings.NewReplacer(replacerArgs...).Replace(newname)
-	newname = constants.FilenameRestrictedCharacterReplacer.Replace(newname)
-	return newname
+	if tinfo != nil {
+		util.AssignMap(data, map[string]any{
+			"size":    util.BytesSize(float64(tinfo.Size)),
+			"name":    tinfo.Info.Name,
+			"name128": util.StringPrefixInBytes(tinfo.Info.Name, 128),
+		})
+	}
+	buf := &bytes.Buffer{}
+	err := renameTemplate.Execute(buf, data)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(constants.FilenameRestrictedCharacterReplacer.Replace(buf.String())), nil
 }
 
-// Get appropriate filename for exported .torrent file.
-// available variable placeholders: [client], [size], [infohash], [infohash16], [category], [name], [name128]
-func RenameExportedTorrent(client string, torrent *client.Torrent, rename string) string {
-	filename := rename
-	filename = strings.NewReplacer("[client]", client, "[size]", util.BytesSize(float64(torrent.Size)),
-		"[infohash]", torrent.InfoHash, "[infohash16]", torrent.InfoHash[:16], "[category]", torrent.Category,
-		"[name]", torrent.Name, "[name128]", util.StringPrefixInBytes(torrent.Name, 128)).Replace(filename)
-	filename = constants.FilenameRestrictedCharacterReplacer.Replace(filename)
-	return filename
+// Get appropriate filename for exported .torrent file. It works similar to [RenameTorrent] .
+// available variables: client, size, infohash, infohash16, category, name, name128.
+// The returned name is processed the same way as [RenameTorrent] .
+func RenameExportedTorrent(client string, torrent *client.Torrent, renameTemplate *template.Template) (string, error) {
+	data := map[string]any{
+		"client":     client,
+		"size":       util.BytesSize(float64(torrent.Size)),
+		"infohash":   torrent.InfoHash,
+		"infohash16": torrent.InfoHash[:16],
+		"category":   torrent.Category,
+		"name":       torrent.Name,
+		"name128":    util.StringPrefixInBytes(torrent.Name, 128),
+	}
+	buf := &bytes.Buffer{}
+	err := renameTemplate.Execute(buf, data)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(constants.FilenameRestrictedCharacterReplacer.Replace(buf.String())), nil
 }
 
 // Create a torrent, return info of created torrent.
@@ -808,7 +832,7 @@ func infoBuildFromFilePath(info *metainfo.Info, root string, excludes []string,
 		}
 		if filenameLengthLimit > 0 && int64(len(fi.Name())) > filenameLengthLimit {
 			return fmt.Errorf("filename %q is too long (%d bytes in UTF-8). Consider truncate it to %q", fi.Name(),
-				len(fi.Name()), util.StringPrefixInBytes(fi.Name(), constants.TORRENT_CONTENT_FILENAME_LENGTH_LIMIT))
+				len(fi.Name()), util.StringPrefixInBytes(fi.Name(), filenameLengthLimit))
 		}
 		if fi.IsDir() {
 			// Directories are implicit in torrent files.

@@ -724,7 +724,8 @@ ptool parsetorrent <torrentFileNameOrIdOrUrl>...
 - `--show-info-hash-only` : 仅显示种子的 info hash。
 - `--all` : 显示种子的更多详细信息（例如 pieces hash）。
 - `--sum` : （仅）显示所有提供的种子汇总的统计信息。
-- `--json` : 以 JSON 格式显示种子的详细信息。
+- `--json` : 以 JSON 格式显示种子的所有详细信息。
+- `--format string` : 自定义种子信息输出格式。例如 `--format "{{.InfoHash}} - {{.Size}}"`。参考命令帮助。
 
 ## 校验种子文件与硬盘内容是否一致 (verifytorrent)
 

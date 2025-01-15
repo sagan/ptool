@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"text/template"
 
 	"github.com/natefinch/atomic"
 	log "github.com/sirupsen/logrus"
@@ -30,15 +31,17 @@ or url (e.g. "https://kp.m-team.cc/details.php?id=488424").
 Torrent url that does NOT belong to any site (e.g. a public site url) is also supported.
 Use a single "-" as args to read torrent (id or url) list from stdin, delimited by blanks.
 
-To set the filename of downloaded torrent, use --rename <name> flag,
-which supports the following variable placeholders:
-* [size] : Torrent size
-* [id] :  Torrent id in site
-* [site] : Torrent site
-* [filename] : Original torrent filename without ".torrent" extension
-* [filename128] : The prefix of [filename] which is at max 128 bytes
-* [name] : Torrent name
-* [name128] : The prefix of torrent name which is at max 128 bytes`,
+To set the filename of downloaded torrent, use "--rename string" flag,
+which is parsed using Go text template ( https://pkg.go.dev/text/template ).
+It supports the following variables:
+* size : Torrent contents size string (e.g. "42GiB")
+* id :  Torrent id in site
+* site : Torrent site name
+* filename : Original torrent filename without ".torrent" extension
+* filename128 : The prefix of filename which is at max 128 bytes
+* name : Torrent name
+* name128 : The prefix of torrent name which is at max 128 bytes
+E.g. '--rename "{{.site}}.{{.id}} - {{.name128}}.torrent"'`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: dltorrent,
 }
@@ -107,6 +110,14 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 			return nil
 		}
 	}
+	var err error
+	var renameTemplate *template.Template
+	if rename != "" {
+		if renameTemplate, err = template.New("template").Parse(rename); err != nil {
+			return fmt.Errorf("invalid rename template: %v", err)
+		}
+	}
+
 	for i, torrent := range torrents {
 		fmt.Printf("(%d/%d) ", i+1, len(torrents))
 		if i > 0 && slowMode {
@@ -140,10 +151,16 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 		filename := ""
 		if skipExisting && sitename != "" && id != "" {
 			filename = fmt.Sprintf("%s.%s.torrent", sitename, strings.TrimPrefix(id, sitename+"."))
-		} else if rename == "" {
+		} else if renameTemplate == nil {
 			filename = _filename
 		} else {
-			filename = torrentutil.RenameTorrent(rename, sitename, id, _filename, tinfo)
+			name, err := torrentutil.RenameTorrent(renameTemplate, sitename, id, _filename, tinfo)
+			if err == nil {
+				filename = name
+			} else {
+				log.Errorf("torrent %s rename template render failed and is not renamed: %v", torrent, err)
+				filename = _filename
+			}
 		}
 		err = atomic.WriteFile(filepath.Join(downloadDir, filename), bytes.NewReader(content))
 		if err != nil {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"text/template"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -18,6 +19,8 @@ import (
 	"github.com/sagan/ptool/util/torrentutil"
 )
 
+const EXPOT_TORRENT_FORMAT_CONSISTENT = "{{.client}}.{{.infohash}}.torrent"
+
 var command = &cobra.Command{
 	Use:         "export {client} [--category category] [--tag tag] [--filter filter] [infoHash]...",
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "export"},
@@ -25,21 +28,25 @@ var command = &cobra.Command{
 	Long: fmt.Sprintf(`Export and download torrents of client to .torrent files.
 %s.
 
-To set the filename of downloaded torrent, use --rename <name> flag,
-which supports the following variable placeholders:
-* [client] : Client name
-* [size] : Torrent size
-* [infohash] :  Torrent infohash
-* [infohash16] :  The first 16 chars of torrent infohash
-* [category] : Torrent category
-* [name] : Torrent name
-* [name128] : The prefix of torrent name which is at max 128 bytes
+To set the filename format of exported torrent, use "--rename string" flag,
+which is parsed using Go text template ( https://pkg.go.dev/text/template ).
+It supports the following variables:
+* client : Client name
+* size : Torrent contents size string (e.g. "42GiB")
+* infohash :  Torrent infohash
+* infohash16 :  The first 16 chars of torrent infohash
+* category : Torrent category
+* name : Torrent name
+* name128 : The prefix of torrent name which is at max 128 bytes
+The default format is %q, unless "--skip-existing" flag is set,
+in which case it's %q.
 
 If --use-comment-meta flag is set, ptool will export torrent's current category & tags & savePath meta info,
 and save them to the 'comment' field of exported .torrent file in JSON '{tags, category, save_path, comment}' format.
 The "ptool add" command has the same flag that extracts and applies meta info from 'comment' when adding torrents.
 
-It will overwrite any existing file on disk with the same name.`, constants.HELP_INFOHASH_ARGS),
+It will overwrite any existing file on disk with the same name.`,
+		constants.HELP_INFOHASH_ARGS, config.DEFAULT_EXPORT_TORRENT_RENAME, EXPOT_TORRENT_FORMAT_CONSISTENT),
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: export,
 }
@@ -57,8 +64,8 @@ var (
 func init() {
 	command.Flags().BoolVarP(&skipExisting, "skip-existing", "", false,
 		`Do NOT re-export torrent that same name file already exists in local dir. `+
-			`If this flag is set, the exported torrent filename ("--rename" flag) will be fixed to `+
-			`"[client].[infohash].torrent" (e.g. "local.293235f712652df08a8665ec2ca118d7e0615c3f.torrent") format`)
+			`If this flag is set, the exported torrent filename format ("--rename" flag) will be fixed to `+
+			`"`+EXPOT_TORRENT_FORMAT_CONSISTENT+`"`)
 	command.Flags().BoolVarP(&useCommentMeta, "use-comment-meta", "", false,
 		`Export torrent category, tags, save path and other infos to "comment" field of .torrent file`)
 	command.Flags().StringVarP(&filter, "filter", "", "", constants.HELP_ARG_FILTER_TORRENT)
@@ -83,6 +90,10 @@ func export(cmd *cobra.Command, args []string) error {
 	}
 	if skipExisting && rename != config.DEFAULT_EXPORT_TORRENT_RENAME {
 		return fmt.Errorf("--skip-existing and --rename flags are NOT compatible")
+	}
+	renameTemplate, err := template.New("template").Parse(rename)
+	if err != nil {
+		return fmt.Errorf("invalid rename template: %v", err)
 	}
 	clientInstance, err := client.CreateClient(clientName)
 	if err != nil {
@@ -114,7 +125,13 @@ func export(cmd *cobra.Command, args []string) error {
 				continue
 			}
 		} else {
-			filename = torrentutil.RenameExportedTorrent(clientName, torrent, rename)
+			name, err := torrentutil.RenameExportedTorrent(clientName, torrent, renameTemplate)
+			if err != nil {
+				fmt.Printf("✕ %s : %v (%d/%d)\n", torrent.InfoHash, err, i+1, cntAll)
+				errorCnt++
+				continue
+			}
+			filename = name
 		}
 		outputPath := ""
 		if downloadDir == "-" {

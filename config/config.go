@@ -48,7 +48,7 @@ const (
 	CLIENT_LOCK_FILE           = "client-%s.lock"
 	EXAMPLE_CONFIG_FILE        = "ptool.example" // .toml , .yaml
 
-	DEFAULT_EXPORT_TORRENT_RENAME = "[name128].[infohash16].torrent"
+	DEFAULT_EXPORT_TORRENT_RENAME = "{{.name128}}.{{.infohash16}}.torrent"
 	// New iyuu API.
 	// iyuuplus-dev: https://github.com/ledccn/iyuuplus-dev .
 	// Docs: https://doc.iyuu.cn/reference/config .

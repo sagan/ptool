@@ -1,9 +1,11 @@
 package parsetorrent
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"strings"
+	"text/template"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -25,6 +27,26 @@ var command = &cobra.Command{
 
 By default it displays parsed infos of all provided torrents.
 If "--sum" flag is set, it only displays the summary of all torrents.
+
+To output parsed info in json format, use "--json" flag.
+
+You can customize the output format using "--format string" flag,
+which is parsed by Go text template ( https://pkg.go.dev/text/template ).
+The data passed to the template is the parsed torrent info object, which is in "TorrentMeta" type:
+
+// https://github.com/sagan/ptool/blob/master/util/torrentutil/torrent.go
+type TorrentMeta struct {
+	InfoHash          string
+	PiecesHash        string // sha1(torrent.info.pieces)
+	Trackers          []string
+	Size              int64
+	SingleFileTorrent bool
+	RootDir           string
+	ContentPath       string // root folder or single file name
+	Files             []TorrentMetaFile
+	MetaInfo          *metainfo.MetaInfo // always non-nil in a parsed *TorrentMeta
+	Info              *metainfo.Info     // always non-nil in a parsed *TorrentMeta
+}
 
 It's also capable to work as a torrent files "filter", e.g. :
   ptool parsetorrent --dedupe --max-torrent-size 100MiB --rename-fail --sum *.torrent
@@ -49,6 +71,7 @@ var (
 	minTorrentSizeStr = ""
 	maxTorrentSizeStr = ""
 	matchTracker      = ""
+	format            = ""
 )
 
 func init() {
@@ -74,15 +97,17 @@ func init() {
 	command.Flags().StringVarP(&matchTracker, "match-tracker", "", "",
 		"Treat torrent which trackers does not contain this tracker (domain or url) as fail (error). "+
 			`If set to "`+constants.NONE+`", it matches if torrent does NOT have any tracker`)
+	command.Flags().StringVarP(&format, "format", "", "", `Manually set the output format of parsed torrent info. `+
+		`Available variable placeholders: {{.InfoHash}}, {{.PiecesHash}}, {{.Size}} and more. It uses Go text template`)
 	cmd.RootCmd.AddCommand(command)
 }
 
 func parsetorrent(cmd *cobra.Command, args []string) error {
-	if util.CountNonZeroVariables(showInfoHashOnly, showAll, showSum) > 1 {
-		return fmt.Errorf("--all, --show-info-hash-only and --sum flags are NOT compatible")
-	}
-	if util.CountNonZeroVariables(showInfoHashOnly, showAll, showJson) > 1 {
-		return fmt.Errorf("--all, --show-info-hash-only and --json flags are NOT compatible")
+	if cnt := util.CountNonZeroVariables(format, showInfoHashOnly, showAll, showSum, showJson); cnt > 1 {
+		if cnt > 2 || !(showSum && showJson) {
+			return fmt.Errorf("--format, --all, --show-info-hash-only, --json and --sum flags " +
+				"are NOT compatible (except the last two)")
+		}
 	}
 	if renameFail && deleteFail {
 		return fmt.Errorf("--rename-fail and --delete-fail flags are NOT compatible")
@@ -102,6 +127,12 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 	errorCnt := int64(0)
 	parsedTorrents := map[string]struct{}{}
 	statistics := common.NewTorrentsStatistics()
+	var outputTemplate *template.Template
+	if format != "" {
+		if outputTemplate, err = template.New("template").Parse(format); err != nil {
+			return fmt.Errorf("invalid format template: %v", err)
+		}
+	}
 
 	for _, torrent := range torrents {
 		_, tinfo, _, _, _, _, isLocal, err := helper.GetTorrentContent(torrent, defaultSite, forceLocal, false,
@@ -157,6 +188,13 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 		} else if showInfoHashOnly {
 			fmt.Printf("%s\n", tinfo.InfoHash)
 			continue
+		} else if outputTemplate != nil {
+			buf := &bytes.Buffer{}
+			if err = outputTemplate.Execute(buf, tinfo); err != nil {
+				return fmt.Errorf("failed to render torrent %v: %v", tinfo, err)
+			}
+			fmt.Println(buf.String())
+			continue
 		}
 		tinfo.Fprint(os.Stdout, torrent, showAll)
 		if showAll {
@@ -164,7 +202,7 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 			fmt.Printf("\n")
 		}
 	}
-	if !showInfoHashOnly {
+	if !showInfoHashOnly && outputTemplate == nil {
 		if !showJson {
 			fmt.Printf("\n")
 			statistics.Print(os.Stdout)

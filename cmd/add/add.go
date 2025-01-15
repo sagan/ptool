@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"text/template"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -35,15 +36,17 @@ download the .torrent file to local and verify it's a valid metainfo file,
 then adding the downloaded .torrent file contents to the BitTorrent client.
 If "--raw" flag is set, it skips above procedures and directly submits the url to the BitTorrent client.
 
-To set the name of added torrent in client, use --rename <name> flag,
-which supports the following variable placeholders:
-* [size] : Torrent size
-* [id] :  Torrent id in site
-* [site] : Torrent site
-* [filename] : Original torrent filename without ".torrent" extension
-* [filename128] : The prefix of [filename] which is at max 128 bytes
-* [name] : Torrent name
-* [name128] : The prefix of torrent name which is at max 128 bytes
+To set the name of added torrent in client, use "--rename string" flag,
+which is parsed using Go text template ( https://pkg.go.dev/text/template ).
+It supports the following variables:
+* size : Torrent contents size string (e.g. "42GiB")
+* id :  Torrent id in site
+* site : Torrent site name
+* filename : Original torrent filename without ".torrent" extension
+* filename128 : The prefix of filename which is at max 128 bytes
+* name : Torrent name
+* name128 : The prefix of torrent name which is at max 128 bytes
+E.g. '--rename "{{.site}}.{{.id}} {{.name}}"'
 
 Flags:
 * --ratio-limit & --seeding-time-limit : See help of "modifytorrent" cmd for more info
@@ -140,6 +143,13 @@ func add(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("invalid map-save-path(s): %w", err)
 		}
 	}
+	var renameTemplate *template.Template
+	if rename != "" {
+		if renameTemplate, err = template.New("template").Parse(rename); err != nil {
+			return fmt.Errorf("invalid rename template: %v", err)
+		}
+	}
+
 	errorCnt := int64(0)
 	cntAdded := int64(0)
 	sizeAdded := int64(0)
@@ -263,8 +273,13 @@ func add(cmd *cobra.Command, args []string) error {
 				option.Tags = append(option.Tags, config.HR_TAG)
 			}
 			option.Tags = append(option.Tags, fixedTags...)
-			if rename != "" {
-				option.Name = torrentutil.RenameTorrent(rename, sitename, id, filename, tinfo)
+			if renameTemplate != nil {
+				name, err := torrentutil.RenameTorrent(renameTemplate, sitename, id, filename, tinfo)
+				if err == nil {
+					option.Name = name
+				} else {
+					log.Errorf("torrent %s rename template render failed and is not renamed: %v", torrent, err)
+				}
 			}
 		}
 		if ratioLimit == 0 {

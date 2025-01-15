@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"syscall"
+	"text/template"
 
 	"github.com/natefinch/atomic"
 	log "github.com/sirupsen/logrus"
@@ -45,15 +46,17 @@ using "--start-page" flag, set it to the "LastPage" value last time this command
 It supports saving info of found torrents to disk file in json format,
 or exporting the id list of found torrents, using "--save-*" flags.
 
-To set the name of added torrent in client or filename of downloaded torrent, use --rename <name> flag,
-which supports the following variable placeholders:
-* [size] : Torrent size
-* [id] :  Torrent id in site
-* [site] : Torrent site
-* [filename] : Original torrent filename without ".torrent" extension
-* [filename128] : The prefix of [filename] which is at max 128 bytes
-* [name] : Torrent name
-* [name128] : The prefix of torrent name which is at max 128 bytes
+To set the name of added torrent in client or filename of downloaded torrent, use "--rename string" flag,
+which is parsed using Go text template ( https://pkg.go.dev/text/template ).
+It supports the following variables:
+* size : Torrent size in string (e.g. "42GiB")
+* id :  Torrent id in site
+* site : Torrent site name
+* filename : Original torrent filename without ".torrent" extension
+* filename128 : The prefix of filename which is at max 128 bytes
+* name : Torrent name
+* name128 : The prefix of torrent name which is at max 128 bytes
+E.g. '--rename "{{.site}}.{{.id}} - {{.name128}}.torrent"'
 
 It will output the summary of downloads result in the end:
 * Torrents : Torrents downloaded
@@ -335,6 +338,12 @@ func batchdl(command *cobra.Command, args []string) error {
 			}
 		}
 	}
+	var renameTemplate *template.Template
+	if rename != "" {
+		if renameTemplate, err = template.New("template").Parse(rename); err != nil {
+			return fmt.Errorf("invalid rename template: %v", err)
+		}
+	}
 	if saveJsonFile != nil && !saveAppend {
 		saveJsonFile.WriteString("[\n")
 	}
@@ -554,10 +563,15 @@ mainloop:
 				} else {
 					if doDownload {
 						if filename == "" {
-							if rename == "" {
-								filename = _filename
+							if renameTemplate != nil {
+								name, err := torrentutil.RenameTorrent(renameTemplate, sitename, torrent.Id, _filename, tinfo)
+								if err == nil {
+									filename = name
+								} else {
+									log.Errorf("torrent %s rename template render failed and is not renamed: %v", torrent.Id, err)
+								}
 							} else {
-								filename = torrentutil.RenameTorrent(rename, sitename, torrent.Id, _filename, tinfo)
+								filename = _filename
 							}
 						}
 						err = atomic.WriteFile(filepath.Join(downloadDir, filename), bytes.NewReader(torrentContent))
@@ -589,7 +603,14 @@ mainloop:
 							clientAddTorrentOption.Category = addCategory
 						}
 						if rename != "" {
-							clientAddTorrentOption.Name = torrentutil.RenameTorrent(rename, sitename, torrent.Id, _filename, tinfo)
+							if renameTemplate != nil {
+								name, err := torrentutil.RenameTorrent(renameTemplate, sitename, torrent.Id, _filename, tinfo)
+								if err == nil {
+									clientAddTorrentOption.Name = name
+								} else {
+									log.Errorf("torrent %s rename template render failed and is not renamed: %v", torrent.Id, err)
+								}
+							}
 						}
 						err = clientInstance.AddTorrent(torrentContent, clientAddTorrentOption, nil)
 						if err != nil {
