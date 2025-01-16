@@ -235,6 +235,15 @@ func (meta *TorrentMeta) UpdateCreationDate(creationDate int64) error {
 	return nil
 }
 
+func (meta *TorrentMeta) MatchFilter(filter string) bool {
+	if util.ContainsI(meta.RootDir, filter) || slices.IndexFunc(meta.Files, func(f TorrentMetaFile) bool {
+		return util.ContainsI(f.Path, filter)
+	}) != -1 {
+		return true
+	}
+	return false
+}
+
 // Remove all existing trackers and set the provided one as the sole tracker.
 func (meta *TorrentMeta) UpdateTracker(tracker string) error {
 	if tracker == "" {

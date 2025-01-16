@@ -568,6 +568,7 @@ mainloop:
 								if err == nil {
 									filename = name
 								} else {
+									filename = _filename
 									log.Errorf("torrent %s rename template render failed and is not renamed: %v", torrent.Id, err)
 								}
 							} else {

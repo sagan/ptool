@@ -48,6 +48,8 @@ type TorrentMeta struct {
 	Info              *metainfo.Info     // always non-nil in a parsed *TorrentMeta
 }
 
+E.g. '--format "{{.InfoHash}} - {{.Size}}"'.
+
 It's also capable to work as a torrent files "filter", e.g. :
   ptool parsetorrent --dedupe --max-torrent-size 100MiB --rename-fail --sum *.torrent
 It will treat all torrents which is duplicate (has the same info-hash as a previous torrent)
@@ -71,6 +73,7 @@ var (
 	minTorrentSizeStr = ""
 	maxTorrentSizeStr = ""
 	matchTracker      = ""
+	filter            = ""
 	format            = ""
 )
 
@@ -89,6 +92,8 @@ func init() {
 	command.Flags().BoolVarP(&showJson, "json", "", false, "Show output in json format")
 	command.Flags().BoolVarP(&forceLocal, "force-local", "", false, "Force treat all arg as local torrent filename")
 	command.Flags().BoolVarP(&showSum, "sum", "", false, "Show torrents summary only")
+	command.Flags().StringVarP(&filter, "filter", "", "",
+		"If set, treat torrent which name or content file names do not contain this value as fail (error)")
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of torrent url")
 	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1",
 		"Treat torrent which contents size is smaller than (<) this value as fail (error). -1 == no limit")
@@ -149,6 +154,8 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 				err = fmt.Errorf("torrent is duplicate: info-hash = %s", tinfo.InfoHash)
 			} else if matchTracker != "" && !tinfo.MatchTracker(matchTracker) {
 				err = fmt.Errorf("torrent tracker(s) does not match: %v", tinfo.Trackers)
+			} else if filter != "" && !tinfo.MatchFilter(filter) {
+				err = fmt.Errorf("torrent name & content file names do not contain %q", filter)
 			}
 			if err != nil {
 				statistics.UpdateTinfo(common.TORRENT_FAILURE, tinfo)
@@ -156,7 +163,7 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 		}
 		if err != nil {
 			if !showSum {
-				fmt.Fprintf(os.Stderr, "✕ %s : failed to parse: %v\n", torrent, err)
+				fmt.Fprintf(os.Stderr, "✕ %s : %v\n", torrent, err)
 			}
 			errorCnt++
 			if isLocal && torrent != "-" {
