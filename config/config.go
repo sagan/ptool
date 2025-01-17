@@ -33,7 +33,7 @@ const (
 	NOADD_TAG                  = "_noadd"
 	NODEL_TAG                  = "_nodel"
 	TORRENT_NODEL_TAG          = "nodel"
-	INVALID_TRACKER_TAG        = "_invalid_tracker"
+	INVALID_TRACKER_TAG_PREFIX = "_invalid_tracker_"
 	TRANSFERRED_TAG            = "_transferred" // transferred to another client
 	NOXSEED_TAG                = "noxseed"      // BT 客户端里含有此 tag 的种子不会被辅种
 	HR_TAG                     = "_hr"
@@ -224,6 +224,7 @@ type SiteConfigStruct struct {
 	UseCuhash                        bool   `yaml:"useCuhash"` // hdcity 使用机制。种子下载地址里必须有cuhash参数
 	// ttg 使用机制。种子下载地址末段必须有4位数字校验码或Passkey参数(即使有 Cookie)
 	UseDigitHash                      bool   `yaml:"useDigitHash"`
+	UsePasskey                        bool   `yaml:"usePasskey"` // 部分站点(例如 ptt)必须使用包含 passkey 的链接下载种子
 	TorrentUrlIdRegexp                string `yaml:"torrentUrlIdRegexp"`
 	FlowControlInterval               int64  `yaml:"flowControlInterval"` // 暂定名。两次请求种子列表页间隔时间(秒)
 	NexusphpNoLetDown                 bool   `yaml:"nexusphpNoLetDown"`

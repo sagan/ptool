@@ -557,6 +557,7 @@ https://www.dmm.co.jp/dc/doujin/-/detail/=/cid={{number | regex_search("\\bd_\\d
 			SelectorTorrentFree:            `.free`,
 			SelectorTorrentNoTraffic:       `.zeroupzerodown`,
 			SelectorTorrentDiscountEndTime: `.free + span`,
+			UsePasskey:                     true,
 			Comment:                        "PTT",
 		},
 		"ptvicomo": {

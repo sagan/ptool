@@ -852,18 +852,15 @@ ptool findalone local --map-save-path "/root/Downloads:/Downloads" /root/Downloa
 ptool markinvalidtracker <client> _all
 ```
 
-markinvalidtracker 命令将在客户端里查找当前 Tracker 状态异常的种子，然后为这些种子打上 `_invalid_tracker` 标签。
+markinvalidtracker 命令将在客户端里查找当前 Tracker 状态异常的种子，然后为这些种子打上 `_invalid_tracker_*` 标签。
 
-markinvalidtracker 命令将以下几种情形认为是 Tracker 状态异常：
+该命令将以下几种情形认为是 Tracker 状态异常，每种情形会打上不同标签。
 
-- 种子在 Tracker 未注册或已经被删除。
-- 种子的 Tracker url 的 Passkey 或 Authkey 不正确。
+- `_invalid_tracker_not_exist` : 种子在 Tracker 未注册或已经被删除。
+- `_invalid_tracker_invalid_auth` : 种子的 Tracker url 的 Passkey 或 Authkey 不正确。
+- `_invalid_tracker_violate_rule` : 种子超过了站点的同时下载/做种客户端数量上限或违反了其它做种规则。
 
-如果指定 "--all" 参数，以下情形的种子也会被标记：
-
-- 种子超过了站点的同时下载/做种客户端数量上限。
-
-markinvalidtracker 命令不会标记因为网络或站点服务器问题而当前无法连通 Tracker 的种子。
+该命令不会标记因为网络或站点服务器问题而当前无法连通 Tracker 的种子。
 
 ## 修改本地 BT 客户端里的种子内容文件保存路径 (movesavepath)
 

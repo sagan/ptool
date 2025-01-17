@@ -18,20 +18,22 @@ import (
 )
 
 type Site struct {
-	Name                 string
-	Location             *time.Location
-	SiteConfig           *config.SiteConfigStruct
-	Config               *config.ConfigStruct
-	HttpClient           *azuretls.Session
-	HttpHeaders          [][]string
-	siteStatus           *site.Status
-	latestTorrents       []*site.Torrent
-	extraTorrents        []*site.Torrent
-	datatime             int64
-	datetimeExtra        int64
-	cuhash               string
-	digitHashPasskey     string
-	digitHashErr         error
+	Name             string
+	Location         *time.Location
+	SiteConfig       *config.SiteConfigStruct
+	Config           *config.ConfigStruct
+	HttpClient       *azuretls.Session
+	HttpHeaders      [][]string
+	siteStatus       *site.Status
+	latestTorrents   []*site.Torrent
+	extraTorrents    []*site.Torrent
+	datatime         int64
+	datetimeExtra    int64
+	cuhash           string
+	passkey          string
+	digitHashPasskey string
+	// 部分站点下载种子时需要提供验证参数：通过抓取并解析站点种子页面动态获取。但仅尝试1次，如果失败记录错误，下次不再重试。
+	dlExtraParamsErr     error
 	torrentsParserOption *TorrentsParserOption
 }
 
@@ -205,15 +207,37 @@ func (npclient *Site) DownloadTorrentById(id string) ([]byte, string, error) {
 		} else {
 			log.Warnf("Failed to get site cuhash. torrent download may fail")
 		}
+	} else if npclient.SiteConfig.UsePasskey {
+		passkey := ""
+		if npclient.SiteConfig.Passkey != "" {
+			passkey = npclient.SiteConfig.Passkey
+		} else if npclient.passkey != "" {
+			passkey = npclient.passkey
+		} else if npclient.dlExtraParamsErr == nil {
+			// update passkey by side effect of sync
+			npclient.sync()
+			if npclient.passkey != "" {
+				passkey = npclient.passkey
+				log.Infof(`Found site passkey. Add the passkey = "%s" line to site config block of ptool.toml `+
+					`to speed up the next visit`, passkey)
+			} else {
+				npclient.dlExtraParamsErr = fmt.Errorf("no passkey parsed")
+			}
+		}
+		if passkey != "" {
+			torrentUrl = util.AppendUrlQueryString(torrentUrl, "passkey="+npclient.passkey)
+		} else {
+			log.Warnf("Failed to get site passkey. torrent download may fail")
+		}
 	} else if npclient.SiteConfig.UseDigitHash {
 		passkey := ""
 		if npclient.SiteConfig.Passkey != "" {
 			passkey = npclient.SiteConfig.Passkey
 		} else if npclient.digitHashPasskey != "" {
 			passkey = npclient.digitHashPasskey
-		} else if npclient.digitHashErr == nil { // only try to fetch passkey once
-			npclient.digitHashPasskey, npclient.digitHashErr = npclient.getDigithash(id)
-			if npclient.digitHashErr != nil {
+		} else if npclient.dlExtraParamsErr == nil { // only try to fetch passkey once
+			npclient.digitHashPasskey, npclient.dlExtraParamsErr = npclient.getDigithash(id)
+			if npclient.dlExtraParamsErr != nil {
 				log.Warnf("Failed to get site passkey. torrent download may fail")
 			} else {
 				passkey = npclient.digitHashPasskey
@@ -405,13 +429,22 @@ labelLastPage:
 
 func (npclient *Site) parseTorrentsFromDoc(doc *goquery.Document, datatime int64) ([]*site.Torrent, error) {
 	torrents, err := parseTorrents(doc, npclient.torrentsParserOption, datatime, npclient.GetName())
-	if npclient.SiteConfig.UseCuhash && npclient.cuhash == "" &&
+	if (npclient.SiteConfig.UsePasskey && npclient.passkey == "" ||
+		npclient.SiteConfig.UseCuhash && npclient.cuhash == "") &&
 		len(torrents) > 0 && torrents[0].DownloadUrl != "" {
 		urlObj, err := url.Parse(torrents[0].DownloadUrl)
 		if err == nil {
-			cuhash := urlObj.Query().Get("cuhash")
-			log.Debugf("Update site %s cuhash=%s", npclient.Name, cuhash)
-			npclient.cuhash = cuhash
+			query := urlObj.Query()
+			if npclient.SiteConfig.UseCuhash {
+				cuhash := query.Get("cuhash")
+				log.Debugf("Update site %s cuhash=%s", npclient.Name, cuhash)
+				npclient.cuhash = cuhash
+			}
+			if npclient.SiteConfig.UsePasskey {
+				passkey := query.Get("passkey")
+				log.Debugf("Update site %s passkey=%s", npclient.Name, passkey)
+				npclient.passkey = passkey
+			}
 		}
 	}
 	return torrents, err

@@ -18,6 +18,32 @@ import (
 	"github.com/sagan/ptool/util"
 )
 
+// 种子 tracker 合法性(validity)状态. > 0 值 表示已知类型的异常状态。
+// 数字越大，异常状态严重程度越高。0 值表示正常（未识别出已知的异常）。
+type TrackerValidity int64
+
+const (
+	TRACKER_VALIDITY_OK           TrackerValidity = iota // 正常（未识别出已知的异常状态）
+	TRACKER_VALIDITY_VIOLATE_RULE                        // 不符合做种规则（例如超过同时做种设备数量限制）
+	TRACKER_VALIDITY_INVALID_AUTH                        // authkey / passkey 不正确
+	TRACKER_VALIDITY_NOT_EXIST                           // 种子在站点里不存在或已被删除
+)
+
+type TrackerValidityInfoStruct = struct {
+	Value TrackerValidity
+	Name  string
+	Desc  string
+}
+
+// all tracker validity status infos. the array index is also the status value.
+var TrackerValidityInfos = []*TrackerValidityInfoStruct{
+	{TRACKER_VALIDITY_OK, "ok", ""},
+	{TRACKER_VALIDITY_VIOLATE_RULE, "violate_rule",
+		"Torrent is currently exceeding the simultaneous downloading / seeding clients number limit"},
+	{TRACKER_VALIDITY_INVALID_AUTH, "invalid_auth", "Tracker url passkey or authkey is required or invalid"},
+	{TRACKER_VALIDITY_NOT_EXIST, "not_exist", "Torrent is not registered in the tracker(s)"},
+}
+
 // @todo: considering changing it to interface
 type Torrent struct {
 	InfoHash           string
@@ -168,55 +194,49 @@ var (
 	clients = map[string]Client{}
 )
 
-var tracker_invalid_torrent_msgs = []string{
-	"not registered",
-	"not exists",
-	"unauthorized",
-	"require passkey",
-	"require authkey",
-	"种子不存在",
-	"该种子没有", // monikadesign 的 msg: "该种子没有在我们的 Tracker 上注册."
-
+// keyword => tracker validity status
+var tracker_invalid_torrent_msgs = map[string]TrackerValidity{
+	"not registered":          TRACKER_VALIDITY_NOT_EXIST,
+	"not exists":              TRACKER_VALIDITY_NOT_EXIST,
+	"unauthorized":            TRACKER_VALIDITY_INVALID_AUTH,
+	"require passkey":         TRACKER_VALIDITY_INVALID_AUTH,
+	"require authkey":         TRACKER_VALIDITY_INVALID_AUTH,
+	"invalid authkey":         TRACKER_VALIDITY_INVALID_AUTH,
+	"invalid passkey":         TRACKER_VALIDITY_INVALID_AUTH,
+	"种子不存在":                   TRACKER_VALIDITY_NOT_EXIST,
+	"该种子没有":                   TRACKER_VALIDITY_NOT_EXIST,    // monikadesign: "该种子没有在我们的 Tracker 上注册."
+	"already are downloading": TRACKER_VALIDITY_VIOLATE_RULE, // "You already are downloading the same torrent"
+	"下载相同种子":                  TRACKER_VALIDITY_VIOLATE_RULE,
+	"下載相同種子":                  TRACKER_VALIDITY_VIOLATE_RULE,
 }
 
-var tracker_exceed_limit_torrent_msgs = []string{
-	"already are downloading", // "You already are downloading the same torrent"
-	"下载相同种子",
-	"下載相同種子",
-}
-
-func (trackers TorrentTrackers) SeemsInvalidTorrent(all bool) bool {
+func (trackers TorrentTrackers) SpeculateTrackerValidity() TrackerValidity {
 	hasOk := false
-	hasInvalid := false
+	var validity TrackerValidity = 999
 	for _, tracker := range trackers {
 		if tracker.Status == "working" && tracker.Msg == "" {
 			hasOk = true
 			break
 		}
-		if tracker.SeemsInvalidTorrent(all) {
-			hasInvalid = true
+		if _validity := tracker.SpeculateTrackerValidity(); _validity > 0 && _validity < validity {
+			validity = _validity
 		}
 	}
-	return !hasOk && hasInvalid
+	if hasOk || validity == 999 {
+		return TRACKER_VALIDITY_OK
+	}
+	return validity
 }
 
-// Return true if the tracker is (seems) working but reports that the torrent does not exist in the tracker
-// or current torrent passkey is invalid.
-// If all is true, also include torrents that exceed the seeding / downloading clients number limit.
-func (tracker *TorrentTracker) SeemsInvalidTorrent(all bool) bool {
+func (tracker *TorrentTracker) SpeculateTrackerValidity() TrackerValidity {
 	if tracker.Msg != "" {
-		if slices.ContainsFunc(tracker_invalid_torrent_msgs, func(msg string) bool {
-			return util.ContainsI(tracker.Msg, msg)
-		}) {
-			return true
-		}
-		if all && slices.ContainsFunc(tracker_exceed_limit_torrent_msgs, func(msg string) bool {
-			return util.ContainsI(tracker.Msg, msg)
-		}) {
-			return true
+		for keyword, validity := range tracker_invalid_torrent_msgs {
+			if util.ContainsI(tracker.Msg, keyword) {
+				return validity
+			}
 		}
 	}
-	return false
+	return TRACKER_VALIDITY_OK
 }
 
 func (cs *Status) Print(f io.Writer, name string, additionalInfo string) {
