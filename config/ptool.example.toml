@@ -68,6 +68,7 @@ cookie = 'cookie_here'
 #brushAllowHr = false # 是否允许使用HR种子刷流。程序不会特意保证HR种子的做种时长，所以仅当你的账户无视HR(如VIP)时开启此选项
 #brushAllowZeroSeeders = false # 是否允许刷流任务添加当前0做种的种子到客户端
 #brushExcludes = [] # 排除种子关键字列表。标题或副标题包含列表中任意项的种子不会被刷流任务选择
+#brushAcceptAnyFree = false # 如果种子是免费的，则上传人数下载人数比和发布种子时间rtime的规则不限制
 #timezone = 'Asia/Shanghai' # 网站页面显示时间的时区
 
 # 新版 m-team (馒头) 不支持 Cookie。必须使用 token 鉴权。两种方法选择其一：

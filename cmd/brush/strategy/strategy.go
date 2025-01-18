@@ -42,6 +42,7 @@ type BrushSiteOptionStruct struct {
 	Excludes                []string
 	ExcludeTags             []string
 	AllowAddTorrents        int64
+	AcceptAnyFree           bool
 }
 
 type BrushClientOptionStruct struct {
@@ -521,7 +522,7 @@ func RateSiteTorrent(siteTorrent *site.Torrent, siteOption *BrushSiteOptionStruc
 		siteTorrent.Size > siteOption.TorrentMaxSizeLimit ||
 		(siteTorrent.DiscountEndTime > 0 && siteTorrent.DiscountEndTime-siteOption.Now < 3600) ||
 		(!siteOption.AllowZeroSeeders && siteTorrent.Seeders == 0) ||
-		siteTorrent.Leechers <= siteTorrent.Seeders {
+		((!siteOption.AcceptAnyFree || siteTorrent.DownloadMultiplier != 0) && siteTorrent.Leechers <= siteTorrent.Seeders) {
 		score = 0
 		return
 	}
@@ -536,7 +537,7 @@ func RateSiteTorrent(siteTorrent *site.Torrent, siteOption *BrushSiteOptionStruc
 		return
 	}
 	// 部分站点定期将旧种重新置顶免费。这类种子仍然可以获得很好的上传速度。
-	if siteOption.Now-siteTorrent.Time <= 86400*30 {
+	if !siteOption.AcceptAnyFree && siteOption.Now-siteTorrent.Time <= 86400*30 {
 		if siteOption.Now-siteTorrent.Time >= 86400 {
 			score = 0
 			return
@@ -598,6 +599,7 @@ func GetBrushSiteOptions(siteInstance site.Site, ts int64) *BrushSiteOptionStruc
 		TorrentMaxSizeLimit:     siteInstance.GetSiteConfig().BrushTorrentMaxSizeLimitValue,
 		TorrentUploadSpeedLimit: siteInstance.GetSiteConfig().TorrentUploadSpeedLimitValue,
 		AllowNoneFree:           siteInstance.GetSiteConfig().BrushAllowNoneFree,
+		AcceptAnyFree:           siteInstance.GetSiteConfig().BrushAcceptAnyFree,
 		AllowPaid:               siteInstance.GetSiteConfig().BrushAllowPaid,
 		AllowHr:                 siteInstance.GetSiteConfig().BrushAllowHr,
 		AllowZeroSeeders:        siteInstance.GetSiteConfig().BrushAllowZeroSeeders,
