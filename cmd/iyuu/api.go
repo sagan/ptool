@@ -122,9 +122,14 @@ func IyuuApiHash(token string, infoHashes []string, sid_sha1 string) (map[string
 	return result, nil
 }
 
-func IyuuApiGetUser(token string) (data map[string]any, err error) {
-	err = util.FetchJson(util.ParseRelativeUrl("index.php?s=App.Api.GetUser&sign="+token,
-		config.Get().GetIyuuDomain()), &data, nil, nil)
+// Get iyuu user profile.
+// New profile api is undocumented (yet) in https://doc.iyuu.cn/.
+// See: https://github.com/ledccn/iyuuplus-dev/commit/2bf34e2ab3824caf0939eb8081c8a9d3e97736b0 .
+func IyuuApiUsersProfile(token string) (data map[string]any, err error) {
+	err = util.FetchJson(util.ParseRelativeUrl("/reseed/users/profile", config.Get().GetIyuuDomain()), &data, nil,
+		http.Header{
+			"Token": []string{token},
+		})
 	return
 }
 
