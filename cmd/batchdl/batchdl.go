@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"text/template"
 
+	"github.com/Masterminds/sprig/v3"
 	"github.com/natefinch/atomic"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -48,6 +49,7 @@ or exporting the id list of found torrents, using "--save-*" flags.
 
 To set the name of added torrent in client or filename of downloaded torrent, use "--rename string" flag,
 which is parsed using Go text template ( https://pkg.go.dev/text/template ).
+You can use all Sprig ( https://github.com/Masterminds/sprig ) functions in template.
 It supports the following variables:
 * size : Torrent size in string (e.g. "42GiB")
 * id :  Torrent id in site
@@ -340,7 +342,7 @@ func batchdl(command *cobra.Command, args []string) error {
 	}
 	var renameTemplate *template.Template
 	if rename != "" {
-		if renameTemplate, err = template.New("template").Parse(rename); err != nil {
+		if renameTemplate, err = template.New("template").Funcs(sprig.FuncMap()).Parse(rename); err != nil {
 			return fmt.Errorf("invalid rename template: %v", err)
 		}
 	}

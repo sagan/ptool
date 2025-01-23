@@ -388,6 +388,15 @@ ptool <command> <client> [flags] [<infoHash>...]
 示例：
 
 ```
+# 显示 local 客户端所有种子信息
+ptool show local _all
+
+# 以 json (array) 格式显示种子信息
+ptool show local _all --json
+
+# 自定义种子信息显示格式（查看命令帮助了解更多）
+ptool show local _all --format "{{.InfoHash}} - {{.SavePath}}"
+
 # 强制立即汇报所有种子
 ptool reannounce local _all
 
@@ -788,6 +797,9 @@ edittorrent 命令可以编辑（修改）.torrent 文件里的信息。
 ```
 # 批量修改 .torrent 文件里的 tracker 地址（Announce 字段）
 ptool edittorrent --update-tracker "https://..." *.torrent
+
+# 修改 .torrent 文件的 "info.source" 字段（会改变种子的 info-hash）
+ptool edittorrent --update-info-source "My site" *.torrent
 
 # 查看命令帮助了解其更多用法
 ptool edittorrent -h

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/Masterminds/sprig/v3"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -38,6 +39,7 @@ If "--raw" flag is set, it skips above procedures and directly submits the url t
 
 To set the name of added torrent in client, use "--rename string" flag,
 which is parsed using Go text template ( https://pkg.go.dev/text/template ).
+You can use all Sprig ( https://github.com/Masterminds/sprig ) functions in template.
 It supports the following variables:
 * size : Torrent contents size string (e.g. "42GiB")
 * id :  Torrent id in site
@@ -145,7 +147,7 @@ func add(cmd *cobra.Command, args []string) error {
 	}
 	var renameTemplate *template.Template
 	if rename != "" {
-		if renameTemplate, err = template.New("template").Parse(rename); err != nil {
+		if renameTemplate, err = template.New("template").Funcs(sprig.FuncMap()).Parse(rename); err != nil {
 			return fmt.Errorf("invalid rename template: %v", err)
 		}
 	}

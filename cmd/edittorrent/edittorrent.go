@@ -9,6 +9,7 @@ import (
 	"github.com/natefinch/atomic"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/constants"
@@ -23,12 +24,13 @@ var command = &cobra.Command{
 	Aliases:     []string{"edit", "edittorrents"},
 	Short:       "Edit local .torrent (metainfo) files.",
 	Long: `Edit local .torrent (metainfo) files.
-It will update local disk .torrent files in place.
-It only supports editing / updating of fields that does NOT affect the info-hash of the torrent.
 Args is the torrent filename list. Use a single "-" as args to read the list from stdin, delimited by blanks.
 
 Note: this command is NOT about modifying torrents in BitTorrent client.
 To do that, use "modifytorrent" command instead.
+
+It will update local disk .torrent files in place, unless "--save-as string" flag is set,
+in which case the updated .torrent contents will be output to that file.
 
 It will ask for confirm before updateing torrent files, unless --force flag is set.
 
@@ -39,7 +41,11 @@ Available "editing" flags (at least one of them must be set):
 * --update-tracker
 * --update-created-by
 * --update-creation-date
+* --update-info-source
+* --update-info-name
 * --update-comment
+* --set-private
+* --set-public
 * --replace-comment-meta-save-path-prefix (requires "--use-comment-meta")
 
 If --use-comment-meta flag is set, ptool will parse the "comment" field of torrent
@@ -61,17 +67,26 @@ var (
 	doBackup                         = false
 	useCommentMeta                   = false
 	addPublicTrackers                = false
+	setPrivate                       = false
+	setPublic                        = false
 	removeTracker                    = ""
 	addTracker                       = ""
 	updateTracker                    = ""
 	updateCreatedBy                  = ""
 	updateCreationDate               = ""
+	updateInfoSource                 = ""
+	updateInfoName                   = ""
 	updateComment                    = ""
 	replaceCommentMetaSavePathPrefix = ""
+	saveAs                           = ""
 )
 
 func init() {
 	command.Flags().BoolVarP(&force, "force", "", false, "Do update torrent files without confirm")
+	command.Flags().BoolVarP(&setPrivate, "set-private", "", false,
+		`Set "info.private" field to 1 to mark torrent as private. Warning: info-hash of torrents will change`)
+	command.Flags().BoolVarP(&setPublic, "set-public", "", false,
+		`Unset "info.private" field to mark torrent as public (non-private). Warning: info-hash of torrents will change`)
 	command.Flags().BoolVarP(&addPublicTrackers, "add-public-trackers", "", false,
 		`Add common pre-defined open trackers to public (non-private) torrents. If a torrent is private, do nothing`)
 	command.Flags().BoolVarP(&doBackup, "backup", "", false,
@@ -90,12 +105,19 @@ func init() {
 	command.Flags().StringVarP(&updateCreationDate, "update-creation-date", "", "",
 		`Update "creation date" field of torrents. E.g. "2024-01-20 15:00:00" (local timezone), `+
 			`or a unix timestamp integer (seconds). To unset this field, set it to "`+constants.NONE+`"`)
+	command.Flags().StringVarP(&updateInfoSource, "update-info-source", "", "",
+		`Update "info.source" field of torrents. Warning: info-hash of torrents will change`)
+	command.Flags().StringVarP(&updateInfoName, "update-info-name", "", "",
+		`Update "info.name" field of torrents. Warning: info-hash of torrents will change`)
 	command.Flags().StringVarP(&updateComment, "update-comment", "", "", `Update "comment" field of torrents`)
 	command.Flags().StringVarP(&replaceCommentMetaSavePathPrefix, "replace-comment-meta-save-path-prefix", "", "",
 		`Used with "--use-comment-meta". Update the prefix of 'save_path' property encoded in "comment" field `+
 			`of torrents, replace old prefix with new one. Format: "old_path|new_path". E.g. `+
 			`"/root/Downloads:/var/Downloads" will change ""/root/Downloads" or "/root/Downloads/..." save path to `+
 			`"/var/Downloads" or "/var/Downloads/..."`)
+	command.Flags().StringVarP(&saveAs, "save-as", "", "", `Save updated .torrent file contents to this file, `+
+		`instead of updating the original file in place. Can only be used with 1 (one) torrent arg. `+
+		`Set to "-" to output to stdout`)
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -111,9 +133,24 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 	if len(torrents) == 1 && torrents[0] == "-" {
 		return fmt.Errorf(`"-" as reading .torrent content from stdin is NOT supported here`)
 	}
+	if util.CountNonZeroVariables(saveAs, doBackup) > 1 {
+		return fmt.Errorf("--save-as and --backup flags are NOT compatible")
+	}
+	if util.CountNonZeroVariables(setPrivate, setPublic) > 1 {
+		return fmt.Errorf("--set-private and --set-public flags are NOT compatible")
+	}
+	if saveAs != "" {
+		if len(torrents) > 1 {
+			return fmt.Errorf("--save-as flag can only be used with 1 (one) torrent arg")
+		}
+		if saveAs == "-" && term.IsTerminal(int(os.Stdout.Fd())) {
+			return fmt.Errorf(constants.HELP_TIP_TTY_BINARY_OUTPUT)
+		}
+	}
 	if util.CountNonZeroVariables(removeTracker, addTracker, addPublicTrackers, updateTracker,
-		updateCreatedBy, updateCreationDate, updateComment, replaceCommentMetaSavePathPrefix) == 0 {
-		return fmt.Errorf(`at least one of "--add-*", "--remove-*", "--update-*", or "--replace-*" flags must be set`)
+		updateCreatedBy, setPrivate, setPublic, updateCreationDate, updateInfoSource, updateInfoName,
+		updateComment, replaceCommentMetaSavePathPrefix) == 0 {
+		return fmt.Errorf(`at least one of "--add/remove/update/set/replace-*" flags must be set`)
 	}
 	if updateTracker != "" && (util.CountNonZeroVariables(removeTracker, addTracker, addPublicTrackers) > 0) {
 		return fmt.Errorf(`"--update-tracker" flag is NOT compatible with other tracker editing flags`)
@@ -171,14 +208,31 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 		if updateCreationDate != "" {
 			fmt.Printf(`Update "creation_date" field: %q`+"\n", updateCreationDate)
 		}
+		if updateInfoSource != "" {
+			fmt.Printf(`Update "info.source" field: %q`+"\n", updateInfoSource)
+		}
+		if updateInfoName != "" {
+			fmt.Printf(`Update "info.name" field: %q`+"\n", updateInfoName)
+		}
 		if updateComment != "" {
 			fmt.Printf(`Update "comment" field: %q`+"\n", updateComment)
+		}
+		if setPrivate {
+			fmt.Printf(`Set "info.private" field = 1` + "\n")
+		} else if setPublic {
+			fmt.Printf(`Unset "info.private" field` + "\n")
 		}
 		if replaceCommentMetaSavePathPrefix != "" {
 			fmt.Printf(`Replace prefix of 'save_path' meta in "comment" field: %q => %q`+"\n",
 				savePathReplaces[0], savePathReplaces[1])
 		}
 		fmt.Printf("-----\n\n")
+		if updateInfoSource != "" || updateInfoName != "" || setPrivate || setPublic {
+			fmt.Printf("Warning: the info-hash of torrents will change.\n")
+		}
+		if saveAs != "" {
+			fmt.Printf("Updated torrent will be output to: %s\n", saveAs)
+		}
 		if !helper.AskYesNoConfirm("Will update torrent files") {
 			return fmt.Errorf("abort")
 		}
@@ -249,6 +303,37 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 				changed = true
 			}
 		}
+		if err == nil && updateInfoSource != "" {
+			err = tinfo.UpdateInfoSource(updateInfoSource)
+			switch err {
+			case torrentutil.ErrNoChange:
+				err = nil
+			case nil:
+				changed = true
+			}
+		}
+		if err == nil && updateInfoName != "" {
+			err = tinfo.UpdateInfoName(updateInfoName)
+			switch err {
+			case torrentutil.ErrNoChange:
+				err = nil
+			case nil:
+				changed = true
+			}
+		}
+		if err == nil && (setPrivate || setPublic) {
+			isPrivate := true
+			if setPublic {
+				isPrivate = false
+			}
+			err = tinfo.SetInfoPrivate(isPrivate)
+			switch err {
+			case torrentutil.ErrNoChange:
+				err = nil
+			case nil:
+				changed = true
+			}
+		}
 		if err == nil && updateComment != "" {
 			if useCommentMeta {
 				if commentMeta == nil {
@@ -303,12 +388,23 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 		if data, err := tinfo.ToBytes(); err != nil {
 			fmt.Printf("✕ %s : failed to generate new contents: %v\n", torrent, err)
 			errorCnt++
-		} else if err := atomic.WriteFile(torrent, bytes.NewReader(data)); err != nil {
-			fmt.Printf("✕ %s : failed to write new contents: %v\n", torrent, err)
-			errorCnt++
 		} else {
-			fmt.Printf("✓ %s : successfully updated\n", torrent)
-			cntTorrents++
+			if saveAs != "" {
+				if saveAs == "-" {
+					_, err = os.Stdout.Write(data)
+				} else {
+					err = atomic.WriteFile(saveAs, bytes.NewReader(data))
+				}
+			} else {
+				err = atomic.WriteFile(torrent, bytes.NewReader(data))
+			}
+			if err != nil {
+				fmt.Printf("✕ %s : failed to write new contents: %v\n", torrent, err)
+				errorCnt++
+			} else {
+				fmt.Printf("✓ %s : successfully updated\n", torrent)
+				cntTorrents++
+			}
 		}
 	}
 	fmt.Fprintf(os.Stderr, "\n")

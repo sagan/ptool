@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"text/template"
 
+	"github.com/Masterminds/sprig/v3"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 
@@ -30,6 +31,7 @@ var command = &cobra.Command{
 
 To set the filename format of exported torrent, use "--rename string" flag,
 which is parsed using Go text template ( https://pkg.go.dev/text/template ).
+You can use all Sprig ( https://github.com/Masterminds/sprig ) functions in template.
 It supports the following variables:
 * client : Client name
 * size : Torrent contents size string (e.g. "42GiB")
@@ -91,7 +93,7 @@ func export(cmd *cobra.Command, args []string) error {
 	if skipExisting && rename != config.DEFAULT_EXPORT_TORRENT_RENAME {
 		return fmt.Errorf("--skip-existing and --rename flags are NOT compatible")
 	}
-	renameTemplate, err := template.New("template").Parse(rename)
+	renameTemplate, err := template.New("template").Funcs(sprig.FuncMap()).Parse(rename)
 	if err != nil {
 		return fmt.Errorf("invalid rename template: %v", err)
 	}

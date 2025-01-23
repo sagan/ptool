@@ -50,6 +50,7 @@ type TorrentMeta struct {
 	Files             []TorrentMetaFile
 	MetaInfo          *metainfo.MetaInfo // always non-nil in a parsed *TorrentMeta
 	Info              *metainfo.Info     // always non-nil in a parsed *TorrentMeta
+	infoChanged       bool
 }
 
 type TorrentMakeOptions struct {
@@ -211,6 +212,40 @@ func (meta *TorrentMeta) IsPrivate() bool {
 	return meta.Info.Private != nil && *meta.Info.Private
 }
 
+func (meta *TorrentMeta) SetInfoPrivate(private bool) error {
+	if private == meta.IsPrivate() {
+		return ErrNoChange
+	}
+	if private {
+		p := true
+		meta.Info.Private = &p
+	} else {
+		// According to BEP 27: https://www.bittorrent.org/beps/bep_0027.html ,
+		// The proper way is to unset private field, instead of setting "private=0".
+		meta.Info.Private = nil
+	}
+	meta.infoChanged = true
+	return nil
+}
+
+func (meta *TorrentMeta) UpdateInfoSource(source string) error {
+	if meta.Info.Source == source {
+		return ErrNoChange
+	}
+	meta.Info.Source = source
+	meta.infoChanged = true
+	return nil
+}
+
+func (meta *TorrentMeta) UpdateInfoName(name string) error {
+	if meta.Info.Name == name {
+		return ErrNoChange
+	}
+	meta.Info.Name = name
+	meta.infoChanged = true
+	return nil
+}
+
 func (meta *TorrentMeta) UpdateCreatedBy(createdBy string) error {
 	if meta.MetaInfo.CreatedBy == createdBy {
 		return ErrNoChange
@@ -343,6 +378,13 @@ outer:
 
 // Generate .torrent file from current content
 func (meta *TorrentMeta) ToBytes() ([]byte, error) {
+	var err error
+	if meta.infoChanged {
+		if meta.MetaInfo.InfoBytes, err = bencode.Marshal(meta.Info); err != nil {
+			return nil, fmt.Errorf("failed to marshal info: %w", err)
+		}
+		meta.infoChanged = false
+	}
 	buf := bytes.NewBuffer(nil)
 	if err := meta.MetaInfo.Write(buf); err != nil {
 		return nil, err

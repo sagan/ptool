@@ -1,13 +1,16 @@
 package show
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path"
 	"sort"
 	"strings"
+	"text/template"
 	"time"
 
+	"github.com/Masterminds/sprig/v3"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -28,7 +31,7 @@ var command = &cobra.Command{
 If both filter flags (--category & --tag & --filter) and args are not set, it will display current active torrents.
 If at least one filter flag is set but no arg is provided, the args is assumed to be "_all"
 
-It displays found torrents of client in the list, which has several fields like "Name" and "State".
+By default, it displays found torrents of client in the list, which has several fields like "Name" and "State".
 
 The "Name" field by default displays the truncated prefix of the torrent name in client.
 If "--dense" flag is set, it will instead display the full name of the torrent,
@@ -44,7 +47,48 @@ The "State" field displays some icon texts:
 * ? : Torrent state is unknown.
 * _ : Torrent contents files are partially selected for downloading.
 
-Specially, if all args is an (1) single info-hash, it displays the details of that torrent instead of the list.`,
+Specially, if all args is an (1) single info-hash, it displays the details of that torrent instead of the list.
+
+If "--json" flag is set, it prints torrents info in json (array) format.
+
+You can also customize the output format of each torrent using "--format string" flag,
+which is parsed by Go text template ( https://pkg.go.dev/text/template ).
+You can use all Sprig ( https://github.com/Masterminds/sprig ) functions in template.
+The data passed to the template is the "client.Torrent" struct:
+
+// https://github.com/sagan/ptool/blob/master/client/client.go
+type Torrent struct {
+	InfoHash           string
+	Name               string
+	TrackerDomain      string // e.g. tracker.m-team.cc
+	TrackerBaseDomain  string // e.g. m-team.cc
+	Tracker            string
+	State              string // simplified state: seeding|downloading|completed|paused|checking|error|unknown
+	LowLevelState      string // original state value returned by bt client
+	Atime              int64  // timestamp torrent added
+	Ctime              int64  // timestamp torrent completed. <=0 if not completed.
+	ActivityTime       int64  // timestamp of torrent latest activity (a chunk being downloaded / uploaded)
+	Category           string
+	SavePath           string
+	ContentPath        string
+	Tags               []string
+	Downloaded         int64
+	DownloadSpeed      int64
+	DownloadSpeedLimit int64 // -1 means no limit
+	Uploaded           int64
+	UploadSpeed        int64
+	UploadedSpeedLimit int64 // -1 means no limit
+	Size               int64 // size of torrent files that selected for downloading
+	SizeTotal          int64 // Total size of all file in the torrent (including unselected ones)
+	SizeCompleted      int64
+	Seeders            int64 // Cnt of seeders (including self client, if it's seeding), returned by tracker
+	Leechers           int64
+	Meta               map[string]int64
+}
+
+The template render result will be trim spaced.
+
+E.g. '--format "{{.InfoHash}}  {{.ContentPath}}"'`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: show,
 }
@@ -72,6 +116,7 @@ var (
 	maxTorrentSizeStr  = ""
 	maxTotalSizeStr    = ""
 	excludes           = ""
+	format             = ""
 	dense              = false
 	showAll            = false
 	showRaw            = false
@@ -125,6 +170,8 @@ func init() {
 		"Skip torrent with size larger than (>) this value. -1 == no limit")
 	command.Flags().StringVarP(&excludes, "exclude", "", "",
 		"Comma-separated list that torrent which name contains any one in the list will be skipped")
+	command.Flags().StringVarP(&format, "format", "", "", `Manually set the output format of each client torrent. `+
+		`Available variable placeholders: {{.InfoHash}}, {{.Size}} and more. It uses Go text template`)
 	cmd.AddEnumFlagP(command, &sortFlag, "sort", "", common.ClientTorrentSortFlag)
 	cmd.AddEnumFlagP(command, &orderFlag, "order", "", common.OrderFlag)
 	cmd.RootCmd.AddCommand(command)
@@ -133,11 +180,10 @@ func init() {
 func show(cmd *cobra.Command, args []string) error {
 	clientName := args[0]
 	infoHashes := args[1:]
-	if showJson && showInfoHashOnly {
-		return fmt.Errorf("--json and --info-hash flags are NOT compatible")
-	}
-	if showInfoHashOnly && (showFiles || showTrackers) {
-		return fmt.Errorf("--show-files or --show-trackers is NOT compatible with --show-info-hash-only flag")
+	if cnt := util.CountNonZeroVariables(showSum, showJson, showInfoHashOnly, format, showFiles,
+		showTrackers); cnt > 1 && (cnt > 2 || (!(showSum && showJson) && !(showFiles && showTrackers))) {
+		return fmt.Errorf(`--sum, --json, --format, --show-files, --show-trackers flags are NOT compatible ` +
+			`(unless the first two and the last two)`)
 	}
 	if util.CountNonZeroVariables(savePath, savePathPrefix, contentPath) > 1 {
 		return fmt.Errorf("--save-path, --save-path-prefix and --content-path flags are NOT compatible")
@@ -205,6 +251,12 @@ func show(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("--active-since must be before --not-active-since flag")
 	}
 	excludesList := util.SplitCsv(excludes)
+	var outputTemplate *template.Template
+	if format != "" {
+		if outputTemplate, err = template.New("template").Funcs(sprig.FuncMap()).Parse(format); err != nil {
+			return fmt.Errorf("invalid format template: %v", err)
+		}
+	}
 
 	hasFilterCondition := savePath != "" || savePathPrefix != "" || contentPath != "" ||
 		tracker != "" || minTorrentSize >= 0 || maxTorrentSize >= 0 || addedAfter > 0 || completedBefore > 0 ||
@@ -215,7 +267,8 @@ func show(cmd *cobra.Command, args []string) error {
 		torrents, err = client.QueryTorrents(clientInstance, "", "", "")
 	} else if noConditionFlags && len(infoHashes) == 0 {
 		torrents, err = client.QueryTorrents(clientInstance, "", "", "", "_active")
-	} else if noConditionFlags && len(infoHashes) == 1 && !strings.HasPrefix(infoHashes[0], "_") {
+	} else if noConditionFlags && len(infoHashes) == 1 && !strings.HasPrefix(infoHashes[0], "_") &&
+		format == "" && !showJson && !showSum {
 		// display single torrent details
 		if !client.IsValidInfoHash(infoHashes[0]) {
 			return fmt.Errorf("%s is not a valid infoHash", infoHashes[0])
@@ -226,9 +279,6 @@ func show(cmd *cobra.Command, args []string) error {
 		}
 		if torrent == nil {
 			return fmt.Errorf("torrent %s not found", infoHashes[0])
-		}
-		if showJson {
-			return util.PrintJson(os.Stdout, torrent)
 		}
 		torrent.Print()
 		if showTrackers {
@@ -325,7 +375,17 @@ func show(cmd *cobra.Command, args []string) error {
 		torrents = torrents[:i]
 	}
 
-	if showJson {
+	if outputTemplate != nil {
+		for _, torrent := range torrents {
+			buf := &bytes.Buffer{}
+			err := outputTemplate.Execute(buf, torrent)
+			if err == nil {
+				fmt.Println(strings.TrimSpace(buf.String()))
+			} else {
+				log.Errorf("Torrent render error: %v", err)
+			}
+		}
+	} else if showJson {
 		return util.PrintJson(os.Stdout, torrents)
 	} else if showInfoHashOnly {
 		sep := ""

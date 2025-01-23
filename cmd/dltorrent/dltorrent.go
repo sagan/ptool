@@ -9,6 +9,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/Masterminds/sprig/v3"
 	"github.com/natefinch/atomic"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -33,6 +34,7 @@ Use a single "-" as args to read torrent (id or url) list from stdin, delimited 
 
 To set the filename of downloaded torrent, use "--rename string" flag,
 which is parsed using Go text template ( https://pkg.go.dev/text/template ).
+You can use all Sprig ( https://github.com/Masterminds/sprig ) functions in template.
 It supports the following variables:
 * size : Torrent contents size string (e.g. "42GiB")
 * id :  Torrent id in site
@@ -113,7 +115,7 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 	var err error
 	var renameTemplate *template.Template
 	if rename != "" {
-		if renameTemplate, err = template.New("template").Parse(rename); err != nil {
+		if renameTemplate, err = template.New("template").Funcs(sprig.FuncMap()).Parse(rename); err != nil {
 			return fmt.Errorf("invalid rename template: %v", err)
 		}
 	}
