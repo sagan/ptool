@@ -9,7 +9,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/Masterminds/sprig/v3"
 	"github.com/natefinch/atomic"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -43,6 +42,8 @@ It supports the following variables:
 * filename128 : The prefix of filename which is at max 128 bytes
 * name : Torrent name
 * name128 : The prefix of torrent name which is at max 128 bytes
+* torrentInfo : The parsed "TorrentMeta" struct of torrent. See help of "parsetorrent" cmd
+
 E.g. '--rename "{{.site}}.{{.id}} - {{.name128}}.torrent"'`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: dltorrent,
@@ -66,7 +67,8 @@ func init() {
 	command.Flags().StringVarP(&defaultSite, "site", "", "", "Set default site of torrents")
 	command.Flags().StringVarP(&downloadDir, "download-dir", "", ".", `Set the dir of downloaded torrents. `+
 		`Use "-" to directly output torrent content to stdout`)
-	command.Flags().StringVarP(&rename, "rename", "", "", "Rename downloaded torrents (supports variables)")
+	command.Flags().StringVarP(&rename, "rename", "", "", `Rename downloaded torrents. `+
+		`Available variable placeholders: {{.site}}, {{.id}} and more. `+constants.HELP_ARG_TEMPLATE)
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -115,7 +117,7 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 	var err error
 	var renameTemplate *template.Template
 	if rename != "" {
-		if renameTemplate, err = template.New("template").Funcs(sprig.FuncMap()).Parse(rename); err != nil {
+		if renameTemplate, err = helper.GetTemplate(rename); err != nil {
 			return fmt.Errorf("invalid rename template: %v", err)
 		}
 	}

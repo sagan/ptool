@@ -42,4 +42,8 @@ const HELP_ARG_TIMES = `Time string (local timezone). ` +
 const HELP_ARG_PATH_MAPPERS = `E.g. ` +
 	`"/root/Downloads|/var/Downloads" will map "/root/Downloads" or "/root/Downloads/..." path to ` +
 	`"/var/Downloads" or "/var/Downloads/...". You can also use ":" instead of "|" as the separator ` +
-	`if both pathes do not contain ":" char.`
+	`if both pathes do not contain ":" char`
+
+const HELP_ARG_TEMPLATE = `The Go text template contents string (See https://pkg.go.dev/text/template ). ` +
+	`If it starts with "@" char, it (the rest part after @) is treated as a file name and template contents ` +
+	`will be read from it instead`

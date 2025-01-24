@@ -452,7 +452,7 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 				if err != nil {
 					return
 				}
-				if _, err = tinfo.Verify("", contentPath, 1); err != nil {
+				if _, err = tinfo.Verify("", contentPath, 1, 0); err != nil {
 					return
 				}
 				if err = atomic.WriteFile(publishedFlagFile, strings.NewReader(id)); err != nil {
@@ -524,7 +524,7 @@ func publicTorrent(siteInstance site.Site, clientInstance client.Client, content
 	} else if doCheck {
 		checkHashMode = 2
 	}
-	if ts, err = tinfo.Verify("", contentPath, checkHashMode); err != nil || ts > torrentStat.ModTime().Unix() {
+	if ts, err = tinfo.Verify("", contentPath, checkHashMode, 0); err != nil || ts > torrentStat.ModTime().Unix() {
 		log.Debugf(".torrent file is obsolete (verify err=%v, content_ts=%d, torrent_ts=%d), re-make torrent",
 			err, ts, torrentStat.ModTime().Unix())
 		if tinfo, err = torrentutil.MakeTorrent(makeTorrentOptions); err != nil {

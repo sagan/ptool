@@ -7,7 +7,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/Masterminds/sprig/v3"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -113,8 +112,8 @@ func init() {
 		"Treat torrent which trackers does not contain this tracker (domain or url) as fail (error). "+
 			`If set to "`+constants.NONE+`", it matches if torrent does NOT have any tracker`)
 	command.Flags().StringVarP(&format, "format", "", "", `Manually set the output format of parsed torrent info. `+
-		`Available variable placeholders: {{.InfoHash}}, {{.PiecesHash}}, {{.Size}} and more. It uses Go text template. `+
-		`If renderring throws any error, the torrent will be treated as fail`)
+		`Available variable placeholders: {{.InfoHash}}, {{.PiecesHash}}, {{.Size}} and more. `+
+		constants.HELP_ARG_TEMPLATE+`. If renderring throws any error, the torrent will be treated as fail`)
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -145,7 +144,7 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 	statistics := common.NewTorrentsStatistics()
 	var outputTemplate *template.Template
 	if format != "" {
-		if outputTemplate, err = template.New("template").Funcs(sprig.FuncMap()).Parse(format); err != nil {
+		if outputTemplate, err = helper.GetTemplate(format); err != nil {
 			return fmt.Errorf("invalid format template: %v", err)
 		}
 	}
@@ -217,7 +216,7 @@ func parsetorrent(cmd *cobra.Command, args []string) error {
 		} else if showInfoHashOnly {
 			fmt.Printf("%s\n", tinfo.InfoHash)
 			continue
-		} else if customOutput != "" {
+		} else if outputTemplate != nil {
 			fmt.Println(customOutput)
 			continue
 		}

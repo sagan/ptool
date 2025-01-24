@@ -12,8 +12,10 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"text/template"
 	"time"
 
+	"github.com/Masterminds/sprig/v3"
 	"github.com/Noooste/azuretls-client"
 	"github.com/google/shlex"
 	log "github.com/sirupsen/logrus"
@@ -368,4 +370,18 @@ func ParseInfoHashesFromArgs(args []string) (infoHashes []string, err error) {
 		}
 	}
 	return
+}
+
+// Get a Go text template instance from tpl string.
+// If tpl starts with "@" char, treat it (the rest part after @) as a file name
+// and read template contents from it instead.
+func GetTemplate(tpl string) (*template.Template, error) {
+	if strings.HasPrefix(tpl, "@") {
+		contents, err := os.ReadFile(tpl[1:])
+		if err != nil {
+			return nil, err
+		}
+		tpl = string(contents)
+	}
+	return template.New("template").Funcs(sprig.FuncMap()).Parse(tpl)
 }

@@ -144,6 +144,7 @@ var DefaultIgnorePatterns = []string{
 	"System Volume Information/",
 	"desktop.ini",
 	"Thumbs.db",
+	"@eaDir", // Synology NAS hidden folder
 }
 
 // Returned if the action is not processed due to in dry run mode

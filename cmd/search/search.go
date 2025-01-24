@@ -1,18 +1,22 @@
 package search
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"sort"
 	"strings"
+	"text/template"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/cmd"
 	"github.com/sagan/ptool/config"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/util"
+	"github.com/sagan/ptool/util/helper"
 )
 
 type SearchResult struct {
@@ -28,7 +32,7 @@ var command = &cobra.Command{
 	Long: `Search torrents by keyword in sites.
 {siteOrGroups}: Comma-separated list of sites or groups. Use "_all" to search all sites.
 
-It displays found torrents of site in the list, which has several fields like "Name" and "Free".
+By default, it displays found torrents of site in the list, which has several fields like "Name" and "Free".
 
 The "Name" field by default displays the truncated prefix of the torrent name in site.
 If "--dense" flag is set, it will instead display the full name of the torrent as well as it's description and tags.
@@ -44,7 +48,43 @@ The "Free" field displays some icon texts:
 The "P" (progress) field also displays some icon texts:
 - If you have never downloaded this torrent before, displays a "-".
 - If you had ever downloaded or seeded this torrent before, display a "✓".
-- If you are currently downloading or seeding this torrent, display a "*%".`,
+- If you are currently downloading or seeding this torrent, display a "*%".
+
+You can also customize the output format of search result torrent using "--format string" flag,
+which is parsed by Go text template ( https://pkg.go.dev/text/template ).
+You can use all Sprig ( https://github.com/Masterminds/sprig ) functions in template.
+The data passed to the template is the "site.Torrent" struct:
+
+// https://github.com/sagan/ptool/blob/master/site/site.go
+type Torrent struct {
+	Name               string
+	Description        string
+	Id                 string // optional torrent id in the site
+	InfoHash           string
+	DownloadUrl        string
+	DownloadMultiplier float64
+	UploadMultiplier   float64
+	DiscountEndTime    int64
+	Time               int64 // torrent timestamp
+	Size               int64
+	IsSizeAccurate     bool
+	Seeders            int64
+	Leechers           int64
+	Snatched           int64
+	HasHnR             bool     // true if has any type of HR
+	IsActive           bool     // true if torrent is or had ever been downloaded / seeding
+	IsCurrentActive    bool     // true if torrent is currently downloading / seeding. If true, so will be IsActive
+	Paid               bool     // "付费"种子: (第一次)下载或汇报种子时扣除魔力/积分
+	Bought             bool     // 适用于付费种子：已购买
+	Neutral            bool     // 中性种子：不计算上传、下载、做种魔力
+	Tags               []string // labels, e.g. category and other meta infos.
+}
+
+The render result is trim spaced.
+E.g. '--format "{{.Id}} {{.Name}} {{.Size}}"'
+
+If "--json" flag is set, it prints the whole search result (found torrents
+along with search meta data) in json object format instead.`,
 	Args: cobra.MatchAll(cobra.MinimumNArgs(2), cobra.OnlyValidArgs),
 	RunE: search,
 }
@@ -63,6 +103,7 @@ var (
 	maxTorrentSizeStr = ""
 	publishedInStr    = ""
 	filter            = ""
+	format            = ""
 	includes          = []string{}
 	excludes          = ""
 )
@@ -89,6 +130,8 @@ func init() {
 	command.Flags().StringVarP(&publishedInStr, "published-in", "", "",
 		`Time duration. Only showing torrent that was published in the past time of this value. E.g. "30d"`)
 	command.Flags().StringVarP(&filter, "filter", "", "", "Filter search result additionally by title or subtitle")
+	command.Flags().StringVarP(&format, "format", "", "", `Set the output format of each site torrent. `+
+		`Available variable placeholders: {{.Id}}, {{.Size}} and more. `+constants.HELP_ARG_TEMPLATE)
 	command.Flags().StringArrayVarP(&includes, "include", "", nil,
 		"Comma-separated list that ONLY torrent which title or subtitle contains any one in the list will be included. "+
 			"Can be provided multiple times, in which case every list MUST be matched")
@@ -98,8 +141,8 @@ func init() {
 }
 
 func search(cmd *cobra.Command, args []string) error {
-	if showIdOnly && showJson {
-		return fmt.Errorf("--json and --show-id-only flags are NOT compatible")
+	if util.CountNonZeroVariables(showIdOnly, showJson, format) > 1 {
+		return fmt.Errorf("--json, --show-id-only, --format flags are NOT compatible")
 	}
 	var includesList [][]string
 	for _, include := range includes {
@@ -112,6 +155,14 @@ func search(cmd *cobra.Command, args []string) error {
 	sitenames := config.ParseGroupAndOtherNames(util.SplitCsv(args[0])...)
 	keyword := strings.Join(args[1:], " ")
 	siteInstancesMap := map[string]site.Site{}
+	var outputTemplate *template.Template
+	var err error
+	if format != "" {
+		if outputTemplate, err = helper.GetTemplate(format); err != nil {
+			return fmt.Errorf("invalid format template: %v", err)
+		}
+	}
+
 	for _, sitename := range sitenames {
 		siteInstance, err := site.CreateSite(sitename)
 		if err != nil {
@@ -186,7 +237,17 @@ func search(cmd *cobra.Command, args []string) error {
 	if maxResults >= 0 && len(torrents) > int(maxResults) {
 		torrents = torrents[:maxResults]
 	}
-	if showJson {
+	if outputTemplate != nil {
+		for _, torrent := range torrents {
+			buf := &bytes.Buffer{}
+			if err := outputTemplate.Execute(buf, torrent); err == nil {
+				fmt.Println(strings.TrimSpace(buf.String()))
+			} else {
+				log.Errorf("Torrent render error: %v", err)
+			}
+		}
+		return nil
+	} else if showJson {
 		data := map[string]any{
 			"successSites":  cntSuccessSites,
 			"noResultSites": cntNoResultSites,

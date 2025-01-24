@@ -10,7 +10,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/Masterminds/sprig/v3"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -19,6 +18,7 @@ import (
 	"github.com/sagan/ptool/cmd/common"
 	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/util"
+	"github.com/sagan/ptool/util/helper"
 )
 
 var command = &cobra.Command{
@@ -171,7 +171,7 @@ func init() {
 	command.Flags().StringVarP(&excludes, "exclude", "", "",
 		"Comma-separated list that torrent which name contains any one in the list will be skipped")
 	command.Flags().StringVarP(&format, "format", "", "", `Manually set the output format of each client torrent. `+
-		`Available variable placeholders: {{.InfoHash}}, {{.Size}} and more. It uses Go text template`)
+		`Available variable placeholders: {{.InfoHash}}, {{.Size}} and more. `+constants.HELP_ARG_TEMPLATE)
 	cmd.AddEnumFlagP(command, &sortFlag, "sort", "", common.ClientTorrentSortFlag)
 	cmd.AddEnumFlagP(command, &orderFlag, "order", "", common.OrderFlag)
 	cmd.RootCmd.AddCommand(command)
@@ -253,7 +253,7 @@ func show(cmd *cobra.Command, args []string) error {
 	excludesList := util.SplitCsv(excludes)
 	var outputTemplate *template.Template
 	if format != "" {
-		if outputTemplate, err = template.New("template").Funcs(sprig.FuncMap()).Parse(format); err != nil {
+		if outputTemplate, err = helper.GetTemplate(format); err != nil {
 			return fmt.Errorf("invalid format template: %v", err)
 		}
 	}

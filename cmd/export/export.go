@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"text/template"
 
-	"github.com/Masterminds/sprig/v3"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 
@@ -40,6 +38,8 @@ It supports the following variables:
 * category : Torrent category
 * name : Torrent name
 * name128 : The prefix of torrent name which is at max 128 bytes
+* torrent : The torrent info ("client.Torrent" struct). See help of "show" cmd
+
 The default format is %q, unless "--skip-existing" flag is set,
 in which case it's %q.
 
@@ -76,7 +76,8 @@ func init() {
 	command.Flags().StringVarP(&downloadDir, "download-dir", "", ".", `Set the download dir of exported torrents. `+
 		`Set to "-" to output to stdout`)
 	command.Flags().StringVarP(&rename, "rename", "", config.DEFAULT_EXPORT_TORRENT_RENAME,
-		"Set the name of downloaded torrents (supports variables)")
+		`Set the name of downloaded torrents. Available variable placeholders: {{.infohash}}, {{.size}} and more. `+
+			constants.HELP_ARG_TEMPLATE)
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -93,7 +94,7 @@ func export(cmd *cobra.Command, args []string) error {
 	if skipExisting && rename != config.DEFAULT_EXPORT_TORRENT_RENAME {
 		return fmt.Errorf("--skip-existing and --rename flags are NOT compatible")
 	}
-	renameTemplate, err := template.New("template").Funcs(sprig.FuncMap()).Parse(rename)
+	renameTemplate, err := helper.GetTemplate(rename)
 	if err != nil {
 		return fmt.Errorf("invalid rename template: %v", err)
 	}

@@ -29,7 +29,7 @@ Args is the torrent filename list. Use a single "-" as args to read the list fro
 Note: this command is NOT about modifying torrents in BitTorrent client.
 To do that, use "modifytorrent" command instead.
 
-It will update local disk .torrent files in place, unless "--save-as string" flag is set,
+It will update local disk .torrent files in place, unless "--output string" flag is set,
 in which case the updated .torrent contents will be output to that file.
 
 It will ask for confirm before updateing torrent files, unless --force flag is set.
@@ -78,7 +78,7 @@ var (
 	updateInfoName                   = ""
 	updateComment                    = ""
 	replaceCommentMetaSavePathPrefix = ""
-	saveAs                           = ""
+	output                           = ""
 )
 
 func init() {
@@ -115,7 +115,7 @@ func init() {
 			`of torrents, replace old prefix with new one. Format: "old_path|new_path". E.g. `+
 			`"/root/Downloads:/var/Downloads" will change ""/root/Downloads" or "/root/Downloads/..." save path to `+
 			`"/var/Downloads" or "/var/Downloads/..."`)
-	command.Flags().StringVarP(&saveAs, "save-as", "", "", `Save updated .torrent file contents to this file, `+
+	command.Flags().StringVarP(&output, "output", "", "", `Save updated .torrent file contents to this file, `+
 		`instead of updating the original file in place. Can only be used with 1 (one) torrent arg. `+
 		`Set to "-" to output to stdout`)
 	cmd.RootCmd.AddCommand(command)
@@ -133,17 +133,17 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 	if len(torrents) == 1 && torrents[0] == "-" {
 		return fmt.Errorf(`"-" as reading .torrent content from stdin is NOT supported here`)
 	}
-	if util.CountNonZeroVariables(saveAs, doBackup) > 1 {
-		return fmt.Errorf("--save-as and --backup flags are NOT compatible")
+	if util.CountNonZeroVariables(output, doBackup) > 1 {
+		return fmt.Errorf("--output and --backup flags are NOT compatible")
 	}
 	if util.CountNonZeroVariables(setPrivate, setPublic) > 1 {
 		return fmt.Errorf("--set-private and --set-public flags are NOT compatible")
 	}
-	if saveAs != "" {
+	if output != "" {
 		if len(torrents) > 1 {
-			return fmt.Errorf("--save-as flag can only be used with 1 (one) torrent arg")
+			return fmt.Errorf("--output flag can only be used with 1 (one) torrent arg")
 		}
-		if saveAs == "-" && term.IsTerminal(int(os.Stdout.Fd())) {
+		if output == "-" && term.IsTerminal(int(os.Stdout.Fd())) {
 			return fmt.Errorf(constants.HELP_TIP_TTY_BINARY_OUTPUT)
 		}
 	}
@@ -185,53 +185,56 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 	cntTorrents := int64(0)
 
 	if !force {
-		fmt.Printf("Will edit (update) the following .torrent files:")
+		fmt.Fprintf(os.Stderr, "Will edit (update) the following .torrent files:")
 		for _, torrent := range torrents {
-			fmt.Printf("  %q", torrent)
+			fmt.Fprintf(os.Stderr, "  %q", torrent)
 		}
-		fmt.Printf("\n\nApplying the below modifications:\n-----\n")
+		fmt.Fprintf(os.Stderr, "\n\nApplying the below modifications:\n-----\n")
 		if removeTracker != "" {
-			fmt.Printf("Remove tracker: %q\n", removeTracker)
+			fmt.Fprintf(os.Stderr, "Remove tracker: %q\n", removeTracker)
 		}
 		if addTracker != "" {
-			fmt.Printf("Add tracker: %q\n", addTracker)
+			fmt.Fprintf(os.Stderr, "Add tracker: %q\n", addTracker)
 		}
 		if addPublicTrackers {
-			fmt.Printf("Add public trackers:\n  %s\n", strings.Join(constants.OpenTrackers, "\n  "))
+			fmt.Fprintf(os.Stderr, "Add public trackers:\n  %s\n", strings.Join(constants.OpenTrackers, "\n  "))
 		}
 		if updateTracker != "" {
-			fmt.Printf("Update tracker: %q\n", updateTracker)
+			fmt.Fprintf(os.Stderr, "Update tracker: %q\n", updateTracker)
 		}
 		if updateCreatedBy != "" {
-			fmt.Printf(`Update "created_by" field: %q`+"\n", updateCreatedBy)
+			fmt.Fprintf(os.Stderr, `Update "created_by" field: %q`+"\n", updateCreatedBy)
 		}
 		if updateCreationDate != "" {
-			fmt.Printf(`Update "creation_date" field: %q`+"\n", updateCreationDate)
+			fmt.Fprintf(os.Stderr, `Update "creation_date" field: %q`+"\n", updateCreationDate)
 		}
 		if updateInfoSource != "" {
-			fmt.Printf(`Update "info.source" field: %q`+"\n", updateInfoSource)
+			fmt.Fprintf(os.Stderr, `Update "info.source" field: %q`+"\n", updateInfoSource)
 		}
 		if updateInfoName != "" {
-			fmt.Printf(`Update "info.name" field: %q`+"\n", updateInfoName)
+			fmt.Fprintf(os.Stderr, `Update "info.name" field: %q`+"\n", updateInfoName)
 		}
 		if updateComment != "" {
-			fmt.Printf(`Update "comment" field: %q`+"\n", updateComment)
+			fmt.Fprintf(os.Stderr, `Update "comment" field: %q`+"\n", updateComment)
 		}
 		if setPrivate {
-			fmt.Printf(`Set "info.private" field = 1` + "\n")
+			fmt.Fprintf(os.Stderr, `Set "info.private" field = 1`+"\n")
 		} else if setPublic {
-			fmt.Printf(`Unset "info.private" field` + "\n")
+			fmt.Fprintf(os.Stderr, `Unset "info.private" field`+"\n")
 		}
 		if replaceCommentMetaSavePathPrefix != "" {
-			fmt.Printf(`Replace prefix of 'save_path' meta in "comment" field: %q => %q`+"\n",
+			fmt.Fprintf(os.Stderr, `Replace prefix of 'save_path' meta in "comment" field: %q => %q`+"\n",
 				savePathReplaces[0], savePathReplaces[1])
 		}
-		fmt.Printf("-----\n\n")
+		fmt.Fprintf(os.Stderr, "-----\n\n")
 		if updateInfoSource != "" || updateInfoName != "" || setPrivate || setPublic {
-			fmt.Printf("Warning: the info-hash of torrents will change.\n")
+			fmt.Fprintf(os.Stderr, "Warning: the info-hash of torrents will change.\n")
 		}
-		if saveAs != "" {
-			fmt.Printf("Updated torrent will be output to: %s\n", saveAs)
+		if output != "" && output != "-" && util.FileExists(output) {
+			fmt.Fprintf(os.Stderr, "Warning: output %q already exists and will be overwritten.\n", output)
+		}
+		if output != "" {
+			fmt.Fprintf(os.Stderr, "Updated torrent will be output to: %s\n", output)
 		}
 		if !helper.AskYesNoConfirm("Will update torrent files") {
 			return fmt.Errorf("abort")
@@ -239,7 +242,7 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 	}
 
 	for i, torrent := range torrents {
-		fmt.Printf("(%d/%d) ", i+1, len(torrents))
+		fmt.Fprintf(os.Stderr, "(%d/%d) ", i+1, len(torrents))
 		_, tinfo, _, _, _, _, _, err := helper.GetTorrentContent(torrent, "", true, false, nil, false, nil)
 		if err != nil {
 			log.Errorf("Failed to parse %s: %v", torrent, err)
@@ -362,17 +365,19 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 			}
 		}
 		if err != nil {
-			fmt.Printf("✕ %s : failed to update torrent: %v\n", torrent, err)
+			fmt.Fprintf(os.Stderr, "✕ %s : failed to update torrent: %v\n", torrent, err)
 			errorCnt++
 			continue
 		}
 		if !changed {
-			fmt.Printf("- %s : no change\n", torrent)
-			continue
+			fmt.Fprintf(os.Stderr, "- %s : no change\n", torrent)
+			if output == "" {
+				continue
+			}
 		}
 		if commentMeta != nil {
 			if err = tinfo.EncodeComment(commentMeta); err != nil {
-				fmt.Printf("✕ %s : failed to encode comment meta: %v\n", torrent, err)
+				fmt.Fprintf(os.Stderr, "✕ %s : failed to encode comment meta: %v\n", torrent, err)
 				errorCnt++
 				continue
 			}
@@ -380,29 +385,33 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 		if doBackup && !strings.HasSuffix(torrent, constants.FILENAME_SUFFIX_BACKUP) {
 			if err := util.CopyFile(torrent, util.TrimAnySuffix(torrent,
 				constants.ProcessedFilenameSuffixes...)+constants.FILENAME_SUFFIX_BACKUP); err != nil {
-				fmt.Printf("✕ %s : abort updating file due to failed to create backup file: %v\n", torrent, err)
+				fmt.Fprintf(os.Stderr, "✕ %s : abort updating file due to failed to create backup file: %v\n", torrent, err)
 				errorCnt++
 				continue
 			}
 		}
 		if data, err := tinfo.ToBytes(); err != nil {
-			fmt.Printf("✕ %s : failed to generate new contents: %v\n", torrent, err)
+			fmt.Fprintf(os.Stderr, "✕ %s : failed to generate new contents: %v\n", torrent, err)
 			errorCnt++
 		} else {
-			if saveAs != "" {
-				if saveAs == "-" {
+			if output != "" {
+				if output == "-" {
 					_, err = os.Stdout.Write(data)
 				} else {
-					err = atomic.WriteFile(saveAs, bytes.NewReader(data))
+					err = atomic.WriteFile(output, bytes.NewReader(data))
 				}
 			} else {
 				err = atomic.WriteFile(torrent, bytes.NewReader(data))
 			}
 			if err != nil {
-				fmt.Printf("✕ %s : failed to write new contents: %v\n", torrent, err)
+				fmt.Fprintf(os.Stderr, "✕ %s : failed to write new contents: %v\n", torrent, err)
 				errorCnt++
 			} else {
-				fmt.Printf("✓ %s : successfully updated\n", torrent)
+				if output != "" {
+					fmt.Fprintf(os.Stderr, "✓ %s : successfully editted and outputted to %s\n", torrent, output)
+				} else {
+					fmt.Fprintf(os.Stderr, "✓ %s : successfully updated\n", torrent)
+				}
 				cntTorrents++
 			}
 		}

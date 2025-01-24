@@ -574,8 +574,9 @@ func (meta *TorrentMeta) VerifyAgaintSavePathFs(savePathFs fs.FS) error {
 }
 
 // checkHash: 0 - none; 1 - quick; 2+ - full.
+// checkMinLength : Used with quick hash mode; if > 0, at least this size of file head & tail must be checked.
 // ts: timestamp of newest file in torrent contents.
-func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash int64) (ts int64, err error) {
+func (meta *TorrentMeta) Verify(savePath, contentPath string, checkHash, checkMinLength int64) (ts int64, err error) {
 	var filenames []string
 	prefixPath := ""
 	if contentPath != "" {
@@ -617,12 +618,15 @@ func (meta *TorrentMeta) Verify(savePath string, contentPath string, checkHash i
 		var currentFile *os.File
 		var err error
 		i := 0
+		// At least 1 piece length of each file's head & tail must be checked
+		checkMinLength = max(meta.Info.PieceLength, checkMinLength)
 		for {
 			if i >= piecesCnt {
 				break
 			}
-			if checkHash == 1 && currentFile != nil && currentFileRemain > meta.Info.PieceLength {
-				skipPieces := currentFileRemain / meta.Info.PieceLength
+			if checkHash == 1 && currentFile != nil &&
+				currentFileOffset >= checkMinLength && currentFileRemain > checkMinLength {
+				skipPieces := (currentFileRemain - checkMinLength) / meta.Info.PieceLength
 				skipLength := skipPieces * meta.Info.PieceLength
 				currentFileOffset += skipLength
 				currentFileRemain -= skipLength
@@ -705,6 +709,7 @@ func RenameTorrent(renameTemplate *template.Template, sitename string, id string
 		"site":        sitename,
 		"filename":    basename,
 		"filename128": util.StringPrefixInBytes(basename, 128),
+		"torrentInfo": tinfo,
 	}
 	if tinfo != nil {
 		util.AssignMap(data, map[string]any{
@@ -733,6 +738,7 @@ func RenameExportedTorrent(client string, torrent *client.Torrent, renameTemplat
 		"category":   torrent.Category,
 		"name":       torrent.Name,
 		"name128":    util.StringPrefixInBytes(torrent.Name, 128),
+		"torrent":    torrent,
 	}
 	buf := &bytes.Buffer{}
 	err := renameTemplate.Execute(buf, data)

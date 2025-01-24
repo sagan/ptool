@@ -8,10 +8,10 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"text/template"
 
-	"github.com/Masterminds/sprig/v3"
 	"github.com/natefinch/atomic"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -23,6 +23,7 @@ import (
 	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/site"
 	"github.com/sagan/ptool/util"
+	"github.com/sagan/ptool/util/helper"
 	"github.com/sagan/ptool/util/torrentutil"
 )
 
@@ -37,7 +38,16 @@ one page by page infinitely, until reachs the end of all site torrents. Press Ct
 If --download flag is set, it will download found torrents to dir specified by "--download dir" flag (default ".").
 If --add-client flag is set, it will directly add found torrents to the specified client.
 
-For the format of displayed torrents list, see help of "ptool search" command.
+For the default format of displayed torrents list, see help of "ptool search" command.
+
+If "--json" flag is set, it prints torrents info in json format instead, one torrent json object each line.
+
+You can also customize the output format of each torrent using "--format string" flag,
+which is parsed by Go text template ( https://pkg.go.dev/text/template ).
+You can use all Sprig ( https://github.com/Masterminds/sprig ) functions in template.
+The data passed to the template is the "site.Torrent" struct, see help of "search" cmd.
+The render result is trim spaced.
+E.g. '--format "{{.Id}} {{.Name}} {{.Size}}"'
 
 To query site torrents by any other order than size asc, use "--sort" and "--order" flags.
 
@@ -48,7 +58,7 @@ It supports saving info of found torrents to disk file in json format,
 or exporting the id list of found torrents, using "--save-*" flags.
 
 To set the name of added torrent in client or filename of downloaded torrent, use "--rename string" flag,
-which is parsed using Go text template ( https://pkg.go.dev/text/template ).
+which is also parsed using Go text template ( https://pkg.go.dev/text/template ).
 You can use all Sprig ( https://github.com/Masterminds/sprig ) functions in template.
 It supports the following variables:
 * size : Torrent size in string (e.g. "42GiB")
@@ -58,6 +68,7 @@ It supports the following variables:
 * filename128 : The prefix of filename which is at max 128 bytes
 * name : Torrent name
 * name128 : The prefix of torrent name which is at max 128 bytes
+* torrentInfo : The parsed "TorrentMeta" struct of torrent. See help of "parsetorrent" cmd
 E.g. '--rename "{{.site}}.{{.id}} - {{.name128}}.torrent"'
 
 It will output the summary of downloads result in the end:
@@ -112,6 +123,7 @@ var (
 	downloadDir        = ""
 	baseUrl            = ""
 	rename             = ""
+	format             = ""
 	sortFlag           = ""
 	orderFlag          = ""
 	saveFilename       = ""
@@ -202,7 +214,10 @@ func init() {
 		`Used with "--add-client". Set contents save path of added torrents`)
 	command.Flags().StringVarP(&baseUrl, "base-url", "", "",
 		`Manually set the base url of torrents list page. e.g. "special.php", "torrents.php?cat=100"`)
-	command.Flags().StringVarP(&rename, "rename", "", "", "Rename downloaded or added torrents (supports variables)")
+	command.Flags().StringVarP(&rename, "rename", "", "", `Rename downloaded or added torrents. `+
+		`Available variable placeholders: {{.site}}, {{.id}} and more. `+constants.HELP_ARG_TEMPLATE)
+	command.Flags().StringVarP(&format, "format", "", "", `Set the output format of each site torrent. `+
+		`Available variable placeholders: {{.Id}}, {{.Size}} and more. `+constants.HELP_ARG_TEMPLATE)
 	command.Flags().StringVarP(&saveFilename, "save-list-file", "", "",
 		"Filename. Write the id list of found torrents to it. File will be truncated unless --save-apend flag is set")
 	command.Flags().StringVarP(&saveOkFilename, "save-ok-list-file", "", "",
@@ -238,6 +253,9 @@ func batchdl(command *cobra.Command, args []string) error {
 	}
 	if util.CountNonZeroVariables(doDownload, addClient) > 1 {
 		return fmt.Errorf("--download and --add-client flags are NOT compatible")
+	}
+	if util.CountNonZeroVariables(showJson, format) > 1 {
+		return fmt.Errorf("--json and --format flags are NOT compatible")
 	}
 	if !doDownload && (skipExisting || downloadDir != ".") {
 		return fmt.Errorf(`found flags that are can only be used with "--download"`)
@@ -340,12 +358,18 @@ func batchdl(command *cobra.Command, args []string) error {
 			}
 		}
 	}
-	var renameTemplate *template.Template
+	var renameTemplate, outputTemplate *template.Template
 	if rename != "" {
-		if renameTemplate, err = template.New("template").Funcs(sprig.FuncMap()).Parse(rename); err != nil {
+		if renameTemplate, err = helper.GetTemplate(rename); err != nil {
 			return fmt.Errorf("invalid rename template: %v", err)
 		}
 	}
+	if format != "" {
+		if outputTemplate, err = helper.GetTemplate(format); err != nil {
+			return fmt.Errorf("invalid format template: %v", err)
+		}
+	}
+
 	if saveJsonFile != nil && !saveAppend {
 		saveJsonFile.WriteString("[\n")
 	}
@@ -524,7 +548,14 @@ mainloop:
 			cntTorrentsThisPage++
 			totalSize += torrent.Size
 			if !doDownload && addClient == "" {
-				if showJson {
+				if outputTemplate != nil {
+					buf := &bytes.Buffer{}
+					if err := outputTemplate.Execute(buf, torrent); err == nil {
+						fmt.Println(strings.TrimSpace(buf.String()))
+					} else {
+						log.Errorf("Torrent render error: %v", err)
+					}
+				} else if showJson {
 					util.PrintJson(os.Stdout, torrent)
 				} else {
 					site.PrintTorrents(os.Stdout, []*site.Torrent{torrent}, "", now, cntTorrents != 1, dense, nil)
