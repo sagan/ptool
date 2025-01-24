@@ -30,9 +30,7 @@ If "--sum" flag is set, it only displays the summary of all torrents.
 
 To output parsed info in json format, use "--json" flag.
 
-You can customize the output format of each torrent using "--format string" flag,
-which is parsed by Go text template ( https://pkg.go.dev/text/template ).
-You can use all Sprig ( https://github.com/Masterminds/sprig ) functions in template.
+You can customize the output format of each torrent using "--format string" flag.
 The data passed to the template is the parsed torrent info object,
 which includes all fields of "TorrentMeta" type:
 

@@ -686,7 +686,7 @@ func (meta *TorrentMeta) Verify(savePath, contentPath string, checkHash, checkMi
 }
 
 // Rename torrent (downloaded filename or name of torrent added to client) according to renameTemplate,
-// which is a Go text template ( https://pkg.go.dev/text/template ).
+// which is a Go text template instance.
 // filename: original torrent filename (e.g. "abc.torrent").
 // Available variables: size, id, site, filename, filename128, name, name128.
 // tinfo is optional and could be nil.

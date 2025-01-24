@@ -37,9 +37,7 @@ then adding the downloaded .torrent file contents to the BitTorrent client.
 If "--raw" flag is set, it skips above procedures and directly submits the url to the BitTorrent client.
 
 To set the name of added torrent in client, use "--rename string" flag,
-which is parsed using Go text template ( https://pkg.go.dev/text/template ).
-You can use all Sprig ( https://github.com/Masterminds/sprig ) functions in template.
-It supports the following variables:
+The template supports the following variables:
 * size : Torrent contents size string (e.g. "42GiB")
 * id :  Torrent id in site
 * site : Torrent site name

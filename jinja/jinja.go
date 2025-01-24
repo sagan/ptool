@@ -1,3 +1,4 @@
+// @todo: replace gonja with Go standard library text template.
 // ptool uses gonja (https://github.com/noirbizarre/gonja) as template language.
 // gonja is a Go port of Jinja which supported features & syntaxes is a subset of the latter.
 // This package implements some Jinja filters that are currently missing in gonja.

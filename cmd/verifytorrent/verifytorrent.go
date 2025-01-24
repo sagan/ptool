@@ -104,7 +104,7 @@ func init() {
 	command.Flags().StringVarP(&rcloneBinary, "rclone-binary", "", "rclone",
 		`Used with "--rclone-save-path", the path of rclone binary`)
 	command.Flags().StringVarP(&checkMinLengthStr, "check-min-length", "", "0",
-		`Used with "--check-quick". If > 0, the min size of each file's head & tail that's must be hash checked. `+
+		`Used with "--check-quick". If > 0, the min size of each file's head & tail that must be hash checked. `+
 			`E.g. "32MiB". Note: at least 1 (one) torrent piece length of each file's head / tail will always be checked`)
 	command.Flags().StringArrayVarP(&mapSavePaths, "map-save-path", "", nil,
 		`Used with "--use-comment-meta". Map save path from torrent comment to the file system of ptool. `+

@@ -51,9 +51,7 @@ Specially, if all args is an (1) single info-hash, it displays the details of th
 
 If "--json" flag is set, it prints torrents info in json (array) format.
 
-You can also customize the output format of each torrent using "--format string" flag,
-which is parsed by Go text template ( https://pkg.go.dev/text/template ).
-You can use all Sprig ( https://github.com/Masterminds/sprig ) functions in template.
+You can also customize the output format of each torrent using "--format string" flag.
 The data passed to the template is the "client.Torrent" struct:
 
 // https://github.com/sagan/ptool/blob/master/client/client.go

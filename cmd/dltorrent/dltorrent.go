@@ -31,10 +31,8 @@ or url (e.g. "https://kp.m-team.cc/details.php?id=488424").
 Torrent url that does NOT belong to any site (e.g. a public site url) is also supported.
 Use a single "-" as args to read torrent (id or url) list from stdin, delimited by blanks.
 
-To set the filename of downloaded torrent, use "--rename string" flag,
-which is parsed using Go text template ( https://pkg.go.dev/text/template ).
-You can use all Sprig ( https://github.com/Masterminds/sprig ) functions in template.
-It supports the following variables:
+To set the filename of downloaded torrent, use "--rename string" flag.
+The template supports the following variables:
 * size : Torrent contents size string (e.g. "42GiB")
 * id :  Torrent id in site
 * site : Torrent site name

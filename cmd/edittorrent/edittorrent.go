@@ -106,7 +106,8 @@ func init() {
 		`Update "creation date" field of torrents. E.g. "2024-01-20 15:00:00" (local timezone), `+
 			`or a unix timestamp integer (seconds). To unset this field, set it to "`+constants.NONE+`"`)
 	command.Flags().StringVarP(&updateInfoSource, "update-info-source", "", "",
-		`Update "info.source" field of torrents. Warning: info-hash of torrents will change`)
+		`Update "info.source" field of torrents. To unset this field, set it to "`+constants.NONE+
+			`". Warning: info-hash of torrents will change`)
 	command.Flags().StringVarP(&updateInfoName, "update-info-name", "", "",
 		`Update "info.name" field of torrents. Warning: info-hash of torrents will change`)
 	command.Flags().StringVarP(&updateComment, "update-comment", "", "", `Update "comment" field of torrents`)
@@ -164,6 +165,10 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 		if len(savePathReplaces) != 2 || savePathReplaces[0] == "" {
 			return fmt.Errorf("invalid --replace-comment-meta-save-path-prefix")
 		}
+	}
+	infoSource := updateInfoSource
+	if infoSource == constants.NONE {
+		infoSource = ""
 	}
 	createdBy := updateCreatedBy
 	if createdBy == constants.NONE {
@@ -307,7 +312,7 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 			}
 		}
 		if err == nil && updateInfoSource != "" {
-			err = tinfo.UpdateInfoSource(updateInfoSource)
+			err = tinfo.UpdateInfoSource(infoSource)
 			switch err {
 			case torrentutil.ErrNoChange:
 				err = nil

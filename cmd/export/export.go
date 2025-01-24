@@ -27,10 +27,8 @@ var command = &cobra.Command{
 	Long: fmt.Sprintf(`Export and download torrents of client to .torrent files.
 %s.
 
-To set the filename format of exported torrent, use "--rename string" flag,
-which is parsed using Go text template ( https://pkg.go.dev/text/template ).
-You can use all Sprig ( https://github.com/Masterminds/sprig ) functions in template.
-It supports the following variables:
+To set the filename format of exported torrent, use "--rename string" flag.
+The template supports the following variables:
 * client : Client name
 * size : Torrent contents size string (e.g. "42GiB")
 * infohash :  Torrent infohash

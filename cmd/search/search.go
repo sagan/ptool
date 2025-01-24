@@ -50,9 +50,7 @@ The "P" (progress) field also displays some icon texts:
 - If you had ever downloaded or seeded this torrent before, display a "✓".
 - If you are currently downloading or seeding this torrent, display a "*%".
 
-You can also customize the output format of search result torrent using "--format string" flag,
-which is parsed by Go text template ( https://pkg.go.dev/text/template ).
-You can use all Sprig ( https://github.com/Masterminds/sprig ) functions in template.
+You can also customize the output format of search result torrent using "--format string" flag.
 The data passed to the template is the "site.Torrent" struct:
 
 // https://github.com/sagan/ptool/blob/master/site/site.go

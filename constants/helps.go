@@ -46,4 +46,4 @@ const HELP_ARG_PATH_MAPPERS = `E.g. ` +
 
 const HELP_ARG_TEMPLATE = `The Go text template contents string (See https://pkg.go.dev/text/template ). ` +
 	`If it starts with "@" char, it (the rest part after @) is treated as a file name and template contents ` +
-	`will be read from it instead`
+	`will be read from it instead. You can use all Sprig ( https://github.com/Masterminds/sprig ) functions in template`

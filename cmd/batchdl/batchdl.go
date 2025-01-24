@@ -42,9 +42,7 @@ For the default format of displayed torrents list, see help of "ptool search" co
 
 If "--json" flag is set, it prints torrents info in json format instead, one torrent json object each line.
 
-You can also customize the output format of each torrent using "--format string" flag,
-which is parsed by Go text template ( https://pkg.go.dev/text/template ).
-You can use all Sprig ( https://github.com/Masterminds/sprig ) functions in template.
+You can also customize the output format of each torrent using "--format string" flag.
 The data passed to the template is the "site.Torrent" struct, see help of "search" cmd.
 The render result is trim spaced.
 E.g. '--format "{{.Id}} {{.Name}} {{.Size}}"'
@@ -57,10 +55,8 @@ using "--start-page" flag, set it to the "LastPage" value last time this command
 It supports saving info of found torrents to disk file in json format,
 or exporting the id list of found torrents, using "--save-*" flags.
 
-To set the name of added torrent in client or filename of downloaded torrent, use "--rename string" flag,
-which is also parsed using Go text template ( https://pkg.go.dev/text/template ).
-You can use all Sprig ( https://github.com/Masterminds/sprig ) functions in template.
-It supports the following variables:
+To set the name of added torrent in client or filename of downloaded torrent, use "--rename string" flag.
+The template supports the following variables:
 * size : Torrent size in string (e.g. "42GiB")
 * id :  Torrent id in site
 * site : Torrent site name
