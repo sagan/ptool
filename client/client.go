@@ -205,6 +205,7 @@ var tracker_invalid_torrent_msgs = map[string]TrackerValidity{
 	"invalid passkey":         TRACKER_VALIDITY_INVALID_AUTH,
 	"种子不存在":                   TRACKER_VALIDITY_NOT_EXIST,
 	"该种子没有":                   TRACKER_VALIDITY_NOT_EXIST,    // monikadesign: "该种子没有在我们的 Tracker 上注册."
+	"种子已被删除":                  TRACKER_VALIDITY_NOT_EXIST,    // azusa: "种子已被删除或尚未发布"
 	"already are downloading": TRACKER_VALIDITY_VIOLATE_RULE, // "You already are downloading the same torrent"
 	"下载相同种子":                  TRACKER_VALIDITY_VIOLATE_RULE,
 	"下載相同種子":                  TRACKER_VALIDITY_VIOLATE_RULE,
