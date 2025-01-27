@@ -181,7 +181,7 @@ func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 	// 为向下兼容，同时设置 4.X 和 5.X 的 API 字段。
 	mp.WriteField("rename", name)
 	mp.WriteField("root_folder", "true")
-	mp.WriteField("contentLayout", "Subfolder")
+	mp.WriteField("contentLayout", "Original")
 	if option != nil {
 		if option.Category != constants.NONE {
 			mp.WriteField("category", option.Category)

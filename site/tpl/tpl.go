@@ -4,7 +4,7 @@ package tpl
 // CSS选择器使用 goquery 解析，支持 jQuery 的扩展语法(例如 :contains("txt") )。
 // 除 Url 以外的所有 ***Url (例如 TorrentsUrl) 均应当使用相对路径。
 // 大部分站点 id 使用其域名（去除二级域名和TLD后）的主要部分；部分站点域名与名称毫无关系，优先使用其通称。
-// 站点 id 和 alias 长度限制在 15 个字符以内（最长："greatposterwall"）。
+// 站点 id 和 alias 长度限制在 15 个字符以内（最长："greatposterwall"），全小写并且不能包含任何特殊字符。
 
 import (
 	"slices"
@@ -95,6 +95,14 @@ var (
 			Url:       "https://carpt.net/",
 			GlobalHnR: true,
 			Comment:   "CarPT (小车站)",
+		},
+		"chdbits": {
+			Type:               "nexusphp",
+			Aliases:            []string{"ptchdbits", "rainbowisland", "chd"},
+			Domains:            []string{"chdbits.xyz", "rainbowisland.co", "chdbits.co"},
+			Url:                "https://ptchdbits.co/",
+			SelectorTorrentHnR: `.circle-text:contains("h")`, // e.g. h5, h3, 表示 HnR 天数。
+			Comment:            "彩虹岛",
 		},
 		"crabpt": {
 			Type:              "nexusphp",

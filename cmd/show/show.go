@@ -106,6 +106,7 @@ var (
 	filter             = ""
 	category           = ""
 	tag                = ""
+	excludeTag         = ""
 	tracker            = ""
 	savePath           = ""
 	contentPath        = ""
@@ -154,6 +155,9 @@ func init() {
 	command.Flags().StringVarP(&filter, "filter", "", "", constants.HELP_ARG_FILTER_TORRENT)
 	command.Flags().StringVarP(&category, "category", "", "", constants.HELP_ARG_CATEGORY)
 	command.Flags().StringVarP(&tag, "tag", "", "", constants.HELP_ARG_TAG)
+	command.Flags().StringVarP(&excludeTag, "exclude-tag", "", "", `Comma-separated tag list. `+
+		`Torrent which tags contain any one in the list will be excluded. Use "`+
+		constants.NONE+`" to exlude untagged torrents`)
 	command.Flags().StringVarP(&tracker, "tracker", "", "", constants.HELP_ARG_TRACKER)
 	command.Flags().StringVarP(&savePath, "save-path", "", "",
 		`Filter torrent by it's save path. E.g. "/root/Downloads"`)
@@ -258,7 +262,7 @@ func show(cmd *cobra.Command, args []string) error {
 
 	hasFilterCondition := savePath != "" || savePathPrefix != "" || contentPath != "" ||
 		tracker != "" || minTorrentSize >= 0 || maxTorrentSize >= 0 || addedAfter > 0 || completedBefore > 0 ||
-		activeSince > 0 || notActiveSince > 0 || partial || excludes != ""
+		activeSince > 0 || notActiveSince > 0 || partial || excludes != "" || excludeTag != ""
 	noConditionFlags := category == "" && tag == "" && filter == "" && !hasFilterCondition
 	var torrents []*client.Torrent
 	if showAll {
@@ -318,6 +322,7 @@ func show(cmd *cobra.Command, args []string) error {
 				completedBefore > 0 && (t.Ctime <= 0 || t.Ctime >= completedBefore) ||
 				activeSince > 0 && t.ActivityTime < activeSince ||
 				notActiveSince > 0 && t.ActivityTime >= notActiveSince ||
+				excludeTag != "" && t.HasAnyTag(excludeTag) ||
 				partial && t.Size == t.SizeTotal {
 				return false
 			}
