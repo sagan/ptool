@@ -62,9 +62,13 @@ var (
 			Comment:                      "观众",
 		},
 		"azusa": {
-			Type:    "nexusphp",
-			Url:     "https://azusa.wiki/",
-			Comment: "梓喵",
+			Type:                    "nexusphp",
+			Url:                     "https://azusa.wiki/",
+			Domains:                 []string{"zimiao.icu"},
+			SelectorTorrentSeeders:  `a[href$="seeders"]`,
+			SelectorTorrentLeechers: `a[href$="leechers"]`,
+			SelectorTorrentSnatched: `a[href^="viewsnatches"]`,
+			Comment:                 "梓喵",
 		},
 		"beitai": {
 			Type:    "nexusphp",
@@ -185,6 +189,7 @@ var (
 		"gtk": {
 			Type:    "nexusphp",
 			Aliases: []string{"ptgtk", "gtkpw"},
+			Domains: []string{"pt.gtkpw.xyz"},
 			Url:     "https://pt.gtk.pw/",
 			Comment: "PT GTK",
 		},
@@ -212,8 +217,7 @@ var (
 		},
 		"hdarea": {
 			Type:    "nexusphp",
-			Url:     "https://www.hdarea.co/",
-			Domains: []string{"hdarea.club"},
+			Url:     "https://hdarea.club/",
 			Comment: "高清地带",
 		},
 		"hdatmos": {
@@ -329,11 +333,10 @@ var (
 			Comment:                    "蝴蝶",
 		},
 		"icc2022": {
-			Type:      "nexusphp",
-			Aliases:   []string{"icc"},
-			Url:       "https://www.icc2022.com/",
-			GlobalHnR: true,
-			Comment:   "冰淇淋",
+			Type:    "nexusphp",
+			Aliases: []string{"icc"},
+			Url:     "https://www.icc2022.com/",
+			Comment: "冰淇淋",
 		},
 		"ilolicon": {
 			Type:    "nexusphp",
