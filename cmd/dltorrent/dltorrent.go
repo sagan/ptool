@@ -156,7 +156,7 @@ func dltorrent(cmd *cobra.Command, args []string) error {
 		} else if renameTemplate == nil {
 			filename = _filename
 		} else {
-			name, err := torrentutil.RenameTorrent(renameTemplate, sitename, id, _filename, tinfo)
+			name, err := torrentutil.RenameTorrent(renameTemplate, sitename, id, _filename, tinfo, false)
 			if err == nil {
 				filename = name
 			} else {

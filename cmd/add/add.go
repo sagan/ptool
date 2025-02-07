@@ -30,6 +30,7 @@ var command = &cobra.Command{
 	Long: fmt.Sprintf(`Add torrents to client.
 First arg is client. The following args is the args list.
 %s.
+It also supports "magnet:" urls.
 
 By default, if the arg is a http(s) url, it will try to parse it as a site torrent url,
 download the .torrent file to local and verify it's a valid metainfo file,
@@ -275,7 +276,7 @@ func add(cmd *cobra.Command, args []string) error {
 			}
 			option.Tags = append(option.Tags, fixedTags...)
 			if renameTemplate != nil {
-				name, err := torrentutil.RenameTorrent(renameTemplate, sitename, id, filename, tinfo)
+				name, err := torrentutil.RenameTorrent(renameTemplate, sitename, id, filename, tinfo, false)
 				if err == nil {
 					option.Name = name
 				} else {

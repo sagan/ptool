@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"text/template"
 
 	"github.com/natefinch/atomic"
 	log "github.com/sirupsen/logrus"
@@ -22,15 +23,27 @@ var command = &cobra.Command{
 	Use:         "edittorrent {torrentFilename}...",
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "edittorrent"},
 	Aliases:     []string{"edit", "edittorrents"},
-	Short:       "Edit local .torrent (metainfo) files.",
-	Long: `Edit local .torrent (metainfo) files.
-Args is the torrent filename list. Use a single "-" as args to read the list from stdin, delimited by blanks.
+	Short:       "Edit .torrent (metainfo) files.",
+	Long: fmt.Sprintf(`Edit .torrent (metainfo) files.
+%s
 
 Note: this command is NOT about modifying torrents in BitTorrent client.
 To do that, use "modifytorrent" command instead.
 
-It will update local disk .torrent files in place, unless "--output string" flag is set,
-in which case the updated .torrent contents will be output to that file.
+By default, it updates local disk .torrent files in place, unless "--output string" flag is set,
+in which case the updated .torrent contents will be output to the render result of "output" flag,
+which is a Go template that supports the following variables:
+* size : Torrent contents size string (e.g. "42GiB")
+* id :  Torrent id in site
+* site : Torrent site name
+* filename : Original torrent filename without ".torrent" extension
+* filename128 : The prefix of filename which is at max 128 bytes
+* name : Torrent name
+* name128 : The prefix of torrent name which is at max 128 bytes
+* torrentInfo : The parsed "TorrentMeta" struct of torrent. See help of "parsetorrent" cmd
+The torrentInfo variable refers to the new torrent info, after all updatings applied.
+E.g. '--output "{{.filename}}.mod.torrent"'
+If any arg is a remote (non-local) torrent, "--output" flag must be provided.
 
 It will ask for confirm before updateing torrent files, unless --force flag is set.
 
@@ -57,7 +70,8 @@ with meta info encoded in "comment" field in the above way.
 The --use-comment-meta flag relative "editing" flags:
 * --replace-comment-meta-save-path-prefix : Update "save_path", replace one prefix with another one.
 
-If --backup flag is set, it will create a backup of original torrent file before updating it.`,
+If --backup flag is set, it will create a backup of original local torrent file before updating it.`,
+		constants.HELP_TORRENT_ARGS),
 	Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
 	RunE: edittorrent,
 }
@@ -116,9 +130,9 @@ func init() {
 			`of torrents, replace old prefix with new one. Format: "old_path|new_path". E.g. `+
 			`"/root/Downloads:/var/Downloads" will change ""/root/Downloads" or "/root/Downloads/..." save path to `+
 			`"/var/Downloads" or "/var/Downloads/..."`)
-	command.Flags().StringVarP(&output, "output", "", "", `Save updated .torrent file contents to this file, `+
-		`instead of updating the original file in place. Can only be used with 1 (one) torrent arg. `+
-		`Set to "-" to output to stdout`)
+	command.Flags().StringVarP(&output, "output", "", "", `Save updated .torrent file contents to these file(s), `+
+		`instead of updating the original local files in place. `+constants.HELP_ARG_TEMPLATE+
+		`. Available variable placeholders: {{.filename}} and more. Set to "-" to output to stdout`)
 	cmd.RootCmd.AddCommand(command)
 }
 
@@ -140,12 +154,17 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 	if util.CountNonZeroVariables(setPrivate, setPublic) > 1 {
 		return fmt.Errorf("--set-private and --set-public flags are NOT compatible")
 	}
+	var outputTemplate *template.Template
 	if output != "" {
-		if len(torrents) > 1 {
-			return fmt.Errorf("--output flag can only be used with 1 (one) torrent arg")
-		}
-		if output == "-" && term.IsTerminal(int(os.Stdout.Fd())) {
-			return fmt.Errorf(constants.HELP_TIP_TTY_BINARY_OUTPUT)
+		if output == "-" {
+			if len(torrents) > 1 {
+				return fmt.Errorf("stdout output can only be used with 1 (one) torrent arg")
+			}
+			if term.IsTerminal(int(os.Stdout.Fd())) {
+				return fmt.Errorf(constants.HELP_TIP_TTY_BINARY_OUTPUT)
+			}
+		} else if outputTemplate, err = helper.GetTemplate(output); err != nil {
+			return fmt.Errorf("invalid output template: %v", err)
 		}
 	}
 	if util.CountNonZeroVariables(removeTracker, addTracker, addPublicTrackers, updateTracker,
@@ -248,7 +267,8 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 
 	for i, torrent := range torrents {
 		fmt.Fprintf(os.Stderr, "(%d/%d) ", i+1, len(torrents))
-		_, tinfo, _, _, _, _, _, err := helper.GetTorrentContent(torrent, "", true, false, nil, false, nil)
+		_, tinfo, _, sitename, filename, id, isLocal, err :=
+			helper.GetTorrentContent(torrent, "", false, false, nil, false, nil)
 		if err != nil {
 			log.Errorf("Failed to parse %s: %v", torrent, err)
 			errorCnt++
@@ -387,7 +407,7 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 				continue
 			}
 		}
-		if doBackup && !strings.HasSuffix(torrent, constants.FILENAME_SUFFIX_BACKUP) {
+		if isLocal && doBackup && !strings.HasSuffix(torrent, constants.FILENAME_SUFFIX_BACKUP) {
 			if err := util.CopyFile(torrent, util.TrimAnySuffix(torrent,
 				constants.ProcessedFilenameSuffixes...)+constants.FILENAME_SUFFIX_BACKUP); err != nil {
 				fmt.Fprintf(os.Stderr, "✕ %s : abort updating file due to failed to create backup file: %v\n", torrent, err)
@@ -395,25 +415,39 @@ func edittorrent(cmd *cobra.Command, args []string) error {
 				continue
 			}
 		}
-		if data, err := tinfo.ToBytes(); err != nil {
+		var data []byte
+		if data, err = tinfo.ToBytes(); err != nil {
 			fmt.Fprintf(os.Stderr, "✕ %s : failed to generate new contents: %v\n", torrent, err)
 			errorCnt++
 		} else {
+			outputName := ""
 			if output != "" {
 				if output == "-" {
+					outputName = "-"
 					_, err = os.Stdout.Write(data)
 				} else {
-					err = atomic.WriteFile(output, bytes.NewReader(data))
+					outputName, err = torrentutil.RenameTorrent(outputTemplate, sitename, id, filename, tinfo, true)
+					if err == nil {
+						if outputName != "" {
+							err = atomic.WriteFile(outputName, bytes.NewReader(data))
+						} else {
+							err = fmt.Errorf("output render result is empty")
+						}
+					}
 				}
 			} else {
-				err = atomic.WriteFile(torrent, bytes.NewReader(data))
+				if isLocal {
+					err = atomic.WriteFile(torrent, bytes.NewReader(data))
+				} else {
+					err = fmt.Errorf(`remote torrent must be used with "--output" flag to specify the save name`)
+				}
 			}
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "✕ %s : failed to write new contents: %v\n", torrent, err)
 				errorCnt++
 			} else {
-				if output != "" {
-					fmt.Fprintf(os.Stderr, "✓ %s : successfully editted and outputted to %s\n", torrent, output)
+				if outputName != "" {
+					fmt.Fprintf(os.Stderr, "✓ %s : successfully editted and outputted to %s\n", torrent, outputName)
 				} else {
 					fmt.Fprintf(os.Stderr, "✓ %s : successfully updated\n", torrent)
 				}

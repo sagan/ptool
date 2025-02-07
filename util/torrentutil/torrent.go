@@ -690,10 +690,10 @@ func (meta *TorrentMeta) Verify(savePath, contentPath string, checkHash, checkMi
 // filename: original torrent filename (e.g. "abc.torrent").
 // Available variables: size, id, site, filename, filename128, name, name128.
 // tinfo is optional and could be nil.
-// The returned name is trim spaced and some (Windows) file system restrictive chars
+// If raw is false, the returned name is trim spaced and any (Windows) file system restrictive chars
 // like "?" are replaced with their full-width equivalents (like "？").
 func RenameTorrent(renameTemplate *template.Template, sitename string, id string, filename string,
-	tinfo *TorrentMeta) (string, error) {
+	tinfo *TorrentMeta, raw bool) (string, error) {
 	basename := filename
 	if i := strings.LastIndex(basename, "."); i != -1 {
 		basename = basename[:i]
@@ -722,6 +722,9 @@ func RenameTorrent(renameTemplate *template.Template, sitename string, id string
 	err := renameTemplate.Execute(buf, data)
 	if err != nil {
 		return "", err
+	}
+	if raw {
+		return buf.String(), nil
 	}
 	return strings.TrimSpace(constants.FilenameRestrictedCharacterReplacer.Replace(buf.String())), nil
 }

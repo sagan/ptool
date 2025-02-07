@@ -593,7 +593,7 @@ mainloop:
 					if doDownload {
 						if filename == "" {
 							if renameTemplate != nil {
-								name, err := torrentutil.RenameTorrent(renameTemplate, sitename, torrent.Id, _filename, tinfo)
+								name, err := torrentutil.RenameTorrent(renameTemplate, sitename, torrent.Id, _filename, tinfo, false)
 								if err == nil {
 									filename = name
 								} else {
@@ -634,7 +634,7 @@ mainloop:
 						}
 						if rename != "" {
 							if renameTemplate != nil {
-								name, err := torrentutil.RenameTorrent(renameTemplate, sitename, torrent.Id, _filename, tinfo)
+								name, err := torrentutil.RenameTorrent(renameTemplate, sitename, torrent.Id, _filename, tinfo, false)
 								if err == nil {
 									clientAddTorrentOption.Name = name
 								} else {

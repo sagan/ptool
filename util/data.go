@@ -158,10 +158,11 @@ func StructToMap(val interface{}, ignoreNoTagFields bool, ignoreEmptyFields bool
 				if fieldKind == reflect.String && fieldValue.String() == "" {
 					continue
 				}
-				if fieldKind == reflect.Int64 && fieldValue.Int() == 0 {
+				if (fieldKind == reflect.Int || fieldKind == reflect.Int8 || fieldKind == reflect.Int16 ||
+					fieldKind == reflect.Int32 || fieldKind == reflect.Int64) && fieldValue.Int() == 0 {
 					continue
 				}
-				if fieldKind == reflect.Float64 && fieldValue.Float() == 0 {
+				if (fieldKind == reflect.Float32 || fieldKind == reflect.Float64) && fieldValue.Float() == 0 {
 					continue
 				}
 				if fieldKind == reflect.Bool && !fieldValue.Bool() {
@@ -171,6 +172,9 @@ func StructToMap(val interface{}, ignoreNoTagFields bool, ignoreEmptyFields bool
 					continue
 				}
 				if fieldKind == reflect.Pointer && fieldValue.Pointer() == 0 {
+					continue
+				}
+				if fieldKind == reflect.Map && len(fieldValue.MapKeys()) == 0 {
 					continue
 				}
 			}

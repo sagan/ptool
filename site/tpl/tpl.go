@@ -32,6 +32,7 @@ var (
 			Type:    "nexusphp",
 			Aliases: []string{"pt2xfree"},
 			Url:     "https://pt.2xfree.org/",
+			Dead:    true,
 			Comment: "2xFree",
 		},
 		"3wmg": {
@@ -73,6 +74,7 @@ var (
 		"beitai": {
 			Type:    "nexusphp",
 			Url:     "https://www.beitai.pt/",
+			Dead:    true,
 			Comment: "备胎",
 		},
 		"biho": {
@@ -123,6 +125,7 @@ var (
 		"dajiao": {
 			Type:    "nexusphp",
 			Url:     "https://dajiao.cyou/",
+			Dead:    true,
 			Comment: "打胶",
 		},
 		"dhtclub": {
@@ -213,6 +216,7 @@ var (
 			SelectorUserInfoUploaded:       `li:has(i[title="上传量"])`,
 			SelectorUserInfoDownloaded:     `li:has(i[title="下载量"])`,
 			SelectorTorrentDiscountEndTime: `.layui-free-color span, .layui-twoupfree-color span`,
+			Dead:                           true,
 			Comment:                        "白兔俱乐部 (Hares Club)",
 		},
 		"hdarea": {
@@ -224,6 +228,11 @@ var (
 			Type:    "nexusphp",
 			Url:     "https://hdatmos.club/",
 			Comment: "阿童木",
+		},
+		"hdclone": {
+			Type:    "nexusphp",
+			Url:     "https://pt.hdclone.org/",
+			Comment: "HDClone",
 		},
 		"hddolby": {
 			Type:    "nexusphp",
@@ -300,6 +309,7 @@ var (
 			Type:    "nexusphp",
 			Domains: []string{"hdfun.me"},
 			Url:     "https://hdzone.me/",
+			Dead:    true,
 			Comment: "高清地带",
 		},
 		"hhanclub": {
@@ -460,15 +470,22 @@ https://www.dmm.co.jp/dc/doujin/-/detail/=/cid={{number | regex_search("\\bd_\\d
 			SearchUrl:         `search.php?search=%s&search_area=0`,
 			Comment:           "红叶",
 		},
+		// old lemonhd
+		// "lemonhd": {
+		// 	Type:                "nexusphp",
+		// 	Aliases:             []string{"leaguehd", "lemon"},
+		// 	Url:                 "https://lemonhd.org/",
+		// 	Domains:             []string{"leaguehd.com"},
+		// 	TorrentsUrl:         "torrents_new.php",
+		// 	SelectorTorrentFree: `div:contains("免費")`,
+		// 	Comment:             "柠檬",
+		// 	Dead:                true,
+		// },
 		"lemonhd": {
-			Type:                "nexusphp",
-			Aliases:             []string{"leaguehd", "lemon"},
-			Url:                 "https://lemonhd.org/",
-			Domains:             []string{"leaguehd.com"},
-			TorrentsUrl:         "torrents_new.php",
-			SelectorTorrentFree: `div:contains("免費")`,
-			Comment:             "柠檬",
-			Dead:                true,
+			Type:    "nexusphp",
+			Aliases: []string{"leaguehd", "lemon"},
+			Url:     "https://lemonhd.club/",
+			Comment: "柠檬(新)",
 		},
 		"mteam": {
 			Type:                "mtorrent",
@@ -558,6 +575,7 @@ https://www.dmm.co.jp/dc/doujin/-/detail/=/cid={{number | regex_search("\\bd_\\d
 		"ptlsp": {
 			Type:    "nexusphp",
 			Url:     "https://www.ptlsp.com/",
+			Dead:    true,
 			Comment: "",
 		},
 		"pttime": {
@@ -578,6 +596,11 @@ https://www.dmm.co.jp/dc/doujin/-/detail/=/cid={{number | regex_search("\\bd_\\d
 			SelectorUserInfoUserName: `.User_Name`,
 			Comment:                  "象站",
 		},
+		"ptzone": {
+			Type:    "nexusphp",
+			Url:     "https://ptzone.xyz/",
+			Comment: "PTzone",
+		},
 		"pwtorrents": {
 			Type:                       "nexusphp",
 			Url:                        "https://pwtorrents.net/",
@@ -595,6 +618,11 @@ https://www.dmm.co.jp/dc/doujin/-/detail/=/cid={{number | regex_search("\\bd_\\d
 			Aliases: []string{"qingwa"},
 			Url:     "https://www.qingwapt.com/",
 			Comment: "青蛙",
+		},
+		"raingfh": {
+			Type:    "nexusphp",
+			Url:     "https://raingfh.top/",
+			Comment: "雨",
 		},
 		"rousi": {
 			Type:              "nexusphp",
