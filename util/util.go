@@ -18,6 +18,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/KarpelesLab/reflink"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/constraints"
 )
@@ -221,7 +222,7 @@ func CopyFile(srcpath, dstpath string) (err error) {
 // Create hardlink duplicate for source dir at dest. Recursively process all files and folders inside source.
 // Symbolinks are ignored.
 // For file with size < limit, create a copy instead.
-func LinkDir(source string, dest string, limit int64) error {
+func LinkDir(source string, dest string, limit int64, useReflink bool) error {
 	return filepath.WalkDir(source, func(sourcePath string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -240,6 +241,12 @@ func LinkDir(source string, dest string, limit int64) error {
 		} else if d.Type().IsRegular() {
 			if stat, err := os.Stat(sourcePath); err != nil {
 				return err
+			} else if useReflink {
+				log.Tracef("Reflink %s => %s", sourcePath, destPath)
+				// Don't use reflink.Auto because reflink fallbacks to copying, not hard linking
+				if err := reflink.Always(sourcePath, destPath); err != nil {
+					return err
+				}
 			} else if limit >= 0 && stat.Size() < limit {
 				log.Tracef("Copy %s => %s", sourcePath, destPath)
 				if err := CopyFile(sourcePath, destPath); err != nil {

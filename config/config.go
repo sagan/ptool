@@ -184,7 +184,7 @@ type SiteConfigStruct struct {
 	SelectorTorrentSize            string     `yaml:"selectorTorrentSize"`
 	SelectorTorrentActive          string     `yaml:"selectorTorrentActive"`        // Is or was active
 	SelectorTorrentCurrentActive   string     `yaml:"selectorTorrentCurrentActive"` // Is currently active
-	SelectorTorrentFree            string     `yaml:"SelectorTorrentFree"`
+	SelectorTorrentFree            string     `yaml:"selectorTorrentFree"`
 	SelectorTorrentNoTraffic       string     `yaml:"selectorTorrentNoTraffic"`
 	SelectorTorrentNeutral         string     `yaml:"selectorTorrentNeutral"`
 	SelectorTorrentHnR             string     `yaml:"selectorTorrentHnR"`
@@ -350,11 +350,11 @@ func UpdateSites(updatesites []*SiteConfigStruct) {
 		return
 	}
 	allsites := Get().Sites
+	ptoolCommentRegex := regexp.MustCompile(`^(.*?)<!--\{ptool\}.*?-->(.*)$`)
 	for _, updatesite := range updatesites {
 		if updatesite.AutoComment != "" {
-			m := regexp.MustCompile(`^(.*?)<!--\{ptool\}.*?-->(.*)$`)
 			autoComment := fmt.Sprintf(`<!--{ptool} %s-->`, updatesite.AutoComment)
-			comment := m.ReplaceAllString(updatesite.Comment, fmt.Sprintf(`$1%s$2`, autoComment))
+			comment := ptoolCommentRegex.ReplaceAllString(updatesite.Comment, fmt.Sprintf(`$1%s$2`, autoComment))
 			if comment == updatesite.Comment {
 				updatesite.Comment += autoComment
 			} else {

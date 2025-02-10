@@ -130,6 +130,7 @@ var pureFlags = []string{
 	"strict",
 	"sum",
 	"use-comment-meta",
+	"use-reflink",
 	"verbose",
 }
 

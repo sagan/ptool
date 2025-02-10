@@ -155,27 +155,31 @@ func StructToMap(val interface{}, ignoreNoTagFields bool, ignoreEmptyFields bool
 		fieldValue := value.Field(i)
 		if fieldKind != reflect.Struct {
 			if ignoreEmptyFields {
-				if fieldKind == reflect.String && fieldValue.String() == "" {
-					continue
-				}
-				if (fieldKind == reflect.Int || fieldKind == reflect.Int8 || fieldKind == reflect.Int16 ||
-					fieldKind == reflect.Int32 || fieldKind == reflect.Int64) && fieldValue.Int() == 0 {
-					continue
-				}
-				if (fieldKind == reflect.Float32 || fieldKind == reflect.Float64) && fieldValue.Float() == 0 {
-					continue
-				}
-				if fieldKind == reflect.Bool && !fieldValue.Bool() {
-					continue
-				}
-				if fieldKind == reflect.Slice && fieldValue.Pointer() == 0 {
-					continue
-				}
-				if fieldKind == reflect.Pointer && fieldValue.Pointer() == 0 {
-					continue
-				}
-				if fieldKind == reflect.Map && len(fieldValue.MapKeys()) == 0 {
-					continue
+				switch fieldKind {
+				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+					if fieldValue.Int() == 0 {
+						continue
+					}
+				case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+					if fieldValue.Uint() == 0 {
+						continue
+					}
+				case reflect.Float32, reflect.Float64:
+					if fieldValue.Float() == 0 {
+						continue
+					}
+				case reflect.Bool:
+					if !fieldValue.Bool() {
+						continue
+					}
+				case reflect.String, reflect.Slice, reflect.Array, reflect.Map:
+					if fieldValue.Len() == 0 {
+						continue
+					}
+				case reflect.Pointer:
+					if fieldValue.Pointer() == 0 {
+						continue
+					}
 				}
 			}
 			data[fieldName] = fieldValue.Interface()

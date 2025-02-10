@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/KarpelesLab/reflink"
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/cmd/hardlink"
@@ -25,10 +26,15 @@ For small file (defined by --hardlink-min-size), it will create a copy instead o
 }
 
 var (
+	useReflink   = false
 	sizeLimitStr = ""
 )
 
 func init() {
+	command.Flags().BoolVarP(&useReflink, "use-reflink", "", false, `Create reflinks instead of hardlinks. `+
+		`It's only supported in Linux with XFS / BTRFS and some few other file systems for now. `+
+		`It's equivalent to Linux "cp" command's "--reflink=always" flag. `+
+		`If this flag is set, the "--hardlink-min-size" flag is ignored`)
 	command.Flags().StringVarP(&sizeLimitStr, "hardlink-min-size", "", "1MiB",
 		"File with size smaller than (<) this value will be copied instead of hardlinked. -1 == always hardlink")
 	hardlink.Command.AddCommand(command)
@@ -70,11 +76,13 @@ func hardlinkcp(cmd *cobra.Command, args []string) error {
 	}
 
 	if !sourceIsDir {
-		if sizeLimit >= 0 && sourceStat.Size() < sizeLimit {
+		if useReflink {
+			return reflink.Always(source, dest)
+		} else if sizeLimit >= 0 && sourceStat.Size() < sizeLimit {
 			return util.CopyFile(source, dest)
 		}
 		return os.Link(source, dest)
 	}
 
-	return util.LinkDir(source, dest, sizeLimit)
+	return util.LinkDir(source, dest, sizeLimit, useReflink)
 }

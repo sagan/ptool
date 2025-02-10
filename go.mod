@@ -4,6 +4,9 @@ go 1.23
 
 toolchain go1.23.0
 
+// fix broken build on Windows due to incorrent copyFileRange function.
+replace github.com/KarpelesLab/reflink => ./reflink
+
 // Change Client.Connect signature to func (c *Client) Connect(requestHeader http.Header)
 replace github.com/googollee/go-socket.io => ./go-socket.io
 
@@ -17,6 +20,7 @@ replace github.com/c-bata/go-prompt => ./go-prompt
 replace github.com/stromland/cobra-prompt => ./cobra-prompt
 
 require (
+	github.com/KarpelesLab/reflink v1.0.1
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/Noooste/azuretls-client v1.6.1
 	github.com/PuerkitoBio/goquery v1.10.1
@@ -110,7 +114,7 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.32.0 // indirect
-	golang.org/x/sys v0.29.0
+	golang.org/x/sys v0.30.0
 	golang.org/x/term v0.28.0
 	golang.org/x/text v0.21.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
