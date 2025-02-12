@@ -6,6 +6,7 @@ package hardlinktorrent
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/sagan/ptool/cmd/hardlink"
 	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/util"
+	"github.com/sagan/ptool/util/helper"
 	"github.com/sagan/ptool/util/torrentfilelocator"
 	"github.com/sagan/ptool/util/torrentutil"
 )
@@ -23,13 +25,13 @@ import (
 var command = &cobra.Command{
 	Use:         "torrent {file.torrent} --content-path {contentPath} [--link-save-path {savePath}]",
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "hardlinkcp"},
-	Short:       "Create hardlinked xseedable folder for a torrent from existing content folder.",
-	Long: `Create hardlinked xseedable folder for a torrent from existing content folder.
+	Short:       "Create hardlinked xseedable folder for a torrent from existing contents on disk.",
+	Long: `Create hardlinked xseedable folder for a torrent from existing contents on disk.
 
 It tries to locate all content files of {file.torrent} arg from "contentPath" disk folder,
 even if existing files in disk have totally different dir structures and / or file names.
 
-Note: the result is NOT guaranteed to be correct, there may be false positives.
+Note: the result is NOT guaranteed to be correct, there may be false positives / negatives.
 
 By default, it only displays loating result.
 If "--link-save-path string" flag is set, it generated hardlinks of located torrent contents
@@ -72,7 +74,11 @@ func hardlinkcp(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf(`"force" must be used with "link-save-path" flag`)
 	}
 	sizeLimit, _ := util.RAMInBytes(sizeLimitStr)
-	torrent := args[0]
+	torrents := helper.ParseFilenameArgs(args[0])
+	if len(torrents) != 1 {
+		return fmt.Errorf("exact 1 (one) torrent arg should be provided")
+	}
+	torrent := torrents[0]
 	torrentContents, err := os.ReadFile(torrent)
 	if err != nil {
 		return err
@@ -88,10 +94,13 @@ func hardlinkcp(cmd *cobra.Command, args []string) error {
 		result.Print(os.Stdout)
 	}
 	if !result.Ok && !force {
-		return fmt.Errorf(`failed to locate all torrent files in disk`)
+		return fmt.Errorf(`failed to locate (all) torrent files in disk`)
 	}
 	if linkSavePath == "" {
 		return nil
+	}
+	if !util.FileExists(linkSavePath) {
+		return fmt.Errorf(`"link-save-path" %q does not exist`, linkSavePath)
 	}
 	targetRootPath := filepath.Join(linkSavePath, tinfo.RootDir)
 	if util.FileExists(targetRootPath) {
@@ -104,6 +113,7 @@ func hardlinkcp(cmd *cobra.Command, args []string) error {
 
 	successCnt := int64(0)
 	errCnt := int64(0)
+	log.Warnf("Linking...")
 	for _, fileLink := range result.TorrentFileLinks {
 		if fileLink.State != torrentfilelocator.LocateStateLocated {
 			continue
@@ -111,14 +121,19 @@ func hardlinkcp(cmd *cobra.Command, args []string) error {
 		src := fileLink.FsFiles[fileLink.LinkedFsFileIndex].Path
 		dst := filepath.Join(targetRootPath, fileLink.TorrentFile.Path)
 		log.Debugf("Link %s => %s", src, dst)
-		srcStat, err := os.Stat(src)
-		if err == nil {
-			if useReflink {
-				err = reflink.Always(src, dst)
-			} else if sizeLimit >= 0 && srcStat.Size() < sizeLimit {
-				err = util.CopyFile(src, dst)
-			} else {
-				err = os.Link(src, dst)
+		dir := filepath.Dir(dst)
+		var err error
+		if err = os.MkdirAll(dir, constants.PERM_DIR); err == nil {
+			var srcStat fs.FileInfo
+			srcStat, err = os.Stat(src)
+			if err == nil {
+				if useReflink {
+					err = reflink.Always(src, dst)
+				} else if sizeLimit >= 0 && srcStat.Size() < sizeLimit {
+					err = util.CopyFile(src, dst)
+				} else {
+					err = os.Link(src, dst)
+				}
 			}
 		}
 		if err == nil {

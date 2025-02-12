@@ -66,7 +66,7 @@ type LocateResult struct {
 // 2. 如果硬盘上相同大小的文件有多个但其中只有1个文件名相同，则使用这个文件。
 // 3. 如果硬盘上相同大小甚至相同文件名的文件有多个，则需要通过 piece hash 进行判断。
 // 种子的单个 piece 可能对应多个 TorrentFile，每个 TorrentFile 可能有多个候选的硬盘文件。
-// 对于单个 piece 的对应的每种硬盘文件组合(permutation)依次进行 hash 验证是否正确。
+// 对于单个 piece 的对应的每种可能硬盘文件组合(permutation)依次进行 hash 验证是否正确。
 // 目前，第一个匹配的硬盘文件组合即被作为结果。
 // 如果 1个 piece 只包含1个种子内容文件，那么某个硬盘文件 hash 失败则表明这个硬盘文件肯定不是对应的种子内容文件。
 func Locate(tinfo *torrentutil.TorrentMeta, contentFolder string) *LocateResult {
