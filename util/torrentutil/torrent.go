@@ -35,8 +35,12 @@ type TorrentCommentMeta struct {
 }
 
 type TorrentMetaFile struct {
-	Path string // full path joined by '/'
-	Size int64
+	Path             string // full path joined by '/'
+	Size             int64
+	StartPieceIndex  int64 // 文件头的 piece index. 0-index
+	EndPieceIndex    int64 // 文件尾的 piece index
+	StartPieceOffset int64 // 文件头在 start piece 里的字节偏移
+	LastPieceBytes   int64 // 文件尾在 end piece 里的字节数
 }
 
 type TorrentMeta struct {
@@ -47,7 +51,7 @@ type TorrentMeta struct {
 	SingleFileTorrent bool
 	RootDir           string
 	ContentPath       string // root folder or single file name
-	Files             []TorrentMetaFile
+	Files             []*TorrentMetaFile
 	MetaInfo          *metainfo.MetaInfo // always non-nil in a parsed *TorrentMeta
 	Info              *metainfo.Info     // always non-nil in a parsed *TorrentMeta
 	infoChanged       bool
@@ -137,13 +141,18 @@ func FromMetaInfo(metaInfo *metainfo.MetaInfo, info *metainfo.Info) (*TorrentMet
 	}
 	torrentMeta.PiecesHash = util.Sha1(torrentMeta.Info.Pieces)
 	info = torrentMeta.Info
+	piecesCnt := int64(info.NumPieces())
 	// single file torrent
 	if len(info.Files) == 0 {
-		torrentMeta.Files = append(torrentMeta.Files, TorrentMetaFile{
+		torrentMeta.Files = append(torrentMeta.Files, &TorrentMetaFile{
 			// 个别 .torrent文件里的 files.path 字段包含不可见字符。保持与 qb 行为一致：直接忽略这些字符。
 			// 例如： keepfrds.1684287 种子里有 \u200e (U+200E, LEFT-TO-RIGHT MARK)
-			Path: util.Clean(info.Name),
-			Size: info.Length,
+			Path:             util.Clean(info.Name),
+			Size:             info.Length,
+			StartPieceIndex:  0,
+			EndPieceIndex:    piecesCnt - 1,
+			StartPieceOffset: 0,
+			LastPieceBytes:   info.Length % info.PieceLength,
 		})
 		torrentMeta.SingleFileTorrent = true
 		torrentMeta.Size = info.Length
@@ -153,11 +162,38 @@ func FromMetaInfo(metaInfo *metainfo.MetaInfo, info *metainfo.Info) (*TorrentMet
 			torrentMeta.RootDir = util.Clean(info.Name)
 			torrentMeta.ContentPath = util.Clean(info.Name)
 		}
+		var currentPieceIndex, currentPieceOffset int64
 		for _, metafile := range info.Files {
-			torrentMeta.Files = append(torrentMeta.Files, TorrentMetaFile{
-				Path: util.Clean(strings.Join(metafile.Path, "/")),
-				Size: metafile.Length,
+			firstPieceLeft := min(info.PieceLength-currentPieceOffset, metafile.Length)
+			remainFileBytes := metafile.Length - firstPieceLeft
+			middleCompletePiecesCnt := int64(0)
+			lastIncompletePieceBytes := int64(0)
+			if remainFileBytes > 0 {
+				middleCompletePiecesCnt = remainFileBytes / info.PieceLength
+				lastIncompletePieceBytes = remainFileBytes % info.PieceLength
+			}
+			endPieceIndex := currentPieceIndex + middleCompletePiecesCnt
+			lastPieceBytes := info.PieceLength
+			if lastIncompletePieceBytes > 0 {
+				lastPieceBytes = lastIncompletePieceBytes
+				endPieceIndex++
+			} else if currentPieceIndex == endPieceIndex {
+				lastPieceBytes = firstPieceLeft
+			}
+			torrentMeta.Files = append(torrentMeta.Files, &TorrentMetaFile{
+				Path:             util.Clean(strings.Join(metafile.Path, "/")),
+				Size:             metafile.Length,
+				StartPieceIndex:  currentPieceIndex,
+				StartPieceOffset: currentPieceOffset,
+				EndPieceIndex:    endPieceIndex,
+				LastPieceBytes:   lastPieceBytes,
 			})
+			if currentPieceIndex == endPieceIndex {
+				currentPieceOffset += firstPieceLeft
+			} else {
+				currentPieceOffset = lastIncompletePieceBytes
+			}
+			currentPieceIndex = endPieceIndex
 			torrentMeta.Size += metafile.Length
 		}
 	}
@@ -271,7 +307,7 @@ func (meta *TorrentMeta) UpdateCreationDate(creationDate int64) error {
 }
 
 func (meta *TorrentMeta) MatchFilter(filter string) bool {
-	if util.ContainsI(meta.RootDir, filter) || slices.IndexFunc(meta.Files, func(f TorrentMetaFile) bool {
+	if util.ContainsI(meta.RootDir, filter) || slices.IndexFunc(meta.Files, func(f *TorrentMetaFile) bool {
 		return util.ContainsI(f.Path, filter)
 	}) != -1 {
 		return true

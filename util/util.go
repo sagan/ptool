@@ -280,6 +280,14 @@ func DirExists(name string) bool {
 	return false
 }
 
+// Return true if name is a accessible and empty dir.
+func IsEmptyDir(name string) bool {
+	if files, err := os.ReadDir(name); err == nil && len(files) == 0 {
+		return true
+	}
+	return false
+}
+
 func TouchFile(name string) error {
 	file, err := os.OpenFile(name, os.O_RDONLY|os.O_CREATE, 0600)
 	if err != nil {

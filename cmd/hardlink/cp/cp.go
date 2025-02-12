@@ -10,14 +10,15 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/cmd/hardlink"
+	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/util"
 )
 
 var command = &cobra.Command{
 	Use:         "cp {source} {dest}",
 	Annotations: map[string]string{"cobra-prompt-dynamic-suggestions": "hardlinkcp"},
-	Short:       "Create hardlinked duplicate of source folder or file",
-	Long: `Create hardlinked duplicate of source folder or file
+	Short:       "Create hardlinked duplicate of source folder or file.",
+	Long: `Create hardlinked duplicate of source folder or file.
 Similar to what "cp -rl SOURCE DEST" in Linux does. It works in every platform.
 
 For small file (defined by --hardlink-min-size), it will create a copy instead of a hardlink.`,
@@ -31,10 +32,9 @@ var (
 )
 
 func init() {
-	command.Flags().BoolVarP(&useReflink, "use-reflink", "", false, `Create reflinks instead of hardlinks. `+
-		`It's only supported in Linux with XFS / BTRFS and some few other file systems for now. `+
-		`It's equivalent to Linux "cp" command's "--reflink=always" flag. `+
-		`If this flag is set, the "--hardlink-min-size" flag is ignored`)
+	// @todo : support ReFS (Windows 11 "Dev Drive" feature) reflink on Windows.
+	// See https://github.com/0xbadfca11/reflink .
+	command.Flags().BoolVarP(&useReflink, "use-reflink", "", false, constants.HELP_ARG_USE_REF_LINK)
 	command.Flags().StringVarP(&sizeLimitStr, "hardlink-min-size", "", "1MiB",
 		"File with size smaller than (<) this value will be copied instead of hardlinked. -1 == always hardlink")
 	hardlink.Command.AddCommand(command)

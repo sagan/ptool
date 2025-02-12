@@ -45,6 +45,9 @@ TOC
   - [标记 BT 客户端里 Tracker 状态异常的种子 (markinvalidtracker)](#标记-bt-客户端里-tracker-状态异常的种子-markinvalidtracker)
   - [修改本地 BT 客户端里的种子内容文件保存路径 (movesavepath)](#修改本地-bt-客户端里的种子内容文件保存路径-movesavepath)
   - [转移种子做种客户端 (transfertorrent)](#转移种子做种客户端-transfertorrent)
+  - [硬链接辅助工具 (hardlink)](#硬链接辅助工具-hardlink)
+    - [创建目录硬链接 (cp)](#创建目录硬链接-cp)
+    - [种子文件定向硬链 (torrent)](#种子文件定向硬链-torrent)
   - [同步 Cookies \& 导入站点 (cookiecloud)](#同步-cookies--导入站点-cookiecloud)
     - [测试 CookieCloud 服务 (status)](#测试-cookiecloud-服务-status)
     - [同步站点 Cookies (sync)](#同步站点-cookies-sync)
@@ -178,6 +181,7 @@ ptool <command> args... [flags]
 - markinvalidtracker : 标记 BT 客户端里 Tracker 状态异常的种子。
 - movesavepath : 修改本地 BT 客户端里的种子内容文件保存路径。
 - transfertorrent : 转移种子做种客户端。
+- hardlink : 硬链接辅助工具。
 - cookiecloud : 使用 [CookieCloud][] 同步站点的 Cookies 或导入站点。
 - sites : 显示本程序内置支持的所有 PT 站点列表。
 - config : 显示当前 ptool.toml 配置文件信息。
@@ -930,6 +934,35 @@ ptool delete {src-client} --tag _transferred --preserve
 
 - {src-client} 和 {dst-client} 需要位于同一个机器。如果两者的文件系统不同（例如位于不同的 Docker 容器里），使用 `--map-save-path src_path:dst_path` 指定两者之间的下载路径映射关系。
 - 由于技术限制，{src-client} 目前对于 Transmission 支持有限：仅支持本机上的的 TR，并且需要在 ptool.toml 里配置 `localTorrentsPath` 指向 TR 的种子文件夹。
+
+## 硬链接辅助工具 (hardlink)
+
+### 创建目录硬链接 (cp)
+
+```
+ptool hardlink cp SOURCE DEST
+```
+
+功能类似 Linux 的 `cp -rl SOURCE DEST`，但支持所有平台。
+
+参数：
+
+- `--hardlink-min-size 1MiB` : 对体积小于此值的小文件进行复制而非硬链接。
+
+### 种子文件定向硬链 (torrent)
+
+```
+ptool hardlink torrent MyTorrent.torrent --content-path ./MyTorrentContents --link-save-path ./Downloads
+```
+
+功能类似 [TorrentHardLinkHelper](https://github.com/harrywong/torrenthardlinkhelper)。根据已有的 .torrent 种子文件，在硬盘 content path 文件夹查找种子里的内容文件。硬盘上已有的文件路径结构、文件名可以和种子文件里定义的内容完全不同。
+
+指定 `--link-save-path` 参数后，将在该路径下硬链接生成符合种子内容结构（可以直接辅种）的内容。
+
+参考：
+
+- [TorrentHardLinkHelper 教程](https://tieba.baidu.com/p/5572480043) (百度贴吧)
+- [TorrentHardLinkHelper 原发布页](https://u2.dmhy.org/forums.php?action=viewtopic&forumid=7&topicid=6298) (u2 站内论坛)
 
 ## 同步 Cookies & 导入站点 (cookiecloud)
 

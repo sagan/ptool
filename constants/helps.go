@@ -47,3 +47,8 @@ const HELP_ARG_PATH_MAPPERS = `E.g. ` +
 const HELP_ARG_TEMPLATE = `The Go text template contents string (See https://pkg.go.dev/text/template ). ` +
 	`If it starts with "@" char, it (the rest part after @) is treated as a file name and template contents ` +
 	`will be read from it instead. You can use all Sprig ( https://github.com/Masterminds/sprig ) functions in template`
+
+const HELP_ARG_USE_REF_LINK = `Create reflinks instead of hardlinks. ` +
+	`It's only supported in Linux with XFS / BTRFS and some few other file systems for now. ` +
+	`It's equivalent to Linux "cp" command's "--reflink=always" flag behavior. ` +
+	`If this flag is set, the "--hardlink-min-size" flag is ignored`
