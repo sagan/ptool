@@ -36,9 +36,10 @@ const HELP_ARG_TAG = `Filter torrents by tag. Comma-separated list. ` +
 	`Torrent which tags contain any one in the list matches. Use "` + NONE + `" to select untagged torrents`
 const HELP_ARG_TAG_XSEED = `Comma-separated tag list. Only xseed torrents which tags ` +
 	`contain any one in the list. Use "` + NONE + `" to select untagged torrents`
-const HELP_ARG_TIMES = `Time string (local timezone). ` +
-	`Supported formats: "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd", a unix timestamp integer (seconds), ` +
-	`or a time duration (e.g. "5d") which references to a past time point from now`
+const HELP_ARG_TIMES = `Time string. Supported formats: "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd", ` +
+	`"yyyy-MM-ddTHH:mm:ssZ", a unix timestamp integer (seconds). ` +
+	`The first two formats assume local timezone while the third one assumes UTC timezone. ` +
+	`It also supports a time duration string (e.g. "5d") which references to a past time point from now`
 const HELP_ARG_PATH_MAPPERS = `E.g. ` +
 	`"/root/Downloads|/var/Downloads" will map "/root/Downloads" or "/root/Downloads/..." path to ` +
 	`"/var/Downloads" or "/var/Downloads/...". You can also use ":" instead of "|" as the separator ` +

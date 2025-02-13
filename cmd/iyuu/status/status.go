@@ -18,7 +18,7 @@ var command = &cobra.Command{
 	Short:       "Show iyuu user status.",
 	Long: `Show iyuu user status.
 
-The output is returned by iyuu server and printed as opaque data, ptool does not interpret it.
+The output is returned by iyuu server and printed as opaque json object, ptool does not interpret it.
 The command always exits with 0 as long as iyuu returns a http 200 response.`,
 	RunE: status,
 }
@@ -34,7 +34,7 @@ func status(cmd *cobra.Command, args []string) error {
 	}
 
 	data, err := iyuu.IyuuApiUsersProfile(config.Get().IyuuToken)
-	fmt.Printf("Iyuu status: error=%v, data=", err)
+	log.Warnf("Iyuu status: error=%v", err)
 	util.PrintJson(os.Stdout, data)
 	return err
 }

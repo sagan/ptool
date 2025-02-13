@@ -47,6 +47,7 @@ E.g.
 
 var (
 	force        = false
+	setReadonly  = false
 	useReflink   = false
 	showJson     = false
 	sizeLimitStr = ""
@@ -57,6 +58,8 @@ var (
 func init() {
 	command.Flags().BoolVarP(&force, "force", "", false, `Used with "--link-save-path" flag. `+
 		`Generate hardlinks even if only partial torrent files are successfully located in disk`)
+	command.Flags().BoolVarP(&setReadonly, "set-readonly", "", false, `Set created hardlinks to read-only. `+
+		`It doesn't get applied if copy or reflink is used instead of hardlink`)
 	command.Flags().BoolVarP(&useReflink, "use-reflink", "", false, constants.HELP_ARG_USE_REF_LINK)
 	command.Flags().BoolVarP(&showJson, "json", "", false, "Show output in json format")
 	command.Flags().StringVarP(&contentPath, "content-path", "", "",
@@ -120,7 +123,7 @@ func hardlinkcp(cmd *cobra.Command, args []string) error {
 		}
 		src := fileLink.FsFiles[fileLink.LinkedFsFileIndex].Path
 		dst := filepath.Join(targetRootPath, fileLink.TorrentFile.Path)
-		log.Debugf("Link %s => %s", src, dst)
+		log.Debugf("Link %q => %q", src, dst)
 		dir := filepath.Dir(dst)
 		var err error
 		if err = os.MkdirAll(dir, constants.PERM_DIR); err == nil {
@@ -133,13 +136,18 @@ func hardlinkcp(cmd *cobra.Command, args []string) error {
 					err = util.CopyFile(src, dst)
 				} else {
 					err = os.Link(src, dst)
+					if setReadonly {
+						if err := os.Chmod(dst, constants.PERM_RO); err != nil {
+							log.Warnf("Failed to set read-only on %q: %v", dst, err)
+						}
+					}
 				}
 			}
 		}
 		if err == nil {
 			successCnt++
 		} else {
-			log.Errorf("Failed to link %s => %s: %v", src, dst, err)
+			log.Errorf("Failed to link %q => %q: %v", src, dst, err)
 			errCnt++
 		}
 	}

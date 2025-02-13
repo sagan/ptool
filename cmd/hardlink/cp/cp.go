@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/KarpelesLab/reflink"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/sagan/ptool/cmd/hardlink"
@@ -27,11 +28,14 @@ For small file (defined by --hardlink-min-size), it will create a copy instead o
 }
 
 var (
+	setReadonly  = false
 	useReflink   = false
 	sizeLimitStr = ""
 )
 
 func init() {
+	command.Flags().BoolVarP(&setReadonly, "set-readonly", "", false, `Set created hardlinks to read-only. `+
+		`It doesn't get applied if copy or reflink is used instead of hardlink`)
 	// @todo : support ReFS (Windows 11 "Dev Drive" feature) reflink on Windows.
 	// See https://github.com/0xbadfca11/reflink .
 	command.Flags().BoolVarP(&useReflink, "use-reflink", "", false, constants.HELP_ARG_USE_REF_LINK)
@@ -57,19 +61,19 @@ func hardlinkcp(cmd *cobra.Command, args []string) error {
 	dest = filepath.Clean(dest)
 	sourceStat, err := os.Stat(source)
 	if err != nil {
-		return fmt.Errorf("failed to access source %s: %w", source, err)
+		return fmt.Errorf("failed to access source %q: %w", source, err)
 	}
 	if sourceStat.IsDir() {
 		sourceIsDir = true
 	} else if sourceIsDir {
 		return fmt.Errorf(`source specified as a dir (has a "/" or "\" prefix) but actually is NOT`)
 	} else if !sourceStat.Mode().IsRegular() {
-		return fmt.Errorf("source %s is NOT a dir or regular file", source)
+		return fmt.Errorf("source %q is NOT a dir or regular file", source)
 	}
 	if _, err := os.Stat(dest); err == nil {
-		return fmt.Errorf("dest %s already exists", dest)
+		return fmt.Errorf("dest %q already exists", dest)
 	} else if !os.IsNotExist(err) {
-		return fmt.Errorf("dest %s can NOT be accessed: %w", dest, err)
+		return fmt.Errorf("dest %q can NOT be accessed: %w", dest, err)
 	}
 	if !sourceIsDir && destIsDir {
 		return fmt.Errorf(`dest specified as a dir (has a "/" or "\" prefix) but source is NOT a dir`)
@@ -81,8 +85,14 @@ func hardlinkcp(cmd *cobra.Command, args []string) error {
 		} else if sizeLimit >= 0 && sourceStat.Size() < sizeLimit {
 			return util.CopyFile(source, dest)
 		}
-		return os.Link(source, dest)
+		err = os.Link(source, dest)
+		if setReadonly {
+			if err := os.Chmod(dest, constants.PERM_RO); err != nil {
+				log.Warnf("Failed to set read-only on %q: %v", dest, err)
+			}
+		}
+		return err
 	}
 
-	return util.LinkDir(source, dest, sizeLimit, useReflink)
+	return util.LinkDir(source, dest, sizeLimit, useReflink, setReadonly)
 }

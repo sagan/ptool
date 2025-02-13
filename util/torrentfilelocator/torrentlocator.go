@@ -223,9 +223,6 @@ func (l *LocateResult) checkPiece(pieceIndex int64) bool {
 		pieceFiles = append(pieceFiles, pieceFile)
 	}
 
-	// log.Tracef("pieceFiles")
-	// util.PrintJson(os.Stdout, pieceFiles)
-
 	var indexes []int = nil
 	for {
 		indexes = next(pieceFiles, indexes)
@@ -290,8 +287,6 @@ func next(pieceFiles []*PieceFile, indexes []int) []int {
 		}
 		return indexes
 	}
-	mod := false
-main:
 	for i, index := range indexes {
 		if pieceFiles[i].FileLink.State == LocateStateLocated {
 			continue
@@ -299,7 +294,6 @@ main:
 		for nextIndex := index + 1; nextIndex < len(pieceFiles[i].FileLink.FsFiles); nextIndex++ {
 			if !pieceFiles[i].FileLink.FailedFsFiles[nextIndex] {
 				indexes[i] = nextIndex
-				mod = true
 				for j := 0; j < i; j++ {
 					if pieceFiles[j].FileLink.State != LocateStateLocated {
 						for index := range pieceFiles[j].FileLink.FsFiles {
@@ -310,12 +304,9 @@ main:
 						}
 					}
 				}
-				break main
+				return indexes
 			}
 		}
-	}
-	if mod {
-		return indexes
 	}
 	return nil
 }

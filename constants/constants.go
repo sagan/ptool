@@ -25,6 +25,7 @@ const TEST_FILE = ".ptool-test"
 
 const PERM = 0600     // 程序创建的所有文件的 PERM
 const PERM_DIR = 0700 // 程序创建的所有文件夹的 PERM
+const PERM_RO = 0400  // 程序创建的只读文件的 PERM
 
 const FILENAME_SUFFIX_ADDED = ".added"
 const FILENAME_SUFFIX_OK = ".ok"

@@ -82,16 +82,14 @@ func Now() int64 {
 }
 
 func ParseFutureTime(str string) (int64, error) {
-	td, error := ParseTimeDuration(str)
-	if error == nil {
+	if td, err := ParseTimeDuration(str); err == nil {
 		return time.Now().Unix() + td, nil
 	}
 	return 0, fmt.Errorf("invalid time str")
 }
 
 func ParseLocalDateTime(str string) (int64, error) {
-	t, error := time.ParseInLocation("2006-01-02", str, time.Local)
-	if error == nil {
+	if t, err := time.ParseInLocation("2006-01-02", str, time.Local); err == nil {
 		return t.Unix(), nil
 	}
 	return 0, fmt.Errorf("invalid date str")
@@ -104,7 +102,7 @@ func ParseTime(str string, location *time.Location) (int64, error) {
 
 // Parse time (with date) string. .
 // It try to parse str in any of the below time format:
-// "yyyy-MM-ddHH:mm:ss", "yyyy-MM-dd HH:mm:ss", <integer> (unix timestamp in seconds),
+// "yyyy-MM-ddHH:mm:ss", "yyyy-MM-dd HH:mm:ss", "yyyy-MM-ddTHH:mm:ssZ", <integer> (unix timestamp in seconds),
 // "time duration" (e.g. "5d", "6hm5s", "4天5时") (treat as pasted time til now)
 // If location is nil, current local timezone is used.
 func ParseTimeWithNow(str string, location *time.Location, now time.Time) (int64, error) {
@@ -115,25 +113,31 @@ func ParseTimeWithNow(str string, location *time.Location, now time.Time) (int64
 	if i, err := strconv.Atoi(str); err == nil {
 		return int64(i), nil
 	}
-	//  handle yyyy-MM-ddHH:mm:ss
-	if matched, _ := regexp.MatchString("^\\d{4}-\\d{2}-\\d{2}\\d{2}:\\d{2}:\\d{2}$", str); matched {
-		str = str[:10] + " " + str[10:]
-	}
-	//  handle yyyy-MM-dd
-	if matched, _ := regexp.MatchString("^\\d{4}-\\d{2}-\\d{2}$", str); matched {
-		str += " 00:00:00"
+	if strings.Contains(str, ",") {
+		if i, err := strconv.Atoi(strings.ReplaceAll(str, ",", "")); err == nil {
+			return int64(i), nil
+		}
 	}
 
+	if t, err := time.Parse("2006-01-02T15:04:05Z", str); err == nil {
+		return t.Unix(), nil
+	}
+	formats := []string{
+		"2006-01-02 15:04:05",
+		"2006-01-0215:04:05",
+		"2006-01-02T15:04:05-07:00",
+		"2006-01-02",
+	}
 	if location == nil {
 		location = time.Local
 	}
-	t, error := time.ParseInLocation("2006-01-02 15:04:05", str, location)
-	if error == nil {
-		return t.Unix(), nil
+	for _, format := range formats {
+		if t, err := time.ParseInLocation(format, str, location); err == nil {
+			return t.Unix(), nil
+		}
 	}
 
-	td, error := ParseTimeDuration(str)
-	if error == nil {
+	if td, err := ParseTimeDuration(str); err == nil {
 		t := time.Unix(now.Unix()-td, 0)
 		// 以距今的相对时间标识，精度有限
 		if td%86400 == 0 && td >= 86400*30 { // e.g. "1月0天", "1年10月"
@@ -151,7 +155,7 @@ func ParseTimeWithNow(str string, location *time.Location, now time.Time) (int64
 
 // Return time duration in seconds
 func ParseTimeDuration(str string) (int64, error) {
-	// remove inside spaces like the one in "9 小时"
+	// remove inner spaces like the one in "9 小时"
 	var re = regexp.MustCompile(`^(.*?)\s*(\D+)\s*(.*?)$`)
 	for {
 		str1 := re.ReplaceAllString(str, `$1$2$3`)
@@ -174,9 +178,9 @@ func ParseTimeDuration(str string) (int64, error) {
 	str = strings.ReplaceAll(str, "分", "m")
 	str = strings.ReplaceAll(str, "秒", "s")
 	str = strings.TrimSuffix(str, "前")
-	td, error := ParseDuration(str)
-	if error == nil {
+	td, err := ParseDuration(str)
+	if err == nil {
 		return int64(td.Seconds()), nil
 	}
-	return 0, error
+	return 0, err
 }

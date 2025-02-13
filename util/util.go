@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/KarpelesLab/reflink"
+	"github.com/sagan/ptool/constants"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/constraints"
 )
@@ -202,7 +203,7 @@ func CopyFile(srcpath, dstpath string) (err error) {
 	}
 	defer r.Close() // ignore error: file was opened read-only.
 
-	w, err := os.Create(dstpath)
+	w, err := os.OpenFile(dstpath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, constants.PERM)
 	if err != nil {
 		return err
 	}
@@ -222,7 +223,9 @@ func CopyFile(srcpath, dstpath string) (err error) {
 // Create hardlink duplicate for source dir at dest. Recursively process all files and folders inside source.
 // Symbolinks are ignored.
 // For file with size < limit, create a copy instead.
-func LinkDir(source string, dest string, limit int64, useReflink bool) error {
+// If useReflink is set, create a reflink instead of hardlink
+// If setReadonly is set, created hardlinks will be set to read-only.
+func LinkDir(source string, dest string, limit int64, useReflink bool, setReadonly bool) error {
 	return filepath.WalkDir(source, func(sourcePath string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -254,7 +257,13 @@ func LinkDir(source string, dest string, limit int64, useReflink bool) error {
 				}
 			} else {
 				log.Tracef("Link %s => %s", sourcePath, destPath)
-				if err := os.Link(sourcePath, destPath); err != nil {
+				err = os.Link(sourcePath, destPath)
+				if setReadonly {
+					if err := os.Chmod(destPath, constants.PERM_RO); err != nil {
+						log.Warnf("Failed to set read-only on %q: %v", destPath, err)
+					}
+				}
+				if err != nil {
 					return err
 				}
 			}
@@ -289,7 +298,7 @@ func IsEmptyDir(name string) bool {
 }
 
 func TouchFile(name string) error {
-	file, err := os.OpenFile(name, os.O_RDONLY|os.O_CREATE, 0600)
+	file, err := os.OpenFile(name, os.O_RDONLY|os.O_CREATE, constants.PERM)
 	if err != nil {
 		return err
 	}

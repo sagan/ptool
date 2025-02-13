@@ -126,6 +126,7 @@ var pureFlags = []string{
 	"skip-existing",
 	"set-private",
 	"set-public",
+	"set-readonly",
 	"slow",
 	"strict",
 	"sum",
