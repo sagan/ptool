@@ -842,7 +842,7 @@ func MakeTorrent(options *TorrentMakeOptions) (tinfo *TorrentMeta, err error) {
 		options.AllowRestrictedCharInFilename, options.FilenameLengthLimit); err != nil {
 		return nil, fmt.Errorf("failed to build info from content-path: %w", err)
 	}
-	if len(info.Files) == 0 {
+	if len(info.Files) == 0 && info.Length == 0 {
 		return nil, fmt.Errorf("no files found in content-path")
 	}
 	if options.MinSize > 0 {
@@ -868,7 +868,7 @@ func MakeTorrent(options *TorrentMakeOptions) (tinfo *TorrentMeta, err error) {
 			options.Output = mi.HashInfoBytes().String() + ".torrent"
 		}
 	}
-	log.Infof("Output to %q", options.Output)
+	log.Warnf("Output created torrent to %q", options.Output)
 	if options.Output == "-" {
 		if term.IsTerminal(int(os.Stdout.Fd())) {
 			err = fmt.Errorf(constants.HELP_TIP_TTY_BINARY_OUTPUT)
