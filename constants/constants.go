@@ -89,8 +89,9 @@ var FilepathRestrictedCharacterReplacer *strings.Replacer
 // 大部分 .torrent 文件第一个字段是 announce，
 // 个别种子没有 announce / announce-list 字段，第一个字段是 created by / creation date 等，
 // 这类种子可以通过 DHT 下载成功。
-// values: ["d8:announce", "d10:created by", "d13:creation date"]
-var TorrentFileMagicNumbers = []string{"d8:announce", "d13:announce-list", "d10:created by", "d13:creation date"}
+// values: ["d8:announce", "d7:comment", "d10:created by", "d13:creation date"]
+var TorrentFileMagicNumbers = []string{"d8:announce", "d13:announce-list", "d7:comment", "d10:created by",
+	"d13:creation date"}
 
 // Some ptool cmds could add a suffix to processed (torrent) filenames.
 // Current Values: [".added", ".ok", ".fail", ".bak"].

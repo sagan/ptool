@@ -33,6 +33,7 @@ devtest/
 
 # test torrent files
 *.torrent
+*.fastresume
 *.bak
 *.log
 

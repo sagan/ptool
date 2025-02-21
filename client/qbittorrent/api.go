@@ -288,7 +288,8 @@ type apiPreferences struct {
 }
 
 func (qt *apiTorrentInfo) CanResume() bool {
-	return qt.State == "pausedUP" || qt.State == "pausedDL" || qt.State == "queuedUP" || qt.State == "queuedDL" || qt.State == "error"
+	return qt.State == "pausedUP" || qt.State == "stoppedUP" || qt.State == "pausedDL" || qt.State == "stoppedDL" ||
+		qt.State == "queuedUP" || qt.State == "queuedDL" || qt.State == "error"
 }
 
 func (qt *apiTorrentInfo) CanPause() bool {
@@ -302,9 +303,9 @@ func (qbtorrent *apiTorrentInfo) ToTorrentState() string {
 		state = "seeding"
 	case "metaDL", "allocating", "stalledDL", "queuedDL", "forcedDL", "downloading":
 		state = "downloading"
-	case "pausedUP":
+	case "pausedUP", "stoppedUP":
 		state = "completed"
-	case "pausedDL":
+	case "pausedDL", "stoppedDL":
 		state = "paused"
 	case "checkingUP", "checkingDL", "checkingResumeData":
 		state = "checking"

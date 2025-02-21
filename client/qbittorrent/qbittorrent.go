@@ -25,6 +25,7 @@ import (
 	"github.com/sagan/ptool/config"
 	"github.com/sagan/ptool/constants"
 	"github.com/sagan/ptool/util"
+	"github.com/sagan/ptool/util/torrentutil"
 )
 
 type Client struct {
@@ -844,12 +845,46 @@ func (qbclient *Client) SetConfig(variable string, value string) error {
 	}
 }
 
+func (qbclient *Client) exportTorrentFileFromLocalTorrentsPath(infoHash string) ([]byte, error) {
+	torrentFile := filepath.Join(qbclient.ClientConfig.LocalTorrentsPath, infoHash+".torrent")
+	contents, err := os.ReadFile(torrentFile)
+	if err != nil {
+		return nil, err
+	}
+	metainfo, err := torrentutil.ParseTorrent(contents)
+	if err != nil {
+		return nil, err
+	}
+	// .torrent file in BT_backup could be trackerless: https://github.com/qbittorrent/qBittorrent/issues/18569 .
+	// Extract trackers from .fastresume file instead in this case.
+	if len(metainfo.Trackers) == 0 {
+		fastresumeFile := filepath.Join(qbclient.ClientConfig.LocalTorrentsPath, infoHash+".fastresume")
+		fastresume, err := parseQbFastresumeFile(fastresumeFile)
+		if err != nil {
+			return nil, err
+		}
+		if len(fastresume.Trackers) == 0 {
+			return nil, fmt.Errorf("no trackers in fastresume file")
+		}
+		for tier, trackers := range fastresume.Trackers {
+			for _, tracker := range trackers {
+				metainfo.AddTracker(tracker, tier)
+			}
+		}
+	}
+	return metainfo.ToBytes()
+}
+
 // The export API of qb exists but currently is not documented in
 // https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-4.1) .
 // See https://github.com/qbittorrent/qBittorrent/issues/18746 for more info.
 func (qbclient *Client) ExportTorrentFile(infoHash string) ([]byte, error) {
 	if qbclient.ClientConfig.LocalTorrentsPath != "" {
-		return os.ReadFile(filepath.Join(qbclient.ClientConfig.LocalTorrentsPath, infoHash+".torrent"))
+		contents, err := qbclient.exportTorrentFileFromLocalTorrentsPath(infoHash)
+		if err == nil {
+			return contents, nil
+		}
+		log.Debugf("Failed to export qb torrent from file system: %v. Fallback to QB Web API", err)
 	}
 	apiUrl := qbclient.ClientConfig.Url + "api/v2/torrents/export?hash=" + infoHash
 	res, _, err := util.FetchUrl(apiUrl, qbclient.HttpClient, nil)
