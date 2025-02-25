@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 	"text/template"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -88,22 +89,23 @@ along with search meta data) in json object format instead.`,
 }
 
 var (
-	dense             = false
-	largestFlag       = false
-	newestFlag        = false
-	showJson          = false
-	showIdOnly        = false
-	minSeeders        = int64(0)
-	maxResults        = int64(0)
-	perSiteMaxResults = int64(0)
-	baseUrl           = ""
-	minTorrentSizeStr = ""
-	maxTorrentSizeStr = ""
-	publishedInStr    = ""
-	filter            = ""
-	format            = ""
-	includes          = []string{}
-	excludes          = ""
+	dense              = false
+	largestFlag        = false
+	newestFlag         = false
+	showJson           = false
+	showIdOnly         = false
+	minSeeders         = int64(0)
+	maxResults         = int64(0)
+	perSiteMaxResults  = int64(0)
+	baseUrl            = ""
+	minTorrentSizeStr  = ""
+	maxTorrentSizeStr  = ""
+	publishedAfterStr  = ""
+	publishedBeforeStr = ""
+	filter             = ""
+	format             = ""
+	includes           = []string{}
+	excludes           = ""
 )
 
 func init() {
@@ -121,12 +123,12 @@ func init() {
 			`E.g. "special.php", "adult.php?incldead=1&search=%s"`)
 	command.Flags().Int64VarP(&minSeeders, "min-seeders", "", 1,
 		"Skip torrent with seeders less than (<) this value. -1 == no limit")
-	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1",
-		"Skip torrent with size smaller than (<) this value. -1 == no limit")
-	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1",
-		"Skip torrent with size larger than (>) this value. -1 == no limit")
-	command.Flags().StringVarP(&publishedInStr, "published-in", "", "",
-		`Time duration. Only showing torrent that was published in the past time of this value. E.g. "30d"`)
+	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1", constants.HELP_ARG_MIN_TORRENT_SIZE)
+	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1", constants.HELP_ARG_MAX_TORRENT_SIZE)
+	command.Flags().StringVarP(&publishedAfterStr, "published-after", "", "",
+		`Only showing torrent that was published after (>=) this time. `+constants.HELP_ARG_TIMES)
+	command.Flags().StringVarP(&publishedBeforeStr, "published-before", "", "",
+		`Only showing torrent that was published before (<) this time. `+constants.HELP_ARG_TIMES)
 	command.Flags().StringVarP(&filter, "filter", "", "", "Filter search result additionally by title or subtitle")
 	command.Flags().StringVarP(&format, "format", "", "", `Set the output format of each site torrent. `+
 		`Available variable placeholders: {{.Id}}, {{.Size}} and more. `+constants.HELP_ARG_TEMPLATE)
@@ -139,6 +141,7 @@ func init() {
 }
 
 func search(cmd *cobra.Command, args []string) error {
+	var err error
 	if util.CountNonZeroVariables(showIdOnly, showJson, format) > 1 {
 		return fmt.Errorf("--json, --show-id-only, --format flags are NOT compatible")
 	}
@@ -149,12 +152,25 @@ func search(cmd *cobra.Command, args []string) error {
 	excludesList := util.SplitCsv(excludes)
 	minTorrentSize, _ := util.RAMInBytes(minTorrentSizeStr)
 	maxTorrentSize, _ := util.RAMInBytes(maxTorrentSizeStr)
-	publishedIn, _ := util.ParseTimeDuration(publishedInStr)
+	now := time.Now()
+	var publishedAfter, publishedBefore int64
+	if publishedAfterStr != "" {
+		publishedAfter, err = util.ParseTimeWithNow(publishedAfterStr, nil, now)
+		if err != nil {
+			return fmt.Errorf("invalid published-after: %w", err)
+		}
+	}
+	if publishedBeforeStr != "" {
+		publishedBefore, err = util.ParseTimeWithNow(publishedBeforeStr, nil, now)
+		if err != nil {
+			return fmt.Errorf("invalid published-before: %w", err)
+		}
+	}
+
 	sitenames := config.ParseGroupAndOtherNames(util.SplitCsv(args[0])...)
 	keyword := strings.Join(args[1:], " ")
 	siteInstancesMap := map[string]site.Site{}
 	var outputTemplate *template.Template
-	var err error
 	if format != "" {
 		if outputTemplate, err = helper.GetTemplate(format); err != nil {
 			return fmt.Errorf("invalid format template: %v", err)
@@ -168,7 +184,6 @@ func search(cmd *cobra.Command, args []string) error {
 		}
 		siteInstancesMap[sitename] = siteInstance
 	}
-	now := util.Now()
 	ch := make(chan SearchResult, len(sitenames))
 	for _, sitename := range sitenames {
 		go func(sitename string) {
@@ -182,7 +197,8 @@ func search(cmd *cobra.Command, args []string) error {
 	cntSuccessSites := int64(0)
 	cntNoResultSites := int64(0)
 	cntErrorSites := int64(0)
-	for i := 0; i < len(sitenames); i++ {
+	cntTorrents := int64(0)
+	for range sitenames {
 		searchResult := <-ch
 		if searchResult.err != nil {
 			cntErrorSites++
@@ -191,6 +207,7 @@ func search(cmd *cobra.Command, args []string) error {
 			cntNoResultSites++
 		} else {
 			cntSuccessSites++
+			cntTorrents += int64(len(searchResult.torrents))
 			siteTorrents := searchResult.torrents
 			if largestFlag {
 				sort.Slice(siteTorrents, func(i, j int) bool {
@@ -207,7 +224,8 @@ func search(cmd *cobra.Command, args []string) error {
 				if minSeeders >= 0 && torrent.Seeders < minSeeders ||
 					minTorrentSize > 0 && torrent.Size < minTorrentSize ||
 					maxTorrentSize > 0 && torrent.Size > maxTorrentSize ||
-					publishedIn > 0 && now-torrent.Time > publishedIn ||
+					publishedAfter > 0 && torrent.Time < publishedAfter ||
+					publishedBefore > 0 && torrent.Time >= publishedBefore ||
 					filter != "" && !torrent.MatchFilter(filter) ||
 					!torrent.MatchFiltersAndOr(includesList) ||
 					torrent.MatchFiltersOr(excludesList) {
@@ -260,12 +278,13 @@ func search(cmd *cobra.Command, args []string) error {
 		}
 		return nil
 	}
-	fmt.Printf("// Done searching %d sites. Success / NoResult / Error sites: %d / %d / %d. Showing %d result\n",
-		cntSuccessSites+cntErrorSites+cntNoResultSites, cntSuccessSites, cntNoResultSites, cntErrorSites, len(torrents))
+	fmt.Printf("// Done searching %d sites. Success / NoResult / Error sites: %d / %d / %d. "+
+		"Showing %d results filtered from %d hits\n", cntSuccessSites+cntErrorSites+cntNoResultSites, cntSuccessSites,
+		cntNoResultSites, cntErrorSites, len(torrents), cntTorrents)
 	if errorStr != "" {
 		log.Warnf("Errors encountered: %s", errorStr)
 	}
 	fmt.Printf("\n")
-	site.PrintTorrents(os.Stdout, torrents, "", now, false, dense, nil)
+	site.PrintTorrents(os.Stdout, torrents, "", now.Unix(), false, dense, nil)
 	return nil
 }

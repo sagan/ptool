@@ -690,7 +690,7 @@ func (siteConfig *SiteConfigStruct) GetTimezone() string {
 
 func (siteConfig *SiteConfigStruct) MatchFilter(filter string) bool {
 	return util.ContainsI(siteConfig.GetName(), filter) || util.ContainsI(siteConfig.Type, filter) ||
-		util.ContainsI(siteConfig.Url, filter)
+		util.ContainsI(siteConfig.Url, filter) || util.ContainsI(siteConfig.Comment, filter)
 }
 
 // Parse a site internal url (e.g. special.php), return absolute url

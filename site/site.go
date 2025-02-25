@@ -35,7 +35,7 @@ type Torrent struct {
 	DownloadMultiplier float64
 	UploadMultiplier   float64
 	DiscountEndTime    int64
-	Time               int64 // torrent timestamp
+	Time               int64 // torrent unix timestamp (seconds)
 	Size               int64
 	IsSizeAccurate     bool
 	Seeders            int64

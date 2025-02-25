@@ -51,10 +51,8 @@ func init() {
 	command.Flags().StringVarP(&category, "category", "", "", constants.HELP_ARG_CATEGORY)
 	command.Flags().StringVarP(&tag, "tag", "", "", constants.HELP_ARG_TAG)
 	command.Flags().StringVarP(&tracker, "tracker", "", "", constants.HELP_ARG_TRACKER)
-	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1",
-		"Skip torrent with size smaller than (<) this value. -1 == no limit")
-	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1",
-		"Skip torrent with size larger than (>) this value. -1 == no limit")
+	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1", constants.HELP_ARG_MIN_TORRENT_SIZE)
+	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1", constants.HELP_ARG_MAX_TORRENT_SIZE)
 	cmd.RootCmd.AddCommand(command)
 }
 

@@ -18,7 +18,7 @@ type apiTorrentTracker struct {
 	Status         int64  `yaml:"status"`
 	Tier           int64  `yaml:"tier"`           // Tracker priority tier. Lower tier trackers are tried before higher tiers. Tier numbers are valid when >= 0, < 0 is used as placeholder when tier does not exist for special entries (such as DHT).
 	Num_peers      int64  `yaml:"num_peers"`      // Number of peers for current torrent, as reported by the tracker
-	Num_seeds      int64  `yaml:"num_seeds"`      // Number of seeds for current torrent, asreported by the tracker
+	Num_seeds      int64  `yaml:"num_seeds"`      // Number of seeds for current torrent, as reported by the tracker
 	Num_leeches    int64  `yaml:"num_leeches"`    // Number of leeches for current torrent, as reported by the tracker
 	Num_downloaded int64  `yaml:"num_downloaded"` // Number of completed downlods for current torrent, as reported by the tracker
 	Msg            string `yaml:"msg"`            // Tracker message (there is no way of knowing what this message is - it's up to tracker admins)

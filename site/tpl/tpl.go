@@ -757,7 +757,7 @@ https://www.dmm.co.jp/dc/doujin/-/detail/=/cid={{number | regex_search("\\bd_\\d
 			Comment: "织梦",
 		},
 	}
-	SITENAMES = []string{}
+	SITENAMES = []string{} // all internal site (canonical) names in lexical order.
 )
 
 func init() {

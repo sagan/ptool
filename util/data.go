@@ -124,6 +124,7 @@ func MapKeys[T constraints.Ordered, TV any](input map[T]TV) []T {
 	return keys
 }
 
+// Convert struct to map. val should be a struct (not a pointer to it).
 // From https://stackoverflow.com/questions/23589564/function-for-converting-a-struct-to-map-in-golang .
 func StructToMap(val interface{}, ignoreNoTagFields bool, ignoreEmptyFields bool) map[string]interface{} {
 	//The name of the tag you will use for fields of struct

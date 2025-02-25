@@ -53,3 +53,6 @@ const HELP_ARG_USE_REF_LINK = `Create reflinks instead of hardlinks. ` +
 	`It's only supported in Linux with XFS / BTRFS and some few other file systems for now. ` +
 	`It's equivalent to Linux "cp" command's "--reflink=always" flag behavior. ` +
 	`If this flag is set, the "--hardlink-min-size" flag is ignored`
+
+const HELP_ARG_MIN_TORRENT_SIZE = `Skip torrent with size smaller than (<) this value. E.g. "1GiB". -1 == no limit`
+const HELP_ARG_MAX_TORRENT_SIZE = `Skip torrent with size larger than (>) this value. E.g. "1GiB". -1 == no limit`

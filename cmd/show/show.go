@@ -145,13 +145,13 @@ func init() {
 	command.Flags().StringVarP(&maxTotalSizeStr, "max-total-size", "", "-1",
 		"Show at most torrents with total contents size of this value. -1 == no limit")
 	command.Flags().StringVarP(&addedAfterStr, "added-after", "", "",
-		`Only showing torrent that was added to client after (>=) this. `+constants.HELP_ARG_TIMES)
+		`Only showing torrent that was added to client after (>=) this time. `+constants.HELP_ARG_TIMES)
 	command.Flags().StringVarP(&completedBeforeStr, "completed-before", "", "",
-		`Only showing torrent that was downloaded completed before (<) this. `+constants.HELP_ARG_TIMES)
+		`Only showing torrent that was downloaded completed before (<) this time. `+constants.HELP_ARG_TIMES)
 	command.Flags().StringVarP(&activeSinceStr, "active-since", "", "",
-		`Only showing torrent that has activity since (>=) this. `+constants.HELP_ARG_TIMES)
+		`Only showing torrent that has activity since (>=) this time. `+constants.HELP_ARG_TIMES)
 	command.Flags().StringVarP(&notActiveSinceStr, "not-active-since", "", "",
-		`Only showing torrent that does NOT has activity since (>=) this. `+constants.HELP_ARG_TIMES)
+		`Only showing torrent that does NOT has activity since (>=) this time. `+constants.HELP_ARG_TIMES)
 	command.Flags().StringVarP(&filter, "filter", "", "", constants.HELP_ARG_FILTER_TORRENT)
 	command.Flags().StringVarP(&category, "category", "", "", constants.HELP_ARG_CATEGORY)
 	command.Flags().StringVarP(&tag, "tag", "", "", constants.HELP_ARG_TAG)
@@ -166,10 +166,8 @@ func init() {
 			`is "/root/Downloads" or any sub path inside it like "/root/Downloads/Videos"`)
 	command.Flags().StringVarP(&contentPath, "content-path", "", "",
 		`Filter torrent by it's content path. E.g. "/root/Downloads/[BDMV]Clannad"`)
-	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1",
-		"Skip torrent with size smaller than (<) this value. -1 == no limit")
-	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1",
-		"Skip torrent with size larger than (>) this value. -1 == no limit")
+	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1", constants.HELP_ARG_MIN_TORRENT_SIZE)
+	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1", constants.HELP_ARG_MAX_TORRENT_SIZE)
 	command.Flags().StringVarP(&excludes, "exclude", "", "",
 		"Comma-separated list that torrent which name contains any one in the list will be skipped")
 	command.Flags().StringVarP(&format, "format", "", "", `Manually set the output format of each client torrent. `+

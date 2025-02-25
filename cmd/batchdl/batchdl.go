@@ -171,10 +171,8 @@ func init() {
 		`Used with "--save-*" flags, write to those files in append mode`)
 	command.Flags().Int64VarP(&maxTorrents, "max-torrents", "", -1,
 		"Number limit of torrents handled. -1 == no limit (Press Ctrl+C to stop)")
-	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1",
-		"Skip torrent with size smaller than (<) this value. -1 == no limit")
-	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1",
-		"Skip torrent with size larger than (>) this value. -1 == no limit")
+	command.Flags().StringVarP(&minTorrentSizeStr, "min-torrent-size", "", "-1", constants.HELP_ARG_MIN_TORRENT_SIZE)
+	command.Flags().StringVarP(&maxTorrentSizeStr, "max-torrent-size", "", "-1", constants.HELP_ARG_MAX_TORRENT_SIZE)
 	command.Flags().StringVarP(&maxTotalSizeStr, "max-total-size", "", "-1",
 		"Will at most download torrents with total contents size of this value. -1 == no limit")
 	command.Flags().Int64VarP(&minSeeders, "min-seeders", "", 1,
