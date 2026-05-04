@@ -104,7 +104,7 @@ func (spm *PathMapper) Before2After(beforePath string) (afterPath string, match 
 			if strings.HasPrefix(beforePath, before) {
 				return spm.mapper[before] + strings.TrimPrefix(beforePath, before), true
 			}
-		} else if strings.HasPrefix(beforePath, before+"/") {
+		} else if beforePath == before || strings.HasPrefix(beforePath, before+"/") {
 			return spm.mapper[before] + strings.TrimPrefix(beforePath, before), true
 		}
 	}

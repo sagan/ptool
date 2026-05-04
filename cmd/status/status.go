@@ -82,7 +82,7 @@ func status(cmd *cobra.Command, args []string) error {
 	}
 	if showAll || showAllClients || showAllSites {
 		if len(args) > 0 {
-			return fmt.Errorf("--all, --clients, --sites flags cann't be used with site or client names")
+			return fmt.Errorf("--all, --clients, --sites flags can't be used with site or client names")
 		}
 		if showAll || showAllClients {
 			for _, client := range config.Get().ClientsEnabled {

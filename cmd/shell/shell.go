@@ -79,7 +79,7 @@ var ptoolPrompt = &cobraprompt.CobraPrompt{
 
 func shell(command *cobra.Command, args []string) error {
 	if config.InShell {
-		return fmt.Errorf(`you cann't run "shell" command in shell itself`)
+		return fmt.Errorf(`you can't run "shell" command in shell itself`)
 	}
 	if config.Fork || config.LockFile != "" {
 		return fmt.Errorf("--fork or --lock flag can NOT be used with shell")

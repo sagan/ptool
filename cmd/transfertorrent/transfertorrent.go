@@ -126,7 +126,7 @@ Add torrents to target client in paused state: %t`+"\n", len(torrents), srcClien
 		if savePathMapper != nil {
 			newpath, match := savePathMapper.Before2After(torrent.SavePath)
 			if !match {
-				fmt.Printf("! %s (%s): do not move due to save path cann't be mapped\n", torrent.InfoHash, torrent.Name)
+				fmt.Printf("! %s (%s): do not move due to save path can't be mapped\n", torrent.InfoHash, torrent.Name)
 				continue
 			}
 			targetpapth = newpath

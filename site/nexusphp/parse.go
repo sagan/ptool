@@ -174,9 +174,9 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 	}
 	if containerElNode == nil {
 		if torrentEls.Length() > 1 || option.selectorTorrentsList != "" {
-			err = fmt.Errorf("cann't find torrents list container element")
+			err = fmt.Errorf("can't find torrents list container element")
 		} else {
-			log.Tracef("Cann't find torrents list container element.")
+			log.Tracef("can't find torrents list container element.")
 		}
 		return
 	}
@@ -210,7 +210,7 @@ func parseTorrents(doc *goquery.Document, option *TorrentsParserOption,
 			headerEl = el.Prev()
 		}
 		if headerEl.Length() == 0 {
-			err = fmt.Errorf("cann't find headerEl")
+			err = fmt.Errorf("can't find headerEl")
 			return
 		}
 		log.Tracef("nptr: header node=%v, id=%v, class=%v\n",

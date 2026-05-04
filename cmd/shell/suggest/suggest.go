@@ -45,7 +45,7 @@ func DirArg(prefix string) []prompt.Suggest {
 func FileArg(prefix string, suffix string, dirOnly bool) []prompt.Suggest {
 	dirprefix := ""
 	dir := "."
-	// cann't use filepath.Dir here as it will discard the leading ./ or ../
+	// can't use filepath.Dir here as it will discard the leading ./ or ../
 	if index := strings.LastIndex(prefix, "/"); index != -1 {
 		dir = prefix[:index]
 		dirprefix = dir + "/"
