@@ -87,6 +87,7 @@ func (qbclient *Client) apiPost(apiUrl string, data url.Values) error {
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
@@ -94,11 +95,14 @@ func (qbclient *Client) apiPost(apiUrl string, data url.Values) error {
 	if string(body) == "Fails." {
 		return fmt.Errorf("apiPost error: Fails")
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
+	if !isSuccessfulAPIStatus(resp.StatusCode) {
 		return fmt.Errorf("apiPost error: status=%d", resp.StatusCode)
 	}
 	return nil
+}
+
+func isSuccessfulAPIStatus(statusCode int) bool {
+	return statusCode == http.StatusOK || statusCode == http.StatusNoContent
 }
 
 func (qbclient *Client) apiRequest(apiPath string, v any) error {
