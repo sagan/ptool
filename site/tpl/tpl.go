@@ -575,9 +575,10 @@ https://www.dmm.co.jp/dc/doujin/-/detail/=/cid={{number | regex_search("\\bd_\\d
 			Comment: "NovaHD",
 		},
 		"opencd": {
-			Type:    "nexusphp",
-			Url:     "https://open.cd/",
-			Comment: "OpenCD, 皇后",
+			Type:                       "nexusphp",
+			Url:                        "https://open.cd/",
+			SelectorTorrentDetailsLink: `a[href^="plugin_details.php?"]`,
+			Comment:                    "OpenCD, 皇后",
 		},
 		"okpt": {
 			Type:              "nexusphp",
