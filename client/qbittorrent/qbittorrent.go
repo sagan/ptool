@@ -95,7 +95,7 @@ func (qbclient *Client) apiPost(apiUrl string, data url.Values) error {
 		return fmt.Errorf("apiPost error: Fails")
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != 200 && resp.StatusCode != 204 {
 		return fmt.Errorf("apiPost error: status=%d", resp.StatusCode)
 	}
 	return nil
@@ -107,8 +107,11 @@ func (qbclient *Client) apiRequest(apiPath string, v any) error {
 		return err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != 200 && resp.StatusCode != 204 {
 		return fmt.Errorf("apiRequest %s response %d status", apiPath, resp.StatusCode)
+	}
+	if resp.StatusCode == 204 {
+		return nil
 	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -224,7 +227,7 @@ func (qbclient *Client) AddTorrent(torrentContent []byte, option *client.Torrent
 		return fmt.Errorf("add torrent error: %w", err)
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != 200 && resp.StatusCode != 204 {
 		return fmt.Errorf("add torrent error: status=%d", resp.StatusCode)
 	}
 	return err
