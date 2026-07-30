@@ -119,6 +119,7 @@ type ClientConfigStruct struct {
 	BrushMaxTorrents                  int64   `yaml:"brushMaxTorrents"`
 	BrushMinRatio                     float64 `yaml:"brushMinRatio"`
 	BrushDefaultUploadSpeedLimit      string  `yaml:"brushDefaultUploadSpeedLimit"`
+	BrushMaxTorrentAgeDays            int64   `yaml:"brushMaxTorrentAgeDays"` // 刷流：自动删除添加时间超过 N 天的 _brush 种子。0=关闭(默认)；最小 7
 	BrushMinDiskSpaceValue            int64
 	BrushSlowUploadSpeedTierValue     int64
 	BrushDefaultUploadSpeedLimitValue int64 ``
@@ -463,6 +464,11 @@ func Get() *ConfigStruct {
 
 			if client.BrushMinRatio == 0 {
 				client.BrushMinRatio = DEFAULT_CLIENT_BRUSH_MIN_RATION
+			}
+
+			if client.BrushMaxTorrentAgeDays != 0 && client.BrushMaxTorrentAgeDays < 7 {
+				log.Fatalf("Invalid brushMaxTorrentAgeDays value %v in client %s config: minimum is 7 (one week), or set to 0 to disable",
+					client.BrushMaxTorrentAgeDays, client.Name)
 			}
 
 			assertConfigItemNameIsValid("client", client.Name, client)
