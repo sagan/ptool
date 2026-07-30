@@ -52,6 +52,7 @@ type BrushClientOptionStruct struct {
 	MaxTorrents             int64
 	MinRatio                float64
 	DefaultUploadSpeedLimit int64
+	MaxTorrentAgeDays       int64
 }
 
 type AlgorithmAddTorrent struct {
@@ -371,6 +372,30 @@ func Decide(clientStatus *client.Status, clientTorrents []*client.Torrent, siteT
 		}
 	}
 
+	// delete torrents due to max age limit (brushMaxTorrentAgeDays); 0 = disabled
+	if clientOption.MaxTorrentAgeDays > 0 {
+		maxAgeSeconds := clientOption.MaxTorrentAgeDays * 86400
+		for _, torrent := range clientTorrents {
+			if clientTorrentsMap[torrent.InfoHash].DeleteFlag {
+				continue
+			}
+			if siteOption.Now-torrent.Atime > maxAgeSeconds {
+				result.DeleteTorrents = append(result.DeleteTorrents, AlgorithmOperationTorrent{
+					InfoHash: torrent.InfoHash,
+					Name:     torrent.Name,
+					Msg:      fmt.Sprintf("delete due to max age %dd limit", clientOption.MaxTorrentAgeDays),
+				})
+				freespaceChange += torrent.SizeCompleted
+				estimateUploadSpeed -= torrent.UploadSpeed
+				clientTorrentsMap[torrent.InfoHash].DeleteFlag = true
+				if countAsDownloading(torrent, siteOption.Now) {
+					cntDownloadingTorrents--
+				}
+				cntTorrents--
+			}
+		}
+	}
+
 	// delete torrents due to max brush torrents limit
 	cntDeleteDueToMaxTorrents := max(cntTorrents-clientOption.MaxTorrents, -siteOption.AllowAddTorrents)
 	if cntDeleteDueToMaxTorrents > 0 && len(candidateTorrents) > 0 {
@@ -617,5 +642,6 @@ func GetBrushClientOptions(clientInstance client.Client) *BrushClientOptionStruc
 		MaxTorrents:             clientInstance.GetClientConfig().BrushMaxTorrents,
 		MinRatio:                clientInstance.GetClientConfig().BrushMinRatio,
 		DefaultUploadSpeedLimit: clientInstance.GetClientConfig().BrushDefaultUploadSpeedLimitValue,
+		MaxTorrentAgeDays:       clientInstance.GetClientConfig().BrushMaxTorrentAgeDays,
 	}
 }
